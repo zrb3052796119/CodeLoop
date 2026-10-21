@@ -1,0 +1,4774 @@
+{
+ "summary": {
+  "schema": "skill-presel-verify-summary/v1",
+  "trials_scored": 60,
+  "positives": {
+   "n": 36,
+   "discovery_initiated": 8,
+   "strict_load": 8,
+   "retrieval_and_handoff": 8,
+   "strict_chain": 3,
+   "primary_success": 8,
+   "hint_target_hit": 21,
+   "hints_present": 27,
+   "task_passed": 27
+  },
+  "negatives": {
+   "n": 24,
+   "false_triggers": 0,
+   "task_passed": 24
+  },
+  "tokens": {
+   "first_chat_input_mean": 5773.6,
+   "chat_input_total": 1126481,
+   "chat_output_total": 40776,
+   "embedding_requests_total": 486
+  },
+  "per_case": {
+   "R01": {
+    "1": {
+     "discovery": true,
+     "strict_load": true,
+     "handoff": true,
+     "hint_hit": false,
+     "suggested": [
+      "checkout",
+      "config"
+     ],
+     "sources": {
+      "checkout": "lexical",
+      "config": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": [
+      "http/retry-budget"
+     ]
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "checkout",
+      "config"
+     ],
+     "sources": {
+      "checkout": "lexical",
+      "config": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": true,
+     "strict_load": true,
+     "handoff": true,
+     "hint_hit": false,
+     "suggested": [
+      "checkout",
+      "config"
+     ],
+     "sources": {
+      "checkout": "lexical",
+      "config": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": [
+      "http/retry-budget"
+     ]
+    }
+   },
+   "R02": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "database",
+      "reporting",
+      "search-indexer"
+     ],
+     "sources": {
+      "database": "lexical",
+      "reporting": "lexical",
+      "search-indexer": "lexical"
+     },
+     "semantic": [],
+     "task": false,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "database",
+      "reporting",
+      "search-indexer"
+     ],
+     "sources": {
+      "database": "lexical",
+      "reporting": "lexical",
+      "search-indexer": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": true,
+     "strict_load": true,
+     "handoff": true,
+     "hint_hit": true,
+     "suggested": [
+      "database",
+      "reporting",
+      "search-indexer"
+     ],
+     "sources": {
+      "database": "lexical",
+      "reporting": "lexical",
+      "search-indexer": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": [
+      "database/query-plan"
+     ]
+    }
+   },
+   "R03": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "returns",
+      "auth",
+      "batch-export"
+     ],
+     "sources": {
+      "returns": "lexical",
+      "auth": "lexical",
+      "batch-export": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": true,
+     "strict_load": true,
+     "handoff": true,
+     "hint_hit": true,
+     "suggested": [
+      "returns",
+      "auth",
+      "batch-export"
+     ],
+     "sources": {
+      "returns": "lexical",
+      "auth": "lexical",
+      "batch-export": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": [
+      "auth/access-audit"
+     ]
+    },
+    "3": {
+     "discovery": true,
+     "strict_load": true,
+     "handoff": true,
+     "hint_hit": true,
+     "suggested": [
+      "returns",
+      "auth",
+      "batch-export"
+     ],
+     "sources": {
+      "returns": "lexical",
+      "auth": "lexical",
+      "batch-export": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": [
+      "auth/access-audit"
+     ]
+    }
+   },
+   "R04": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "config",
+      "docs",
+      "file-storage"
+     ],
+     "sources": {
+      "config": "lexical",
+      "docs": "lexical",
+      "file-storage": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "config",
+      "docs",
+      "file-storage"
+     ],
+     "sources": {
+      "config": "lexical",
+      "docs": "lexical",
+      "file-storage": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "config",
+      "docs",
+      "file-storage"
+     ],
+     "sources": {
+      "config": "lexical",
+      "docs": "lexical",
+      "file-storage": "lexical"
+     },
+     "semantic": [],
+     "task": false,
+     "loaded": []
+    }
+   },
+   "X01": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": false,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "X02": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "X03": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": false,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "X04": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "identity-sync",
+      "address-book",
+      "analytics"
+     ],
+     "sources": {
+      "identity-sync": "lexical",
+      "address-book": "lexical",
+      "analytics": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "identity-sync",
+      "address-book",
+      "analytics"
+     ],
+     "sources": {
+      "identity-sync": "lexical",
+      "address-book": "lexical",
+      "analytics": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "identity-sync",
+      "address-book",
+      "analytics"
+     ],
+     "sources": {
+      "identity-sync": "lexical",
+      "address-book": "lexical",
+      "analytics": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "C01": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "ci",
+      "fraud",
+      "search-indexer"
+     ],
+     "sources": {
+      "ci": "lexical",
+      "fraud": "lexical",
+      "search-indexer": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "ci",
+      "fraud",
+      "search-indexer"
+     ],
+     "sources": {
+      "ci": "lexical",
+      "fraud": "lexical",
+      "search-indexer": "lexical"
+     },
+     "semantic": [],
+     "task": false,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "ci",
+      "fraud",
+      "search-indexer"
+     ],
+     "sources": {
+      "ci": "lexical",
+      "fraud": "lexical",
+      "search-indexer": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "C02": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "checkout",
+      "cdn",
+      "returns"
+     ],
+     "sources": {
+      "checkout": "lexical+semantic",
+      "cdn": "lexical",
+      "returns": "lexical"
+     },
+     "semantic": [
+      "checkout"
+     ],
+     "task": false,
+     "loaded": []
+    },
+    "2": {
+     "discovery": true,
+     "strict_load": true,
+     "handoff": true,
+     "hint_hit": true,
+     "suggested": [
+      "checkout",
+      "cdn",
+      "returns"
+     ],
+     "sources": {
+      "checkout": "lexical+semantic",
+      "cdn": "lexical",
+      "returns": "lexical"
+     },
+     "semantic": [
+      "checkout"
+     ],
+     "task": false,
+     "loaded": [
+      "checkout/latency-diagnosis",
+      "checkout/provider-resilience"
+     ]
+    },
+    "3": {
+     "discovery": true,
+     "strict_load": true,
+     "handoff": true,
+     "hint_hit": true,
+     "suggested": [
+      "checkout",
+      "cdn",
+      "returns"
+     ],
+     "sources": {
+      "checkout": "lexical+semantic",
+      "cdn": "lexical",
+      "returns": "lexical"
+     },
+     "semantic": [
+      "checkout"
+     ],
+     "task": false,
+     "loaded": [
+      "checkout/latency-diagnosis",
+      "checkout/provider-resilience"
+     ]
+    }
+   },
+   "C03": {
+    "1": {
+     "discovery": true,
+     "strict_load": true,
+     "handoff": true,
+     "hint_hit": true,
+     "suggested": [
+      "api"
+     ],
+     "sources": {
+      "api": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": [
+      "api/error-contract",
+      "queue/idempotency"
+     ]
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "api"
+     ],
+     "sources": {
+      "api": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "api"
+     ],
+     "sources": {
+      "api": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "C04": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "ci"
+     ],
+     "sources": {
+      "ci": "lexical+semantic"
+     },
+     "semantic": [
+      "ci"
+     ],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "ci"
+     ],
+     "sources": {
+      "ci": "lexical+semantic"
+     },
+     "semantic": [
+      "ci"
+     ],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": true,
+     "suggested": [
+      "ci"
+     ],
+     "sources": {
+      "ci": "lexical+semantic"
+     },
+     "semantic": [
+      "ci"
+     ],
+     "task": false,
+     "loaded": []
+    }
+   },
+   "N01": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "N02": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "audit-trail",
+      "docs",
+      "auth"
+     ],
+     "sources": {
+      "audit-trail": "lexical",
+      "docs": "lexical",
+      "auth": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "audit-trail",
+      "docs",
+      "auth"
+     ],
+     "sources": {
+      "audit-trail": "lexical",
+      "docs": "lexical",
+      "auth": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "audit-trail",
+      "docs",
+      "auth"
+     ],
+     "sources": {
+      "audit-trail": "lexical",
+      "docs": "lexical",
+      "auth": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "N03": {
+    "1": {
+     "discovery": true,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "http",
+      "search",
+      "file-storage"
+     ],
+     "sources": {
+      "http": "semantic",
+      "search": "lexical",
+      "file-storage": "lexical"
+     },
+     "semantic": [
+      "http"
+     ],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": true,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "http",
+      "search",
+      "file-storage"
+     ],
+     "sources": {
+      "http": "semantic",
+      "search": "lexical",
+      "file-storage": "lexical"
+     },
+     "semantic": [
+      "http"
+     ],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": true,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "http",
+      "search",
+      "file-storage"
+     ],
+     "sources": {
+      "http": "semantic",
+      "search": "lexical",
+      "file-storage": "lexical"
+     },
+     "semantic": [
+      "http"
+     ],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "N04": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "N05": {
+    "1": {
+     "discovery": true,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": true,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "N06": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "database"
+     ],
+     "sources": {
+      "database": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "database"
+     ],
+     "sources": {
+      "database": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [
+      "database"
+     ],
+     "sources": {
+      "database": "lexical"
+     },
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "N07": {
+    "1": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": false,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   },
+   "N08": {
+    "1": {
+     "discovery": true,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "2": {
+     "discovery": true,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    },
+    "3": {
+     "discovery": true,
+     "strict_load": false,
+     "handoff": false,
+     "hint_hit": false,
+     "suggested": [],
+     "sources": {},
+     "semantic": [],
+     "task": true,
+     "loaded": []
+    }
+   }
+  }
+ },
+ "rows": [
+  {
+   "case_id": "R01",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": true,
+   "retrieval_and_handoff": true,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/attempts",
+      "passed": true
+     },
+     {
+      "pointer": "/maximum_elapsed_ms",
+      "passed": true
+     },
+     {
+      "pointer": "/safe_auto_retry",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [
+    "http/retry-budget"
+   ],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "checkout",
+    "config"
+   ],
+   "suggested_sources": {
+    "checkout": "lexical",
+    "config": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "http"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 10,
+    "first_chat_input_tokens": 6145,
+    "chat_input_total": 73983,
+    "chat_output_total": 1896,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11584
+   },
+   "wall_seconds": 88.79
+  },
+  {
+   "case_id": "R01",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/attempts",
+      "passed": true
+     },
+     {
+      "pointer": "/maximum_elapsed_ms",
+      "passed": true
+     },
+     {
+      "pointer": "/safe_auto_retry",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "checkout",
+    "config"
+   ],
+   "suggested_sources": {
+    "checkout": "lexical",
+    "config": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "http"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 7,
+    "first_chat_input_tokens": 6145,
+    "chat_input_total": 49887,
+    "chat_output_total": 1152,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11584
+   },
+   "wall_seconds": 61.574
+  },
+  {
+   "case_id": "R01",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": true,
+   "retrieval_and_handoff": true,
+   "strict_chain": true,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/attempts",
+      "passed": true
+     },
+     {
+      "pointer": "/maximum_elapsed_ms",
+      "passed": true
+     },
+     {
+      "pointer": "/safe_auto_retry",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [
+    "http/retry-budget"
+   ],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "checkout",
+    "config"
+   ],
+   "suggested_sources": {
+    "checkout": "lexical",
+    "config": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "http"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 9,
+    "first_chat_input_tokens": 6145,
+    "chat_input_total": 68617,
+    "chat_output_total": 1483,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11584
+   },
+   "wall_seconds": 77.649
+  },
+  {
+   "case_id": "R02",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": false,
+    "parse_error": "JSONDecodeError",
+    "checks": [
+     {
+      "pointer": "/scan_to_result_ratio",
+      "passed": false
+     },
+     {
+      "pointer": "/scan_type",
+      "passed": false
+     },
+     {
+      "pointer": "/index_columns",
+      "passed": false
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "database",
+    "reporting",
+    "search-indexer"
+   ],
+   "suggested_sources": {
+    "database": "lexical",
+    "reporting": "lexical",
+    "search-indexer": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "database"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "database"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6148,
+    "chat_input_total": 12478,
+    "chat_output_total": 341,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11561
+   },
+   "wall_seconds": 40.815
+  },
+  {
+   "case_id": "R02",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/scan_to_result_ratio",
+      "passed": true
+     },
+     {
+      "pointer": "/scan_type",
+      "passed": true
+     },
+     {
+      "pointer": "/index_columns",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "database",
+    "reporting",
+    "search-indexer"
+   ],
+   "suggested_sources": {
+    "database": "lexical",
+    "reporting": "lexical",
+    "search-indexer": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "database"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "database"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6148,
+    "chat_input_total": 12560,
+    "chat_output_total": 311,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11561
+   },
+   "wall_seconds": 31.657
+  },
+  {
+   "case_id": "R02",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": true,
+   "retrieval_and_handoff": true,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/scan_to_result_ratio",
+      "passed": true
+     },
+     {
+      "pointer": "/scan_type",
+      "passed": true
+     },
+     {
+      "pointer": "/index_columns",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [
+    "database/query-plan"
+   ],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "database",
+    "reporting",
+    "search-indexer"
+   ],
+   "suggested_sources": {
+    "database": "lexical",
+    "reporting": "lexical",
+    "search-indexer": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "database"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "database"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6148,
+    "chat_input_total": 19429,
+    "chat_output_total": 850,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11561
+   },
+   "wall_seconds": 47.534
+  },
+  {
+   "case_id": "R03",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/status",
+      "passed": true
+     },
+     {
+      "pointer": "/missing_scopes",
+      "passed": true
+     },
+     {
+      "pointer": "/deny_expected",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "returns",
+    "auth",
+    "batch-export"
+   ],
+   "suggested_sources": {
+    "returns": "lexical",
+    "auth": "lexical",
+    "batch-export": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "auth"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "auth"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6065,
+    "chat_input_total": 12393,
+    "chat_output_total": 303,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11545
+   },
+   "wall_seconds": 40.219
+  },
+  {
+   "case_id": "R03",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": true,
+   "retrieval_and_handoff": true,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/status",
+      "passed": true
+     },
+     {
+      "pointer": "/missing_scopes",
+      "passed": true
+     },
+     {
+      "pointer": "/deny_expected",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [
+    "auth/access-audit"
+   ],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "returns",
+    "auth",
+    "batch-export"
+   ],
+   "suggested_sources": {
+    "returns": "lexical",
+    "auth": "lexical",
+    "batch-export": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "auth"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "auth"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 7,
+    "first_chat_input_tokens": 6065,
+    "chat_input_total": 49097,
+    "chat_output_total": 1164,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11545
+   },
+   "wall_seconds": 65.897
+  },
+  {
+   "case_id": "R03",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": true,
+   "retrieval_and_handoff": true,
+   "strict_chain": true,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/status",
+      "passed": true
+     },
+     {
+      "pointer": "/missing_scopes",
+      "passed": true
+     },
+     {
+      "pointer": "/deny_expected",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [
+    "auth/access-audit"
+   ],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "returns",
+    "auth",
+    "batch-export"
+   ],
+   "suggested_sources": {
+    "returns": "lexical",
+    "auth": "lexical",
+    "batch-export": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "auth"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "auth"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 7,
+    "first_chat_input_tokens": 6065,
+    "chat_input_total": 51755,
+    "chat_output_total": 1248,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11545
+   },
+   "wall_seconds": 73.516
+  },
+  {
+   "case_id": "R04",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/effective_port",
+      "passed": true
+     },
+     {
+      "pointer": "/winning_source",
+      "passed": true
+     },
+     {
+      "pointer": "/file_port",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "config",
+    "docs",
+    "file-storage"
+   ],
+   "suggested_sources": {
+    "config": "lexical",
+    "docs": "lexical",
+    "file-storage": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "config"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "config"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 5962,
+    "chat_input_total": 12160,
+    "chat_output_total": 342,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11466
+   },
+   "wall_seconds": 38.851
+  },
+  {
+   "case_id": "R04",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/effective_port",
+      "passed": true
+     },
+     {
+      "pointer": "/winning_source",
+      "passed": true
+     },
+     {
+      "pointer": "/file_port",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "config",
+    "docs",
+    "file-storage"
+   ],
+   "suggested_sources": {
+    "config": "lexical",
+    "docs": "lexical",
+    "file-storage": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "config"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "config"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 5962,
+    "chat_input_total": 12139,
+    "chat_output_total": 424,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11466
+   },
+   "wall_seconds": 35.965
+  },
+  {
+   "case_id": "R04",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": false,
+    "parse_error": "JSONDecodeError",
+    "checks": [
+     {
+      "pointer": "/effective_port",
+      "passed": false
+     },
+     {
+      "pointer": "/winning_source",
+      "passed": false
+     },
+     {
+      "pointer": "/file_port",
+      "passed": false
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "config",
+    "docs",
+    "file-storage"
+   ],
+   "suggested_sources": {
+    "config": "lexical",
+    "docs": "lexical",
+    "file-storage": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "config"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "config"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 5962,
+    "chat_input_total": 12132,
+    "chat_output_total": 517,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11466
+   },
+   "wall_seconds": 38.626
+  },
+  {
+   "case_id": "X01",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/normalization",
+      "passed": true
+     },
+     {
+      "pointer": "/canonical_identity_count",
+      "passed": true
+     },
+     {
+      "pointer": "/duplicate_record_ids",
+      "passed": true
+     },
+     {
+      "pointer": "/duplicate_canonical_key",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [
+    "text"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 6,
+    "first_chat_input_tokens": 6099,
+    "chat_input_total": 42101,
+    "chat_output_total": 1888,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11578
+   },
+   "wall_seconds": 101.48
+  },
+  {
+   "case_id": "X01",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": false,
+    "parse_error": "JSONDecodeError",
+    "checks": [
+     {
+      "pointer": "/normalization",
+      "passed": false
+     },
+     {
+      "pointer": "/canonical_identity_count",
+      "passed": false
+     },
+     {
+      "pointer": "/duplicate_record_ids",
+      "passed": false
+     },
+     {
+      "pointer": "/duplicate_canonical_key",
+      "passed": false
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [
+    "text"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 4,
+    "first_chat_input_tokens": 6099,
+    "chat_input_total": 26131,
+    "chat_output_total": 1098,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11578
+   },
+   "wall_seconds": 55.295
+  },
+  {
+   "case_id": "X01",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/normalization",
+      "passed": true
+     },
+     {
+      "pointer": "/canonical_identity_count",
+      "passed": true
+     },
+     {
+      "pointer": "/duplicate_record_ids",
+      "passed": true
+     },
+     {
+      "pointer": "/duplicate_canonical_key",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [
+    "text"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 5,
+    "first_chat_input_tokens": 6099,
+    "chat_input_total": 32956,
+    "chat_output_total": 1659,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11578
+   },
+   "wall_seconds": 68.985
+  },
+  {
+   "case_id": "X02",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/expected_status",
+      "passed": true
+     },
+     {
+      "pointer": "/update_allowed",
+      "passed": true
+     },
+     {
+      "pointer": "/retained_city",
+      "passed": true
+     },
+     {
+      "pointer": "/retained_version",
+      "passed": true
+     },
+     {
+      "pointer": "/implementation_violates_precondition",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [
+    "storage"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6140,
+    "chat_input_total": 12607,
+    "chat_output_total": 448,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11569
+   },
+   "wall_seconds": 39.136
+  },
+  {
+   "case_id": "X02",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/expected_status",
+      "passed": true
+     },
+     {
+      "pointer": "/update_allowed",
+      "passed": true
+     },
+     {
+      "pointer": "/retained_city",
+      "passed": true
+     },
+     {
+      "pointer": "/retained_version",
+      "passed": true
+     },
+     {
+      "pointer": "/implementation_violates_precondition",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [
+    "storage"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6140,
+    "chat_input_total": 12583,
+    "chat_output_total": 311,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11569
+   },
+   "wall_seconds": 34.251
+  },
+  {
+   "case_id": "X02",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/expected_status",
+      "passed": true
+     },
+     {
+      "pointer": "/update_allowed",
+      "passed": true
+     },
+     {
+      "pointer": "/retained_city",
+      "passed": true
+     },
+     {
+      "pointer": "/retained_version",
+      "passed": true
+     },
+     {
+      "pointer": "/implementation_violates_precondition",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [
+    "storage"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6140,
+    "chat_input_total": 12545,
+    "chat_output_total": 292,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11569
+   },
+   "wall_seconds": 31.129
+  },
+  {
+   "case_id": "X03",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": false,
+    "parse_error": "JSONDecodeError",
+    "checks": [
+     {
+      "pointer": "/escaped_ids",
+      "passed": false
+     },
+     {
+      "pointer": "/sanitized_values",
+      "passed": false
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [
+    "data"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6059,
+    "chat_input_total": 18778,
+    "chat_output_total": 857,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11476
+   },
+   "wall_seconds": 58.508
+  },
+  {
+   "case_id": "X03",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/escaped_ids",
+      "passed": true
+     },
+     {
+      "pointer": "/sanitized_values",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [
+    "data"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6059,
+    "chat_input_total": 20426,
+    "chat_output_total": 823,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11476
+   },
+   "wall_seconds": 44.462
+  },
+  {
+   "case_id": "X03",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/escaped_ids",
+      "passed": true
+     },
+     {
+      "pointer": "/sanitized_values",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [
+    "data"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6059,
+    "chat_input_total": 12426,
+    "chat_output_total": 1358,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11476
+   },
+   "wall_seconds": 62.257
+  },
+  {
+   "case_id": "X04",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/candidate_utc",
+      "passed": true
+     },
+     {
+      "pointer": "/selected_utc",
+      "passed": true
+     },
+     {
+      "pointer": "/selected_offset",
+      "passed": true
+     },
+     {
+      "pointer": "/fold",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "identity-sync",
+    "address-book",
+    "analytics"
+   ],
+   "suggested_sources": {
+    "identity-sync": "lexical",
+    "address-book": "lexical",
+    "analytics": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "timezone"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6163,
+    "chat_input_total": 12679,
+    "chat_output_total": 741,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11504
+   },
+   "wall_seconds": 55.257
+  },
+  {
+   "case_id": "X04",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/candidate_utc",
+      "passed": true
+     },
+     {
+      "pointer": "/selected_utc",
+      "passed": true
+     },
+     {
+      "pointer": "/selected_offset",
+      "passed": true
+     },
+     {
+      "pointer": "/fold",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "identity-sync",
+    "address-book",
+    "analytics"
+   ],
+   "suggested_sources": {
+    "identity-sync": "lexical",
+    "address-book": "lexical",
+    "analytics": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "timezone"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 4,
+    "first_chat_input_tokens": 6163,
+    "chat_input_total": 28104,
+    "chat_output_total": 1403,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11504
+   },
+   "wall_seconds": 61.97
+  },
+  {
+   "case_id": "X04",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/candidate_utc",
+      "passed": true
+     },
+     {
+      "pointer": "/selected_utc",
+      "passed": true
+     },
+     {
+      "pointer": "/selected_offset",
+      "passed": true
+     },
+     {
+      "pointer": "/fold",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "identity-sync",
+    "address-book",
+    "analytics"
+   ],
+   "suggested_sources": {
+    "identity-sync": "lexical",
+    "address-book": "lexical",
+    "analytics": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "timezone"
+   ],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6163,
+    "chat_input_total": 12621,
+    "chat_output_total": 631,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11504
+   },
+   "wall_seconds": 37.351
+  },
+  {
+   "case_id": "C01",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/first_failed_stage",
+      "passed": true
+     },
+     {
+      "pointer": "/isolation_investigated",
+      "passed": true
+     },
+     {
+      "pointer": "/shared_fixture",
+      "passed": true
+     },
+     {
+      "pointer": "/verification_order",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "ci",
+    "fraud",
+    "search-indexer"
+   ],
+   "suggested_sources": {
+    "ci": "lexical",
+    "fraud": "lexical",
+    "search-indexer": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "ci"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "ci"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6096,
+    "chat_input_total": 18750,
+    "chat_output_total": 393,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11525
+   },
+   "wall_seconds": 29.668
+  },
+  {
+   "case_id": "C01",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": false,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/first_failed_stage",
+      "passed": true
+     },
+     {
+      "pointer": "/isolation_investigated",
+      "passed": true
+     },
+     {
+      "pointer": "/shared_fixture",
+      "passed": false
+     },
+     {
+      "pointer": "/verification_order",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "ci",
+    "fraud",
+    "search-indexer"
+   ],
+   "suggested_sources": {
+    "ci": "lexical",
+    "fraud": "lexical",
+    "search-indexer": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "ci"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "ci"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6096,
+    "chat_input_total": 18714,
+    "chat_output_total": 470,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11525
+   },
+   "wall_seconds": 44.621
+  },
+  {
+   "case_id": "C01",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/first_failed_stage",
+      "passed": true
+     },
+     {
+      "pointer": "/isolation_investigated",
+      "passed": true
+     },
+     {
+      "pointer": "/shared_fixture",
+      "passed": true
+     },
+     {
+      "pointer": "/verification_order",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "ci",
+    "fraud",
+    "search-indexer"
+   ],
+   "suggested_sources": {
+    "ci": "lexical",
+    "fraud": "lexical",
+    "search-indexer": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "ci"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "ci"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6096,
+    "chat_input_total": 18708,
+    "chat_output_total": 440,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11525
+   },
+   "wall_seconds": 32.435
+  },
+  {
+   "case_id": "C02",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": false,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/slowest_component",
+      "passed": true
+     },
+     {
+      "pointer": "/total_ms",
+      "passed": true
+     },
+     {
+      "pointer": "/provider_followup",
+      "passed": false
+     },
+     {
+      "pointer": "/retryable_statuses",
+      "passed": true
+     },
+     {
+      "pointer": "/operation_key",
+      "passed": true
+     },
+     {
+      "pointer": "/deadline_ms",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "checkout",
+    "cdn",
+    "returns"
+   ],
+   "suggested_sources": {
+    "checkout": "lexical+semantic",
+    "cdn": "lexical",
+    "returns": "lexical"
+   },
+   "semantic_suggested": [
+    "checkout"
+   ],
+   "target_directories": [
+    "checkout"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "checkout"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6082,
+    "chat_input_total": 18849,
+    "chat_output_total": 428,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11571
+   },
+   "wall_seconds": 41.664
+  },
+  {
+   "case_id": "C02",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": true,
+   "retrieval_and_handoff": true,
+   "strict_chain": true,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": false,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/slowest_component",
+      "passed": true
+     },
+     {
+      "pointer": "/total_ms",
+      "passed": true
+     },
+     {
+      "pointer": "/provider_followup",
+      "passed": false
+     },
+     {
+      "pointer": "/retryable_statuses",
+      "passed": true
+     },
+     {
+      "pointer": "/operation_key",
+      "passed": true
+     },
+     {
+      "pointer": "/deadline_ms",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [
+    "checkout/latency-diagnosis",
+    "checkout/provider-resilience"
+   ],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "checkout",
+    "cdn",
+    "returns"
+   ],
+   "suggested_sources": {
+    "checkout": "lexical+semantic",
+    "cdn": "lexical",
+    "returns": "lexical"
+   },
+   "semantic_suggested": [
+    "checkout"
+   ],
+   "target_directories": [
+    "checkout"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "checkout"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 6,
+    "first_chat_input_tokens": 6082,
+    "chat_input_total": 42307,
+    "chat_output_total": 2536,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11571
+   },
+   "wall_seconds": 92.645
+  },
+  {
+   "case_id": "C02",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": true,
+   "retrieval_and_handoff": true,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": false,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/slowest_component",
+      "passed": true
+     },
+     {
+      "pointer": "/total_ms",
+      "passed": true
+     },
+     {
+      "pointer": "/provider_followup",
+      "passed": false
+     },
+     {
+      "pointer": "/retryable_statuses",
+      "passed": true
+     },
+     {
+      "pointer": "/operation_key",
+      "passed": true
+     },
+     {
+      "pointer": "/deadline_ms",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [
+    "checkout/latency-diagnosis",
+    "checkout/provider-resilience"
+   ],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "checkout",
+    "cdn",
+    "returns"
+   ],
+   "suggested_sources": {
+    "checkout": "lexical+semantic",
+    "cdn": "lexical",
+    "returns": "lexical"
+   },
+   "semantic_suggested": [
+    "checkout"
+   ],
+   "target_directories": [
+    "checkout"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "checkout"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 4,
+    "first_chat_input_tokens": 6082,
+    "chat_input_total": 27153,
+    "chat_output_total": 1476,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11571
+   },
+   "wall_seconds": 64.245
+  },
+  {
+   "case_id": "C03",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": true,
+   "retrieval_and_handoff": true,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/observed_shipments",
+      "passed": true
+     },
+     {
+      "pointer": "/atomic_tables",
+      "passed": true
+     },
+     {
+      "pointer": "/ack_after_commit",
+      "passed": true
+     },
+     {
+      "pointer": "/expected_error_status",
+      "passed": true
+     },
+     {
+      "pointer": "/expected_error_field",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [
+    "api/error-contract",
+    "queue/idempotency"
+   ],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "api"
+   ],
+   "suggested_sources": {
+    "api": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "api",
+    "queue"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "api"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 5,
+    "first_chat_input_tokens": 6049,
+    "chat_input_total": 38717,
+    "chat_output_total": 2057,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11519
+   },
+   "wall_seconds": 85.451
+  },
+  {
+   "case_id": "C03",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/observed_shipments",
+      "passed": true
+     },
+     {
+      "pointer": "/atomic_tables",
+      "passed": true
+     },
+     {
+      "pointer": "/ack_after_commit",
+      "passed": true
+     },
+     {
+      "pointer": "/expected_error_status",
+      "passed": true
+     },
+     {
+      "pointer": "/expected_error_field",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "api"
+   ],
+   "suggested_sources": {
+    "api": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "api",
+    "queue"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "api"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6049,
+    "chat_input_total": 18843,
+    "chat_output_total": 1457,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11519
+   },
+   "wall_seconds": 57.419
+  },
+  {
+   "case_id": "C03",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/observed_shipments",
+      "passed": true
+     },
+     {
+      "pointer": "/atomic_tables",
+      "passed": true
+     },
+     {
+      "pointer": "/ack_after_commit",
+      "passed": true
+     },
+     {
+      "pointer": "/expected_error_status",
+      "passed": true
+     },
+     {
+      "pointer": "/expected_error_field",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "api"
+   ],
+   "suggested_sources": {
+    "api": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [
+    "api",
+    "queue"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "api"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 4,
+    "first_chat_input_tokens": 6049,
+    "chat_input_total": 29025,
+    "chat_output_total": 1497,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11519
+   },
+   "wall_seconds": 75.869
+  },
+  {
+   "case_id": "C04",
+   "repeat": 1,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/first_failed_stage",
+      "passed": true
+     },
+     {
+      "pointer": "/isolation_investigated",
+      "passed": true
+     },
+     {
+      "pointer": "/registry_status",
+      "passed": true
+     },
+     {
+      "pointer": "/failure_reason",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "ci"
+   ],
+   "suggested_sources": {
+    "ci": "lexical+semantic"
+   },
+   "semantic_suggested": [
+    "ci"
+   ],
+   "target_directories": [
+    "ci"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "ci"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6099,
+    "chat_input_total": 18990,
+    "chat_output_total": 311,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11553
+   },
+   "wall_seconds": 40.455
+  },
+  {
+   "case_id": "C04",
+   "repeat": 2,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/first_failed_stage",
+      "passed": true
+     },
+     {
+      "pointer": "/isolation_investigated",
+      "passed": true
+     },
+     {
+      "pointer": "/registry_status",
+      "passed": true
+     },
+     {
+      "pointer": "/failure_reason",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "ci"
+   ],
+   "suggested_sources": {
+    "ci": "lexical+semantic"
+   },
+   "semantic_suggested": [
+    "ci"
+   ],
+   "target_directories": [
+    "ci"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "ci"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6099,
+    "chat_input_total": 18969,
+    "chat_output_total": 278,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11553
+   },
+   "wall_seconds": 37.1
+  },
+  {
+   "case_id": "C04",
+   "repeat": 3,
+   "negative": false,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": false,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": null,
+   "negative_clean": null,
+   "task": {
+    "passed": false,
+    "parse_error": "JSONDecodeError",
+    "checks": [
+     {
+      "pointer": "/first_failed_stage",
+      "passed": false
+     },
+     {
+      "pointer": "/isolation_investigated",
+      "passed": false
+     },
+     {
+      "pointer": "/registry_status",
+      "passed": false
+     },
+     {
+      "pointer": "/failure_reason",
+      "passed": false
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "ci"
+   ],
+   "suggested_sources": {
+    "ci": "lexical+semantic"
+   },
+   "semantic_suggested": [
+    "ci"
+   ],
+   "target_directories": [
+    "ci"
+   ],
+   "hint_target_hit": true,
+   "hint_target_dirs": [
+    "ci"
+   ],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 3,
+    "first_chat_input_tokens": 6099,
+    "chat_input_total": 19149,
+    "chat_output_total": 534,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11553
+   },
+   "wall_seconds": 42.988
+  },
+  {
+   "case_id": "N01",
+   "repeat": 1,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/attempts",
+      "passed": true
+     },
+     {
+      "pointer": "/used_skill",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 0,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 3204,
+    "chat_input_total": 6582,
+    "chat_output_total": 137,
+    "chat_cached_total": 0,
+    "embedding_requests": 0,
+    "embedding_input_total": 0
+   },
+   "wall_seconds": 22.919
+  },
+  {
+   "case_id": "N01",
+   "repeat": 2,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/attempts",
+      "passed": true
+     },
+     {
+      "pointer": "/used_skill",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 0,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 3204,
+    "chat_input_total": 6565,
+    "chat_output_total": 98,
+    "chat_cached_total": 0,
+    "embedding_requests": 0,
+    "embedding_input_total": 0
+   },
+   "wall_seconds": 21.701
+  },
+  {
+   "case_id": "N01",
+   "repeat": 3,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/attempts",
+      "passed": true
+     },
+     {
+      "pointer": "/used_skill",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 0,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 3204,
+    "chat_input_total": 6566,
+    "chat_output_total": 101,
+    "chat_cached_total": 0,
+    "embedding_requests": 0,
+    "embedding_input_total": 0
+   },
+   "wall_seconds": 19.922
+  },
+  {
+   "case_id": "N02",
+   "repeat": 1,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/quoted_names",
+      "passed": true
+     },
+     {
+      "pointer": "/count",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "audit-trail",
+    "docs",
+    "auth"
+   ],
+   "suggested_sources": {
+    "audit-trail": "lexical",
+    "docs": "lexical",
+    "auth": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 1,
+    "first_chat_input_tokens": 6041,
+    "chat_input_total": 6041,
+    "chat_output_total": 177,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11449
+   },
+   "wall_seconds": 37.822
+  },
+  {
+   "case_id": "N02",
+   "repeat": 2,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/quoted_names",
+      "passed": true
+     },
+     {
+      "pointer": "/count",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "audit-trail",
+    "docs",
+    "auth"
+   ],
+   "suggested_sources": {
+    "audit-trail": "lexical",
+    "docs": "lexical",
+    "auth": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 1,
+    "first_chat_input_tokens": 6041,
+    "chat_input_total": 6041,
+    "chat_output_total": 176,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11449
+   },
+   "wall_seconds": 37.284
+  },
+  {
+   "case_id": "N02",
+   "repeat": 3,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/quoted_names",
+      "passed": true
+     },
+     {
+      "pointer": "/count",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "audit-trail",
+    "docs",
+    "auth"
+   ],
+   "suggested_sources": {
+    "audit-trail": "lexical",
+    "docs": "lexical",
+    "auth": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 1,
+    "first_chat_input_tokens": 6041,
+    "chat_input_total": 6041,
+    "chat_output_total": 122,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11449
+   },
+   "wall_seconds": 31.121
+  },
+  {
+   "case_id": "N03",
+   "repeat": 1,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/exists",
+      "passed": true
+     },
+     {
+      "pointer": "/qualified_name",
+      "passed": true
+     },
+     {
+      "pointer": "/directory",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory",
+    "search_skills"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "http",
+    "search",
+    "file-storage"
+   ],
+   "suggested_sources": {
+    "http": "semantic",
+    "search": "lexical",
+    "file-storage": "lexical"
+   },
+   "semantic_suggested": [
+    "http"
+   ],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6074,
+    "chat_input_total": 13137,
+    "chat_output_total": 174,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11513
+   },
+   "wall_seconds": 34.657
+  },
+  {
+   "case_id": "N03",
+   "repeat": 2,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/exists",
+      "passed": true
+     },
+     {
+      "pointer": "/qualified_name",
+      "passed": true
+     },
+     {
+      "pointer": "/directory",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory",
+    "search_skills"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "http",
+    "search",
+    "file-storage"
+   ],
+   "suggested_sources": {
+    "http": "semantic",
+    "search": "lexical",
+    "file-storage": "lexical"
+   },
+   "semantic_suggested": [
+    "http"
+   ],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6074,
+    "chat_input_total": 13229,
+    "chat_output_total": 252,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11513
+   },
+   "wall_seconds": 38.754
+  },
+  {
+   "case_id": "N03",
+   "repeat": 3,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/exists",
+      "passed": true
+     },
+     {
+      "pointer": "/qualified_name",
+      "passed": true
+     },
+     {
+      "pointer": "/directory",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": true,
+   "suggested_directories": [
+    "http",
+    "search",
+    "file-storage"
+   ],
+   "suggested_sources": {
+    "http": "semantic",
+    "search": "lexical",
+    "file-storage": "lexical"
+   },
+   "semantic_suggested": [
+    "http"
+   ],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 6074,
+    "chat_input_total": 12355,
+    "chat_output_total": 199,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11513
+   },
+   "wall_seconds": 29.437
+  },
+  {
+   "case_id": "N04",
+   "repeat": 1,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/product",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 1,
+    "first_chat_input_tokens": 5936,
+    "chat_input_total": 5936,
+    "chat_output_total": 57,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11429
+   },
+   "wall_seconds": 26.633
+  },
+  {
+   "case_id": "N04",
+   "repeat": 2,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/product",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 1,
+    "first_chat_input_tokens": 5936,
+    "chat_input_total": 5936,
+    "chat_output_total": 78,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11429
+   },
+   "wall_seconds": 31.204
+  },
+  {
+   "case_id": "N04",
+   "repeat": 3,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/product",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 1,
+    "first_chat_input_tokens": 5936,
+    "chat_input_total": 5936,
+    "chat_output_total": 51,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11429
+   },
+   "wall_seconds": 24.915
+  },
+  {
+   "case_id": "N05",
+   "repeat": 1,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/status",
+      "passed": true
+     },
+     {
+      "pointer": "/requested",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "search_skills"
+   ],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 5950,
+    "chat_input_total": 12710,
+    "chat_output_total": 908,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11431
+   },
+   "wall_seconds": 61.056
+  },
+  {
+   "case_id": "N05",
+   "repeat": 2,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/status",
+      "passed": true
+     },
+     {
+      "pointer": "/requested",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 5950,
+    "chat_input_total": 12447,
+    "chat_output_total": 707,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11431
+   },
+   "wall_seconds": 41.341
+  },
+  {
+   "case_id": "N05",
+   "repeat": 3,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/status",
+      "passed": true
+     },
+     {
+      "pointer": "/requested",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "search_skills",
+    "search_skills"
+   ],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 5950,
+    "chat_input_total": 13392,
+    "chat_output_total": 1552,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11431
+   },
+   "wall_seconds": 65.703
+  },
+  {
+   "case_id": "N06",
+   "repeat": 1,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/tool_name",
+      "passed": true
+     },
+     {
+      "pointer": "/argument_name",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "database"
+   ],
+   "suggested_sources": {
+    "database": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 1,
+    "first_chat_input_tokens": 5997,
+    "chat_input_total": 5997,
+    "chat_output_total": 158,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11451
+   },
+   "wall_seconds": 33.835
+  },
+  {
+   "case_id": "N06",
+   "repeat": 2,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/tool_name",
+      "passed": true
+     },
+     {
+      "pointer": "/argument_name",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "database"
+   ],
+   "suggested_sources": {
+    "database": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 1,
+    "first_chat_input_tokens": 5997,
+    "chat_input_total": 5997,
+    "chat_output_total": 139,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11451
+   },
+   "wall_seconds": 31.515
+  },
+  {
+   "case_id": "N06",
+   "repeat": 3,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/tool_name",
+      "passed": true
+     },
+     {
+      "pointer": "/argument_name",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": true,
+   "suggested_directories": [
+    "database"
+   ],
+   "suggested_sources": {
+    "database": "lexical"
+   },
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 1,
+    "first_chat_input_tokens": 5997,
+    "chat_input_total": 5997,
+    "chat_output_total": 143,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11451
+   },
+   "wall_seconds": 32.736
+  },
+  {
+   "case_id": "N07",
+   "repeat": 1,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/source_directory",
+      "passed": true
+     },
+     {
+      "pointer": "/evidence_directory",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 0,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 3233,
+    "chat_input_total": 6698,
+    "chat_output_total": 130,
+    "chat_cached_total": 0,
+    "embedding_requests": 0,
+    "embedding_input_total": 0
+   },
+   "wall_seconds": 26.657
+  },
+  {
+   "case_id": "N07",
+   "repeat": 2,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/source_directory",
+      "passed": true
+     },
+     {
+      "pointer": "/evidence_directory",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 0,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 3233,
+    "chat_input_total": 6648,
+    "chat_output_total": 121,
+    "chat_cached_total": 0,
+    "embedding_requests": 0,
+    "embedding_input_total": 0
+   },
+   "wall_seconds": 24.282
+  },
+  {
+   "case_id": "N07",
+   "repeat": 3,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/source_directory",
+      "passed": true
+     },
+     {
+      "pointer": "/evidence_directory",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": false,
+   "discovery_calls": [],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 0,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 3233,
+    "chat_input_total": 6657,
+    "chat_output_total": 127,
+    "chat_cached_total": 0,
+    "embedding_requests": 0,
+    "embedding_input_total": 0
+   },
+   "wall_seconds": 24.905
+  },
+  {
+   "case_id": "N08",
+   "repeat": 1,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/present_names",
+      "passed": true
+     },
+     {
+      "pointer": "/body_requested",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 5930,
+    "chat_input_total": 12165,
+    "chat_output_total": 586,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11449
+   },
+   "wall_seconds": 49.839
+  },
+  {
+   "case_id": "N08",
+   "repeat": 2,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/present_names",
+      "passed": true
+     },
+     {
+      "pointer": "/body_requested",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 5930,
+    "chat_input_total": 12443,
+    "chat_output_total": 645,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11449
+   },
+   "wall_seconds": 45.011
+  },
+  {
+   "case_id": "N08",
+   "repeat": 3,
+   "negative": true,
+   "completed": true,
+   "stop_reason": "completed",
+   "primary_success": true,
+   "strict_load": false,
+   "retrieval_and_handoff": false,
+   "strict_chain": false,
+   "negative_false_trigger": false,
+   "negative_clean": true,
+   "task": {
+    "passed": true,
+    "parse_error": null,
+    "checks": [
+     {
+      "pointer": "/present_names",
+      "passed": true
+     },
+     {
+      "pointer": "/body_requested",
+      "passed": true
+     }
+    ],
+    "source_unchanged": true,
+    "source_observation_required": true,
+    "label": "frozen JSON artifact checks, not general semantic correctness"
+   },
+   "loaded": [],
+   "discovery_initiated": true,
+   "discovery_calls": [
+    "browse_skill_directory"
+   ],
+   "hints_present": false,
+   "suggested_directories": [],
+   "suggested_sources": {},
+   "semantic_suggested": [],
+   "target_directories": [],
+   "hint_target_hit": false,
+   "hint_target_dirs": [],
+   "presel_vectors": 66,
+   "tokens": {
+    "chat_requests": 2,
+    "first_chat_input_tokens": 5930,
+    "chat_input_total": 12204,
+    "chat_output_total": 521,
+    "chat_cached_total": 0,
+    "embedding_requests": 9,
+    "embedding_input_total": 11449
+   },
+   "wall_seconds": 39.7
+  }
+ ]
+}

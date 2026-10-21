@@ -1,0 +1,338 @@
+[
+ {
+  "case_id": "E01",
+  "repeat": 1,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E01",
+  "repeat": 2,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E01",
+  "repeat": 3,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E02",
+  "repeat": 1,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E02",
+  "repeat": 2,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E02",
+  "repeat": 3,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E03",
+  "repeat": 1,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E03",
+  "repeat": 2,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E03",
+  "repeat": 3,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E04",
+  "repeat": 1,
+  "answer_ok": false,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E04",
+  "repeat": 2,
+  "answer_ok": false,
+  "json_extracted": false,
+  "completed": true
+ },
+ {
+  "case_id": "E04",
+  "repeat": 3,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E05",
+  "repeat": 1,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E05",
+  "repeat": 2,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E05",
+  "repeat": 3,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E06",
+  "repeat": 1,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E06",
+  "repeat": 2,
+  "answer_ok": false,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E06",
+  "repeat": 3,
+  "answer_ok": false,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E07",
+  "repeat": 1,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E07",
+  "repeat": 2,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E07",
+  "repeat": 3,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E08",
+  "repeat": 1,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E08",
+  "repeat": 2,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "E08",
+  "repeat": 3,
+  "answer_ok": true,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N01",
+  "repeat": 1,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N01",
+  "repeat": 2,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N01",
+  "repeat": 3,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N02",
+  "repeat": 1,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N02",
+  "repeat": 2,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N02",
+  "repeat": 3,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N03",
+  "repeat": 1,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N03",
+  "repeat": 2,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N03",
+  "repeat": 3,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N04",
+  "repeat": 1,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N04",
+  "repeat": 2,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N04",
+  "repeat": 3,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N05",
+  "repeat": 1,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N05",
+  "repeat": 2,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N05",
+  "repeat": 3,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N06",
+  "repeat": 1,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N06",
+  "repeat": 2,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N06",
+  "repeat": 3,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N07",
+  "repeat": 1,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N07",
+  "repeat": 2,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N07",
+  "repeat": 3,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N08",
+  "repeat": 1,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N08",
+  "repeat": 2,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ },
+ {
+  "case_id": "N08",
+  "repeat": 3,
+  "answer_ok": null,
+  "json_extracted": true,
+  "completed": true
+ }
+]

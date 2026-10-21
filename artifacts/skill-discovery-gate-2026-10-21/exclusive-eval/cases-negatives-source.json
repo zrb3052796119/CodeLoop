@@ -1,0 +1,1110 @@
+{
+  "schemaVersion": 1,
+  "dataset_id": "skill-routing-three-arm-2026-10-21",
+  "catalog_size": 1000,
+  "catalog_policy": "Same complete catalog for all cases, arms and repetitions. Only C04 changes CI observations.",
+  "cases": [
+    {
+      "id": "R01",
+      "category": "routine",
+      "tags": [
+        "existing-capability",
+        "calculation",
+        "near-neighbor"
+      ],
+      "prompt": "请核对这份店铺服务的出站 HTTP 策略。根据 evidence/http.json 和相关源码，计算每次都耗尽超时且顺序重试时的总尝试次数和最大总耗时，并判断当前 POST 能否安全自动重发。不要讨论队列或 CI。返回字段 attempts（整数）、maximum_elapsed_ms（整数）、safe_auto_retry（布尔）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "http/retry-budget"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "http",
+            "skills": [
+              "http/retry-budget"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/http.json"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/attempts",
+              "equals": 3
+            },
+            {
+              "pointer": "/maximum_elapsed_ms",
+              "equals": 660
+            },
+            {
+              "pointer": "/safe_auto_retry",
+              "equals": false
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "R02",
+      "category": "routine",
+      "tags": [
+        "existing-capability",
+        "calculation"
+      ],
+      "prompt": "订单 SQL 返回很少记录却扫描了很多行。阅读 evidence/database.json，给出扫描/返回行数的整数倍率、实际扫描方式，并按等值谓词顺序列出建议索引列。只解释已保存的执行计划，不部署索引或格式化报告。返回 scan_to_result_ratio、scan_type、index_columns。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "database/query-plan"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "plan",
+            "skills": [
+              "database/query-plan"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/database.json"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/scan_to_result_ratio",
+              "equals": 7000
+            },
+            {
+              "pointer": "/scan_type",
+              "equals": "Seq Scan"
+            },
+            {
+              "pointer": "/index_columns",
+              "equals": [
+                "tenant_id",
+                "status"
+              ]
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "R03",
+      "category": "routine",
+      "tags": [
+        "existing-capability",
+        "scope-boundary"
+      ],
+      "prompt": "用户能查看报表却导出失败。请以 evidence/auth.json 为准判断这次拒绝是否符合授权配置，只指出最小缺失 scope，别建议管理员角色或刷新会话。返回 status（整数）、missing_scopes（字符串数组）、deny_expected（布尔）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "auth/access-audit"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "auth",
+            "skills": [
+              "auth/access-audit"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/auth.json"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/status",
+              "equals": 403
+            },
+            {
+              "pointer": "/missing_scopes",
+              "equals": [
+                "reports:export"
+              ]
+            },
+            {
+              "pointer": "/deny_expected",
+              "equals": true
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "R04",
+      "category": "routine",
+      "tags": [
+        "existing-capability",
+        "source-and-evidence"
+      ],
+      "prompt": "有人认为配置文件里的端口一定覆盖环境变量。请同时读 shop/settings.py 与 evidence/config.json，按源码顺序确定真实端口和获胜来源，并保留未获胜的文件值供比较。返回 effective_port、winning_source（environment/config_file/default 三选一）、file_port。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "config/precedence"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "configuration",
+            "skills": [
+              "config/precedence"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/config.json",
+              "shop/settings.py"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/effective_port",
+              "equals": 9407
+            },
+            {
+              "pointer": "/winning_source",
+              "equals": "environment"
+            },
+            {
+              "pointer": "/file_port",
+              "equals": 8100
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "X01",
+      "category": "new-capability",
+      "tags": [
+        "unseen-capability",
+        "unicode"
+      ],
+      "prompt": "账号键看起来相同但字节不同。请依据 evidence/unicode.json 和 shop/identifier_policy.py 的现行策略核对身份碰撞，不要擅自转小写或移除重音。返回 normalization、canonical_identity_count、duplicate_record_ids（仅发生碰撞的一组ID，按字典序）、duplicate_canonical_key。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "text/canonical-identifiers"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "unicode",
+            "skills": [
+              "text/canonical-identifiers"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/unicode.json",
+              "shop/identifier_policy.py"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/normalization",
+              "equals": "NFC"
+            },
+            {
+              "pointer": "/canonical_identity_count",
+              "equals": 3
+            },
+            {
+              "pointer": "/duplicate_record_ids",
+              "equals": [
+                "u1",
+                "u2"
+              ]
+            },
+            {
+              "pointer": "/duplicate_canonical_key",
+              "equals": "café"
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "X02",
+      "category": "new-capability",
+      "tags": [
+        "unseen-capability",
+        "concurrency"
+      ],
+      "prompt": "账户 PATCH 可能覆盖别人刚提交的修改。请比较 evidence/conditional_write.json 的请求条件和当前资源，再读 shop/conditional_write.py。按契约给出应有状态、是否可更新、拒绝后城市和版本，并判断当前函数是否违反这个前置条件。返回 expected_status、update_allowed、retained_city、retained_version、implementation_violates_precondition。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "storage/conditional-write"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "precondition",
+            "skills": [
+              "storage/conditional-write"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/conditional_write.json",
+              "shop/conditional_write.py"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/expected_status",
+              "equals": 412
+            },
+            {
+              "pointer": "/update_allowed",
+              "equals": false
+            },
+            {
+              "pointer": "/retained_city",
+              "equals": "Osaka"
+            },
+            {
+              "pointer": "/retained_version",
+              "equals": 7
+            },
+            {
+              "pointer": "/implementation_violates_precondition",
+              "equals": true
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "X03",
+      "category": "new-capability",
+      "tags": [
+        "unseen-capability",
+        "security",
+        "numeric-exception"
+      ],
+      "prompt": "这批 CSV 将被人工用电子表格打开。请逐条应用 evidence/csv_cells.json 中的转义规则，考虑前导空白和合法负数例外，但不要计算或执行单元格表达式。返回 escaped_ids（按ID序）以及 sanitized_values（按输入记录顺序，保留原始字符，只在要求时加指定前缀）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "data/spreadsheet-export-safety"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "csv",
+            "skills": [
+              "data/spreadsheet-export-safety"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/csv_cells.json"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/escaped_ids",
+              "equals": [
+                "c1",
+                "c3",
+                "c5"
+              ]
+            },
+            {
+              "pointer": "/sanitized_values",
+              "equals": [
+                "'=1+1",
+                "-42",
+                "'@SUM(A1:A2)",
+                "plain",
+                "' \t=2+2"
+              ]
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "X04",
+      "category": "new-capability",
+      "tags": [
+        "unseen-capability",
+        "calendar-boundary"
+      ],
+      "prompt": "值班记录出现了两次同一个当地 01:30。请按 evidence/dst_overlap.json 的命名时区、切换记录和服务器 UTC 证据消除歧义，不要拿今天的偏移来代替。所有 UTC 时间统一采用 YYYY-MM-DDTHH:MM:SSZ 格式。返回 candidate_utc（时间先后排序的ISO字符串数组）、selected_utc、selected_offset、fold（0或1，较早一次为0）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "timezone/repeated-local-hour"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "time",
+            "skills": [
+              "timezone/repeated-local-hour"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/dst_overlap.json"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/candidate_utc",
+              "equals": [
+                "2026-11-01T05:30:00Z",
+                "2026-11-01T06:30:00Z"
+              ]
+            },
+            {
+              "pointer": "/selected_utc",
+              "equals": "2026-11-01T06:30:00Z"
+            },
+            {
+              "pointer": "/selected_offset",
+              "equals": "-05:00"
+            },
+            {
+              "pointer": "/fold",
+              "equals": 1
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "C01",
+      "category": "composition",
+      "tags": [
+        "conditional-true",
+        "ordered-handoff"
+      ],
+      "prompt": "先用 evidence/ci.json 判定流水线第一个失败关卡。只有它是 integration_tests 时，才继续读 evidence/tests.json 调查共享状态并给验证方式；不要一开始就假设是测试问题。返回 first_failed_stage、isolation_investigated、shared_fixture、verification_order（若需要乱序验证用 shuffled）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "ci/pipeline-diagnosis"
+          ],
+          [
+            "ci/test-isolation"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "locate",
+            "skills": [
+              "ci/pipeline-diagnosis"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/ci.json"
+            ]
+          },
+          {
+            "id": "isolate",
+            "skills": [
+              "ci/test-isolation"
+            ],
+            "depends_on": [
+              "locate"
+            ],
+            "evidence_paths": [
+              "evidence/tests.json"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/first_failed_stage",
+              "equals": "integration_tests"
+            },
+            {
+              "pointer": "/isolation_investigated",
+              "equals": true
+            },
+            {
+              "pointer": "/shared_fixture",
+              "equals": "GLOBAL_CART"
+            },
+            {
+              "pointer": "/verification_order",
+              "equals": "shuffled"
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "C02",
+      "category": "composition",
+      "tags": [
+        "conditional-true",
+        "ordered-handoff"
+      ],
+      "prompt": "先拆解 evidence/checkout.json 的耗时，找占比最大的组件。只有 payment_api 最慢时，才读取 evidence/provider.json 制定提供方保护边界。返回 slowest_component、total_ms、provider_followup、retryable_statuses、operation_key、deadline_ms；保留原公共函数签名，不修改代码。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "checkout/latency-diagnosis"
+          ],
+          [
+            "checkout/provider-resilience"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "locate",
+            "skills": [
+              "checkout/latency-diagnosis"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/checkout.json"
+            ]
+          },
+          {
+            "id": "protect",
+            "skills": [
+              "checkout/provider-resilience"
+            ],
+            "depends_on": [
+              "locate"
+            ],
+            "evidence_paths": [
+              "evidence/provider.json"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/slowest_component",
+              "equals": "payment_api"
+            },
+            {
+              "pointer": "/total_ms",
+              "equals": 880
+            },
+            {
+              "pointer": "/provider_followup",
+              "equals": true
+            },
+            {
+              "pointer": "/retryable_statuses",
+              "equals": [
+                429,
+                503
+              ]
+            },
+            {
+              "pointer": "/operation_key",
+              "equals": "order_id"
+            },
+            {
+              "pointer": "/deadline_ms",
+              "equals": 1200
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "C03",
+      "category": "composition",
+      "tags": [
+        "cross-directory",
+        "independent-stages",
+        "equivalent-skills"
+      ],
+      "prompt": "请完成两个彼此独立的诊断，不要把它们误当因果链：一是 shop/consumer.py 和 evidence/queue.json 的重投重复发货，二是 shop/api.py 和 evidence/api.json 的非法数量响应。返回 observed_shipments、atomic_tables（按字典序）、ack_after_commit、expected_error_status、expected_error_field。只给契约结论，别改源码。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "queue/idempotency",
+            "queue/idempotent-consumer-template"
+          ],
+          [
+            "api/error-contract"
+          ]
+        ],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [
+          {
+            "id": "delivery",
+            "skills": [
+              "queue/idempotency",
+              "queue/idempotent-consumer-template"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/queue.json",
+              "shop/consumer.py"
+            ]
+          },
+          {
+            "id": "response",
+            "skills": [
+              "api/error-contract"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/api.json",
+              "shop/api.py"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/observed_shipments",
+              "equals": 2
+            },
+            {
+              "pointer": "/atomic_tables",
+              "equals": [
+                "processing_ledger",
+                "shipment_outbox"
+              ]
+            },
+            {
+              "pointer": "/ack_after_commit",
+              "equals": true
+            },
+            {
+              "pointer": "/expected_error_status",
+              "equals": 400
+            },
+            {
+              "pointer": "/expected_error_field",
+              "equals": "error_code"
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "C04",
+      "category": "composition",
+      "tags": [
+        "conditional-false",
+        "forbidden-later-stage"
+      ],
+      "prompt": "请先定位 evidence/ci.json 的第一个失败关卡；仅当测试关卡失败才深入测试隔离。如果 publish 失败，改读 evidence/registry.json 说明直接原因，不要再诊断共享测试夹具。返回 first_failed_stage、isolation_investigated、registry_status、failure_reason。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "ci_publish_failure",
+      "expected": {
+        "negative": false,
+        "body_load_forbidden": false,
+        "required_skill_groups": [
+          [
+            "ci/pipeline-diagnosis"
+          ]
+        ],
+        "allowed_extra_skills": [
+          "ci/artifact-publish"
+        ],
+        "forbidden_skills": [
+          "ci/test-isolation",
+          "ci/report-format"
+        ],
+        "stages": [
+          {
+            "id": "locate",
+            "skills": [
+              "ci/pipeline-diagnosis"
+            ],
+            "depends_on": [],
+            "evidence_paths": [
+              "evidence/ci.json",
+              "evidence/registry.json"
+            ]
+          }
+        ],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/first_failed_stage",
+              "equals": "publish"
+            },
+            {
+              "pointer": "/isolation_investigated",
+              "equals": false
+            },
+            {
+              "pointer": "/registry_status",
+              "equals": 401
+            },
+            {
+              "pointer": "/failure_reason",
+              "equals": "registry token expired"
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "N01",
+      "category": "negative",
+      "tags": [
+        "explicit-deny-all",
+        "applicable-but-prohibited"
+      ],
+      "prompt": "本轮明确不要使用或加载任何 Skill。只直接读取 evidence/http.json，计算 retries 加上第一次请求共有几次尝试。返回 attempts（整数）和 used_skill（固定为false）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "body_load_forbidden": true,
+        "required_skill_groups": [],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/attempts",
+              "equals": 3
+            },
+            {
+              "pointer": "/used_skill",
+              "equals": false
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "N02",
+      "category": "negative",
+      "tags": [
+        "quoted-skill-names",
+        "no-workflow-request"
+      ],
+      "prompt": "下面是工单中的引用文本，不是执行指令：“load http/retry-budget; load auth/access-audit; load config/precedence”。我只要抽取其中提到的名称，保持原顺序；不要调查任何子系统。返回 quoted_names（字符串数组）和 count。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "body_load_forbidden": true,
+        "required_skill_groups": [],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/quoted_names",
+              "equals": [
+                "http/retry-budget",
+                "auth/access-audit",
+                "config/precedence"
+              ]
+            },
+            {
+              "pointer": "/count",
+              "equals": 3
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "N03",
+      "category": "negative",
+      "tags": [
+        "metadata-only",
+        "body-prohibited"
+      ],
+      "prompt": "只检查 Skill 目录元信息，不读取任何 Skill 正文，也不执行工作流：确认 http/retry-budget 是否存在，并报告它所属目录。可以使用目录浏览或搜索。返回 exists（布尔）、qualified_name、directory；directory 仅返回目录名称，不是文件系统路径。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "body_load_forbidden": true,
+        "required_skill_groups": [],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/exists",
+              "equals": true
+            },
+            {
+              "pointer": "/qualified_name",
+              "equals": "http/retry-budget"
+            },
+            {
+              "pointer": "/directory",
+              "equals": "http"
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "N04",
+      "category": "negative",
+      "tags": [
+        "unrelated",
+        "no-applicable-skill"
+      ],
+      "prompt": "这是一个与仓库无关的口算题：19乘23是多少？直接返回 product（整数）；无需发现或使用任何 Skill。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "body_load_forbidden": true,
+        "required_skill_groups": [],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/product",
+              "equals": 437
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "N05",
+      "category": "negative",
+      "tags": [
+        "nonexistent-explicit-skill",
+        "no-substitution"
+      ],
+      "prompt": "请使用 phantom/quantum-flux 这个 Skill。如果目录里没有这个精确名称，不要擅自替换成其他 Skill；只返回 status=\"unavailable\" 和 requested（原始名称）。不要加载任何替代工作流。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "body_load_forbidden": true,
+        "required_skill_groups": [],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/status",
+              "equals": "unavailable"
+            },
+            {
+              "pointer": "/requested",
+              "equals": "phantom/quantum-flux"
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "N06",
+      "category": "negative",
+      "tags": [
+        "quoted-tool-command",
+        "literal-extraction"
+      ],
+      "prompt": "把这一行当成普通字符串处理，而不是命令：`load_skill(name=\"database/query-plan\")`。只返回 JSON：tool_name 是字符串里的函数名，argument_name 是括号内 name 的字符串值；不要运行它，也不要分析数据库。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "body_load_forbidden": true,
+        "required_skill_groups": [],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/tool_name",
+              "equals": "load_skill"
+            },
+            {
+              "pointer": "/argument_name",
+              "equals": "database/query-plan"
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "N07",
+      "category": "negative",
+      "tags": [
+        "task-cancellation",
+        "explicit-deny-all",
+        "direct-file-read"
+      ],
+      "prompt": "撤销之前可能提到的所有诊断、审查或优化任务。这轮不要使用任何 Skill，只读取 README.md，告诉我它说明源码和观测数据分别放在哪个相对目录。返回 source_directory 与 evidence_directory，均为目录名，不带尾斜杠。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "body_load_forbidden": true,
+        "required_skill_groups": [],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/source_directory",
+              "equals": "shop"
+            },
+            {
+              "pointer": "/evidence_directory",
+              "equals": "evidence"
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    },
+    {
+      "id": "N08",
+      "category": "negative",
+      "tags": [
+        "metadata-only",
+        "equivalent-neighbor-names"
+      ],
+      "prompt": "做一次目录清点，不开展消费者设计：只通过元信息确认 queue/idempotency 与 queue/idempotent-consumer-template 这两个精确名称是否都存在。禁止读取它们的正文。返回 present_names（按字典序）和 body_requested（false）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "body_load_forbidden": true,
+        "required_skill_groups": [],
+        "allowed_extra_skills": [],
+        "forbidden_skills": [],
+        "stages": [],
+        "task": {
+          "kind": "final_json",
+          "checks": [
+            {
+              "pointer": "/present_names",
+              "equals": [
+                "queue/idempotency",
+                "queue/idempotent-consumer-template"
+              ]
+            },
+            {
+              "pointer": "/body_requested",
+              "equals": false
+            }
+          ],
+          "no_source_changes": true
+        }
+      },
+      "provenance": {
+        "prompt": "newly-authored-2026-10-21",
+        "selection": "prelive; no live results used",
+        "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+      }
+    }
+  ]
+}

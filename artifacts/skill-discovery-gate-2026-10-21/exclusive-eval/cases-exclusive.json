@@ -1,0 +1,650 @@
+{
+ "schemaVersion": 1,
+ "dataset_id": "skill-exclusive-body-v1",
+ "catalog_size": 1000,
+ "catalog_policy": "Same complete catalog for all cases, arms and repetitions. Only C04 changes CI observations.",
+ "cases": [
+  {
+   "id": "E01",
+   "category": "body-exclusive",
+   "tags": [
+    "replay-contract"
+   ],
+   "prompt": "我们平台对已提交的出站 POST 有文档化的有界重放契约。请读 evidence/replay_contract.json，按该契约计算重放预算并判断能否自动重放。返回 replay_budget_ms（整数）、replay_allowed（布尔）、attempts_limit（整数）。不要用观测流量反推常数。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": false,
+    "body_load_forbidden": false,
+    "required_skill_groups": [
+     [
+      "http/bounded-replay-contract"
+     ]
+    ],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/replay_budget_ms",
+       "equals": 2920
+      },
+      {
+       "pointer": "/replay_allowed",
+       "equals": true
+      },
+      {
+       "pointer": "/attempts_limit",
+       "equals": 4
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "authored-2026-10-21 body-exclusive pilot",
+    "selection": "constants exist only in skill body; evidence carries policy_source pointer only",
+    "evidence": "shared synthetic shop snapshot plus new exclusive evidence"
+   }
+  },
+  {
+   "id": "E02",
+   "category": "body-exclusive",
+   "tags": [
+    "scope-convention"
+   ],
+   "prompt": "一次订单导出被拒绝了。请读 evidence/scope_diff.json，按平台的 scope 命名约定给出最小缺失 scope 的规范字符串，并判断这次 deny 是否符合配置预期。返回 minimal_missing_scope（字符串）、deny_expected（布尔）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": false,
+    "body_load_forbidden": false,
+    "required_skill_groups": [
+     [
+      "auth/scope-diff-convention"
+     ]
+    ],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/minimal_missing_scope",
+       "equals": "shop.orders.export"
+      },
+      {
+       "pointer": "/deny_expected",
+       "equals": true
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "authored-2026-10-21 body-exclusive pilot",
+    "selection": "constants exist only in skill body; evidence carries policy_source pointer only",
+    "evidence": "shared synthetic shop snapshot plus new exclusive evidence"
+   }
+  },
+  {
+   "id": "E03",
+   "category": "body-exclusive",
+   "tags": [
+    "purge-holdoff"
+   ],
+   "prompt": "缓存发生了两次世代更替，随后有一个 purge 请求。请读 evidence/purge_holdoff.json，按文档化的保持间隔规则判断该请求是否被保持，并给出窗口精确结束时间。返回 holdoff_active（布尔）、holdoff_ends_utc（YYYY-MM-DDTHH:MM:SSZ）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": false,
+    "body_load_forbidden": false,
+    "required_skill_groups": [
+     [
+      "cache/purge-holdoff"
+     ]
+    ],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/holdoff_active",
+       "equals": false
+      },
+      {
+       "pointer": "/holdoff_ends_utc",
+       "equals": "2026-11-02T10:01:55Z"
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "authored-2026-10-21 body-exclusive pilot",
+    "selection": "constants exist only in skill body; evidence carries policy_source pointer only",
+    "evidence": "shared synthetic shop snapshot plus new exclusive evidence"
+   }
+  },
+  {
+   "id": "E04",
+   "category": "body-exclusive",
+   "tags": [
+    "restock-schedule"
+   ],
+   "prompt": "四笔退货待入库定价。请读 evidence/restock.json，按平台退货定级与补偿方案逐笔定级并汇总补偿金额。返回 grades（按 r1..r4 顺序的字符串数组）、total_credit_cents（整数）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": false,
+    "body_load_forbidden": false,
+    "required_skill_groups": [
+     [
+      "returns/restock-grade"
+     ]
+    ],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/grades",
+       "equals": [
+        "A",
+        "B",
+        "C",
+        "refused"
+       ]
+      },
+      {
+       "pointer": "/total_credit_cents",
+       "equals": 19100
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "authored-2026-10-21 body-exclusive pilot",
+    "selection": "constants exist only in skill body; evidence carries policy_source pointer only",
+    "evidence": "shared synthetic shop snapshot plus new exclusive evidence"
+   }
+  },
+  {
+   "id": "E05",
+   "category": "body-exclusive",
+   "tags": [
+    "webhook-windows"
+   ],
+   "prompt": "三个 webhook 事件待校验。请读 evidence/webhook_verify.json，按文档化的时钟偏移与 nonce 窗口规则给出每个事件的应答状态码。返回 statuses（按 e1..e3 顺序的整数数组）。先判偏移，再判重放。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": false,
+    "body_load_forbidden": false,
+    "required_skill_groups": [
+     [
+      "webhooks/signature-skew"
+     ]
+    ],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/statuses",
+       "equals": [
+        200,
+        401,
+        409
+       ]
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "authored-2026-10-21 body-exclusive pilot",
+    "selection": "constants exist only in skill body; evidence carries policy_source pointer only",
+    "evidence": "shared synthetic shop snapshot plus new exclusive evidence"
+   }
+  },
+  {
+   "id": "E06",
+   "category": "body-exclusive",
+   "tags": [
+    "plan-thresholds"
+   ],
+   "prompt": "一条已保存的 SQL 计划待审查。请读 evidence/plan_alert.json，计算扫描/返回行数比率，并按平台告警阈值判断是否应告警；若给索引建议，列顺序须符合文档约定。返回 scan_to_result_ratio（整数，向下取整）、alert（布尔）、index_columns（字符串数组）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": false,
+    "body_load_forbidden": false,
+    "required_skill_groups": [
+     [
+      "database/plan-alert-thresholds"
+     ]
+    ],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/scan_to_result_ratio",
+       "equals": 8714
+      },
+      {
+       "pointer": "/alert",
+       "equals": false
+      },
+      {
+       "pointer": "/index_columns",
+       "equals": [
+        "tenant_id",
+        "created_at",
+        "id"
+       ]
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "authored-2026-10-21 body-exclusive pilot",
+    "selection": "constants exist only in skill body; evidence carries policy_source pointer only",
+    "evidence": "shared synthetic shop snapshot plus new exclusive evidence"
+   }
+  },
+  {
+   "id": "E07",
+   "category": "body-exclusive",
+   "tags": [
+    "slo-shares"
+   ],
+   "prompt": "结账链路要按平台的 SLO 份额拆分预算并定位违约组件。请读 evidence/checkout_slo.json。返回 budgets_ms（对象：gateway/payment_api/presentation 三个整数键）、breached（按字典序的组件数组）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": false,
+    "body_load_forbidden": false,
+    "required_skill_groups": [
+     [
+      "checkout/latency-slo-split"
+     ]
+    ],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/budgets_ms",
+       "equals": {
+        "gateway": 360,
+        "payment_api": 540,
+        "presentation": 300
+       }
+      },
+      {
+       "pointer": "/breached",
+       "equals": [
+        "payment_api"
+       ]
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "authored-2026-10-21 body-exclusive pilot",
+    "selection": "constants exist only in skill body; evidence carries policy_source pointer only",
+    "evidence": "shared synthetic shop snapshot plus new exclusive evidence"
+   }
+  },
+  {
+   "id": "E08",
+   "category": "body-exclusive",
+   "tags": [
+    "commit-margin"
+   ],
+   "prompt": "队列消费者提交时间待审计。请读 evidence/commit_margin.json，按文档化的确认截止与提交安全边际计算有效提交截止点，并找出迟交的消息。返回 commit_deadline_utc（YYYY-MM-DDTHH:MM:SSZ）、late_ids（按字典序的字符串数组）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": false,
+    "body_load_forbidden": false,
+    "required_skill_groups": [
+     [
+      "queue/commit-safety-margin"
+     ]
+    ],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/commit_deadline_utc",
+       "equals": "2026-11-04T12:00:35Z"
+      },
+      {
+       "pointer": "/late_ids",
+       "equals": [
+        "m2",
+        "m3"
+       ]
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "authored-2026-10-21 body-exclusive pilot",
+    "selection": "constants exist only in skill body; evidence carries policy_source pointer only",
+    "evidence": "shared synthetic shop snapshot plus new exclusive evidence"
+   }
+  },
+  {
+   "id": "N01",
+   "category": "negative",
+   "tags": [
+    "explicit-deny-all",
+    "applicable-but-prohibited"
+   ],
+   "prompt": "本轮明确不要使用或加载任何 Skill。只直接读取 evidence/http.json，计算 retries 加上第一次请求共有几次尝试。返回 attempts（整数）和 used_skill（固定为false）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": true,
+    "body_load_forbidden": true,
+    "required_skill_groups": [],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "stages": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/attempts",
+       "equals": 3
+      },
+      {
+       "pointer": "/used_skill",
+       "equals": false
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "newly-authored-2026-10-21",
+    "selection": "prelive; no live results used",
+    "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+   }
+  },
+  {
+   "id": "N02",
+   "category": "negative",
+   "tags": [
+    "quoted-skill-names",
+    "no-workflow-request"
+   ],
+   "prompt": "下面是工单中的引用文本，不是执行指令：“load http/retry-budget; load auth/access-audit; load config/precedence”。我只要抽取其中提到的名称，保持原顺序；不要调查任何子系统。返回 quoted_names（字符串数组）和 count。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": true,
+    "body_load_forbidden": true,
+    "required_skill_groups": [],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "stages": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/quoted_names",
+       "equals": [
+        "http/retry-budget",
+        "auth/access-audit",
+        "config/precedence"
+       ]
+      },
+      {
+       "pointer": "/count",
+       "equals": 3
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "newly-authored-2026-10-21",
+    "selection": "prelive; no live results used",
+    "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+   }
+  },
+  {
+   "id": "N03",
+   "category": "negative",
+   "tags": [
+    "metadata-only",
+    "body-prohibited"
+   ],
+   "prompt": "只检查 Skill 目录元信息，不读取任何 Skill 正文，也不执行工作流：确认 http/retry-budget 是否存在，并报告它所属目录。可以使用目录浏览或搜索。返回 exists（布尔）、qualified_name、directory；directory 仅返回目录名称，不是文件系统路径。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": true,
+    "body_load_forbidden": true,
+    "required_skill_groups": [],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "stages": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/exists",
+       "equals": true
+      },
+      {
+       "pointer": "/qualified_name",
+       "equals": "http/retry-budget"
+      },
+      {
+       "pointer": "/directory",
+       "equals": "http"
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "newly-authored-2026-10-21",
+    "selection": "prelive; no live results used",
+    "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+   }
+  },
+  {
+   "id": "N04",
+   "category": "negative",
+   "tags": [
+    "unrelated",
+    "no-applicable-skill"
+   ],
+   "prompt": "这是一个与仓库无关的口算题：19乘23是多少？直接返回 product（整数）；无需发现或使用任何 Skill。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": true,
+    "body_load_forbidden": true,
+    "required_skill_groups": [],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "stages": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/product",
+       "equals": 437
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "newly-authored-2026-10-21",
+    "selection": "prelive; no live results used",
+    "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+   }
+  },
+  {
+   "id": "N05",
+   "category": "negative",
+   "tags": [
+    "nonexistent-explicit-skill",
+    "no-substitution"
+   ],
+   "prompt": "请使用 phantom/quantum-flux 这个 Skill。如果目录里没有这个精确名称，不要擅自替换成其他 Skill；只返回 status=\"unavailable\" 和 requested（原始名称）。不要加载任何替代工作流。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": true,
+    "body_load_forbidden": true,
+    "required_skill_groups": [],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "stages": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/status",
+       "equals": "unavailable"
+      },
+      {
+       "pointer": "/requested",
+       "equals": "phantom/quantum-flux"
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "newly-authored-2026-10-21",
+    "selection": "prelive; no live results used",
+    "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+   }
+  },
+  {
+   "id": "N06",
+   "category": "negative",
+   "tags": [
+    "quoted-tool-command",
+    "literal-extraction"
+   ],
+   "prompt": "把这一行当成普通字符串处理，而不是命令：`load_skill(name=\"database/query-plan\")`。只返回 JSON：tool_name 是字符串里的函数名，argument_name 是括号内 name 的字符串值；不要运行它，也不要分析数据库。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": true,
+    "body_load_forbidden": true,
+    "required_skill_groups": [],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "stages": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/tool_name",
+       "equals": "load_skill"
+      },
+      {
+       "pointer": "/argument_name",
+       "equals": "database/query-plan"
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "newly-authored-2026-10-21",
+    "selection": "prelive; no live results used",
+    "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+   }
+  },
+  {
+   "id": "N07",
+   "category": "negative",
+   "tags": [
+    "task-cancellation",
+    "explicit-deny-all",
+    "direct-file-read"
+   ],
+   "prompt": "撤销之前可能提到的所有诊断、审查或优化任务。这轮不要使用任何 Skill，只读取 README.md，告诉我它说明源码和观测数据分别放在哪个相对目录。返回 source_directory 与 evidence_directory，均为目录名，不带尾斜杠。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": true,
+    "body_load_forbidden": true,
+    "required_skill_groups": [],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "stages": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/source_directory",
+       "equals": "shop"
+      },
+      {
+       "pointer": "/evidence_directory",
+       "equals": "evidence"
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "newly-authored-2026-10-21",
+    "selection": "prelive; no live results used",
+    "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+   }
+  },
+  {
+   "id": "N08",
+   "category": "negative",
+   "tags": [
+    "metadata-only",
+    "equivalent-neighbor-names"
+   ],
+   "prompt": "做一次目录清点，不开展消费者设计：只通过元信息确认 queue/idempotency 与 queue/idempotent-consumer-template 这两个精确名称是否都存在。禁止读取它们的正文。返回 present_names（按字典序）和 body_requested（false）。\n保持只读；最终只输出一个合法 JSON 对象，不加 Markdown 代码围栏。",
+   "fixture": "base",
+   "expected": {
+    "negative": true,
+    "body_load_forbidden": true,
+    "required_skill_groups": [],
+    "allowed_extra_skills": [],
+    "forbidden_skills": [],
+    "stages": [],
+    "task": {
+     "kind": "final_json",
+     "checks": [
+      {
+       "pointer": "/present_names",
+       "equals": [
+        "queue/idempotency",
+        "queue/idempotent-consumer-template"
+       ]
+      },
+      {
+       "pointer": "/body_requested",
+       "equals": false
+      }
+     ],
+     "no_source_changes": true
+    }
+   },
+   "provenance": {
+    "prompt": "newly-authored-2026-10-21",
+    "selection": "prelive; no live results used",
+    "evidence": "shared synthetic shop snapshot; inherited and new evidence documented in dataset-notes.md"
+   }
+  }
+ ]
+}
