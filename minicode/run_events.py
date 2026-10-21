@@ -212,13 +212,22 @@ class AgentEventSink(Protocol):
 
 
 class SkillUsageTracker:
-    """Task-scoped, bounded record of Skills actually loaded by the tool."""
+    """Turn-local loaded names plus a bounded Skill attribution projection."""
 
     def __init__(self, max_skills: int = _MAX_ATTRIBUTED_SKILLS) -> None:
         self._max_skills = max(1, min(max_skills, _MAX_ATTRIBUTED_SKILLS))
         self._loaded: dict[
             tuple[str, str, str, str, str], dict[str, object]
         ] = {}
+        # Execution must remember every successful load, even after the
+        # bounded attribution payload has filled. This set is turn-local and
+        # populated only by the loader, never by replaying transcript text.
+        self._loaded_names: set[str] = set()
+        # Discovery activity (browse/search/load attempts) is also turn-local
+        # execution state: the advisory discovery gate must not re-nudge a
+        # turn that already inspected the skill channel, even when nothing
+        # was loaded or every attempt failed.
+        self._discovery_seen = False
         self._truncated = False
         self._lock = Lock()
 
@@ -237,6 +246,7 @@ class SkillUsageTracker:
             str(item["contentDigest"]),
         )
         with self._lock:
+            self._loaded_names.add(identity[0])
             if identity in self._loaded:
                 return
             if len(self._loaded) >= self._max_skills:
@@ -244,7 +254,23 @@ class SkillUsageTracker:
                 return
             self._loaded[identity] = item
 
+    def loaded_names(self) -> frozenset[str]:
+        """Return all successfully loaded qualified names for execution gates."""
+        with self._lock:
+            return frozenset(self._loaded_names)
+
+    def record_discovery(self, tool_name: str) -> None:
+        """Note one skill-channel tool attempt for the discovery gate."""
+        with self._lock:
+            self._discovery_seen = True
+
+    def discovery_seen(self) -> bool:
+        """Return whether any skill-channel tool ran earlier this turn."""
+        with self._lock:
+            return self._discovery_seen
+
     def snapshot(self) -> tuple[list[dict[str, object]], bool]:
+        """Return the bounded attribution payload, not execution state."""
         with self._lock:
             return (
                 [dict(item) for item in self._loaded.values()],

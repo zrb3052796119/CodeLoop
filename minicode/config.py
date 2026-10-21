@@ -880,6 +880,22 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
             or skill_selection_settings.get("intentPrefetch"),
             False,
         ),
+        # Directory-level semantic preselection: one embedding vector per
+        # directory reorders and extends the intent hints' suggested
+        # directories. Requires intentHints; advisory only, off by default.
+        "directoryPresel": _as_bool(
+            env.get("MINI_CODE_SKILL_DIRECTORY_PRESEL")
+            or skill_selection_settings.get("directoryPresel"),
+            False,
+        ),
+        # Advisory discovery gate: one pre-final nudge when the routing layer
+        # flagged likely directories but the turn never touched the skill
+        # channel. Off by default; never fails the turn.
+        "discoveryGate": _as_bool(
+            env.get("MINI_CODE_SKILL_DISCOVERY_GATE")
+            or skill_selection_settings.get("discoveryGate"),
+            False,
+        ),
     }
 
     # Child-agent model routing is independent from the parent provider. The
@@ -1173,6 +1189,12 @@ def safe_runtime_summary(runtime: Mapping[str, Any]) -> dict[str, Any]:
             "intentHints": _as_bool(skill_selection_values.get("intentHints")),
             "intentPrefetch": _as_bool(
                 skill_selection_values.get("intentPrefetch")
+            ),
+            "directoryPresel": _as_bool(
+                skill_selection_values.get("directoryPresel")
+            ),
+            "discoveryGate": _as_bool(
+                skill_selection_values.get("discoveryGate")
             ),
         },
         "credentials": {

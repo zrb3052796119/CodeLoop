@@ -339,6 +339,8 @@ def test_skill_selection_mode_defaults_to_model(tmp_path, monkeypatch) -> None:
         "skillPageCharBudget": 4000,
         "intentHints": False,
         "intentPrefetch": False,
+        "directoryPresel": False,
+        "discoveryGate": False,
     }
     assert config_module.safe_runtime_summary(runtime)["skillSelection"] == {
         "mode": "model",
@@ -346,6 +348,8 @@ def test_skill_selection_mode_defaults_to_model(tmp_path, monkeypatch) -> None:
         "skillPageCharBudget": 4000,
         "intentHints": False,
         "intentPrefetch": False,
+        "directoryPresel": False,
+        "discoveryGate": False,
     }
 
 
@@ -406,6 +410,8 @@ def test_skill_selection_budgets_fall_back_to_settings_file(
         "skillPageCharBudget": 2500,
         "intentHints": False,
         "intentPrefetch": False,
+        "directoryPresel": False,
+        "discoveryGate": False,
     }
 
 

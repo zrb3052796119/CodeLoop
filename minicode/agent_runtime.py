@@ -244,6 +244,7 @@ class AgentTurnRuntime:
         from minicode.skill_router import (
             required_skill_names_for_routing,
             skill_load_policy_for_routing,
+            suggested_skill_directories_for_routing,
         )
 
         def tool_started(tool_name: str, _tool_input: object) -> None:
@@ -318,6 +319,14 @@ class AgentTurnRuntime:
             presentation=presentation,
             required_skill_names=required_skill_names_for_routing(self.skill_routing),
             skill_load_policy=skill_load_policy_for_routing(self.skill_routing),
+            suggested_skill_directories=suggested_skill_directories_for_routing(
+                self.skill_routing
+            ),
+            skill_discovery_gate=bool(
+                (self.runtime or {}).get("skillSelection", {}).get(
+                    "discoveryGate", False
+                )
+            ),
             allow_user_interaction=self.allow_user_interaction,
             trusted_user_evidence=self.trusted_user_evidence,
             implementation_spec=self.implementation_spec,
@@ -533,8 +542,21 @@ def create_agent_turn_runtime(
                     "intentPrefetch", False
                 )
             ),
+            "skill_directory_presel": bool(
+                (runtime or {}).get("skillSelection", {}).get(
+                    "directoryPresel", False
+                )
+            ),
+            "skill_discovery_gate": bool(
+                (runtime or {}).get("skillSelection", {}).get(
+                    "discoveryGate", False
+                )
+            ),
         }
-        from minicode.skill_router import build_skill_router
+        from minicode.skill_directory_presel import DirectoryPreselMatcher
+        from minicode.skill_router import (
+            build_skill_router,
+        )
 
         turn_routing = route_skill_turn(
             SkillRoutingTurnRequest(
@@ -547,6 +569,11 @@ def create_agent_turn_runtime(
                 router=build_skill_router(str(resolved)),
                 semantic_intent=semantic_adapter,
                 candidate_reranker=skill_candidate_reranker,
+                directory_presel=(
+                    DirectoryPreselMatcher.from_environment(str(resolved))
+                    if routing_controls.get("skill_directory_presel")
+                    else None
+                ),
             ),
             controls=routing_controls,
         )

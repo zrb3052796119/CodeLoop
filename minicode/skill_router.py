@@ -553,6 +553,26 @@ def required_skill_names_for_routing(routing: Any) -> list[str]:
     return names
 
 
+def suggested_skill_directories_for_routing(routing: Any) -> frozenset[str]:
+    """Advisory directory names from the routing result's intent hints.
+
+    Empty unless the turn carried hierarchical hints; the discovery gate
+    treats these as the routing layer's own relevance signal.
+    """
+    hints = None
+    if isinstance(routing, dict):
+        hints = routing.get("intent_hints")
+    elif routing is not None:
+        hints = getattr(routing, "intent_hints", None)
+    if not isinstance(hints, dict):
+        return frozenset()
+    return frozenset(
+        str(name)
+        for name in (hints.get("suggested_directories") or ())
+        if str(name)
+    )
+
+
 def skill_load_policy_for_routing(routing: Any) -> SkillLoadPolicy | None:
     """Project routing into turn-scoped, enforceable ``load_skill`` authority.
 
@@ -1070,25 +1090,17 @@ class SkillRouter:
                 (routed, signal_score, specific_score, affinity_score, index)
             )
 
-        scored = _apply_operation_topic_purpose_scores(
-            scored,
-            skills,
-            intent,
-            alias=self._alias,
-        )
-
         # A workflow contract is stronger than lexical or semantic relevance.
         # If the user explicitly prohibited a step that the Skill necessarily
         # performs, the candidate must not be admitted -- even when it was
         # named explicitly.  Keep the names on the in-memory routing result so
         # inventory fallback and ``load_skill`` cannot reintroduce it later.
-        # Broad intent/action labels are useful ranking context, but they do
-        # not prove that a particular Skill applies. Admission requires
-        # query-specific lexical/entity/semantic evidence or an explicit
-        # user reference. Capability, directory, tool and source bonuses may
-        # reorder admitted candidates, never create them.
-        eligible = [
-            item
+        # Apply score-independent gates before candidates compete for an
+        # operation or its purpose-only fallback. Retain the full catalog's
+        # topic evidence so an unavailable specialist does not authorize an
+        # unrelated specialty through a broad operation label.
+        eligible_catalog_indexes = {
+            item[4]
             for item in scored
             if not item[0].explicitly_denied
             and item[4] not in constraint_vetoed_indexes
@@ -1096,8 +1108,6 @@ class SkillRouter:
                 item[0].explicitly_requested
                 or (
                     inferred_routing_allowed
-                    and item[0].score > 0
-                    and item[2] >= _MIN_SPECIFIC_SIGNAL
                     and _skill_activation_satisfied(
                         skills[item[4]],
                         intent,
@@ -1106,6 +1116,29 @@ class SkillRouter:
                         _skill_topic_text(skills[item[4]]), intent
                     )
                 )
+            )
+        }
+
+        scored = _apply_operation_topic_purpose_scores(
+            scored,
+            skills,
+            intent,
+            alias=self._alias,
+            eligible_catalog_indexes=eligible_catalog_indexes,
+        )
+
+        # Broad intent/action labels are useful ranking context, but they do
+        # not prove that a particular Skill applies. Admission requires
+        # query-specific lexical/entity/semantic evidence or an explicit
+        # user reference. Capability, directory, tool and source bonuses may
+        # reorder admitted candidates, never create them.
+        eligible = [
+            item
+            for item in scored
+            if item[4] in eligible_catalog_indexes
+            and (
+                item[0].explicitly_requested
+                or (item[0].score > 0 and item[2] >= _MIN_SPECIFIC_SIGNAL)
             )
         ]
         if not eligible:
@@ -2866,6 +2899,7 @@ def _apply_operation_topic_purpose_scores(
     intent: ParsedIntent,
     *,
     alias: Any,
+    eligible_catalog_indexes: set[int],
 ) -> list[_ScoredSkill]:
     """Make operation × topic causal for admission, ranking, and lanes.
 
@@ -2898,6 +2932,13 @@ def _apply_operation_topic_purpose_scores(
         for match in matches
         if match.topic_score > 0.0 and match.purpose_compatible
     }
+    eligible_compatible_operation_indexes = {
+        match.operation_index
+        for catalog_index, matches in matches_by_catalog_index.items()
+        if catalog_index in eligible_catalog_indexes
+        for match in matches
+        if match.topic_score > 0.0 and match.purpose_compatible
+    }
     strict_purpose_operation_indexes = {
         operation_index
         for operation_index, operation in operation_items
@@ -2909,7 +2950,7 @@ def _apply_operation_topic_purpose_scores(
     purpose_only_winners: dict[int, set[int]] = {}
     for operation_index, operation in operation_items:
         if (
-            operation_index in compatible_operation_indexes
+            operation_index in eligible_compatible_operation_indexes
             or operation.intent_type not in _PURPOSE_ONLY_FALLBACK_INTENTS
             or not _allows_purpose_only_fallback(intent, operation)
         ):
@@ -2917,7 +2958,8 @@ def _apply_operation_topic_purpose_scores(
         choices = [
             item
             for item in scored
-            if any(
+            if item[4] in eligible_catalog_indexes
+            and any(
                 match.operation_index == operation_index
                 and match.topic_score <= 0.0
                 and match.purpose_compatible
@@ -2948,6 +2990,12 @@ def _apply_operation_topic_purpose_scores(
                 # of assigning it either to that Skill or to an unrelated,
                 # specialized audit purely because its prose says "review".
                 choices = []
+        elif operation_index in compatible_operation_indexes:
+            # The catalog recognizes this subject, but its matching workflow
+            # is unavailable. A broad operation contract cannot authorize an
+            # unrelated specialty to take over. The explicitly general review
+            # purpose above is a declared fallback, so it remains eligible.
+            choices = []
         if (
             len(choices) > 1
             and operation.intent_type is IntentType.TEST

@@ -371,6 +371,16 @@ def _execute(request: dict[str, object], *, tool_evidence_recorder=None) -> dict
                             "intentPrefetch", False
                         )
                     ),
+                    "skill_directory_presel": bool(
+                        (runtime or {}).get("skillSelection", {}).get(
+                            "directoryPresel", False
+                        )
+                    ),
+                    "skill_discovery_gate": bool(
+                        (runtime or {}).get("skillSelection", {}).get(
+                            "discoveryGate", False
+                        )
+                    ),
                 },
                 parsed_intent=parsed_intent,
             )

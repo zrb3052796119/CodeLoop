@@ -2136,6 +2136,11 @@ def run_agent_turn(
     outcome_capture: AgentOutcomeCapture | None = None,
     required_skill_names: list[str] | None = None,
     skill_load_policy: SkillLoadPolicy | None = None,
+    # Advisory discovery gate: when the routing layer itself flagged likely
+    # directories and the turn never touched the skill channel, nudge one
+    # discovery round before the final answer is accepted.
+    suggested_skill_directories: frozenset[str] | None = None,
+    skill_discovery_gate: bool = False,
     allow_user_interaction: bool = True,
     max_steps_soft_landing: bool = False,
     enable_bounded_completion: bool = False,
@@ -2279,6 +2284,7 @@ def run_agent_turn(
     completed_tool_step_count = 0
     failed_tool_step_count = 0
     skill_requirement_nudged = False
+    skill_discovery_nudged = False
     step = 0
     turn_outcome = "unknown"
     execution_trace: list[dict[str, Any]] = []
@@ -2398,10 +2404,7 @@ def run_agent_turn(
     def enforce_skill_load_before_final() -> str:
         """Return ``ok``, ``retry``, or a terminal failure message."""
         nonlocal skill_requirement_nudged
-        loaded, _truncated = skill_usage_tracker.snapshot()
-        loaded_names = {
-            str(item.get("qualifiedName") or "") for item in loaded
-        }
+        loaded_names = skill_usage_tracker.loaded_names()
         missing = sorted(required_skills - loaded_names)
         if not missing:
             return "ok"
@@ -2421,6 +2424,32 @@ def run_agent_turn(
             "The turn stopped because required routed Skills were not loaded: "
             + ", ".join(missing)
         )
+
+    def enforce_discovery_before_final() -> str:
+        """Return ``ok`` or ``retry``; advisory-once, never fails the turn."""
+        nonlocal skill_discovery_nudged
+        if not skill_discovery_gate or not suggested_skill_directories:
+            return "ok"
+        if skill_usage_tracker.discovery_seen():
+            return "ok"
+        if not skill_discovery_nudged:
+            skill_discovery_nudged = True
+            current_messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        "Skill routing flagged these directories as possibly "
+                        "relevant to this task: "
+                        + ", ".join(sorted(suggested_skill_directories))
+                        + ". Before answering, inspect the actual skill "
+                        "descriptions with browse_skill_directory or "
+                        "search_skills, and load an applicable skill if one "
+                        "covers the requested workflow."
+                    ),
+                }
+            )
+            return "retry"
+        return "ok"
 
     def enforce_subagent_completion_before_final(content: str) -> bool:
         """Keep assistant final closed until owned async results are visible."""
@@ -4979,6 +5008,10 @@ def run_agent_turn(
                     turn_outcome = "failed"
                     return current_messages
 
+                discovery_contract = enforce_discovery_before_final()
+                if discovery_contract == "retry":
+                    continue
+
                 implementation_decision = enforce_implementation_completion_before_final(next_step.content)
                 if implementation_decision == "retry":
                     continue
@@ -5083,6 +5116,10 @@ def run_agent_turn(
                     )
                     turn_outcome = "failed"
                     return current_messages
+
+                discovery_contract = enforce_discovery_before_final()
+                if discovery_contract == "retry":
+                    continue
                 raise_if_cancelled(cancellation_token)
                 turn_outcome = "success"
                 return current_messages
@@ -5147,6 +5184,16 @@ def run_agent_turn(
                     (call, ToolResult(ok=False, output=suppression.message))
                 )
 
+            for discovery_call in executable_calls:
+                if str(discovery_call.get("toolName")) in (
+                    "browse_skill_directory",
+                    "search_skills",
+                    "load_skill",
+                ):
+                    skill_usage_tracker.record_discovery(
+                        str(discovery_call.get("toolName"))
+                    )
+
             # --- Skill load barrier: a batch containing a load_skill for a
             # not-yet-loaded skill must execute only the loads; every other
             # call is deferred so the model can read the skill body before
@@ -5154,10 +5201,7 @@ def run_agent_turn(
             if any(
                 call.get("toolName") == "load_skill" for call in executable_calls
             ):
-                loaded_skill_names = {
-                    str(item.get("qualifiedName") or "")
-                    for item in skill_usage_tracker.snapshot()[0]
-                }
+                loaded_skill_names = skill_usage_tracker.loaded_names()
                 has_new_load = any(
                     # Model arguments can be valid JSON without being an
                     # object. Let normal tool validation report that error;

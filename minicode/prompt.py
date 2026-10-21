@@ -56,15 +56,16 @@ def _hierarchical_skill_lines(skills: list) -> list[str]:
         [
             "",
             "SKILL USAGE GUIDE:",
+            "- Directory cards are navigation summaries, not complete Skill descriptions.",
             "- Match skills to the current task stage and the system being worked on. For conditional requests, establish the condition before choosing a later-stage workflow.",
-            "- Call browse_skill_directory with one or several directory names to expand their skill descriptions; batched expansion is allowed.",
+            "- When the current stage needs a specialized workflow and a directory looks relevant, inspect actual Skill descriptions with browse_skill_directory or search_skills before deciding whether any applies.",
             "- Compare the descriptions of plausible skills before loading. Directory names are organizational hints; related skills may live elsewhere.",
-            "- Call search_skills with a query for cross-directory lexical search over all authorized skills.",
+            "- browse_skill_directory can expand one or several directory names in a batch; search_skills supports cross-directory lexical search over all authorized skills.",
             "- Both tools return descriptions only; call load_skill with the exact qualified name for the full skill body.",
             "- An empty page does not prove a directory has no match: paginate with offset or search instead.",
-            "- You may inspect project files to clarify the task, then return to skill discovery. Read an applicable skill before carrying out its specialized workflow.",
+            "- You may inspect project files first to clarify facts or conditions; this does not reveal unexpanded Skill descriptions. Read an applicable skill before carrying out its specialized workflow.",
             "- Load the smallest sufficient set of skills. Similar names do not imply the same scope; a later task stage can discover and load more skills.",
-            "- Choosing zero skills is also valid; proceed with normal tools and reasoning.",
+            "- If no described capability applies, or the task is a simple ordinary operation that needs no specialized workflow, choose zero skills and proceed with normal tools and reasoning.",
         ]
     )
     return lines

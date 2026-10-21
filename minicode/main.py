@@ -20,6 +20,7 @@ from minicode.run_events import emit_skill_routing_safely
 from minicode.run_lifecycle import observe_run
 from minicode.skill_router import (
     required_skill_names_for_routing,
+    suggested_skill_directories_for_routing,
     skill_load_policy_for_routing,
 )
 from minicode.tools import create_default_tool_registry
@@ -156,7 +157,10 @@ def _route_skills_for_prompt(
     from minicode.capability_registry import (
         build_tool_capability_snapshot,
     )
-    from minicode.skill_router import build_skill_router
+    from minicode.skill_directory_presel import DirectoryPreselMatcher
+    from minicode.skill_router import (
+        build_skill_router,
+    )
     from minicode.skill_routing_turn import (
         SkillRoutingTurnAdapters,
         SkillRoutingTurnRequest,
@@ -170,7 +174,14 @@ def _route_skills_for_prompt(
             skills=tools.get_skills(),
             registry=build_tool_capability_snapshot(tools),
         ),
-        SkillRoutingTurnAdapters(router=build_skill_router(cwd)),
+        SkillRoutingTurnAdapters(
+            router=build_skill_router(cwd),
+            directory_presel=(
+                DirectoryPreselMatcher.from_environment(cwd)
+                if (call_context or {}).get("skill_directory_presel")
+                else None
+            ),
+        ),
         controls=call_context,
     )
     return list(turn_routing.prompt_skills), turn_routing.routing
@@ -491,6 +502,16 @@ def main() -> None:
                                     "intentPrefetch", False
                                 )
                             ),
+                            "skill_directory_presel": bool(
+                                (runtime or {}).get("skillSelection", {}).get(
+                                    "directoryPresel", False
+                                )
+                            ),
+                            "skill_discovery_gate": bool(
+                                (runtime or {}).get("skillSelection", {}).get(
+                                    "discoveryGate", False
+                                )
+                            ),
                         }
                         if skill_candidate_reranker is not None:
                             skill_routing_call_context[
@@ -542,6 +563,16 @@ def main() -> None:
                             ),
                             skill_load_policy=skill_load_policy_for_routing(
                                 skill_routing
+                            ),
+                            suggested_skill_directories=(
+                                suggested_skill_directories_for_routing(
+                                    skill_routing
+                                )
+                            ),
+                            skill_discovery_gate=bool(
+                                (runtime or {}).get("skillSelection", {}).get(
+                                    "discoveryGate", False
+                                )
                             ),
                             parsed_intent=parsed_intent,
                             trusted_user_evidence=stable_constraint_seeds(
