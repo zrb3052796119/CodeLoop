@@ -1,0 +1,2755 @@
+{
+  "preflightVersion": 1,
+  "passed": true,
+  "taskDocumentSha256": "1abf840790ccaa2a6be300638b3877eb2c1a8cab92e98c1a11a475cefe3c5fd5",
+  "policy": {
+    "version": "archived-public-verification-fixtures-v1",
+    "registered": [
+      {
+        "case": "real-vision-budget",
+        "path": ".mini-code/agents/visual-judge.md",
+        "sha256": "112882e006b335964130255ed339fd28c54c847376e31d82faccf6a8205e4828",
+        "bytes": 1430
+      }
+    ],
+    "source": "frozen-task-public-files-only",
+    "scope": "disposable-verification-workspace-only",
+    "requiresBeforeAfterDigest": true,
+    "modelSelectable": false,
+    "promotable": false
+  },
+  "fixtures": [],
+  "cases": [
+    {
+      "case": "gen2-read-context",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_770f4205579527f5e1e97194",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_gen2_read_context",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 756,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 756,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:b8151e58ad322cbf5d95fbb255dd6e48b9cf8bcd421c7e9c5890e6561e8f9732",
+            "preview": "..                                                                       [100%]\n2 passed in 0.58s\n",
+            "previewBase64": "Li4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQoyIHBhc3NlZCBpbiAwLjU4cwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 2,
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:0f36c115a5eeb5c2a7f441ca12c1f9019c2b43c805fb337fcbbfac6bd30faa7c",
+        "caseReport": {
+          "digest": "sha256:46da81d271d0bb0441797d406b63a1e8d67a8fc26330af07caf5d211be3acd51",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_read_and_search_ordinary_source",
+              "outcome": "passed"
+            },
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_complete_read_and_search_no_match",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_18ff5fca1d9242e8507084a7",
+                  "endColumn": 31,
+                  "endLine": 12,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+                  "startColumn": 4,
+                  "startLine": 12
+                },
+                {
+                  "assertionId": "assert_1ede0fe3b50426329378406a",
+                  "endColumn": 53,
+                  "endLine": 17,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+                  "startColumn": 4,
+                  "startLine": 17
+                },
+                {
+                  "assertionId": "assert_278de50182143596af2f88a2",
+                  "endColumn": 54,
+                  "endLine": 18,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+                  "startColumn": 4,
+                  "startLine": 18
+                },
+                {
+                  "assertionId": "assert_31a4ea6db663f8ca8a836af1",
+                  "endColumn": 47,
+                  "endLine": 13,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+                  "startColumn": 4,
+                  "startLine": 13
+                },
+                {
+                  "assertionId": "assert_a2306be6ae4001290f094dc8",
+                  "endColumn": 43,
+                  "endLine": 14,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+                  "startColumn": 4,
+                  "startLine": 14
+                },
+                {
+                  "assertionId": "assert_c6dc2163967e543a7c242032",
+                  "endColumn": 35,
+                  "endLine": 16,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+                  "startColumn": 4,
+                  "startLine": 16
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_08dd9d94c75531f28be25d69",
+                  "codeDigest": "sha256:52ab1e93bde31e87a065ab0540f3cd5bc095be28fc26ce081a272dcb79d78dde",
+                  "count": 1,
+                  "firstLine": 225,
+                  "identityVerified": true,
+                  "parentCallId": "call_d53bbb401a493ec08cb17e59",
+                  "path": "minicode/tools/grep_files.py",
+                  "qualname": "_run",
+                  "sourceDigest": "sha256:79bf6f3bc6adb4bb6616607458db876a5255188ad7609c07348ec62b8094848e"
+                },
+                {
+                  "callId": "call_22e14c87785804a0357f95a8",
+                  "codeDigest": "sha256:2ed712e9dc8f0e22aa648c3222f147d3a17fb4fc8ea1384eccc9381a5365445c",
+                  "count": 2,
+                  "firstLine": 1176,
+                  "identityVerified": true,
+                  "parentCallId": "call_d53bbb401a493ec08cb17e59",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.describe_capability",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_27d660da3d2faaef9a5e008c",
+                  "codeDigest": "sha256:736520fdf6beee6125b5140f08a97b7f925aaaa3738e4cb747213a004bc326b6",
+                  "count": 1,
+                  "firstLine": 21,
+                  "identityVerified": true,
+                  "parentCallId": "call_2d565139ce47c00b58cfae94",
+                  "path": "minicode/workspace.py",
+                  "qualname": "is_internal_workspace_path.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_2d565139ce47c00b58cfae94",
+                  "codeDigest": "sha256:90583df959aba7af54a4658e29309d9829978ed165ca4b3e6cc5de0ebf6de44d",
+                  "count": 1,
+                  "firstLine": 13,
+                  "identityVerified": true,
+                  "parentCallId": "call_4413b9df376f85055cb5fc04",
+                  "path": "minicode/workspace.py",
+                  "qualname": "is_internal_workspace_path",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_30920a04cf0ade5fe1ef62e1",
+                  "codeDigest": "sha256:c31f56277a6bf4211d82bc20fcf5a44ec93619fa1c03088d8741f620f182354f",
+                  "count": 1,
+                  "firstLine": 1013,
+                  "identityVerified": true,
+                  "parentCallId": "call_a4921cb0a6409517de3c0b04",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.__init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_43fd82f5013bbfa4ebed149b",
+                  "codeDigest": "sha256:bf938aac56c3011905bcb23b94e362a1a36d1ea077f6eb0b4bf5a124779b3e22",
+                  "count": 2,
+                  "firstLine": 525,
+                  "identityVerified": true,
+                  "parentCallId": "call_22e14c87785804a0357f95a8",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "describe_tool_capability",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_4413b9df376f85055cb5fc04",
+                  "codeDigest": "sha256:7aa5740f1d2e21c12eacd9d95fc181979da06c92209dcbdc0eee2e596a555e55",
+                  "count": 1,
+                  "firstLine": 24,
+                  "identityVerified": true,
+                  "parentCallId": "call_08dd9d94c75531f28be25d69",
+                  "path": "minicode/workspace.py",
+                  "qualname": "resolve_tool_path",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_5cfa2173a23fc9719538fede",
+                  "codeDigest": "sha256:2ce5066cd2639baff594755e597befc91174de792138e51739e851b069389f5d",
+                  "count": 1,
+                  "firstLine": 51,
+                  "identityVerified": true,
+                  "parentCallId": "call_08dd9d94c75531f28be25d69",
+                  "path": "minicode/tools/grep_files.py",
+                  "qualname": "_matches_glob",
+                  "sourceDigest": "sha256:79bf6f3bc6adb4bb6616607458db876a5255188ad7609c07348ec62b8094848e"
+                },
+                {
+                  "callId": "call_888afdf9a8f4632ab3176ebc",
+                  "codeDigest": "sha256:736520fdf6beee6125b5140f08a97b7f925aaaa3738e4cb747213a004bc326b6",
+                  "count": 1,
+                  "firstLine": 21,
+                  "identityVerified": true,
+                  "parentCallId": "call_e09393e1b554dfea285a7f27",
+                  "path": "minicode/workspace.py",
+                  "qualname": "is_internal_workspace_path.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_8962178656c4cbdc07eb16d0",
+                  "codeDigest": "sha256:ab1022bfb950b33b7bfdac87eb79810a01c993d8ba3866d4fb893a055a18c860",
+                  "count": 2,
+                  "firstLine": 1105,
+                  "identityVerified": true,
+                  "parentCallId": "call_22e14c87785804a0357f95a8",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.find",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_8d21b3afaec2b43be41964be",
+                  "codeDigest": "sha256:d29de4b697190d1ae354824040c16192730107388637794023bc472eb5684493",
+                  "count": 2,
+                  "firstLine": 148,
+                  "identityVerified": true,
+                  "parentCallId": "call_d53bbb401a493ec08cb17e59",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityProfile.to_dict",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_a4921cb0a6409517de3c0b04",
+                  "codeDigest": "sha256:34c6d8787c2a9a6f3f10446a8139848bc26e6197e1c399a55f3f06342ef082cf",
+                  "count": 1,
+                  "firstLine": 7,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_read_and_search_ordinary_source",
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15"
+                },
+                {
+                  "callId": "call_b42d56e1e90dce637969f96a",
+                  "codeDigest": "sha256:80b7c02308d415159852e2b02b9f547a21ce56059de62056fa696bcd46cdd4ec",
+                  "count": 1,
+                  "firstLine": 80,
+                  "identityVerified": true,
+                  "parentCallId": "call_08dd9d94c75531f28be25d69",
+                  "path": "minicode/tools/grep_files.py",
+                  "qualname": "_search_file",
+                  "sourceDigest": "sha256:79bf6f3bc6adb4bb6616607458db876a5255188ad7609c07348ec62b8094848e"
+                },
+                {
+                  "callId": "call_b7cce72f2f8ae7efda9dd1b9",
+                  "codeDigest": "sha256:7aa5740f1d2e21c12eacd9d95fc181979da06c92209dcbdc0eee2e596a555e55",
+                  "count": 1,
+                  "firstLine": 24,
+                  "identityVerified": true,
+                  "parentCallId": "call_c624309325e49f6ec2a572f4",
+                  "path": "minicode/workspace.py",
+                  "qualname": "resolve_tool_path",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_bbd51498f3d9a8c890208c3a",
+                  "codeDigest": "sha256:5b24303ef1ee407f46ea4e805df9249b77c113edb02d992e0104e847d8f56ffc",
+                  "count": 1,
+                  "firstLine": 186,
+                  "identityVerified": true,
+                  "parentCallId": "call_d53bbb401a493ec08cb17e59",
+                  "path": "minicode/tools/grep_files.py",
+                  "qualname": "_validate",
+                  "sourceDigest": "sha256:79bf6f3bc6adb4bb6616607458db876a5255188ad7609c07348ec62b8094848e"
+                },
+                {
+                  "callId": "call_be9d570557f9ae41ac605ddc",
+                  "codeDigest": "sha256:8aef49adf3a2be166dd3591597b6e368e7020f590bfa9e48175e965d0f89d9f5",
+                  "count": 2,
+                  "firstLine": 551,
+                  "identityVerified": true,
+                  "parentCallId": "call_22e14c87785804a0357f95a8",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "describe_capability_call",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_c624309325e49f6ec2a572f4",
+                  "codeDigest": "sha256:200da4186c581768a81dc2ec47dbf478be43950a5cb152776d2273bb28dbfbb5",
+                  "count": 1,
+                  "firstLine": 131,
+                  "identityVerified": true,
+                  "parentCallId": "call_d53bbb401a493ec08cb17e59",
+                  "path": "minicode/tools/read_file.py",
+                  "qualname": "_run",
+                  "sourceDigest": "sha256:adf037b53cfa023948661bc95a89c47a00360c79835dcac42591081cdc95565d"
+                },
+                {
+                  "callId": "call_d53bbb401a493ec08cb17e59",
+                  "codeDigest": "sha256:78b4957155d843508e9c78d70d80b938679c1687c714313ab09a1720132df4b6",
+                  "count": 2,
+                  "firstLine": 1193,
+                  "identityVerified": true,
+                  "parentCallId": "call_a4921cb0a6409517de3c0b04",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.execute",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_d5ba5d9afacf5052bd34b84b",
+                  "codeDigest": "sha256:85cacbc15f0f701a1b2a4d52afbbc1616b48c0945ea603c6a9138a703f220c45",
+                  "count": 2,
+                  "firstLine": 76,
+                  "identityVerified": true,
+                  "parentCallId": "call_8d21b3afaec2b43be41964be",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityEffects.to_dict",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_e09393e1b554dfea285a7f27",
+                  "codeDigest": "sha256:90583df959aba7af54a4658e29309d9829978ed165ca4b3e6cc5de0ebf6de44d",
+                  "count": 1,
+                  "firstLine": 13,
+                  "identityVerified": true,
+                  "parentCallId": "call_b7cce72f2f8ae7efda9dd1b9",
+                  "path": "minicode/workspace.py",
+                  "qualname": "is_internal_workspace_path",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_e5449daf8a4dcb0acf4e9e57",
+                  "codeDigest": "sha256:ab1022bfb950b33b7bfdac87eb79810a01c993d8ba3866d4fb893a055a18c860",
+                  "count": 2,
+                  "firstLine": 1105,
+                  "identityVerified": true,
+                  "parentCallId": "call_d53bbb401a493ec08cb17e59",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.find",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_ea40bdfaf3d2531c3b25c463",
+                  "codeDigest": "sha256:c12002ea0b2e5f231be41913323bbff6678b8bbd815b227d320dbe33382f2566",
+                  "count": 1,
+                  "firstLine": 118,
+                  "identityVerified": true,
+                  "parentCallId": "call_d53bbb401a493ec08cb17e59",
+                  "path": "minicode/tools/read_file.py",
+                  "qualname": "_validate",
+                  "sourceDigest": "sha256:adf037b53cfa023948661bc95a89c47a00360c79835dcac42591081cdc95565d"
+                },
+                {
+                  "callId": "call_ee2d8f1862ac15c5e0b9fa93",
+                  "codeDigest": "sha256:012f0e2b928c4f58306363dae6fb1381415ca5ec56d9137e1fb41cfa5e0b1e87",
+                  "count": 1,
+                  "firstLine": 135,
+                  "identityVerified": true,
+                  "parentCallId": "call_08dd9d94c75531f28be25d69",
+                  "path": "minicode/tools/grep_files.py",
+                  "qualname": "_format_results",
+                  "sourceDigest": "sha256:79bf6f3bc6adb4bb6616607458db876a5255188ad7609c07348ec62b8094848e"
+                },
+                {
+                  "callId": "call_fdb56bf76191a1348966d70f",
+                  "codeDigest": "sha256:0738fbb2ed57061d877b531e9ce2d2bc127dfbd62d6c88e8a92200e7225594ce",
+                  "count": 1,
+                  "firstLine": 50,
+                  "identityVerified": true,
+                  "parentCallId": "call_c624309325e49f6ec2a572f4",
+                  "path": "minicode/tools/read_file.py",
+                  "qualname": "_get_cached_file_content",
+                  "sourceDigest": "sha256:adf037b53cfa023948661bc95a89c47a00360c79835dcac42591081cdc95565d"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_read_and_search_ordinary_source"
+            },
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_433c677364dcc5e845541647",
+                  "endColumn": 35,
+                  "endLine": 29,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+                  "startColumn": 4,
+                  "startLine": 29
+                },
+                {
+                  "assertionId": "assert_814dc7b3ac197569334586a0",
+                  "endColumn": 46,
+                  "endLine": 27,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+                  "startColumn": 4,
+                  "startLine": 27
+                },
+                {
+                  "assertionId": "assert_ac8826db61ce936bcd23895e",
+                  "endColumn": 55,
+                  "endLine": 26,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+                  "startColumn": 4,
+                  "startLine": 26
+                },
+                {
+                  "assertionId": "assert_ef306a1521996d91be37eaeb",
+                  "endColumn": 46,
+                  "endLine": 30,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+                  "startColumn": 4,
+                  "startLine": 30
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_002341e04137bae556272c56",
+                  "codeDigest": "sha256:ab1022bfb950b33b7bfdac87eb79810a01c993d8ba3866d4fb893a055a18c860",
+                  "count": 2,
+                  "firstLine": 1105,
+                  "identityVerified": true,
+                  "parentCallId": "call_08227b6be50e940476963468",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.find",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_08227b6be50e940476963468",
+                  "codeDigest": "sha256:78b4957155d843508e9c78d70d80b938679c1687c714313ab09a1720132df4b6",
+                  "count": 2,
+                  "firstLine": 1193,
+                  "identityVerified": true,
+                  "parentCallId": "call_cf834e15331881de0d75953d",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.execute",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_0dc2b295b2e0935216674dc7",
+                  "codeDigest": "sha256:d29de4b697190d1ae354824040c16192730107388637794023bc472eb5684493",
+                  "count": 2,
+                  "firstLine": 148,
+                  "identityVerified": true,
+                  "parentCallId": "call_08227b6be50e940476963468",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityProfile.to_dict",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_0f41cef99a1681a9c7ccb885",
+                  "codeDigest": "sha256:85cacbc15f0f701a1b2a4d52afbbc1616b48c0945ea603c6a9138a703f220c45",
+                  "count": 2,
+                  "firstLine": 76,
+                  "identityVerified": true,
+                  "parentCallId": "call_0dc2b295b2e0935216674dc7",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityEffects.to_dict",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_2634dcafc4a856b940ac7ffe",
+                  "codeDigest": "sha256:ab1022bfb950b33b7bfdac87eb79810a01c993d8ba3866d4fb893a055a18c860",
+                  "count": 2,
+                  "firstLine": 1105,
+                  "identityVerified": true,
+                  "parentCallId": "call_c7f4a24cd771b87ddf686d52",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.find",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_46a305a5388c992580879b89",
+                  "codeDigest": "sha256:736520fdf6beee6125b5140f08a97b7f925aaaa3738e4cb747213a004bc326b6",
+                  "count": 1,
+                  "firstLine": 21,
+                  "identityVerified": true,
+                  "parentCallId": "call_70bcb59e08ca572132931952",
+                  "path": "minicode/workspace.py",
+                  "qualname": "is_internal_workspace_path.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_5b0f70f47a904e2bce7fd1a5",
+                  "codeDigest": "sha256:52ab1e93bde31e87a065ab0540f3cd5bc095be28fc26ce081a272dcb79d78dde",
+                  "count": 1,
+                  "firstLine": 225,
+                  "identityVerified": true,
+                  "parentCallId": "call_08227b6be50e940476963468",
+                  "path": "minicode/tools/grep_files.py",
+                  "qualname": "_run",
+                  "sourceDigest": "sha256:79bf6f3bc6adb4bb6616607458db876a5255188ad7609c07348ec62b8094848e"
+                },
+                {
+                  "callId": "call_68725f2af1e34e5ca21484c1",
+                  "codeDigest": "sha256:90583df959aba7af54a4658e29309d9829978ed165ca4b3e6cc5de0ebf6de44d",
+                  "count": 1,
+                  "firstLine": 13,
+                  "identityVerified": true,
+                  "parentCallId": "call_9054d1b6531af0bd35b66d2d",
+                  "path": "minicode/workspace.py",
+                  "qualname": "is_internal_workspace_path",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_70bcb59e08ca572132931952",
+                  "codeDigest": "sha256:90583df959aba7af54a4658e29309d9829978ed165ca4b3e6cc5de0ebf6de44d",
+                  "count": 1,
+                  "firstLine": 13,
+                  "identityVerified": true,
+                  "parentCallId": "call_d7405de4cc25ea1ca32c4eeb",
+                  "path": "minicode/workspace.py",
+                  "qualname": "is_internal_workspace_path",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_7a25408ad4bd35beeec1f032",
+                  "codeDigest": "sha256:5b24303ef1ee407f46ea4e805df9249b77c113edb02d992e0104e847d8f56ffc",
+                  "count": 1,
+                  "firstLine": 186,
+                  "identityVerified": true,
+                  "parentCallId": "call_08227b6be50e940476963468",
+                  "path": "minicode/tools/grep_files.py",
+                  "qualname": "_validate",
+                  "sourceDigest": "sha256:79bf6f3bc6adb4bb6616607458db876a5255188ad7609c07348ec62b8094848e"
+                },
+                {
+                  "callId": "call_9054d1b6531af0bd35b66d2d",
+                  "codeDigest": "sha256:7aa5740f1d2e21c12eacd9d95fc181979da06c92209dcbdc0eee2e596a555e55",
+                  "count": 1,
+                  "firstLine": 24,
+                  "identityVerified": true,
+                  "parentCallId": "call_5b0f70f47a904e2bce7fd1a5",
+                  "path": "minicode/workspace.py",
+                  "qualname": "resolve_tool_path",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_91709a2b593d75e0aec41303",
+                  "codeDigest": "sha256:bf938aac56c3011905bcb23b94e362a1a36d1ea077f6eb0b4bf5a124779b3e22",
+                  "count": 2,
+                  "firstLine": 525,
+                  "identityVerified": true,
+                  "parentCallId": "call_c7f4a24cd771b87ddf686d52",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "describe_tool_capability",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_91a7942e3679472260329e17",
+                  "codeDigest": "sha256:8aef49adf3a2be166dd3591597b6e368e7020f590bfa9e48175e965d0f89d9f5",
+                  "count": 2,
+                  "firstLine": 551,
+                  "identityVerified": true,
+                  "parentCallId": "call_c7f4a24cd771b87ddf686d52",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "describe_capability_call",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_9cbf136d82be2d46a0f8b390",
+                  "codeDigest": "sha256:0738fbb2ed57061d877b531e9ce2d2bc127dfbd62d6c88e8a92200e7225594ce",
+                  "count": 1,
+                  "firstLine": 50,
+                  "identityVerified": true,
+                  "parentCallId": "call_f625422c7730268819f1a0b2",
+                  "path": "minicode/tools/read_file.py",
+                  "qualname": "_get_cached_file_content",
+                  "sourceDigest": "sha256:adf037b53cfa023948661bc95a89c47a00360c79835dcac42591081cdc95565d"
+                },
+                {
+                  "callId": "call_b1ce384a0c57d2fa2db81e0e",
+                  "codeDigest": "sha256:736520fdf6beee6125b5140f08a97b7f925aaaa3738e4cb747213a004bc326b6",
+                  "count": 1,
+                  "firstLine": 21,
+                  "identityVerified": true,
+                  "parentCallId": "call_68725f2af1e34e5ca21484c1",
+                  "path": "minicode/workspace.py",
+                  "qualname": "is_internal_workspace_path.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_c7f4a24cd771b87ddf686d52",
+                  "codeDigest": "sha256:2ed712e9dc8f0e22aa648c3222f147d3a17fb4fc8ea1384eccc9381a5365445c",
+                  "count": 2,
+                  "firstLine": 1176,
+                  "identityVerified": true,
+                  "parentCallId": "call_08227b6be50e940476963468",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.describe_capability",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_cf834e15331881de0d75953d",
+                  "codeDigest": "sha256:91de9ec2dc84be0ccfa6392be88d4e5bc11acc63313414e25afadc5c85c3334c",
+                  "count": 1,
+                  "firstLine": 21,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_complete_read_and_search_no_match",
+                  "sourceDigest": "sha256:a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15"
+                },
+                {
+                  "callId": "call_d6b62aeee3114306ebba9263",
+                  "codeDigest": "sha256:80b7c02308d415159852e2b02b9f547a21ce56059de62056fa696bcd46cdd4ec",
+                  "count": 1,
+                  "firstLine": 80,
+                  "identityVerified": true,
+                  "parentCallId": "call_5b0f70f47a904e2bce7fd1a5",
+                  "path": "minicode/tools/grep_files.py",
+                  "qualname": "_search_file",
+                  "sourceDigest": "sha256:79bf6f3bc6adb4bb6616607458db876a5255188ad7609c07348ec62b8094848e"
+                },
+                {
+                  "callId": "call_d726765283d7743d2936de6e",
+                  "codeDigest": "sha256:2ce5066cd2639baff594755e597befc91174de792138e51739e851b069389f5d",
+                  "count": 1,
+                  "firstLine": 51,
+                  "identityVerified": true,
+                  "parentCallId": "call_5b0f70f47a904e2bce7fd1a5",
+                  "path": "minicode/tools/grep_files.py",
+                  "qualname": "_matches_glob",
+                  "sourceDigest": "sha256:79bf6f3bc6adb4bb6616607458db876a5255188ad7609c07348ec62b8094848e"
+                },
+                {
+                  "callId": "call_d7405de4cc25ea1ca32c4eeb",
+                  "codeDigest": "sha256:7aa5740f1d2e21c12eacd9d95fc181979da06c92209dcbdc0eee2e596a555e55",
+                  "count": 1,
+                  "firstLine": 24,
+                  "identityVerified": true,
+                  "parentCallId": "call_f625422c7730268819f1a0b2",
+                  "path": "minicode/workspace.py",
+                  "qualname": "resolve_tool_path",
+                  "sourceDigest": "sha256:f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+                },
+                {
+                  "callId": "call_f469669d52d62d7c0f2a9f9b",
+                  "codeDigest": "sha256:c12002ea0b2e5f231be41913323bbff6678b8bbd815b227d320dbe33382f2566",
+                  "count": 1,
+                  "firstLine": 118,
+                  "identityVerified": true,
+                  "parentCallId": "call_08227b6be50e940476963468",
+                  "path": "minicode/tools/read_file.py",
+                  "qualname": "_validate",
+                  "sourceDigest": "sha256:adf037b53cfa023948661bc95a89c47a00360c79835dcac42591081cdc95565d"
+                },
+                {
+                  "callId": "call_f625422c7730268819f1a0b2",
+                  "codeDigest": "sha256:200da4186c581768a81dc2ec47dbf478be43950a5cb152776d2273bb28dbfbb5",
+                  "count": 1,
+                  "firstLine": 131,
+                  "identityVerified": true,
+                  "parentCallId": "call_08227b6be50e940476963468",
+                  "path": "minicode/tools/read_file.py",
+                  "qualname": "_run",
+                  "sourceDigest": "sha256:adf037b53cfa023948661bc95a89c47a00360c79835dcac42591081cdc95565d"
+                },
+                {
+                  "callId": "call_fd375199054be117a8de298d",
+                  "codeDigest": "sha256:c31f56277a6bf4211d82bc20fcf5a44ec93619fa1c03088d8741f620f182354f",
+                  "count": 1,
+                  "firstLine": 1013,
+                  "identityVerified": true,
+                  "parentCallId": "call_cf834e15331881de0d75953d",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.__init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_complete_read_and_search_no_match"
+            }
+          ],
+          "digest": "sha256:968287882fbe5b0916730fe2d5f2dd968eacc00e6ed74ece466342cc5caffe89",
+          "junitDigest": "sha256:0f36c115a5eeb5c2a7f441ca12c1f9019c2b43c805fb337fcbbfac6bd30faa7c",
+          "version": 1
+        }
+      }
+    },
+    {
+      "case": "gen2-registry-lifetime",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_52a87d4873c401ba8291fc71",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_gen2_registry_lifetime",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 182,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 182,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:6affff3fa6ce0c6f95578cfcdc5fb8f6e18696d0b51309940bab380bda460a3e",
+            "preview": "...                                                                      [100%]\n3 passed in 0.05s\n",
+            "previewBase64": "Li4uICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQozIHBhc3NlZCBpbiAwLjA1cwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 3,
+        "passed": 3,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:abdb92e4c8fa2709703823126d8e7711ef04a11663cb9b9acf23b1f19471ae67",
+        "caseReport": {
+          "digest": "sha256:3df1656b7dfdc837392526ac9c2275ac8cae361d1d426dfc26facd4008f6b164",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_filter_preserves_owner_and_selected_execution",
+              "outcome": "passed"
+            },
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_nested_filter_keeps_each_view_independent",
+              "outcome": "passed"
+            },
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_filtered_empty_view_does_not_mutate_the_owner",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_0951d04a36b5805307f12e7e",
+                  "endColumn": 39,
+                  "endLine": 22,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 22
+                },
+                {
+                  "assertionId": "assert_2f82d0178d8930352cca03ce",
+                  "endColumn": 49,
+                  "endLine": 24,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 24
+                },
+                {
+                  "assertionId": "assert_bf7a91c72fcd734902bd73fd",
+                  "endColumn": 43,
+                  "endLine": 20,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 20
+                },
+                {
+                  "assertionId": "assert_e553cc6521e584dbb693d3bc",
+                  "endColumn": 42,
+                  "endLine": 21,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 21
+                },
+                {
+                  "assertionId": "assert_e647a3d124a9423fc0959375",
+                  "endColumn": 42,
+                  "endLine": 19,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 19
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_0689cb8fca6caba18746ea9b",
+                  "codeDigest": "sha256:9c7b9a9da1780e2ef452b7d9c9a5ec0af23586902eada39c0895999eed48da5a",
+                  "count": 1,
+                  "firstLine": 433,
+                  "identityVerified": true,
+                  "parentCallId": "call_bc4adea086ae30d797255279",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "_tool_name_tokens",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_0b20364eef5dd915f715b5db",
+                  "codeDigest": "sha256:ffd288d3c3adb7bf5934515a308b8100ecfce6344096e4b4ae855f93046afbb2",
+                  "count": 1,
+                  "firstLine": 16,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_filter_preserves_owner_and_selected_execution",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_10be13f78112e1a420bae1a3",
+                  "codeDigest": "sha256:ab1022bfb950b33b7bfdac87eb79810a01c993d8ba3866d4fb893a055a18c860",
+                  "count": 4,
+                  "firstLine": 1105,
+                  "identityVerified": true,
+                  "parentCallId": "call_0b20364eef5dd915f715b5db",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.find",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_221cc4150960176b44788d7c",
+                  "codeDigest": "sha256:3cbce8bf7e1403cd0a6287fde85c2c7f22d93a7f77eb784c324ca72eb6ebfd57",
+                  "count": 1,
+                  "firstLine": 87,
+                  "identityVerified": true,
+                  "parentCallId": "call_40b22b81daf5296dd1bbc1dc",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "Capability",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_27d8ae526ff7fa5eb5684436",
+                  "codeDigest": "sha256:85cacbc15f0f701a1b2a4d52afbbc1616b48c0945ea603c6a9138a703f220c45",
+                  "count": 1,
+                  "firstLine": 76,
+                  "identityVerified": true,
+                  "parentCallId": "call_fb09afc07c4785aba83951c5",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityEffects.to_dict",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_31d013207622f8cb50a893f6",
+                  "codeDigest": "sha256:2ed712e9dc8f0e22aa648c3222f147d3a17fb4fc8ea1384eccc9381a5365445c",
+                  "count": 1,
+                  "firstLine": 1176,
+                  "identityVerified": true,
+                  "parentCallId": "call_5bb296916446918157ca2dbf",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.describe_capability",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_325278fcf5c967344154ee5c",
+                  "codeDigest": "sha256:9251336c9e99b5e20be502aec39f939cd7b4c691c0956aa24d1264c17e15c873",
+                  "count": 2,
+                  "firstLine": 18,
+                  "identityVerified": true,
+                  "parentCallId": "call_46d28482b71cd8a0ae7a7f67",
+                  "path": "tests/test_public.py",
+                  "qualname": "test_filter_preserves_owner_and_selected_execution.<locals>.<lambda>",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_33d7abb1c441b36101b8bad0",
+                  "codeDigest": "sha256:c66d661744d5fc7229e574ee3743ab6fc35d89078740b6103e08aa4aa33dd87a",
+                  "count": 1,
+                  "firstLine": 231,
+                  "identityVerified": true,
+                  "parentCallId": "call_40b22b81daf5296dd1bbc1dc",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "CapabilityRegistry",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_385c9c120fd5f2e39698fe8c",
+                  "codeDigest": "sha256:bab8ab2d09e2c8f0dfb338f5b4958b66077acc8c2d0e01c12a105715f3ca07d2",
+                  "count": 1,
+                  "firstLine": 34,
+                  "identityVerified": true,
+                  "parentCallId": "call_40b22b81daf5296dd1bbc1dc",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "CapabilityMetadata",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_40b22b81daf5296dd1bbc1dc",
+                  "codeDigest": "sha256:59cf01fa49c5fb927aa13e4c0e2380821ab744210dcc0867e51a329e47034413",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_31d013207622f8cb50a893f6",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "<module>",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_44202bb748b6da67e4323322",
+                  "codeDigest": "sha256:8aef49adf3a2be166dd3591597b6e368e7020f590bfa9e48175e965d0f89d9f5",
+                  "count": 1,
+                  "firstLine": 551,
+                  "identityVerified": true,
+                  "parentCallId": "call_31d013207622f8cb50a893f6",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "describe_capability_call",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_46d28482b71cd8a0ae7a7f67",
+                  "codeDigest": "sha256:834866166805cbcd6ce36e6936db5bb4c2b30be67b3133b04c52b6e15e0388c6",
+                  "count": 1,
+                  "firstLine": 1145,
+                  "identityVerified": true,
+                  "parentCallId": "call_0b20364eef5dd915f715b5db",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.filtered",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_4b5ec8b4a520a4915e2e0c0d",
+                  "codeDigest": "sha256:6fb6a3c05ae0d072e6e53edbdb7f6c3810c0fe4b6463856352fd770b89a70e50",
+                  "count": 1,
+                  "firstLine": 1099,
+                  "identityVerified": true,
+                  "parentCallId": "call_46d28482b71cd8a0ae7a7f67",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.get_skills",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_4d8cf07d4afdb9dbc1d98790",
+                  "codeDigest": "sha256:98b6552c8a9e9003046dafbb4286d37caee703cf729379fc9694bee698051d35",
+                  "count": 1,
+                  "firstLine": 95,
+                  "identityVerified": true,
+                  "parentCallId": "call_40b22b81daf5296dd1bbc1dc",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "RegisteredCapability",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_50ce31278418131bec0febe8",
+                  "codeDigest": "sha256:56207890a42400d460386a8cfae58be3b06d5ad0daf84f1594a832eb7f267309",
+                  "count": 3,
+                  "firstLine": 97,
+                  "identityVerified": true,
+                  "parentCallId": "call_7f8652e27a39d5e2f1102c8b",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "_strings.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_5a89fa6385c1b4d7fea0d308",
+                  "codeDigest": "sha256:88c1fa72a296b1dad03727d56f1dadc8dccfb3e9350a351ca1063d7407e49a45",
+                  "count": 1,
+                  "firstLine": 460,
+                  "identityVerified": true,
+                  "parentCallId": "call_cacba69b4307faeda0e97b29",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "infer_tool_scope",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_5bb296916446918157ca2dbf",
+                  "codeDigest": "sha256:78b4957155d843508e9c78d70d80b938679c1687c714313ab09a1720132df4b6",
+                  "count": 1,
+                  "firstLine": 1193,
+                  "identityVerified": true,
+                  "parentCallId": "call_0b20364eef5dd915f715b5db",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.execute",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_64e2a82908e5c4aaca8628e2",
+                  "codeDigest": "sha256:e7f92f73fc0272150544c14ec67ffc20189b38e65028a68da458cd080d6cf591",
+                  "count": 1,
+                  "firstLine": 114,
+                  "identityVerified": true,
+                  "parentCallId": "call_cacba69b4307faeda0e97b29",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityProfile.__post_init__",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_653b07aaa34fd2a46042543d",
+                  "codeDigest": "sha256:c31f56277a6bf4211d82bc20fcf5a44ec93619fa1c03088d8741f620f182354f",
+                  "count": 1,
+                  "firstLine": 1013,
+                  "identityVerified": true,
+                  "parentCallId": "call_46d28482b71cd8a0ae7a7f67",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.__init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_695019fe2f2b258f3e78b114",
+                  "codeDigest": "sha256:a613437e43c0d481eb7b004c510d0f044c3f43508ca0edf9a18a90152ee86836",
+                  "count": 2,
+                  "firstLine": 927,
+                  "identityVerified": true,
+                  "parentCallId": "call_d853dea659582ad939366144",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolDefinition.__post_init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_6d1b4123ac59868752bd878e",
+                  "codeDigest": "sha256:10c367893a836a4048b6dc0b94f5fa904d8f4a57cc835ef78998fc53376e0d68",
+                  "count": 3,
+                  "firstLine": 99,
+                  "identityVerified": true,
+                  "parentCallId": "call_7f8652e27a39d5e2f1102c8b",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "_strings.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_6d623dc3a68fe23a54be2368",
+                  "codeDigest": "sha256:c31f56277a6bf4211d82bc20fcf5a44ec93619fa1c03088d8741f620f182354f",
+                  "count": 1,
+                  "firstLine": 1013,
+                  "identityVerified": true,
+                  "parentCallId": "call_0b20364eef5dd915f715b5db",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.__init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_7125f88bc7881d58a87183a9",
+                  "codeDigest": "sha256:ab1022bfb950b33b7bfdac87eb79810a01c993d8ba3866d4fb893a055a18c860",
+                  "count": 1,
+                  "firstLine": 1105,
+                  "identityVerified": true,
+                  "parentCallId": "call_31d013207622f8cb50a893f6",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.find",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_7dda2f3d5459cf6c3d8844f4",
+                  "codeDigest": "sha256:e4dd640352d159933ea795ea71705654440c986ebfa6c2f4d2b9a43eb1b16781",
+                  "count": 1,
+                  "firstLine": 139,
+                  "identityVerified": true,
+                  "parentCallId": "call_40b22b81daf5296dd1bbc1dc",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "FrozenRegisteredCapability",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_7f8652e27a39d5e2f1102c8b",
+                  "codeDigest": "sha256:b290260cbfa57a403bb635568dc98087bb252decd39b7220dabd88239ae4e3a3",
+                  "count": 3,
+                  "firstLine": 92,
+                  "identityVerified": true,
+                  "parentCallId": "call_64e2a82908e5c4aaca8628e2",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "_strings",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_93533533842c40c3e36de874",
+                  "codeDigest": "sha256:06c34b38a02c0489bafe207dcfd15cc3e947f3a3a01406904fdc55fbef86126b",
+                  "count": 3,
+                  "firstLine": 95,
+                  "identityVerified": true,
+                  "parentCallId": "call_7f8652e27a39d5e2f1102c8b",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "_strings.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_95fb5d2226ae9ed8f6643913",
+                  "codeDigest": "sha256:c408d12f2e6024e5a9406a975231c9ade38085cff929a128cb537539eda135c8",
+                  "count": 1,
+                  "firstLine": 68,
+                  "identityVerified": true,
+                  "parentCallId": "call_cacba69b4307faeda0e97b29",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityEffects.__post_init__",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_b279168307c770475d4f7736",
+                  "codeDigest": "sha256:4d9383782647f76789914497ea2804c5bebf4286184e2abfe4711032191c414c",
+                  "count": 1,
+                  "firstLine": 195,
+                  "identityVerified": true,
+                  "parentCallId": "call_40b22b81daf5296dd1bbc1dc",
+                  "path": "minicode/logging_config.py",
+                  "qualname": "get_logger",
+                  "sourceDigest": "sha256:2d9b9079f25cfaa643f254aeb36bc6fff3f7340b16122423474cf02eff1f4a85"
+                },
+                {
+                  "callId": "call_bc4adea086ae30d797255279",
+                  "codeDigest": "sha256:7f5367c9396d945377a63c57a73d8551863dfa779085b9d39b81492d6bb34258",
+                  "count": 1,
+                  "firstLine": 437,
+                  "identityVerified": true,
+                  "parentCallId": "call_cacba69b4307faeda0e97b29",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "infer_tool_domain",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_c45d73914cd618198e6e8ac7",
+                  "codeDigest": "sha256:1c073373bf61e2de499e917cc55c0430d15eb39de149c160a34cce39cd650129",
+                  "count": 1,
+                  "firstLine": 12,
+                  "identityVerified": true,
+                  "parentCallId": "call_5bb296916446918157ca2dbf",
+                  "path": "tests/test_public.py",
+                  "qualname": "tool.<locals>.<lambda>",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_cacba69b4307faeda0e97b29",
+                  "codeDigest": "sha256:bf938aac56c3011905bcb23b94e362a1a36d1ea077f6eb0b4bf5a124779b3e22",
+                  "count": 1,
+                  "firstLine": 525,
+                  "identityVerified": true,
+                  "parentCallId": "call_31d013207622f8cb50a893f6",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "describe_tool_capability",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_ce16a6784834479f2a7e8f2a",
+                  "codeDigest": "sha256:ab1022bfb950b33b7bfdac87eb79810a01c993d8ba3866d4fb893a055a18c860",
+                  "count": 1,
+                  "firstLine": 1105,
+                  "identityVerified": true,
+                  "parentCallId": "call_5bb296916446918157ca2dbf",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.find",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_cf9665b333d9f2df42821607",
+                  "codeDigest": "sha256:9c7b9a9da1780e2ef452b7d9c9a5ec0af23586902eada39c0895999eed48da5a",
+                  "count": 1,
+                  "firstLine": 433,
+                  "identityVerified": true,
+                  "parentCallId": "call_5a89fa6385c1b4d7fea0d308",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "_tool_name_tokens",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_d2eb3cb2e747887a6c3144b5",
+                  "codeDigest": "sha256:0539dcc87c51557bedea6d3433e855f5e2adecacc5b74c17d0e546cbd5775304",
+                  "count": 1,
+                  "firstLine": 11,
+                  "identityVerified": true,
+                  "parentCallId": "call_5bb296916446918157ca2dbf",
+                  "path": "tests/test_public.py",
+                  "qualname": "tool.<locals>.<lambda>",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_d853dea659582ad939366144",
+                  "codeDigest": "sha256:df7bbf5f8c1e2b0a1cdddd59cb4d491cc3038dfd1b0df782bdfa1d2015aace05",
+                  "count": 2,
+                  "firstLine": 8,
+                  "identityVerified": true,
+                  "parentCallId": "call_0b20364eef5dd915f715b5db",
+                  "path": "tests/test_public.py",
+                  "qualname": "tool",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_efd94237ae2cdda2d0927f7d",
+                  "codeDigest": "sha256:df195c4573fd4a5d6b6db1fd9d39f5c200c6541fcd0ca930f114dd90bc59c2cc",
+                  "count": 1,
+                  "firstLine": 140,
+                  "identityVerified": true,
+                  "parentCallId": "call_64e2a82908e5c4aaca8628e2",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityProfile.__post_init__.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_fb09afc07c4785aba83951c5",
+                  "codeDigest": "sha256:d29de4b697190d1ae354824040c16192730107388637794023bc472eb5684493",
+                  "count": 1,
+                  "firstLine": 148,
+                  "identityVerified": true,
+                  "parentCallId": "call_5bb296916446918157ca2dbf",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityProfile.to_dict",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_filter_preserves_owner_and_selected_execution"
+            },
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_290f66d6cb3ab163e003f92c",
+                  "endColumn": 55,
+                  "endLine": 32,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 32
+                },
+                {
+                  "assertionId": "assert_6a2a1be6eb4446f01839b91f",
+                  "endColumn": 64,
+                  "endLine": 31,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 31
+                },
+                {
+                  "assertionId": "assert_b56483ac968f5a0c3344f25e",
+                  "endColumn": 50,
+                  "endLine": 35,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 35
+                },
+                {
+                  "assertionId": "assert_f286efc7c2345723485f7d18",
+                  "endColumn": 47,
+                  "endLine": 33,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 33
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_0f3dc8f6d5a271ec8c16f114",
+                  "codeDigest": "sha256:df195c4573fd4a5d6b6db1fd9d39f5c200c6541fcd0ca930f114dd90bc59c2cc",
+                  "count": 1,
+                  "firstLine": 140,
+                  "identityVerified": true,
+                  "parentCallId": "call_c2c104587dc08f61aaa31b8d",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityProfile.__post_init__.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_15ca8cfd4d84318b782bf02a",
+                  "codeDigest": "sha256:0539dcc87c51557bedea6d3433e855f5e2adecacc5b74c17d0e546cbd5775304",
+                  "count": 1,
+                  "firstLine": 11,
+                  "identityVerified": true,
+                  "parentCallId": "call_9851bbb07f90d6bc2677928e",
+                  "path": "tests/test_public.py",
+                  "qualname": "tool.<locals>.<lambda>",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_1ac5faf242c3cc55401a0b6d",
+                  "codeDigest": "sha256:1c073373bf61e2de499e917cc55c0430d15eb39de149c160a34cce39cd650129",
+                  "count": 1,
+                  "firstLine": 12,
+                  "identityVerified": true,
+                  "parentCallId": "call_9851bbb07f90d6bc2677928e",
+                  "path": "tests/test_public.py",
+                  "qualname": "tool.<locals>.<lambda>",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_25a8ce8a6126a2f0d9da9b5d",
+                  "codeDigest": "sha256:6fb6a3c05ae0d072e6e53edbdb7f6c3810c0fe4b6463856352fd770b89a70e50",
+                  "count": 2,
+                  "firstLine": 1099,
+                  "identityVerified": true,
+                  "parentCallId": "call_9d9b0430fdd5ffb79191429b",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.get_skills",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_2cc3bb3b95074129439da45a",
+                  "codeDigest": "sha256:8aef49adf3a2be166dd3591597b6e368e7020f590bfa9e48175e965d0f89d9f5",
+                  "count": 1,
+                  "firstLine": 551,
+                  "identityVerified": true,
+                  "parentCallId": "call_d9c77d7ea91204ff77cf2f62",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "describe_capability_call",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_39c8f3c8916ae0a74e75b27c",
+                  "codeDigest": "sha256:c31f56277a6bf4211d82bc20fcf5a44ec93619fa1c03088d8741f620f182354f",
+                  "count": 1,
+                  "firstLine": 1013,
+                  "identityVerified": true,
+                  "parentCallId": "call_6412e97704c8cdc0a7ba4007",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.__init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_3f64914e30dc900dbc98140b",
+                  "codeDigest": "sha256:a613437e43c0d481eb7b004c510d0f044c3f43508ca0edf9a18a90152ee86836",
+                  "count": 3,
+                  "firstLine": 927,
+                  "identityVerified": true,
+                  "parentCallId": "call_404e563dd775c9993127d008",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolDefinition.__post_init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_404e563dd775c9993127d008",
+                  "codeDigest": "sha256:df7bbf5f8c1e2b0a1cdddd59cb4d491cc3038dfd1b0df782bdfa1d2015aace05",
+                  "count": 3,
+                  "firstLine": 8,
+                  "identityVerified": true,
+                  "parentCallId": "call_6412e97704c8cdc0a7ba4007",
+                  "path": "tests/test_public.py",
+                  "qualname": "tool",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_4116a2f25ed9b7d79ca19395",
+                  "codeDigest": "sha256:c31f56277a6bf4211d82bc20fcf5a44ec93619fa1c03088d8741f620f182354f",
+                  "count": 2,
+                  "firstLine": 1013,
+                  "identityVerified": true,
+                  "parentCallId": "call_9d9b0430fdd5ffb79191429b",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.__init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_4352cf08c003e7e4a24e0a47",
+                  "codeDigest": "sha256:ab1022bfb950b33b7bfdac87eb79810a01c993d8ba3866d4fb893a055a18c860",
+                  "count": 1,
+                  "firstLine": 1105,
+                  "identityVerified": true,
+                  "parentCallId": "call_9851bbb07f90d6bc2677928e",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.find",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_5d96775f6f4b15ed8e635af6",
+                  "codeDigest": "sha256:bf938aac56c3011905bcb23b94e362a1a36d1ea077f6eb0b4bf5a124779b3e22",
+                  "count": 1,
+                  "firstLine": 525,
+                  "identityVerified": true,
+                  "parentCallId": "call_d9c77d7ea91204ff77cf2f62",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "describe_tool_capability",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_6249a0dbdf18b840ea7bf7c6",
+                  "codeDigest": "sha256:b290260cbfa57a403bb635568dc98087bb252decd39b7220dabd88239ae4e3a3",
+                  "count": 3,
+                  "firstLine": 92,
+                  "identityVerified": true,
+                  "parentCallId": "call_c2c104587dc08f61aaa31b8d",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "_strings",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_6412e97704c8cdc0a7ba4007",
+                  "codeDigest": "sha256:05e9df24384ac11657ad2e2e8171134645a59ab526a169835fc6ae8260abead6",
+                  "count": 1,
+                  "firstLine": 27,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_nested_filter_keeps_each_view_independent",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_6dbee1323e003759305efd3c",
+                  "codeDigest": "sha256:ab1022bfb950b33b7bfdac87eb79810a01c993d8ba3866d4fb893a055a18c860",
+                  "count": 1,
+                  "firstLine": 1105,
+                  "identityVerified": true,
+                  "parentCallId": "call_d9c77d7ea91204ff77cf2f62",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.find",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_8275a1d2ce270cc8bf7f152e",
+                  "codeDigest": "sha256:06c34b38a02c0489bafe207dcfd15cc3e947f3a3a01406904fdc55fbef86126b",
+                  "count": 3,
+                  "firstLine": 95,
+                  "identityVerified": true,
+                  "parentCallId": "call_6249a0dbdf18b840ea7bf7c6",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "_strings.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_8fc69da9afcf1a383add72bd",
+                  "codeDigest": "sha256:d29de4b697190d1ae354824040c16192730107388637794023bc472eb5684493",
+                  "count": 1,
+                  "firstLine": 148,
+                  "identityVerified": true,
+                  "parentCallId": "call_9851bbb07f90d6bc2677928e",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityProfile.to_dict",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_9462f7d27703a2caa73dc7ea",
+                  "codeDigest": "sha256:648eab6f4ff2dfb2fb851de78b4babf54c0f10f2d49a0f1c83ae1746d444876c",
+                  "count": 2,
+                  "firstLine": 30,
+                  "identityVerified": true,
+                  "parentCallId": "call_9d9b0430fdd5ffb79191429b",
+                  "path": "tests/test_public.py",
+                  "qualname": "test_nested_filter_keeps_each_view_independent.<locals>.<lambda>",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_9851bbb07f90d6bc2677928e",
+                  "codeDigest": "sha256:78b4957155d843508e9c78d70d80b938679c1687c714313ab09a1720132df4b6",
+                  "count": 1,
+                  "firstLine": 1193,
+                  "identityVerified": true,
+                  "parentCallId": "call_6412e97704c8cdc0a7ba4007",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.execute",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_9d9b0430fdd5ffb79191429b",
+                  "codeDigest": "sha256:834866166805cbcd6ce36e6936db5bb4c2b30be67b3133b04c52b6e15e0388c6",
+                  "count": 2,
+                  "firstLine": 1145,
+                  "identityVerified": true,
+                  "parentCallId": "call_6412e97704c8cdc0a7ba4007",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.filtered",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_9f2272bc404f5ce025f81330",
+                  "codeDigest": "sha256:85cacbc15f0f701a1b2a4d52afbbc1616b48c0945ea603c6a9138a703f220c45",
+                  "count": 1,
+                  "firstLine": 76,
+                  "identityVerified": true,
+                  "parentCallId": "call_8fc69da9afcf1a383add72bd",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityEffects.to_dict",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_a2d7dd4ca94fd475cbe17406",
+                  "codeDigest": "sha256:7f5367c9396d945377a63c57a73d8551863dfa779085b9d39b81492d6bb34258",
+                  "count": 1,
+                  "firstLine": 437,
+                  "identityVerified": true,
+                  "parentCallId": "call_5d96775f6f4b15ed8e635af6",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "infer_tool_domain",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_adf1567786089b679af60903",
+                  "codeDigest": "sha256:e8c41ded186b0ecfb18f6217883b5b535d8733532e93b3c816b69b62e97de914",
+                  "count": 3,
+                  "firstLine": 1096,
+                  "identityVerified": true,
+                  "parentCallId": "call_6412e97704c8cdc0a7ba4007",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.list_all",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_b52ad417bb50c83e1478fbe4",
+                  "codeDigest": "sha256:56207890a42400d460386a8cfae58be3b06d5ad0daf84f1594a832eb7f267309",
+                  "count": 3,
+                  "firstLine": 97,
+                  "identityVerified": true,
+                  "parentCallId": "call_6249a0dbdf18b840ea7bf7c6",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "_strings.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_b91f65d120c705a733a9e874",
+                  "codeDigest": "sha256:10c367893a836a4048b6dc0b94f5fa904d8f4a57cc835ef78998fc53376e0d68",
+                  "count": 3,
+                  "firstLine": 99,
+                  "identityVerified": true,
+                  "parentCallId": "call_6249a0dbdf18b840ea7bf7c6",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "_strings.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_baee1f31219ed92c289c7801",
+                  "codeDigest": "sha256:88c1fa72a296b1dad03727d56f1dadc8dccfb3e9350a351ca1063d7407e49a45",
+                  "count": 1,
+                  "firstLine": 460,
+                  "identityVerified": true,
+                  "parentCallId": "call_5d96775f6f4b15ed8e635af6",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "infer_tool_scope",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_c2c104587dc08f61aaa31b8d",
+                  "codeDigest": "sha256:e7f92f73fc0272150544c14ec67ffc20189b38e65028a68da458cd080d6cf591",
+                  "count": 1,
+                  "firstLine": 114,
+                  "identityVerified": true,
+                  "parentCallId": "call_5d96775f6f4b15ed8e635af6",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityProfile.__post_init__",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_d6e6df06e6135df6103ee71e",
+                  "codeDigest": "sha256:9c7b9a9da1780e2ef452b7d9c9a5ec0af23586902eada39c0895999eed48da5a",
+                  "count": 1,
+                  "firstLine": 433,
+                  "identityVerified": true,
+                  "parentCallId": "call_baee1f31219ed92c289c7801",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "_tool_name_tokens",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_d89f615dd75db1b8d8442fda",
+                  "codeDigest": "sha256:c408d12f2e6024e5a9406a975231c9ade38085cff929a128cb537539eda135c8",
+                  "count": 1,
+                  "firstLine": 68,
+                  "identityVerified": true,
+                  "parentCallId": "call_5d96775f6f4b15ed8e635af6",
+                  "path": "minicode/capability_contracts.py",
+                  "qualname": "CapabilityEffects.__post_init__",
+                  "sourceDigest": "sha256:284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76"
+                },
+                {
+                  "callId": "call_d9c77d7ea91204ff77cf2f62",
+                  "codeDigest": "sha256:2ed712e9dc8f0e22aa648c3222f147d3a17fb4fc8ea1384eccc9381a5365445c",
+                  "count": 1,
+                  "firstLine": 1176,
+                  "identityVerified": true,
+                  "parentCallId": "call_9851bbb07f90d6bc2677928e",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.describe_capability",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_daf65fc86b6f174d173a9970",
+                  "codeDigest": "sha256:9c7b9a9da1780e2ef452b7d9c9a5ec0af23586902eada39c0895999eed48da5a",
+                  "count": 1,
+                  "firstLine": 433,
+                  "identityVerified": true,
+                  "parentCallId": "call_a2d7dd4ca94fd475cbe17406",
+                  "path": "minicode/capability_registry.py",
+                  "qualname": "_tool_name_tokens",
+                  "sourceDigest": "sha256:338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd"
+                },
+                {
+                  "callId": "call_ec305052ace753b948e6d750",
+                  "codeDigest": "sha256:18ccf9f6cc47eaaa01f2d508d83f85617943459ac7f0dc5361dc3d7dcb932a48",
+                  "count": 3,
+                  "firstLine": 29,
+                  "identityVerified": true,
+                  "parentCallId": "call_9d9b0430fdd5ffb79191429b",
+                  "path": "tests/test_public.py",
+                  "qualname": "test_nested_filter_keeps_each_view_independent.<locals>.<lambda>",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_nested_filter_keeps_each_view_independent"
+            },
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_2dbf54f27a16611f53c8ee92",
+                  "endColumn": 33,
+                  "endLine": 41,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 41
+                },
+                {
+                  "assertionId": "assert_35bfe102a17a2d7c2166bfdb",
+                  "endColumn": 40,
+                  "endLine": 42,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+                  "startColumn": 4,
+                  "startLine": 42
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_25313a330ebcf15001a57e74",
+                  "codeDigest": "sha256:a613437e43c0d481eb7b004c510d0f044c3f43508ca0edf9a18a90152ee86836",
+                  "count": 1,
+                  "firstLine": 927,
+                  "identityVerified": true,
+                  "parentCallId": "call_71eba92c48ed6d0b56b6ec5b",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolDefinition.__post_init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_71eba92c48ed6d0b56b6ec5b",
+                  "codeDigest": "sha256:df7bbf5f8c1e2b0a1cdddd59cb4d491cc3038dfd1b0df782bdfa1d2015aace05",
+                  "count": 1,
+                  "firstLine": 8,
+                  "identityVerified": true,
+                  "parentCallId": "call_94bbdb3558c7f9dad0e825e5",
+                  "path": "tests/test_public.py",
+                  "qualname": "tool",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_791944c49afe7ebba9769f08",
+                  "codeDigest": "sha256:c31f56277a6bf4211d82bc20fcf5a44ec93619fa1c03088d8741f620f182354f",
+                  "count": 1,
+                  "firstLine": 1013,
+                  "identityVerified": true,
+                  "parentCallId": "call_8d0251e26c869ea546e06535",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.__init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_84539ccf33ffbe1f09e62025",
+                  "codeDigest": "sha256:e8c41ded186b0ecfb18f6217883b5b535d8733532e93b3c816b69b62e97de914",
+                  "count": 2,
+                  "firstLine": 1096,
+                  "identityVerified": true,
+                  "parentCallId": "call_94bbdb3558c7f9dad0e825e5",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.list_all",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_8d0251e26c869ea546e06535",
+                  "codeDigest": "sha256:834866166805cbcd6ce36e6936db5bb4c2b30be67b3133b04c52b6e15e0388c6",
+                  "count": 1,
+                  "firstLine": 1145,
+                  "identityVerified": true,
+                  "parentCallId": "call_94bbdb3558c7f9dad0e825e5",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.filtered",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_94bbdb3558c7f9dad0e825e5",
+                  "codeDigest": "sha256:2999501840113ca22d14b9312a4b2b3fa377cfb6fb4ed895bf6f14e75d7a8299",
+                  "count": 1,
+                  "firstLine": 38,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_filtered_empty_view_does_not_mutate_the_owner",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_9b3a878526bab5d4496ed50e",
+                  "codeDigest": "sha256:aeff16f1c102c856c865876bad39972bff5a9a66132e5234deac8ae1c9f1a4cf",
+                  "count": 1,
+                  "firstLine": 40,
+                  "identityVerified": true,
+                  "parentCallId": "call_8d0251e26c869ea546e06535",
+                  "path": "tests/test_public.py",
+                  "qualname": "test_filtered_empty_view_does_not_mutate_the_owner.<locals>.<lambda>",
+                  "sourceDigest": "sha256:2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7"
+                },
+                {
+                  "callId": "call_aa441ce041c896ba29253c8e",
+                  "codeDigest": "sha256:6fb6a3c05ae0d072e6e53edbdb7f6c3810c0fe4b6463856352fd770b89a70e50",
+                  "count": 1,
+                  "firstLine": 1099,
+                  "identityVerified": true,
+                  "parentCallId": "call_8d0251e26c869ea546e06535",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.get_skills",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                },
+                {
+                  "callId": "call_fd64aea64dd977f7ee7d019e",
+                  "codeDigest": "sha256:c31f56277a6bf4211d82bc20fcf5a44ec93619fa1c03088d8741f620f182354f",
+                  "count": 1,
+                  "firstLine": 1013,
+                  "identityVerified": true,
+                  "parentCallId": "call_94bbdb3558c7f9dad0e825e5",
+                  "path": "minicode/tooling.py",
+                  "qualname": "ToolRegistry.__init__",
+                  "sourceDigest": "sha256:e37d33dea67dbf8575f9b96fceda7d503c2e322e9faae41e8904d261472a30f8"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_filtered_empty_view_does_not_mutate_the_owner"
+            }
+          ],
+          "digest": "sha256:cd9045a7bdbf84f62d5645b50dd4088f8fdf72e86825c65965b5c18bfe3f0870",
+          "junitDigest": "sha256:abdb92e4c8fa2709703823126d8e7711ef04a11663cb9b9acf23b1f19471ae67",
+          "version": 1
+        }
+      }
+    },
+    {
+      "case": "gen2-summary-budget",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_2fe8ccb4d963426a7e128d48",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_gen2_summary_budget",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 242,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 242,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:19e95f03931508bcb63d5f1f276741db94fd3f8f0399d2690ed306a73c3ba6c7",
+            "preview": "..                                                                       [100%]\n2 passed in 0.08s\n",
+            "previewBase64": "Li4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQoyIHBhc3NlZCBpbiAwLjA4cwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 2,
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:bd9e07f498db47b553faab67c5ab70e5eab1c78fd9a56846a9a3afeb715399f0",
+        "caseReport": {
+          "digest": "sha256:4c7ec33241fcc2da0fa98bc09f91bc5556cdfdb975f4e54858689acac3eb23a4",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::SummaryCompatibilityTests::test_exhausted_balance_uses_existing_fallback",
+              "outcome": "passed"
+            },
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::SummaryCompatibilityTests::test_summary_keeps_plain_adapter_compatibility",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [],
+              "calls": [
+                {
+                  "callId": "call_3877d650ff8d56ba58d3f6bd",
+                  "codeDigest": "sha256:395393cd9a4fba60cc80718c74d660e247964dbf2977eb488045af224139d55f",
+                  "count": 1,
+                  "firstLine": 1441,
+                  "identityVerified": true,
+                  "parentCallId": "call_73900c9839a38a0d895b5849",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator.__init__",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_40d00b5cdfa7986145c778b1",
+                  "codeDigest": "sha256:67dbd1045895d4ad273b630821535963f834325987e5a7d3e2874e889ff948e8",
+                  "count": 1,
+                  "firstLine": 1778,
+                  "identityVerified": true,
+                  "parentCallId": "call_ea9cdaf267c3af05c8b17bb6",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._emit_failure",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_4318a2a214e7491f21e3cd80",
+                  "codeDigest": "sha256:e36b426a785680acd00110f8c6ea7f338be7c100205257b46cfed77b5ed0427f",
+                  "count": 1,
+                  "firstLine": 1771,
+                  "identityVerified": true,
+                  "parentCallId": "call_40d00b5cdfa7986145c778b1",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._duration_ms",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_4d959457bdb1679fd33cef7b",
+                  "codeDigest": "sha256:b287ebbcee1fc210e863103c63fde8ec3d7d91cab8e94c00cc4a75d1e0411fc3",
+                  "count": 1,
+                  "firstLine": 337,
+                  "identityVerified": true,
+                  "parentCallId": "call_ea9cdaf267c3af05c8b17bb6",
+                  "path": "minicode/run_events.py",
+                  "qualname": "new_model_operation_id",
+                  "sourceDigest": "sha256:d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67"
+                },
+                {
+                  "callId": "call_5b35d4f597058e3221758095",
+                  "codeDigest": "sha256:b6b6852ac638e976b19f0eb1f738b0628773e399abb63464094421bde69cea27",
+                  "count": 1,
+                  "firstLine": 87,
+                  "identityVerified": true,
+                  "parentCallId": "call_8c3aeea378eb4b33ccd34dbe",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "AgentBudgetExceeded.__init__",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_6285c425a69068331efa83ef",
+                  "codeDigest": "sha256:5ef35fb144f27b01bec7b9ef2d242a101d30e9d08dd48fc0b19d68f5e740f20c",
+                  "count": 2,
+                  "firstLine": 79,
+                  "identityVerified": true,
+                  "parentCallId": "call_e09935744aacf4c3712567b5",
+                  "path": "minicode/context_manager.py",
+                  "qualname": "estimate_tokens",
+                  "sourceDigest": "sha256:9abca65d2994ba4dcf63edde5f67686827b324fa7a7d3bdf236f81aef382c02a"
+                },
+                {
+                  "callId": "call_638dd6b5c6f82d3eb5496f0b",
+                  "codeDigest": "sha256:07ed5efe2b75aaafeead1502dbeeb626b64493d402dd2f88a5e03f1e8cc740b6",
+                  "count": 2,
+                  "firstLine": 32,
+                  "identityVerified": true,
+                  "parentCallId": "call_6aaba767319fa8cba3775167",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "_optional_int",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_6a5ed3e4b37cf8ac5c68a7d4",
+                  "codeDigest": "sha256:83512ac74032de29357075c93f055943eda000fca9dadbf9bb035f2c734b39c5",
+                  "count": 1,
+                  "firstLine": 177,
+                  "identityVerified": true,
+                  "parentCallId": "call_a3541c15d8d3f640d82c7c00",
+                  "path": "minicode/context_manager.py",
+                  "qualname": "ContextManager",
+                  "sourceDigest": "sha256:9abca65d2994ba4dcf63edde5f67686827b324fa7a7d3bdf236f81aef382c02a"
+                },
+                {
+                  "callId": "call_6aaba767319fa8cba3775167",
+                  "codeDigest": "sha256:b66a1528e4b215e607722f03947acbb749579234c2634a0ef3e9f1e8b80ceaf8",
+                  "count": 1,
+                  "firstLine": 362,
+                  "identityVerified": true,
+                  "parentCallId": "call_73900c9839a38a0d895b5849",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "AgentTurnBudget.__init__",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_73900c9839a38a0d895b5849",
+                  "codeDigest": "sha256:e0374a4bdc62af5fc44b8166423bc494d62e8f3948865eddd8742d6c5a10ed77",
+                  "count": 1,
+                  "firstLine": 29,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "SummaryCompatibilityTests.test_exhausted_balance_uses_existing_fallback",
+                  "sourceDigest": "sha256:14f147d9507609d39138b50248d48b8f64410f0552a51036278ef150e2272d48"
+                },
+                {
+                  "callId": "call_75a6febe2f4f26765e59d1f6",
+                  "codeDigest": "sha256:62e8fa5a43e3ff6caae48f6ae38883b3b7eb99eb4586883f01708c469cbd37ac",
+                  "count": 1,
+                  "firstLine": 1539,
+                  "identityVerified": true,
+                  "parentCallId": "call_fde534a5af97d7327c8e3c58",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._build_prompts",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_78da948ba36d590838d66653",
+                  "codeDigest": "sha256:a1020f1645470bdd3b90c037e8e19fa7bc3ef094e94a78692a7985dfb618e632",
+                  "count": 2,
+                  "firstLine": 1521,
+                  "identityVerified": true,
+                  "parentCallId": "call_75a6febe2f4f26765e59d1f6",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._message_line",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_8c3aeea378eb4b33ccd34dbe",
+                  "codeDigest": "sha256:80b3bb3e9a3ae5692144afa5a1944cdf9d66c4af5f14c0ca278423968e984f99",
+                  "count": 1,
+                  "firstLine": 453,
+                  "identityVerified": true,
+                  "parentCallId": "call_ea9cdaf267c3af05c8b17bb6",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "AgentTurnBudget.reserve_model_call",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_8d66a6e6d857bc9846327e75",
+                  "codeDigest": "sha256:b6d53fd16b4cfb0722e57e1e5010cf81a440785838c1756335cf74fa85940423",
+                  "count": 1,
+                  "firstLine": 44,
+                  "identityVerified": true,
+                  "parentCallId": "call_6aaba767319fa8cba3775167",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "_optional_decimal",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_93bd995e5ad65205df3d4238",
+                  "codeDigest": "sha256:5bf1b0ec334f8f555a9b488c5a355e80ab4557fb76b9bb9139d94487e76d511b",
+                  "count": 1,
+                  "firstLine": 392,
+                  "identityVerified": true,
+                  "parentCallId": "call_4318a2a214e7491f21e3cd80",
+                  "path": "minicode/run_events.py",
+                  "qualname": "project_model_duration_ms",
+                  "sourceDigest": "sha256:d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67"
+                },
+                {
+                  "callId": "call_9eb3980a83b9c0c76c20f6aa",
+                  "codeDigest": "sha256:90c813883445d307e26a5338beeb5cb46b970785328ed2d8cf56c9bdb0e940c6",
+                  "count": 1,
+                  "firstLine": 32,
+                  "identityVerified": true,
+                  "parentCallId": "call_73900c9839a38a0d895b5849",
+                  "path": "tests/test_public.py",
+                  "qualname": "SummaryCompatibilityTests.test_exhausted_balance_uses_existing_fallback.<locals>.Model",
+                  "sourceDigest": "sha256:14f147d9507609d39138b50248d48b8f64410f0552a51036278ef150e2272d48"
+                },
+                {
+                  "callId": "call_a045619b47b7fac5d210747c",
+                  "codeDigest": "sha256:b678cd5089c1cc439b1c24800898b99cd49edc4a4fd364981f15c9fb7abf557e",
+                  "count": 1,
+                  "firstLine": 1803,
+                  "identityVerified": true,
+                  "parentCallId": "call_a130912c9de5b8dd41e44709",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._estimate_prompt_tokens.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_a130912c9de5b8dd41e44709",
+                  "codeDigest": "sha256:5f2e41b29b57c3b505e7fed547f1e4685b504684512e58ed444360453b79cd35",
+                  "count": 1,
+                  "firstLine": 1798,
+                  "identityVerified": true,
+                  "parentCallId": "call_ea9cdaf267c3af05c8b17bb6",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._estimate_prompt_tokens",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_a3541c15d8d3f640d82c7c00",
+                  "codeDigest": "sha256:58fe859c17ab2f45edb7fe1e6a1d9676c758016ea6b5cdcbc2cdd77b81f05269",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_a130912c9de5b8dd41e44709",
+                  "path": "minicode/context_manager.py",
+                  "qualname": "<module>",
+                  "sourceDigest": "sha256:9abca65d2994ba4dcf63edde5f67686827b324fa7a7d3bdf236f81aef382c02a"
+                },
+                {
+                  "callId": "call_a790a91509159d46c593cbb6",
+                  "codeDigest": "sha256:d1dc17a272efcbae2e4565253a01575310e4da07b9354c21d1ff1bc832fca465",
+                  "count": 1,
+                  "firstLine": 163,
+                  "identityVerified": true,
+                  "parentCallId": "call_a3541c15d8d3f640d82c7c00",
+                  "path": "minicode/context_manager.py",
+                  "qualname": "ContextStats",
+                  "sourceDigest": "sha256:9abca65d2994ba4dcf63edde5f67686827b324fa7a7d3bdf236f81aef382c02a"
+                },
+                {
+                  "callId": "call_ae3cc86607efc781305853a1",
+                  "codeDigest": "sha256:bf5eac31423e10bd6ed3491fbaeffcc4f8d49e64233d66a1a8cbf5a627332d9e",
+                  "count": 1,
+                  "firstLine": 1611,
+                  "identityVerified": true,
+                  "parentCallId": "call_c30ee94582b73bdba86f0628",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._call_model",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_b9784e21ef790fa4b1edb1b9",
+                  "codeDigest": "sha256:391ffaaf1c23a12739c5bb6f4181cd89c24cbb2905584f475a8ac450887cc55c",
+                  "count": 1,
+                  "firstLine": 298,
+                  "identityVerified": true,
+                  "parentCallId": "call_40d00b5cdfa7986145c778b1",
+                  "path": "minicode/run_events.py",
+                  "qualname": "emit_event_safely",
+                  "sourceDigest": "sha256:d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67"
+                },
+                {
+                  "callId": "call_c30ee94582b73bdba86f0628",
+                  "codeDigest": "sha256:5adccc1f537323d15e1c22bc3d7b9125c3a132508659406f7fc1ebae8ac88cb6",
+                  "count": 1,
+                  "firstLine": 1504,
+                  "identityVerified": true,
+                  "parentCallId": "call_fde534a5af97d7327c8e3c58",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._summarize_prompt",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_d32185cf541a9b26eb66606a",
+                  "codeDigest": "sha256:19fda1c812bcae66f2a9bea6a2204216980b154de36193aa91f1ce8d3c042111",
+                  "count": 1,
+                  "firstLine": 763,
+                  "identityVerified": true,
+                  "parentCallId": "call_8c3aeea378eb4b33ccd34dbe",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "AgentTurnBudget._locked_snapshot",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_e09935744aacf4c3712567b5",
+                  "codeDigest": "sha256:005cccae39710fe807d755e75bec6ea41e57a695b09b07bcb28a6690234f0bf8",
+                  "count": 2,
+                  "firstLine": 113,
+                  "identityVerified": true,
+                  "parentCallId": "call_a045619b47b7fac5d210747c",
+                  "path": "minicode/context_manager.py",
+                  "qualname": "estimate_message_tokens",
+                  "sourceDigest": "sha256:9abca65d2994ba4dcf63edde5f67686827b324fa7a7d3bdf236f81aef382c02a"
+                },
+                {
+                  "callId": "call_ea9cdaf267c3af05c8b17bb6",
+                  "codeDigest": "sha256:72c4f06bc2055bf41cc2d81484f87c117697da2f8eb39177f7ba45b67df12bdc",
+                  "count": 1,
+                  "firstLine": 1651,
+                  "identityVerified": true,
+                  "parentCallId": "call_ae3cc86607efc781305853a1",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._call_model_once",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_ee4121f3a7215be529a732f6",
+                  "codeDigest": "sha256:4ca62a1380cecde3da8a3496f6ad7384e6572a6efd121c0702753a9d6efa9721",
+                  "count": 1,
+                  "firstLine": 435,
+                  "identityVerified": true,
+                  "parentCallId": "call_73900c9839a38a0d895b5849",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "AgentTurnBudget.snapshot",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_fde534a5af97d7327c8e3c58",
+                  "codeDigest": "sha256:3b9df266c38a900bd48c2717a8b973103819423f47e7960549228910782b5031",
+                  "count": 1,
+                  "firstLine": 1458,
+                  "identityVerified": true,
+                  "parentCallId": "call_73900c9839a38a0d895b5849",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator.summarize",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::SummaryCompatibilityTests::test_exhausted_balance_uses_existing_fallback"
+            },
+            {
+              "assertions": [],
+              "calls": [
+                {
+                  "callId": "call_0262a9a6f34667126c03d5b2",
+                  "codeDigest": "sha256:5ef35fb144f27b01bec7b9ef2d242a101d30e9d08dd48fc0b19d68f5e740f20c",
+                  "count": 2,
+                  "firstLine": 79,
+                  "identityVerified": true,
+                  "parentCallId": "call_b2240d92bbf87b56859cd670",
+                  "path": "minicode/context_manager.py",
+                  "qualname": "estimate_tokens",
+                  "sourceDigest": "sha256:9abca65d2994ba4dcf63edde5f67686827b324fa7a7d3bdf236f81aef382c02a"
+                },
+                {
+                  "callId": "call_0c64c778a67e8147ef8b7239",
+                  "codeDigest": "sha256:a1020f1645470bdd3b90c037e8e19fa7bc3ef094e94a78692a7985dfb618e632",
+                  "count": 2,
+                  "firstLine": 1521,
+                  "identityVerified": true,
+                  "parentCallId": "call_67b7b7da540d8713be0b0eb8",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._message_line",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_1475a0fb9e20bcd0f6ec212a",
+                  "codeDigest": "sha256:47b12a7850d1f7c6d18093833217f94751f6294b011700e987d5f966bf5b08d1",
+                  "count": 2,
+                  "firstLine": 15,
+                  "identityVerified": true,
+                  "parentCallId": "call_854dff5016c1e8b6a300665a",
+                  "path": "minicode/model_call_control.py",
+                  "qualname": "checkpoint_model_call",
+                  "sourceDigest": "sha256:70a55003f88e3e67831a2f178982414ef09b4fa6c7d84233681ecbaa783c29dc"
+                },
+                {
+                  "callId": "call_1bbb1e91646e94d5cf89d3fb",
+                  "codeDigest": "sha256:069758d92214e6c53eeb0c3fe3962609436dc9f9f0431b25cbefb25d1c465a73",
+                  "count": 1,
+                  "firstLine": 13,
+                  "identityVerified": true,
+                  "parentCallId": "call_49e560d237a3ff1607faf5c3",
+                  "path": "tests/test_public.py",
+                  "qualname": "SummaryCompatibilityTests.test_summary_keeps_plain_adapter_compatibility.<locals>.Model",
+                  "sourceDigest": "sha256:14f147d9507609d39138b50248d48b8f64410f0552a51036278ef150e2272d48"
+                },
+                {
+                  "callId": "call_2093d108cc7ff017d8c24e18",
+                  "codeDigest": "sha256:e36b426a785680acd00110f8c6ea7f338be7c100205257b46cfed77b5ed0427f",
+                  "count": 1,
+                  "firstLine": 1771,
+                  "identityVerified": true,
+                  "parentCallId": "call_ee5a9395d5a3b7e7f873d9c4",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._duration_ms",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_264bc734ad9a23795174ca32",
+                  "codeDigest": "sha256:25aac87c8a06d81d8d17b8093879ac4df70846c18b2387976467aa4acf33ac11",
+                  "count": 1,
+                  "firstLine": 238,
+                  "identityVerified": true,
+                  "parentCallId": "call_7b3b1f5d796d3ed5fa20b805",
+                  "path": "minicode/pricing.py",
+                  "qualname": "_actual_model_identity",
+                  "sourceDigest": "sha256:ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0"
+                },
+                {
+                  "callId": "call_329394cdeca70bc8bca10918",
+                  "codeDigest": "sha256:bf5eac31423e10bd6ed3491fbaeffcc4f8d49e64233d66a1a8cbf5a627332d9e",
+                  "count": 1,
+                  "firstLine": 1611,
+                  "identityVerified": true,
+                  "parentCallId": "call_60d450751084eadd846e07ca",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._call_model",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_33f8a3efc7c39cddc7641daf",
+                  "codeDigest": "sha256:c1df0666c4691442c060ab89054e49797a8a338e73b6e10c6c5dcf95013aa7b0",
+                  "count": 1,
+                  "firstLine": 152,
+                  "identityVerified": true,
+                  "parentCallId": "call_3b7cf29babcfc227943aec32",
+                  "path": "minicode/pricing.py",
+                  "qualname": "CostQuote.to_event_payload",
+                  "sourceDigest": "sha256:ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0"
+                },
+                {
+                  "callId": "call_343c5d3266927ed430e98eec",
+                  "codeDigest": "sha256:395393cd9a4fba60cc80718c74d660e247964dbf2977eb488045af224139d55f",
+                  "count": 1,
+                  "firstLine": 1441,
+                  "identityVerified": true,
+                  "parentCallId": "call_49e560d237a3ff1607faf5c3",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator.__init__",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_3b7cf29babcfc227943aec32",
+                  "codeDigest": "sha256:2f7234bb182df1be030de325965cd1113db31cae5d6c66297b640d8ee000e3fc",
+                  "count": 1,
+                  "firstLine": 461,
+                  "identityVerified": true,
+                  "parentCallId": "call_ee5a9395d5a3b7e7f873d9c4",
+                  "path": "minicode/pricing.py",
+                  "qualname": "project_model_cost_event",
+                  "sourceDigest": "sha256:ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0"
+                },
+                {
+                  "callId": "call_3c6ebba1b130e70ef4727d0c",
+                  "codeDigest": "sha256:b678cd5089c1cc439b1c24800898b99cd49edc4a4fd364981f15c9fb7abf557e",
+                  "count": 1,
+                  "firstLine": 1803,
+                  "identityVerified": true,
+                  "parentCallId": "call_6a9374b9f4e961d49e4f8fa9",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._estimate_prompt_tokens.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_3f1acf02122dbc128832b57c",
+                  "codeDigest": "sha256:3b9df266c38a900bd48c2717a8b973103819423f47e7960549228910782b5031",
+                  "count": 1,
+                  "firstLine": 1458,
+                  "identityVerified": true,
+                  "parentCallId": "call_49e560d237a3ff1607faf5c3",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator.summarize",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_3f368fd416e72bc9df09bb2b",
+                  "codeDigest": "sha256:112180b7de529b5ce7b07e55e56167b749b4e59a2e8238d608acebf0a73a8752",
+                  "count": 1,
+                  "firstLine": 144,
+                  "identityVerified": true,
+                  "parentCallId": "call_84a998e24d0bcdf8f9864b1b",
+                  "path": "minicode/pricing.py",
+                  "qualname": "CostQuote.__post_init__",
+                  "sourceDigest": "sha256:ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0"
+                },
+                {
+                  "callId": "call_48fc4627088b260c730ca522",
+                  "codeDigest": "sha256:bf495fd27f1e8ec5ce86ca31f51069be8bde81eb89ab9703937cb7d8adf33d6e",
+                  "count": 1,
+                  "firstLine": 184,
+                  "identityVerified": true,
+                  "parentCallId": "call_8d38816c6c9bd2a0d9236147",
+                  "path": "minicode/cost_tracker.py",
+                  "qualname": "calculate_cost",
+                  "sourceDigest": "sha256:e612aac0d2a9163297791276ce40a2e9cf1af7d8260a776630c8709e588c7da9"
+                },
+                {
+                  "callId": "call_49e560d237a3ff1607faf5c3",
+                  "codeDigest": "sha256:ebceb3e06333ad0fd7f786d6a4e298a3875894c22e278dcd2ad62444ae62c733",
+                  "count": 1,
+                  "firstLine": 10,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "SummaryCompatibilityTests.test_summary_keeps_plain_adapter_compatibility",
+                  "sourceDigest": "sha256:14f147d9507609d39138b50248d48b8f64410f0552a51036278ef150e2272d48"
+                },
+                {
+                  "callId": "call_5d6b7bb3c1e9eadc35bf6220",
+                  "codeDigest": "sha256:07ed5efe2b75aaafeead1502dbeeb626b64493d402dd2f88a5e03f1e8cc740b6",
+                  "count": 2,
+                  "firstLine": 32,
+                  "identityVerified": true,
+                  "parentCallId": "call_f4c064dfe06d9536bf782a8d",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "_optional_int",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_5ffaeb8794a60f834931288d",
+                  "codeDigest": "sha256:3597207031ab7c6de4e34e93f955d97bdd82272b87863598f936631a9b2dedf1",
+                  "count": 4,
+                  "firstLine": 939,
+                  "identityVerified": true,
+                  "parentCallId": "call_8d38816c6c9bd2a0d9236147",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "record_budgeted_model_call.<locals>.safe_token",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_60d450751084eadd846e07ca",
+                  "codeDigest": "sha256:5adccc1f537323d15e1c22bc3d7b9125c3a132508659406f7fc1ebae8ac88cb6",
+                  "count": 1,
+                  "firstLine": 1504,
+                  "identityVerified": true,
+                  "parentCallId": "call_3f1acf02122dbc128832b57c",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._summarize_prompt",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_67b7b7da540d8713be0b0eb8",
+                  "codeDigest": "sha256:62e8fa5a43e3ff6caae48f6ae38883b3b7eb99eb4586883f01708c469cbd37ac",
+                  "count": 1,
+                  "firstLine": 1539,
+                  "identityVerified": true,
+                  "parentCallId": "call_3f1acf02122dbc128832b57c",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._build_prompts",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_6a9374b9f4e961d49e4f8fa9",
+                  "codeDigest": "sha256:5f2e41b29b57c3b505e7fed547f1e4685b504684512e58ed444360453b79cd35",
+                  "count": 1,
+                  "firstLine": 1798,
+                  "identityVerified": true,
+                  "parentCallId": "call_ee5a9395d5a3b7e7f873d9c4",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._estimate_prompt_tokens",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_7a93475c3f008b4ce65fd98d",
+                  "codeDigest": "sha256:1bf839a2da9364ee1c6f5c19984925d46e3497804c8367d497596ca38dccae72",
+                  "count": 4,
+                  "firstLine": 18,
+                  "identityVerified": true,
+                  "parentCallId": "call_48fc4627088b260c730ca522",
+                  "path": "minicode/cost_tracker.py",
+                  "qualname": "_to_decimal",
+                  "sourceDigest": "sha256:e612aac0d2a9163297791276ce40a2e9cf1af7d8260a776630c8709e588c7da9"
+                },
+                {
+                  "callId": "call_7b3b1f5d796d3ed5fa20b805",
+                  "codeDigest": "sha256:a53a7558fe9e97af72597c766509a2de2e5ba72317e298d1d3f8f50a7a5fd361",
+                  "count": 1,
+                  "firstLine": 325,
+                  "identityVerified": true,
+                  "parentCallId": "call_ce5761a77af7eb42cece66e6",
+                  "path": "minicode/pricing.py",
+                  "qualname": "_quote_model_cost",
+                  "sourceDigest": "sha256:ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0"
+                },
+                {
+                  "callId": "call_7cc9b4c5083e0ec0a2ecda8d",
+                  "codeDigest": "sha256:21f7551edd65c1db0e2a31f287fd1b14339fbd21feebbd11dc7d9bd615bd3a54",
+                  "count": 1,
+                  "firstLine": 674,
+                  "identityVerified": true,
+                  "parentCallId": "call_8d38816c6c9bd2a0d9236147",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "AgentTurnBudget.record_model_call",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_7ce957a44512cd668a8b20c5",
+                  "codeDigest": "sha256:85ebc5ce2fc792ddb6ce471f54fce46bf3a753b66ba26fdf3e181ab59e92f4f3",
+                  "count": 1,
+                  "firstLine": 370,
+                  "identityVerified": true,
+                  "parentCallId": "call_d496a38a256780f3a4879094",
+                  "path": "minicode/run_events.py",
+                  "qualname": "project_model_usage.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67"
+                },
+                {
+                  "callId": "call_84a998e24d0bcdf8f9864b1b",
+                  "codeDigest": "sha256:f0882b2abe92023b292658f6b80caac03269fb09cd95849f4e9272d33586b6dc",
+                  "count": 1,
+                  "firstLine": 224,
+                  "identityVerified": true,
+                  "parentCallId": "call_7b3b1f5d796d3ed5fa20b805",
+                  "path": "minicode/pricing.py",
+                  "qualname": "_unavailable",
+                  "sourceDigest": "sha256:ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0"
+                },
+                {
+                  "callId": "call_854dff5016c1e8b6a300665a",
+                  "codeDigest": "sha256:3321499c7c90d53ad7f1efb1a6104d44d29f1b580e223fbda1009538c5024feb",
+                  "count": 1,
+                  "firstLine": 89,
+                  "identityVerified": true,
+                  "parentCallId": "call_ee5a9395d5a3b7e7f873d9c4",
+                  "path": "minicode/model_call_control.py",
+                  "qualname": "call_model_next",
+                  "sourceDigest": "sha256:70a55003f88e3e67831a2f178982414ef09b4fa6c7d84233681ecbaa783c29dc"
+                },
+                {
+                  "callId": "call_8d38816c6c9bd2a0d9236147",
+                  "codeDigest": "sha256:0a92e00a0ae18419cd530d3f6ddcb54d33f4ac7273a4317d48584e20840e5661",
+                  "count": 1,
+                  "firstLine": 918,
+                  "identityVerified": true,
+                  "parentCallId": "call_ee5a9395d5a3b7e7f873d9c4",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "record_budgeted_model_call",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_a0960c22044e638cdd18583d",
+                  "codeDigest": "sha256:b6d53fd16b4cfb0722e57e1e5010cf81a440785838c1756335cf74fa85940423",
+                  "count": 1,
+                  "firstLine": 44,
+                  "identityVerified": true,
+                  "parentCallId": "call_f4c064dfe06d9536bf782a8d",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "_optional_decimal",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_aa6b4c5f8580f0b9b685202d",
+                  "codeDigest": "sha256:b287ebbcee1fc210e863103c63fde8ec3d7d91cab8e94c00cc4a75d1e0411fc3",
+                  "count": 1,
+                  "firstLine": 337,
+                  "identityVerified": true,
+                  "parentCallId": "call_ee5a9395d5a3b7e7f873d9c4",
+                  "path": "minicode/run_events.py",
+                  "qualname": "new_model_operation_id",
+                  "sourceDigest": "sha256:d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67"
+                },
+                {
+                  "callId": "call_ab9638fe6d04b9866fc82a46",
+                  "codeDigest": "sha256:391ffaaf1c23a12739c5bb6f4181cd89c24cbb2905584f475a8ac450887cc55c",
+                  "count": 2,
+                  "firstLine": 298,
+                  "identityVerified": true,
+                  "parentCallId": "call_ee5a9395d5a3b7e7f873d9c4",
+                  "path": "minicode/run_events.py",
+                  "qualname": "emit_event_safely",
+                  "sourceDigest": "sha256:d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67"
+                },
+                {
+                  "callId": "call_b2240d92bbf87b56859cd670",
+                  "codeDigest": "sha256:005cccae39710fe807d755e75bec6ea41e57a695b09b07bcb28a6690234f0bf8",
+                  "count": 2,
+                  "firstLine": 113,
+                  "identityVerified": true,
+                  "parentCallId": "call_3c6ebba1b130e70ef4727d0c",
+                  "path": "minicode/context_manager.py",
+                  "qualname": "estimate_message_tokens",
+                  "sourceDigest": "sha256:9abca65d2994ba4dcf63edde5f67686827b324fa7a7d3bdf236f81aef382c02a"
+                },
+                {
+                  "callId": "call_b6d9d25b496d205bc1c1784f",
+                  "codeDigest": "sha256:80b3bb3e9a3ae5692144afa5a1944cdf9d66c4af5f14c0ca278423968e984f99",
+                  "count": 1,
+                  "firstLine": 453,
+                  "identityVerified": true,
+                  "parentCallId": "call_ee5a9395d5a3b7e7f873d9c4",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "AgentTurnBudget.reserve_model_call",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_b9fc375e4123b07ecc544db0",
+                  "codeDigest": "sha256:4ca62a1380cecde3da8a3496f6ad7384e6572a6efd121c0702753a9d6efa9721",
+                  "count": 2,
+                  "firstLine": 435,
+                  "identityVerified": true,
+                  "parentCallId": "call_49e560d237a3ff1607faf5c3",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "AgentTurnBudget.snapshot",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_ce5761a77af7eb42cece66e6",
+                  "codeDigest": "sha256:23c371e21c54af2f0ac59b3d83bf7394ae9a80f586bffbc8bc39f2d2a87192ad",
+                  "count": 1,
+                  "firstLine": 426,
+                  "identityVerified": true,
+                  "parentCallId": "call_3b7cf29babcfc227943aec32",
+                  "path": "minicode/pricing.py",
+                  "qualname": "quote_model_cost",
+                  "sourceDigest": "sha256:ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0"
+                },
+                {
+                  "callId": "call_cf88af268bb53a84d7c37b94",
+                  "codeDigest": "sha256:69f6a832352764b337ea8979a0449c9b823e4818161a51d9358fc1c8bfbec9f4",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_8d38816c6c9bd2a0d9236147",
+                  "path": "minicode/cost_tracker.py",
+                  "qualname": "<module>",
+                  "sourceDigest": "sha256:e612aac0d2a9163297791276ce40a2e9cf1af7d8260a776630c8709e588c7da9"
+                },
+                {
+                  "callId": "call_d496a38a256780f3a4879094",
+                  "codeDigest": "sha256:3b975886dbf06911292772199a1a8960b21bf3481e6335c2f6abd1f84b0e78eb",
+                  "count": 1,
+                  "firstLine": 347,
+                  "identityVerified": true,
+                  "parentCallId": "call_ee5a9395d5a3b7e7f873d9c4",
+                  "path": "minicode/run_events.py",
+                  "qualname": "project_model_usage",
+                  "sourceDigest": "sha256:d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67"
+                },
+                {
+                  "callId": "call_d535e85fbeeb7fa1fc6e1291",
+                  "codeDigest": "sha256:a445e12d386bf615e9ca6ec7e6b1ead3ac5fdacb559688a8bee00df0d10b747f",
+                  "count": 1,
+                  "firstLine": 113,
+                  "identityVerified": true,
+                  "parentCallId": "call_854dff5016c1e8b6a300665a",
+                  "path": "minicode/model_call_control.py",
+                  "qualname": "call_model_next.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:70a55003f88e3e67831a2f178982414ef09b4fa6c7d84233681ecbaa783c29dc"
+                },
+                {
+                  "callId": "call_daa613106a35d29e865dbcf6",
+                  "codeDigest": "sha256:2ce44a0f9907009288fb0f2233c2082b55078141fd641ce9afbdcc95f270e70c",
+                  "count": 1,
+                  "firstLine": 217,
+                  "identityVerified": true,
+                  "parentCallId": "call_cf88af268bb53a84d7c37b94",
+                  "path": "minicode/cost_tracker.py",
+                  "qualname": "ModelUsage",
+                  "sourceDigest": "sha256:e612aac0d2a9163297791276ce40a2e9cf1af7d8260a776630c8709e588c7da9"
+                },
+                {
+                  "callId": "call_e8c1d59ce16eb76043b4bd88",
+                  "codeDigest": "sha256:1bf5588b813bbeca6bebc395bf7f779a4834e4d5c33eb3c073edbf023ae78d46",
+                  "count": 1,
+                  "firstLine": 247,
+                  "identityVerified": true,
+                  "parentCallId": "call_cf88af268bb53a84d7c37b94",
+                  "path": "minicode/cost_tracker.py",
+                  "qualname": "CostTracker",
+                  "sourceDigest": "sha256:e612aac0d2a9163297791276ce40a2e9cf1af7d8260a776630c8709e588c7da9"
+                },
+                {
+                  "callId": "call_ee5a9395d5a3b7e7f873d9c4",
+                  "codeDigest": "sha256:72c4f06bc2055bf41cc2d81484f87c117697da2f8eb39177f7ba45b67df12bdc",
+                  "count": 1,
+                  "firstLine": 1651,
+                  "identityVerified": true,
+                  "parentCallId": "call_329394cdeca70bc8bca10918",
+                  "path": "minicode/context_compactor.py",
+                  "qualname": "LLMSummaryGenerator._call_model_once",
+                  "sourceDigest": "sha256:7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+                },
+                {
+                  "callId": "call_f4c064dfe06d9536bf782a8d",
+                  "codeDigest": "sha256:b66a1528e4b215e607722f03947acbb749579234c2634a0ef3e9f1e8b80ceaf8",
+                  "count": 1,
+                  "firstLine": 362,
+                  "identityVerified": true,
+                  "parentCallId": "call_49e560d237a3ff1607faf5c3",
+                  "path": "minicode/agent_budget.py",
+                  "qualname": "AgentTurnBudget.__init__",
+                  "sourceDigest": "sha256:656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+                },
+                {
+                  "callId": "call_f810334e9323433f8887c44c",
+                  "codeDigest": "sha256:1f2d7849534559cafba5573e6ac9c9070cd7e0cd2181479c2c8f7f593095cabd",
+                  "count": 1,
+                  "firstLine": 14,
+                  "identityVerified": true,
+                  "parentCallId": "call_854dff5016c1e8b6a300665a",
+                  "path": "tests/test_public.py",
+                  "qualname": "SummaryCompatibilityTests.test_summary_keeps_plain_adapter_compatibility.<locals>.Model.next",
+                  "sourceDigest": "sha256:14f147d9507609d39138b50248d48b8f64410f0552a51036278ef150e2272d48"
+                },
+                {
+                  "callId": "call_fa526a15fa0ad9c287f8f655",
+                  "codeDigest": "sha256:5bf1b0ec334f8f555a9b488c5a355e80ab4557fb76b9bb9139d94487e76d511b",
+                  "count": 1,
+                  "firstLine": 392,
+                  "identityVerified": true,
+                  "parentCallId": "call_2093d108cc7ff017d8c24e18",
+                  "path": "minicode/run_events.py",
+                  "qualname": "project_model_duration_ms",
+                  "sourceDigest": "sha256:d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::SummaryCompatibilityTests::test_summary_keeps_plain_adapter_compatibility"
+            }
+          ],
+          "digest": "sha256:a622afe079363113cf3d401f48ea72287927eb6ecbc92fd7398da1dcc333a86f",
+          "junitDigest": "sha256:bd9e07f498db47b553faab67c5ab70e5eab1c78fd9a56846a9a3afeb715399f0",
+          "version": 1
+        }
+      }
+    }
+  ],
+  "pytestReportRequired": true
+}

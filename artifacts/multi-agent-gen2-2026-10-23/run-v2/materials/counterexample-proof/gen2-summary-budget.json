@@ -1,0 +1,37 @@
+{
+  "baseline": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-B",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-1fwt7o95/baseline/hidden_oracle.py",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-1fwt7o95/baseline"
+    ],
+    "duration_seconds": 0.118,
+    "returncode": 1,
+    "stderr": "LLM summary skipped: shared Agent turn budget exhausted\n",
+    "stdout": "{\"checks\": [{\"label\": \"schema_does_not_fit\", \"limit\": 9293, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"schema_fits\", \"limit\": 13390, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"unlimited_catalog\", \"limit\": null, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"no_catalog_fits\", \"limit\": 4096, \"requests\": [{\"input\": 252, \"reserved\": 252, \"schemas\": 0, \"toolNames\": []}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 275}, {\"label\": \"messages_do_not_fit\", \"limit\": 1, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}], \"errors\": [\"schema_does_not_fit: expected 0 requests, got 1\", \"schema_does_not_fit: refused request returned summary or charged tokens\", \"schema_fits: admitted actual request exceeds reserved input\"], \"ok\": false, \"schemaTokens\": 9294}\n",
+    "timed_out": false
+  },
+  "baseline_kind": "directory",
+  "fixed": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-B",
+      "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-counterexample-3a69tk5e/fixed/hidden_oracle.py",
+      "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-counterexample-3a69tk5e/fixed"
+    ],
+    "duration_seconds": 0.122,
+    "returncode": 0,
+    "stderr": "LLM summary skipped: shared Agent turn budget exhausted\nLLM summary skipped: shared Agent turn budget exhausted\n",
+    "stdout": "{\"checks\": [{\"label\": \"schema_does_not_fit\", \"limit\": 9293, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}, {\"label\": \"schema_fits\", \"limit\": 13390, \"requests\": [{\"input\": 9546, \"reserved\": 9546, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"unlimited_catalog\", \"limit\": null, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"no_catalog_fits\", \"limit\": 4096, \"requests\": [{\"input\": 252, \"reserved\": 252, \"schemas\": 0, \"toolNames\": []}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 275}, {\"label\": \"messages_do_not_fit\", \"limit\": 1, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}], \"errors\": [], \"ok\": true, \"schemaTokens\": 9294}\n",
+    "timed_out": false
+  },
+  "fixed_root": "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-counterexample-3a69tk5e/fixed",
+  "status": "PROVEN",
+  "test_files": [
+    {
+      "path": "hidden_oracle.py",
+      "sha256": "b6b6884930c92f373ac945bfc59a45c9680ec5372ffafcc58d505a4b19928da4"
+    }
+  ]
+}

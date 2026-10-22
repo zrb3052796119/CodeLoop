@@ -1,0 +1,37 @@
+{
+  "baseline": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-B",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-ji24fp8d/baseline/hidden_oracle.py",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-ji24fp8d/baseline"
+    ],
+    "duration_seconds": 0.099,
+    "returncode": 1,
+    "stderr": "",
+    "stdout": "{\"evidence\": {\"backgroundAcceptingAfterChildClose\": false, \"backgroundAcceptingAfterOwnerClose\": false, \"canReserveAfterChildClose\": false, \"childCloseErrors\": [], \"ownerDisposerCallsAfterChildClose\": 0, \"ownerDisposerCallsAfterOwnerClose\": 1, \"parentProcessAliveAfterChildClose\": false, \"parentProcessStoppedAfterOwnerClose\": true, \"parentReplyAfterChildClose\": null, \"terminalStatus\": \"cancelled\", \"terminationReason\": \"application_shutdown\"}, \"failures\": [\"parentProcessAliveAfterChildClose: expected True, observed False\", \"backgroundAcceptingAfterChildClose: expected True, observed False\", \"parentReplyAfterChildClose: expected 'ACK:after-child-close', observed None\", \"canReserveAfterChildClose: expected True, observed False\"], \"passed\": false}\n",
+    "timed_out": false
+  },
+  "baseline_kind": "directory",
+  "fixed": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-B",
+      "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-counterexample-09wica_l/fixed/hidden_oracle.py",
+      "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-counterexample-09wica_l/fixed"
+    ],
+    "duration_seconds": 0.096,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "{\"evidence\": {\"backgroundAcceptingAfterChildClose\": true, \"backgroundAcceptingAfterOwnerClose\": false, \"canReserveAfterChildClose\": true, \"childCloseErrors\": [], \"ownerDisposerCallsAfterChildClose\": 0, \"ownerDisposerCallsAfterOwnerClose\": 1, \"parentProcessAliveAfterChildClose\": true, \"parentProcessStoppedAfterOwnerClose\": true, \"parentReplyAfterChildClose\": \"ACK:after-child-close\", \"terminalStatus\": \"cancelled\", \"terminationReason\": \"application_shutdown\"}, \"failures\": [], \"passed\": true}\n",
+    "timed_out": false
+  },
+  "fixed_root": "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-counterexample-09wica_l/fixed",
+  "status": "PROVEN",
+  "test_files": [
+    {
+      "path": "hidden_oracle.py",
+      "sha256": "06d120fe42a23ec6caa31b6066a81c164d49f720afbe8df31d965d9a0483eec9"
+    }
+  ]
+}

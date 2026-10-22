@@ -1,0 +1,38 @@
+{
+  "id": "gen2-registry-lifetime",
+  "category": "concurrent-context",
+  "prompt": "Repair the lifetime handling of borrowed tool-registry contexts. A parent owns a ToolRegistry and a live background shell job. A child receives a restricted registry through the existing filtered() API, and may create another filtered view. When the child finishes and disposes those borrowed views, the parent's background job is unexpectedly terminated and the runtime stops accepting background work. Make child cleanup safe while preserving the actual owner's ability to terminate its jobs and release its resources. Preserve filtering and execution behavior. Add a regression test demonstrating the bug and your fix in tests/test_eval_regression.py. You may edit only minicode/tooling.py and tests/test_eval_regression.py. Run the public compatibility tests and your regression tests before finishing.",
+  "authorized_paths": [
+    "minicode/tooling.py",
+    "tests/test_eval_regression.py"
+  ],
+  "verification_argv": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_public.py"
+  ],
+  "sourcePaths": [
+    "minicode/tooling.py"
+  ],
+  "provenance": {
+    "repository": "MiniCode-Python-main",
+    "baselineCommit": "9aaa6a434ae0a86766d28f8b1b91529451a31eb8",
+    "referenceCommit": "ad20e4a893248a747e3b3ac741c280ded413ff54",
+    "referenceCommittedAt": "2026-10-19T18:18:43+08:00",
+    "relationship": "baselineCommit is the direct parent of referenceCommit",
+    "originalRegression": "tests/test_implementation_registry_overlay.py::test_only_owner_disposes_shared_resources_even_after_nested_overlay_and_filter",
+    "baselineEvidence": "minicode/tooling.py:1145-1174 already documents filtered() as non-owning; dispose():1346-1354 nevertheless shuts down all process-owned background jobs for every filtered view",
+    "fixEvidence": "minicode/tooling.py sets the borrowed filtered registry's resource ownership to false and dispose() returns before shutting down resources for a borrowed registry",
+    "referenceSourcePaths": ["minicode/tooling.py"],
+    "excludedNewApi": "The task and oracle do not require or invoke overlay(); only filtered() and dispose() existed at the baseline.",
+    "distinctFromOldTasks": [
+      "real-concurrent-context: fixes argument forwarding to concurrent task dispatch; this case tests borrowed-registry cleanup and real process lifetime",
+      "real-remediation-context: preserves typed-result reminder messages; this case does not invoke task result remediation",
+      "old result ownership: guards subagent mailbox author identity; this case does not read or write subagent notes",
+      "old async delivery: acknowledges result delivery into a parent transcript; this case has no asynchronous subagent result or acknowledgement"
+    ],
+    "overlapAuditLimitation": "The historical three-arm tasks.json/manifest.json are absent from this checkout and ad20's tree; the full exclusion inventory must be confirmed by the final preregistration audit."
+  }
+}

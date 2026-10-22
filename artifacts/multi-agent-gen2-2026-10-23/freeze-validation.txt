@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/scripts/run_multi_agent_gen2.py", line 627, in <module>
+    main()
+  File "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/scripts/run_multi_agent_gen2.py", line 612, in main
+    freeze(output)
+  File "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/scripts/run_multi_agent_gen2.py", line 370, in freeze
+    preflight = run_public_preflight(document, output / "public-preflight", runtime=runtime,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/scripts/public_verification_fixtures.py", line 245, in run_public_preflight
+    result = verifier.run(checks=(VerificationCheck('public_existing', 'tests', tuple(case['verification_argv']), 120),),
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in __init__
+  File "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/minicode/deterministic_verifier.py", line 314, in __post_init__
+    raise ValueError("verification command must be safe argv")
+ValueError: verification command must be safe argv

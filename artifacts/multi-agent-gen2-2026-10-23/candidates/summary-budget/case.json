@@ -1,0 +1,58 @@
+{
+  "id": "gen2-summary-budget",
+  "category": "conditional_adjudication_or_budget",
+  "prompt": "修复上下文压缩摘要的共享预算准入。LLMSummaryGenerator 使用带工具目录的现有模型 adapter 时，实际请求同时包含摘要消息和工具 schema；当前有限 token 余额仅按消息预留，可能在余额不足时仍发出请求。请让有限预算在调用前覆盖实际发送的输入，包括工具 schema；余额不足时沿用现有摘要 fallback，且不发出请求。保留无限 token 预算、无工具目录 adapter、普通摘要内容、真实 usage 结算和已耗尽预算的兼容行为，不要通过关闭工具目录、关闭摘要或拒绝所有摘要来规避问题。仅修改授权路径，并在 tests/test_eval_regression.py 新增可独立运行、不接外网的回归测试，证明修复前会失败、修复后通过；已有公开兼容测试也必须通过。",
+  "authorized_paths": [
+    "minicode/context_compactor.py",
+    "minicode/model_call_control.py",
+    "tests/test_eval_regression.py"
+  ],
+  "verification_argv": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_public.py"
+  ],
+  "sourcePaths": [
+    "minicode/context_compactor.py",
+    "minicode/model_call_control.py"
+  ],
+  "publicTestPath": "tests/test_public.py",
+  "newTestPath": "tests/test_eval_regression.py",
+  "provenance": {
+    "referenceCommit": "ad20e4a893248a747e3b3ac741c280ded413ff54",
+    "referenceParentCommit": "9aaa6a434ae0a86766d28f8b1b91529451a31eb8",
+    "referenceCommitDate": "2026-10-19T18:18:43+08:00",
+    "baselineConstruction": "Exact minicode tree at baselineCommit, with public compatibility test added; no reverse edits or synthesized defect.",
+    "referenceConstruction": "The same base minicode tree with only sourcePaths replaced by their complete original referenceCommit bytes; also verified against complete reference minicode tree.",
+    "sourceObjects": {
+      "9aaa6a434ae0a86766d28f8b1b91529451a31eb8": {
+        "minicode/context_compactor.py": {
+          "gitBlob": "9cd835d5966974cc825ec5c5ad6c4222ba40efdf",
+          "sha256": "7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7"
+        },
+        "minicode/model_call_control.py": {
+          "gitBlob": "2268d808e6613ceaaaed50eca15f6bf6a4ea2afb",
+          "sha256": "70a55003f88e3e67831a2f178982414ef09b4fa6c7d84233681ecbaa783c29dc"
+        }
+      },
+      "ad20e4a893248a747e3b3ac741c280ded413ff54": {
+        "minicode/context_compactor.py": {
+          "gitBlob": "62f25c757043637851608a411ff0e5b7c5a91245",
+          "sha256": "bac655195dd11159684a310110843658c0fdf2b10b7d76a29b381f5dfc9c9560"
+        },
+        "minicode/model_call_control.py": {
+          "gitBlob": "67b7d02482101beb84dbac791453fd6c1b4c702c",
+          "sha256": "ffd2e46eea4b9b096acdd471598e71473b47bc4e1804e9e1cb9443c4a89ba7a6"
+        }
+      }
+    },
+    "overlapReview": "../../overlap-review.md",
+    "historicalProof": "historical-proof.json",
+    "knownOverlap": "None identified for this concrete summary schema admission defect in retained historical task records. Distinct from inspect_image bypassing the budget ledger. Complete deleted original oracles cannot be re-audited.",
+    "oracleSha256": "b6b6884930c92f373ac945bfc59a45c9680ec5372ffafcc58d505a4b19928da4",
+    "publicTestSha256": "14f147d9507609d39138b50248d48b8f64410f0552a51036278ef150e2272d48",
+    "baselineCommit": "9aaa6a434ae0a86766d28f8b1b91529451a31eb8"
+  }
+}

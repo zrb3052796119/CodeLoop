@@ -1,0 +1,15 @@
+{
+  "id": "gen2-read-context",
+  "category": "repair-context",
+  "prompt": "修复源码调查工具的上下文坐标一致性。用户通过 grep_files 定位再用 read_file 分页读取时，含 Unicode 分隔字符的源码字符串会导致搜索行号偏移；字符分页越过文件末尾时，TOTAL_CHARS 又会把请求的 offset 当作文件长度。请让搜索行号及上下文按文本文件实际换行计数，字符串中的非换行分隔字符保留原样；让字符读取在 EOF 及 EOF 之后报告真实的规范化字符总数并返回空正文，同时保留普通读取、分页和搜索行为。CRLF/CR 归一化规则沿用现有文本 I/O。不得修改公开测试；必须新增 tests/test_eval_regression.py，至少一项实际执行并全部通过的回归测试，覆盖本次缺陷。",
+  "authorized_paths": ["minicode/tools/read_file.py", "minicode/tools/grep_files.py", "tests/test_eval_regression.py"],
+  "verification_argv": ["python3", "-m", "pytest", "-q", "tests/test_public.py"],
+  "sourcePaths": ["minicode/tools/read_file.py", "minicode/tools/grep_files.py"],
+  "provenance": {
+    "baselineCommit": "9aaa6a434ae0a86766d28f8b1b91529451a31eb8",
+    "referenceCommit": "ad20e4a893248a747e3b3ac741c280ded413ff54",
+    "referenceCommittedAt": "2026-10-19T18:18:43+08:00",
+    "historicalDefect": "grep_files._search_file used str.splitlines for source coordinates; read_file._read_text_window returned no observed EOF total and _run substituted requested offset.",
+    "referenceRepair": "Use LF source boundaries and carry observed normalized EOF length from streaming read. Both changes exist in the real reference commit; no synthetic defect is introduced."
+  }
+}

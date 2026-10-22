@@ -1,0 +1,18 @@
+{
+  "valid": true,
+  "mode": "partial",
+  "expectedTrials": 6,
+  "auditedTrials": 0,
+  "deliveryEvidenceMode": "task_result_owner_ack",
+  "protocolVersion": "multi-agent-gen2-v1",
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "incomplete_results",
+      "trial": null,
+      "detail": "0/6 terminal rows"
+    }
+  ],
+  "trials": [],
+  "limits": "Only surviving evidence can be audited. No archived code, model request or oracle was executed. Missing usage remains unknown; failed task/protocol outcomes remain valid observations."
+}

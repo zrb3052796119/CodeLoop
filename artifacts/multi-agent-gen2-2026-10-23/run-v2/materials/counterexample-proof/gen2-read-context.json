@@ -1,0 +1,37 @@
+{
+  "baseline": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-B",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-0kuvq8ks/baseline/hidden_oracle.py",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-0kuvq8ks/baseline"
+    ],
+    "duration_seconds": 0.577,
+    "returncode": 1,
+    "stderr": "",
+    "stdout": "{\"passed\": false, \"checks\": 60, \"errors\": [\"Search must report physical LF-normalized source lines: source0.py:2:  \u4e59'\\nsource0.py:3: needle = 42\\nsource0.py:4:  last = '\u5c3e\ud83d\ude00'\\n\\n\\n1 match(es) in 1 file(s)\", \"Source string data must stay on its physical line: source0.py\", \"EOF total must measure normalized file content, not requested offset: FILE: source0.py\\nOFFSET: 39\\nEND: 39\\nTOTAL_CHARS: 39\\nTRUNCATED: no\\n\", \"EOF total must measure normalized file content, not requested offset: FILE: source0.py\\nOFFSET: 12383\\nEND: 12383\\nTOTAL_CHARS: 12383\\nTRUNCATED: no\\n\", \"Search must report physical LF-normalized source lines: source1.py:2:  \u4e59'\\nsource1.py:3: needle = 42\\nsource1.py:4:  last = '\u5c3e\ud83d\ude00'\\n\\n\\n1 match(es) in 1 file(s) (1 file(s) skipped)\", \"Source string data must stay on its physical line: source1.py\", \"EOF total must measure normalized file content, not requested offset: FILE: source1.py\\nOFFSET: 39\\nEND: 39\\nTOTAL_CHARS: 39\\nTRUNCATED: no\\n\", \"EOF total must measure normalized file content, not requested offset: FILE: source1.py\\nOFFSET: 12383\\nEND: 12383\\nTOTAL_CHARS: 12383\\nTRUNCATED: no\\n\", \"Search must report physical LF-normalized source lines: source2.py:2:  \u4e59'\\nsource2.py:3: needle = 42\\nsource2.py:4:  last = '\u5c3e\ud83d\ude00'\\n\\n\\n1 match(es) in 1 file(s) (2 file(s) skipped)\", \"Source string data must stay on its physical line: source2.py\", \"EOF total must measure normalized file content, not requested offset: FILE: source2.py\\nOFFSET: 39\\nEND: 39\\nTOTAL_CHARS: 39\\nTRUNCATED: no\\n\", \"EOF total must measure normalized file content, not requested offset: FILE: source2.py\\nOFFSET: 12383\\nEND: 12383\\nTOTAL_CHARS: 12383\\nTRUNCATED: no\\n\", \"Search must report physical LF-normalized source lines: source3.py:2:  \u4e59'\\nsource3.py:3: needle = 42\\nsource3.py:4:  last = '\u5c3e\ud83d\ude00'\\n\\n\\n1 match(es) in 1 file(s) (3 file(s) skipped)\", \"Source string data must stay on its physical line: source3.py\", \"EOF total must measure normalized file content, not requested offset: FILE: source3.py\\nOFFSET: 39\\nEND: 39\\nTOTAL_CHARS: 39\\nTRUNCATED: no\\n\", \"EOF total must measure normalized file content, not requested offset: FILE: source3.py\\nOFFSET: 12383\\nEND: 12383\\nTOTAL_CHARS: 12383\\nTRUNCATED: no\\n\", \"Search must report physical LF-normalized source lines: source4.py:2:  \u4e59'\\nsource4.py:3: needle = 42\\nsource4.py:4:  last = '\u5c3e\ud83d\ude00'\\n\\n\\n1 match(es) in 1 file(s) (4 file(s) skipped)\", \"Source string data must stay on its physical line: source4.py\", \"EOF total must measure normalized file content, not requested offset: FILE: source4.py\\nOFFSET: 39\\nEND: 39\\nTOTAL_CHARS: 39\\nTRUNCATED: no\\n\", \"EOF total must measure normalized file content, not requested offset: FILE: source4.py\\nOFFSET: 12383\\nEND: 12383\\nTOTAL_CHARS: 12383\\nTRUNCATED: no\\n\"]}\n",
+    "timed_out": false
+  },
+  "baseline_kind": "directory",
+  "fixed": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-B",
+      "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-counterexample-o4ca7r_t/fixed/hidden_oracle.py",
+      "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-counterexample-o4ca7r_t/fixed"
+    ],
+    "duration_seconds": 0.552,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "{\"passed\": true, \"checks\": 60, \"errors\": []}\n",
+    "timed_out": false
+  },
+  "fixed_root": "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-counterexample-o4ca7r_t/fixed",
+  "status": "PROVEN",
+  "test_files": [
+    {
+      "path": "hidden_oracle.py",
+      "sha256": "754b59911ebc20cc6acb7abc37287118d878c5b9adc53feb747e0efc469a96f8"
+    }
+  ]
+}

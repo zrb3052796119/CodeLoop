@@ -1,0 +1,26 @@
+{
+  "base": {
+    "oracleExitCode": 1,
+    "oracleStdout": "{\"checks\": [{\"label\": \"schema_does_not_fit\", \"limit\": 9293, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"schema_fits\", \"limit\": 13390, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"unlimited_catalog\", \"limit\": null, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"no_catalog_fits\", \"limit\": 4096, \"requests\": [{\"input\": 252, \"reserved\": 252, \"schemas\": 0, \"toolNames\": []}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 275}, {\"label\": \"messages_do_not_fit\", \"limit\": 1, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}], \"errors\": [\"schema_does_not_fit: expected 0 requests, got 1\", \"schema_does_not_fit: refused request returned summary or charged tokens\", \"schema_fits: admitted actual request exceeds reserved input\"], \"ok\": false, \"schemaTokens\": 9294}\n",
+    "oracleStderr": "LLM summary skipped: shared Agent turn budget exhausted\n",
+    "publicExitCode": 0,
+    "publicStdout": "",
+    "publicStderr": "LLM summary skipped: shared Agent turn budget exhausted\n..\n----------------------------------------------------------------------\nRan 2 tests in 0.002s\n\nOK\n"
+  },
+  "reference": {
+    "oracleExitCode": 0,
+    "oracleStdout": "{\"checks\": [{\"label\": \"schema_does_not_fit\", \"limit\": 9293, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}, {\"label\": \"schema_fits\", \"limit\": 13390, \"requests\": [{\"input\": 9546, \"reserved\": 9546, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"unlimited_catalog\", \"limit\": null, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"no_catalog_fits\", \"limit\": 4096, \"requests\": [{\"input\": 252, \"reserved\": 252, \"schemas\": 0, \"toolNames\": []}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 275}, {\"label\": \"messages_do_not_fit\", \"limit\": 1, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}], \"errors\": [], \"ok\": true, \"schemaTokens\": 9294}\n",
+    "oracleStderr": "LLM summary skipped: shared Agent turn budget exhausted\nLLM summary skipped: shared Agent turn budget exhausted\n",
+    "publicExitCode": 0,
+    "publicStdout": "",
+    "publicStderr": "LLM summary skipped: shared Agent turn budget exhausted\n..\n----------------------------------------------------------------------\nRan 2 tests in 0.002s\n\nOK\n"
+  },
+  "minimal-reference": {
+    "oracleExitCode": 0,
+    "oracleStdout": "{\"checks\": [{\"label\": \"schema_does_not_fit\", \"limit\": 9293, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}, {\"label\": \"schema_fits\", \"limit\": 13390, \"requests\": [{\"input\": 9546, \"reserved\": 9546, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"unlimited_catalog\", \"limit\": null, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"no_catalog_fits\", \"limit\": 4096, \"requests\": [{\"input\": 252, \"reserved\": 252, \"schemas\": 0, \"toolNames\": []}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 275}, {\"label\": \"messages_do_not_fit\", \"limit\": 1, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}], \"errors\": [], \"ok\": true, \"schemaTokens\": 9294}\n",
+    "oracleStderr": "LLM summary skipped: shared Agent turn budget exhausted\nLLM summary skipped: shared Agent turn budget exhausted\n",
+    "publicExitCode": 0,
+    "publicStdout": "",
+    "publicStderr": "LLM summary skipped: shared Agent turn budget exhausted\n..\n----------------------------------------------------------------------\nRan 2 tests in 0.002s\n\nOK\n"
+  }
+}
