@@ -1,0 +1,416 @@
+{
+  "case": "gen2-read-context",
+  "arm": "explicit",
+  "repeat": 1,
+  "id": "gen2-read-context-r1-explicit",
+  "modelCalls": 9,
+  "usageComplete": true,
+  "admissionRejectedCount": 0,
+  "tokenUsageComplete": true,
+  "cacheUsageComplete": true,
+  "unknownUsageCalls": 0,
+  "inputTokens": 151868,
+  "outputTokens": 15264,
+  "totalTokens": 167132,
+  "cacheReadTokens": 24704,
+  "estimatedCostCny": 0.15015232,
+  "knownCostLowerBoundCny": 0.15015232,
+  "delegationAttempts": 1,
+  "delegationTypes": [
+    "workflow"
+  ],
+  "failedCalls": 0,
+  "inFlightCalls": 0,
+  "ledgerDamaged": false,
+  "actualLeafRuns": 1,
+  "leafModelCalls": 6,
+  "deliveredLeafResults": 1,
+  "successfulLeafRuns": 1,
+  "readAnalysisLeafRuns": 0,
+  "implementationLeafRuns": 1,
+  "collaborationExecuted": true,
+  "collaborationProtocolSatisfied": true,
+  "deliveredWorkflowResults": 1,
+  "actualAnalystLeafRuns": 0,
+  "deliveredAnalystLeafResults": 0,
+  "externalAnalysisLeafRuns": 0,
+  "externalLeafRuns": 0,
+  "category": "repair-context",
+  "durationSeconds": 286.88678850000724,
+  "processSeconds": 288.4748850000324,
+  "judgeSeconds": 1.9464524580398574,
+  "success": true,
+  "oracleSuccess": true,
+  "oraclePassed": true,
+  "scopePassed": true,
+  "errorClass": null,
+  "oracleErrorClass": null,
+  "recoveryEvidenceErrors": [],
+  "processCleanup": {
+    "rootPid": 66004,
+    "recordedPids": [
+      66004,
+      66091,
+      66092,
+      66093,
+      66094,
+      66096,
+      66097,
+      66253,
+      66254,
+      66255,
+      66256,
+      66257,
+      66258,
+      66262,
+      66263,
+      66264,
+      66266,
+      66267,
+      66268,
+      66279,
+      66280,
+      66281,
+      66282,
+      66283,
+      66284,
+      66285,
+      66286,
+      66287,
+      66288,
+      66289,
+      66290,
+      66293,
+      66294,
+      66295,
+      66298,
+      66299,
+      66300,
+      66302,
+      66303,
+      66304,
+      66305,
+      66306,
+      66307,
+      66308,
+      66309
+    ],
+    "stoppedPids": [],
+    "killedPids": [],
+    "survivorPids": [],
+    "evidenceErrors": [],
+    "processScanErrors": [],
+    "cleanupComplete": true,
+    "phase": "complete",
+    "freezeComplete": true,
+    "killConfirmComplete": true,
+    "lateDiscoveredPids": [],
+    "unconfirmedPids": [],
+    "identityMismatches": [],
+    "phaseTimings": {
+      "freeze": {
+        "startedEpoch": 1792690440.24973,
+        "limitSeconds": 5.0,
+        "elapsedSeconds": 0.014645416056737304,
+        "scanCount": 1,
+        "timedOut": false,
+        "finishedEpoch": 1792690440.264375
+      },
+      "kill-confirm": {
+        "startedEpoch": 1792690440.264378,
+        "limitSeconds": 5.0,
+        "elapsedSeconds": 0.012194291921332479,
+        "scanCount": 1,
+        "timedOut": false,
+        "finishedEpoch": 1792690440.276572
+      }
+    },
+    "signalEvents": [
+      {
+        "pid": 66004,
+        "pgid": 66004,
+        "signal": "SIGSTOP",
+        "phase": "freeze",
+        "attemptedEpoch": 1792690440.24976,
+        "elapsedSeconds": 6.625009700655937e-05,
+        "sent": false,
+        "finishedEpoch": 1792690440.249771
+      },
+      {
+        "pid": 66004,
+        "pgid": 66004,
+        "signal": "SIGKILL",
+        "phase": "kill-confirm",
+        "attemptedEpoch": 1792690440.2643871,
+        "elapsedSeconds": 0.01469341607298702,
+        "sent": false,
+        "finishedEpoch": 1792690440.2643929
+      }
+    ],
+    "lastSeenProcesses": [],
+    "finalScanProcesses": [],
+    "cleanupSeconds": 0.027313232421875
+  },
+  "changedFiles": [
+    "minicode/tools/grep_files.py",
+    "minicode/tools/read_file.py",
+    "tests/test_eval_regression.py"
+  ],
+  "unauthorizedChanges": [],
+  "verificationInducedChanges": [],
+  "budget": {
+    "limit_total_tokens": 500000,
+    "limit_model_calls": 40,
+    "limit_cost_usd": "5",
+    "used_total_tokens": 167132,
+    "reserved_total_tokens": 0,
+    "used_model_calls": 9,
+    "used_cost_usd": "0.6919752",
+    "used_input_tokens": 151868,
+    "used_output_tokens": 15264,
+    "usage_uncertain": true
+  },
+  "subagentRuns": 2,
+  "taskErrorCodes": [],
+  "approvalDecisions": [],
+  "regressionTest": {
+    "status": "passed",
+    "passed": true,
+    "durationSeconds": 1.049792416044511,
+    "counts": {
+      "collected": 2,
+      "errors": 0,
+      "failed": 0,
+      "passed": 2,
+      "skipped": 0,
+      "xfailed": 0
+    },
+    "exitCode": 0,
+    "receiptSha256": "6f4f8b77dfef5d3f2ff6e7fbd63088eab3d17e623501501ba5869b7cbe7aa870",
+    "cleanup": {
+      "rootPid": 66351,
+      "recordedPids": [
+        66351
+      ],
+      "stoppedPids": [],
+      "killedPids": [],
+      "survivorPids": [],
+      "evidenceErrors": [],
+      "processScanErrors": [],
+      "cleanupComplete": true,
+      "phase": "complete",
+      "freezeComplete": true,
+      "killConfirmComplete": true,
+      "lateDiscoveredPids": [],
+      "unconfirmedPids": [],
+      "identityMismatches": [],
+      "phaseTimings": {
+        "freeze": {
+          "startedEpoch": 1792690442.209374,
+          "limitSeconds": 5.0,
+          "elapsedSeconds": 0.01449545903597027,
+          "scanCount": 1,
+          "timedOut": false,
+          "finishedEpoch": 1792690442.223868
+        },
+        "kill-confirm": {
+          "startedEpoch": 1792690442.2238731,
+          "limitSeconds": 5.0,
+          "elapsedSeconds": 0.01261241699103266,
+          "scanCount": 1,
+          "timedOut": false,
+          "finishedEpoch": 1792690442.236484
+        }
+      },
+      "signalEvents": [
+        {
+          "pid": 66351,
+          "pgid": 66351,
+          "signal": "SIGSTOP",
+          "phase": "freeze",
+          "attemptedEpoch": 1792690442.2093902,
+          "elapsedSeconds": 3.450002986937761e-05,
+          "sent": false,
+          "finishedEpoch": 1792690442.2094002
+        },
+        {
+          "pid": 66351,
+          "pgid": 66351,
+          "signal": "SIGKILL",
+          "phase": "kill-confirm",
+          "attemptedEpoch": 1792690442.223882,
+          "elapsedSeconds": 0.014527000021189451,
+          "sent": false,
+          "finishedEpoch": 1792690442.2238872
+        }
+      ],
+      "lastSeenProcesses": [],
+      "finalScanProcesses": []
+    },
+    "testSha256": "1fe0661175438ffdf47bf490f6f7d1dde0cc983ba7802ffa1081dff00584869f",
+    "snapshot": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/multi-agent-gen2-2026-10-23/run-v2/private/gen2-read-context-r1-explicit/judgement/regression/workspace",
+    "finishedAtSeconds": 1.9596427920041606
+  },
+  "regressionTestPassed": true,
+  "judgement": {
+    "schemaVersion": 1,
+    "policyVersion": "common-generated-regression-v1",
+    "limitSeconds": 120,
+    "durationSeconds": 1.9754034170182422,
+    "deadlineExceeded": false,
+    "oracle": {
+      "status": "passed",
+      "passed": true,
+      "durationSeconds": 0.8665923749795184,
+      "counts": null,
+      "exitCode": 0,
+      "receiptSha256": "f564c6d7c4dd74d1f027cd1a3fb11488a586653af852d1aa8b067b919ebce6ff",
+      "cleanup": {
+        "rootPid": 66338,
+        "recordedPids": [
+          66338
+        ],
+        "stoppedPids": [],
+        "killedPids": [],
+        "survivorPids": [],
+        "evidenceErrors": [],
+        "processScanErrors": [],
+        "cleanupComplete": true,
+        "phase": "complete",
+        "freezeComplete": true,
+        "killConfirmComplete": true,
+        "lateDiscoveredPids": [],
+        "unconfirmedPids": [],
+        "identityMismatches": [],
+        "phaseTimings": {
+          "freeze": {
+            "startedEpoch": 1792690441.1593668,
+            "limitSeconds": 5.0,
+            "elapsedSeconds": 0.014292582985945046,
+            "scanCount": 1,
+            "timedOut": false,
+            "finishedEpoch": 1792690441.1736572
+          },
+          "kill-confirm": {
+            "startedEpoch": 1792690441.173662,
+            "limitSeconds": 5.0,
+            "elapsedSeconds": 0.012605166994035244,
+            "scanCount": 1,
+            "timedOut": false,
+            "finishedEpoch": 1792690441.1862662
+          }
+        },
+        "signalEvents": [
+          {
+            "pid": 66338,
+            "pgid": 66338,
+            "signal": "SIGSTOP",
+            "phase": "freeze",
+            "attemptedEpoch": 1792690441.1593869,
+            "elapsedSeconds": 4.0207989513874054e-05,
+            "sent": false,
+            "finishedEpoch": 1792690441.1593978
+          },
+          {
+            "pid": 66338,
+            "pgid": 66338,
+            "signal": "SIGKILL",
+            "phase": "kill-confirm",
+            "attemptedEpoch": 1792690441.173671,
+            "elapsedSeconds": 0.014323833049274981,
+            "sent": false,
+            "finishedEpoch": 1792690441.173677
+          }
+        ],
+        "lastSeenProcesses": [],
+        "finalScanProcesses": []
+      },
+      "testSha256": null,
+      "snapshot": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/multi-agent-gen2-2026-10-23/run-v2/private/gen2-read-context-r1-explicit/judgement/oracle/workspace",
+      "finishedAtSeconds": 0.9094109169673175
+    },
+    "regressionTest": {
+      "status": "passed",
+      "passed": true,
+      "durationSeconds": 1.049792416044511,
+      "counts": {
+        "collected": 2,
+        "errors": 0,
+        "failed": 0,
+        "passed": 2,
+        "skipped": 0,
+        "xfailed": 0
+      },
+      "exitCode": 0,
+      "receiptSha256": "6f4f8b77dfef5d3f2ff6e7fbd63088eab3d17e623501501ba5869b7cbe7aa870",
+      "cleanup": {
+        "rootPid": 66351,
+        "recordedPids": [
+          66351
+        ],
+        "stoppedPids": [],
+        "killedPids": [],
+        "survivorPids": [],
+        "evidenceErrors": [],
+        "processScanErrors": [],
+        "cleanupComplete": true,
+        "phase": "complete",
+        "freezeComplete": true,
+        "killConfirmComplete": true,
+        "lateDiscoveredPids": [],
+        "unconfirmedPids": [],
+        "identityMismatches": [],
+        "phaseTimings": {
+          "freeze": {
+            "startedEpoch": 1792690442.209374,
+            "limitSeconds": 5.0,
+            "elapsedSeconds": 0.01449545903597027,
+            "scanCount": 1,
+            "timedOut": false,
+            "finishedEpoch": 1792690442.223868
+          },
+          "kill-confirm": {
+            "startedEpoch": 1792690442.2238731,
+            "limitSeconds": 5.0,
+            "elapsedSeconds": 0.01261241699103266,
+            "scanCount": 1,
+            "timedOut": false,
+            "finishedEpoch": 1792690442.236484
+          }
+        },
+        "signalEvents": [
+          {
+            "pid": 66351,
+            "pgid": 66351,
+            "signal": "SIGSTOP",
+            "phase": "freeze",
+            "attemptedEpoch": 1792690442.2093902,
+            "elapsedSeconds": 3.450002986937761e-05,
+            "sent": false,
+            "finishedEpoch": 1792690442.2094002
+          },
+          {
+            "pid": 66351,
+            "pgid": 66351,
+            "signal": "SIGKILL",
+            "phase": "kill-confirm",
+            "attemptedEpoch": 1792690442.223882,
+            "elapsedSeconds": 0.014527000021189451,
+            "sent": false,
+            "finishedEpoch": 1792690442.2238872
+          }
+        ],
+        "lastSeenProcesses": [],
+        "finalScanProcesses": []
+      },
+      "testSha256": "1fe0661175438ffdf47bf490f6f7d1dde0cc983ba7802ffa1081dff00584869f",
+      "snapshot": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/multi-agent-gen2-2026-10-23/run-v2/private/gen2-read-context-r1-explicit/judgement/regression/workspace",
+      "finishedAtSeconds": 1.9596427920041606
+    },
+    "cleanupComplete": true
+  },
+  "changedSourceFiles": [
+    "minicode/tools/grep_files.py",
+    "minicode/tools/read_file.py"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "conditions": {
+    "gen2Protocol": true,
+    "sixTerminalRows": true,
+    "validFinalAudit": true,
+    "cleanScopeAndReceipts": true,
+    "atLeastFourRealRepairs": true,
+    "eachArmAtLeastTwo": true,
+    "eachCaseAtLeastOne": true,
+    "allExplicitExecutorDelivered": true
+  },
+  "realRepairCount": 5,
+  "repairsByArm": {
+    "single": 3,
+    "explicit": 2
+  },
+  "repairsByCase": {
+    "gen2-read-context": 2,
+    "gen2-registry-lifetime": 2,
+    "gen2-summary-budget": 1
+  },
+  "interpretation": "Gen-2 engineering continuation gate only; incomparable with all historical results; no superiority or model-only causality claim.",
+  "manifestSha256": "7b4be9a3d683058caf0501471de36e0f0db89cedc397a801cd4c79ec17fe0018",
+  "resultsSha256": "1d7edbcb18915e799b957546a3764b04a4420a7b082d3b9e18d4a5bcd2f7a36a",
+  "auditSha256": "a1e23a483c2248459ae0296cf29244668c656217e99242dc7aed661fb909091a"
+}

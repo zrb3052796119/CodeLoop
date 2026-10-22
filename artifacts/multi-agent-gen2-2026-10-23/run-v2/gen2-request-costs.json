@@ -1,0 +1,72 @@
+{
+  "byArmAndRole": {
+    "explicit:analyst": {
+      "requests": 0,
+      "knownTokens": 0,
+      "unknownTokenRequests": 0,
+      "requestSeconds": 0.0,
+      "missingDurationRequests": 0
+    },
+    "explicit:executor": {
+      "requests": 29,
+      "knownTokens": 641506,
+      "unknownTokenRequests": 0,
+      "requestSeconds": 763.7858897502301,
+      "missingDurationRequests": 0
+    },
+    "explicit:main": {
+      "requests": 9,
+      "knownTokens": 75730,
+      "unknownTokenRequests": 0,
+      "requestSeconds": 187.75612004403956,
+      "missingDurationRequests": 0
+    },
+    "explicit:plan": {
+      "requests": 0,
+      "knownTokens": 0,
+      "unknownTokenRequests": 0,
+      "requestSeconds": 0.0,
+      "missingDurationRequests": 0
+    },
+    "single:analyst": {
+      "requests": 0,
+      "knownTokens": 0,
+      "unknownTokenRequests": 0,
+      "requestSeconds": 0.0,
+      "missingDurationRequests": 0
+    },
+    "single:executor": {
+      "requests": 0,
+      "knownTokens": 0,
+      "unknownTokenRequests": 0,
+      "requestSeconds": 0.0,
+      "missingDurationRequests": 0
+    },
+    "single:main": {
+      "requests": 62,
+      "knownTokens": 1467381,
+      "unknownTokenRequests": 0,
+      "requestSeconds": 1114.58003191615,
+      "missingDurationRequests": 0
+    },
+    "single:plan": {
+      "requests": 0,
+      "knownTokens": 0,
+      "unknownTokenRequests": 0,
+      "requestSeconds": 0.0,
+      "missingDurationRequests": 0
+    }
+  },
+  "executorReachedTrials": [
+    "gen2-read-context-r1-explicit",
+    "gen2-registry-lifetime-r1-explicit",
+    "gen2-summary-budget-r1-explicit"
+  ],
+  "executorEditRequestTrials": [
+    "gen2-read-context-r1-explicit",
+    "gen2-registry-lifetime-r1-explicit",
+    "gen2-summary-budget-r1-explicit"
+  ],
+  "explicitNonExecutorRequestFraction": 0.23684210526315788,
+  "notes": "Tokens remain known lower bounds when unknownTokenRequests>0; requestSeconds sums request latency, not phase wall time. Edit requests are attempts, not accepted writes. Non-Executor share is descriptive, not a protocol-tax gate."
+}

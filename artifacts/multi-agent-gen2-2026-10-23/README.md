@@ -14,4 +14,6 @@ python3 scripts/analyze_multi_agent_gen2.py --input artifacts/multi-agent-gen2-2
 
 `candidate-pack-v1/v2/v3` 和首次 `run/` 是模型运行之前的离线准备迭代，保留在本地：v2修正非零退出假红判定，v3删除公开命令中生产白名单不允许的选项；没有模型重抽。真正六格只能从提交后的 `run-v2/manifest.json` 固定顺序各跑一次。
 
-当前预注册提交记录的是零模型调用状态。本地联合测试54通过、正式冻结包独立partial audit有效（0/6、仅未运行警告）。后续结果与终态审计保存在run-v2，不能将这些离线验证当作模型效果验收。
+预注册已在零模型调用状态提交为 `f131d7f3f9cc47dc00d7e64a977c466ec4804237`。用户明确授权既有智谱端点后，固定六格全部完成：**5/6（single 3/3、explicit 2/3）**，继续门通过。独立终审6/6有效、0错误、1个由HTTP前预算拒绝解释的计数警告。没有重跑、补抽或更换模型。
+
+结论与边界见 [完整报告](report.md)，机器判定见 [gen2-gate.json](run-v2/gen2-gate.json)，按角色开销见 [gen2-report.md](run-v2/gen2-report.md)。原始账本、请求和验收副本在本地被Git忽略的 `run-v2/private/` 保留；版本控制保存精选结果与审计摘要，不能仅靠摘要重建全部原始证据。

@@ -1,0 +1,6 @@
+{"id": "gen2-read-context-r1-single", "success": true, "durationSeconds": 469.02727945894003, "modelCalls": 18, "totalTokens": 490097, "delegationAttempts": 0, "errorClass": "AgentBudgetExceeded"}
+{"id": "gen2-registry-lifetime-r1-explicit", "success": true, "durationSeconds": 373.42811974999495, "modelCalls": 14, "totalTokens": 257759, "delegationAttempts": 1, "errorClass": null}
+{"id": "gen2-summary-budget-r1-single", "success": true, "durationSeconds": 394.9317845420446, "modelCalls": 21, "totalTokens": 492045, "delegationAttempts": 0, "errorClass": null}
+{"id": "gen2-read-context-r1-explicit", "success": true, "durationSeconds": 286.88678850000724, "modelCalls": 9, "totalTokens": 167132, "delegationAttempts": 1, "errorClass": null}
+{"id": "gen2-summary-budget-r1-explicit", "success": false, "durationSeconds": 321.67885379190557, "modelCalls": 15, "totalTokens": 292345, "delegationAttempts": 1, "errorClass": null}
+{"id": "gen2-registry-lifetime-r1-single", "success": true, "durationSeconds": 309.04508404200897, "modelCalls": 23, "totalTokens": 485239, "delegationAttempts": 0, "errorClass": null}
