@@ -1,0 +1,40 @@
+Status: PROVEN
+{
+  "baseline": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-m",
+      "pytest",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py",
+      "-q"
+    ],
+    "duration_seconds": 0.149,
+    "returncode": 1,
+    "stderr": "",
+    "stdout": "F....F..FFF                                                              [100%]\n=================================== FAILURES ===================================\n_________ test_explicit_empty_catalog_does_not_inherit_builtin_models __________\n\n    def test_explicit_empty_catalog_does_not_inherit_builtin_models() -> None:\n        router = AgentRouter(available_models={})\n    \n>       with pytest.raises(RuntimeError):\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       Failed: DID NOT RAISE RuntimeError\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py:29: Failed\n_________ test_missing_tier_candidates_never_select_an_unrelated_model _________\n\n    def test_missing_tier_candidates_never_select_an_unrelated_model() -> None:\n        router = AgentRouter(tiers=[tier()], available_models=catalog(\"unrelated\"))\n    \n>       with pytest.raises(RuntimeError):\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       Failed: DID NOT RAISE RuntimeError\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py:66: Failed\n______________ test_unregistered_explicit_model_is_rejected[True] ______________\n\nconfigure_at_construction = True\n\n    @pytest.mark.parametrize(\"configure_at_construction\", [True, False])\n    def test_unregistered_explicit_model_is_rejected(\n        configure_at_construction: bool,\n    ) -> None:\n        router = AgentRouter(\n            tiers=[tier()], available_models=catalog(\"project-primary\"),\n            force_model=\"unregistered\" if configure_at_construction else None,\n        )\n        if not configure_at_construction:\n            router.force_model_selection(\"unregistered\")\n    \n>       with pytest.raises(RuntimeError):\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       Failed: DID NOT RAISE RuntimeError\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py:100: Failed\n_____________ test_unregistered_explicit_model_is_rejected[False] ______________\n\nconfigure_at_construction = False\n\n    @pytest.mark.parametrize(\"configure_at_construction\", [True, False])\n    def test_unregistered_explicit_model_is_rejected(\n        configure_at_construction: bool,\n    ) -> None:\n        router = AgentRouter(\n            tiers=[tier()], available_models=catalog(\"project-primary\"),\n            force_model=\"unregistered\" if configure_at_construction else None,\n        )\n        if not configure_at_construction:\n            router.force_model_selection(\"unregistered\")\n    \n>       with pytest.raises(RuntimeError):\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       Failed: DID NOT RAISE RuntimeError\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py:100: Failed\n_________ test_smart_router_does_not_switch_after_candidate_exhaustion _________\n\n    def test_smart_router_does_not_switch_after_candidate_exhaustion() -> None:\n        router = AgentRouter(tiers=[tier()], available_models=catalog(\"unrelated\"))\n        switcher = Mock(spec=ModelSwitcher)\n        smart = SmartRouter(router=router, switcher=switcher)\n    \n>       with pytest.raises(RuntimeError):\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       Failed: DID NOT RAISE RuntimeError\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py:111: Failed\n=========================== short test summary info ============================\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py::test_explicit_empty_catalog_does_not_inherit_builtin_models\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py::test_missing_tier_candidates_never_select_an_unrelated_model\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py::test_unregistered_explicit_model_is_rejected[True]\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py::test_unregistered_explicit_model_is_rejected[False]\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-n0r86nbl/baseline/tests/test_agent_router_fail_closed.py::test_smart_router_does_not_switch_after_candidate_exhaustion\n5 failed, 6 passed in 0.05s\n",
+    "timed_out": false
+  },
+  "baseline_kind": "directory",
+  "fixed": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-m",
+      "pytest",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/tests/test_agent_router_fail_closed.py",
+      "-q"
+    ],
+    "duration_seconds": 0.658,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "...........                                                              [100%]\n11 passed in 0.21s\n",
+    "timed_out": false
+  },
+  "fixed_root": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+  "status": "PROVEN",
+  "test_files": [
+    {
+      "path": "tests/test_agent_router_fail_closed.py",
+      "sha256": "1eb1a6623f3b37c07af93bd8d8495cc5f563eb1e30e95a5e5f90f01a135f8d74"
+    }
+  ]
+}

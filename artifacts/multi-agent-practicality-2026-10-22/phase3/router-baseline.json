@@ -1,0 +1,9 @@
+{
+  "baseCommit": "e85a95803e248e157523e10dd0f1fe5bbed3f9bb",
+  "sourcePath": "minicode/agent_router.py",
+  "baselineRoot": "/tmp/minicode-phase3-router-baseline-f3g510gc",
+  "sha256": "4a4d0d77034076f18452dc89a3703e7d7d7ed7895a93a5da5f6b707dbf8b6127",
+  "matchesHeadBlob": true,
+  "baselineKind": "exact pre-change source snapshot with current dependencies",
+  "modelCalls": 0
+}

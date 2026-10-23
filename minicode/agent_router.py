@@ -246,7 +246,7 @@ class AgentRouter:
         force_model: str | None = None,  # Override all routing
     ):
         self.tiers = tiers or DEFAULT_TIERS
-        self.available_models = available_models or BUILTIN_MODELS
+        self.available_models = BUILTIN_MODELS if available_models is None else available_models
         self.budget_per_hour = budget_per_hour
         self.force_model = force_model
         self._history: list[RoutingDecision] = []
@@ -261,9 +261,17 @@ class AgentRouter:
             
         Returns:
             RoutingDecision with selected model and reasoning
+
+        Raises:
+            RuntimeError: No configured candidate is available, or a forced
+                model is absent from the available model catalog.
         """
-        # If forced model is set, always use it
+        # An explicit choice overrides tiers, but not the available catalog.
         if self.force_model:
+            if self.force_model not in self.available_models:
+                raise RuntimeError(
+                    f"Forced model {self.force_model!r} is not available for routing"
+                )
             decision = RoutingDecision(
                 task_text=task_text,
                 profile=extract_task_profile(task_text),
@@ -342,11 +350,9 @@ class AgentRouter:
             if fallback in self.available_models:
                 return fallback
         
-        # Last resort: any available model
-        if self.available_models:
-            return next(iter(self.available_models))
-        
-        raise RuntimeError("No models available for routing")
+        raise RuntimeError(
+            f"No configured models available for routing tier {tier.name!r}"
+        )
     
     def _estimate_cost(self, model_name: str, estimated_tokens: int) -> float:
         """Estimate the cost of running a task on a model."""
