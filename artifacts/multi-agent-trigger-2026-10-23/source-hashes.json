@@ -1,0 +1,42 @@
+{
+  "baselineArchiveSha256": "e60b5ff1c8f514da1c1874ca9eacddcbe7e3a0ca9dbd82e672434eaa7c5672f5",
+  "files": [
+    {
+      "path": "minicode/prompt.py",
+      "beforeSha256": "56d8f6a8dc5ee183a656004a7867490ca56008a0f0b37e2fa0a1dea02bcf2899",
+      "afterSha256": "44fe45eb613cadbfe0060564034f3922022e629a8ca310bf77d9ea27eb82afd0",
+      "baseline": "gen2 execution-host.zip"
+    },
+    {
+      "path": "minicode/tools/task.py",
+      "beforeSha256": "94dd12b8988e36130a37e994a2e9c6cc9b8e61ca4b325844115d7b71bf593def",
+      "afterSha256": "209c8a84a9e0c5699a5edf29510260ec3a7e12b4fe3fb1b7ed6f1ea3ddda4e6b",
+      "baseline": "gen2 execution-host.zip"
+    },
+    {
+      "path": "minicode/coding_progress.py",
+      "beforeSha256": "a57b94c88405a5d4c70c1b2cd3865c901f4c504c888a567ac6fcd466c5c0f49f",
+      "afterSha256": "d63326b8f89033595b27602dbf130416490981554c70ef96c1e674b1d3979941",
+      "baseline": "gen2 execution-host.zip"
+    },
+    {
+      "path": "minicode/agent_loop.py",
+      "beforeSha256": "978aaba198cea97265046a47091279e6b356bd36d96b5361159f6bbd3c8cdec3",
+      "afterSha256": "85a0cd49eca519adc7ce165cba6709b5031acf1b478e8e0c6b7a25e36a2d8851",
+      "baseline": "gen2 execution-host.zip"
+    },
+    {
+      "path": "tests/test_implementation_recovery.py",
+      "beforeSha256": "00035fdbb669c60bf83a2d99c1823adcedebcb89414505390e4188ab48768603",
+      "afterSha256": "8a4d37b4100cbbcfec1f910ea823543b8c88084ef65a12b3501d1946128bf308",
+      "baseline": "94c06e26 test fixture"
+    },
+    {
+      "path": "tests/test_progress_delegation.py",
+      "beforeSha256": null,
+      "afterSha256": "5b193664322b8f476e067b70896076ba7cccc301a33756bf5bf0f4f8c487e7f3",
+      "baseline": "new regression test"
+    }
+  ],
+  "patchSha256": "3a86905b3164d7724363eaac861efe5372d6c810f36ef04b4a2f64ee17813c29"
+}

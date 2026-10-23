@@ -1,0 +1,385 @@
+--- a/minicode/prompt.py
++++ b/minicode/prompt.py
+@@ -260,18 +260,19 @@
+         "If propose_skill is unavailable, explain that automatic Skill directory routing is unavailable before writing any Skill files.\n"
+         "\n"
+         "## Sub-agent (task tool) usage guide\n"
+-        "You have access to the 'task' tool which can spawn sub-agents for complex work. Use it when:\n"
+-        "- You need to explore a large codebase without bloating the main context (agent_type='explore')\n"
+-        "- You need an analysis-only answer or must resolve a specific design uncertainty (agent_type='plan'); give it a bounded question, not a request to understand the entire repository\n"
+-        "- Small low-risk edits (a few non-sensitive files, bounded diff): edit directly with edit_file/write_file and verify with run_command; if a permission decision requires workflow, delegate the remaining work through that route\n"
+-        "- For delegated changes, call agent_type='workflow' directly with write_paths and verification_commands (the scheduler constructs WorkflowRequest.v1 for you) or an explicit workflow_request. Do not routinely run Plan first: the scheduler selects Analyst when the scope and risk require it, and narrow fully-verified scopes use Executor->Verifier. Verification, approval, review, and commit gates remain scheduler-owned\n"
+-        "- Keep the workflow prompt within 3800 characters: state the objective, observed failure, constraints, and acceptance outcome; put authorized paths and verification argv in their dedicated fields. Do not paste source files or exploration transcripts. Preserve essential requirements when shortening the handoff\n"
++        "Choose a task shape with a clear handoff result; delegate only when the remaining shared budget and time support the work and its return. File count is an auxiliary signal, not a delegation rule.\n"
++        "| Task shape | Route and example | Use direct tools when |\n"
++        "| --- | --- | --- |\n"
++        "| Independent investigation question | agent_type='explore' (read-only): trace configuration precedence and return the rule with source locations | a single-fact lookup already has a known file or symbol |\n"
++        "| Specific design uncertainty | agent_type='plan' (read-only): compare locking options for this race and recommend one with trade-offs | the required behavior and small fix are already clear |\n"
++        "| Isolated implementation with authorized scope and executable verification | agent_type='workflow': repair retry handling in the named files and add/run the stated regression | a known-location, low-risk guard fix can be edited and checked directly |\n"
++        "| Known-location lookup or small low-risk, non-sensitive edit | read_file/grep_files/find_symbols, or edit_file/write_file then run_command: find a constant or fix one known guard | no independent question or isolated implementation needs a handoff |\n"
++        "- If a permission decision requires workflow, delegate the remaining work through that route. For delegated changes, call workflow directly with write_paths and verification_commands (the scheduler constructs WorkflowRequest.v1 for you) or an explicit workflow_request. Do not routinely run Plan first: the scheduler selects Analyst when scope and risk require it; complete non-sensitive requests default to Executor->Verifier. Verification, approval, review, and commit gates remain scheduler-owned\n"
++        "- Make each handoff self-contained: objective, observed failure, constraints, and acceptance outcome; put authorized paths and verification argv in their dedicated fields. Keep inline workflow prompts within 3800 characters. For a longer brief, save the full text in an authorized workspace file and use '@file:relative/path' as the first line, followed by an inline summary of at most 800 characters. Preserve all essential requirements in that file instead of pasting source dumps or exploration transcripts inline\n"
+         "- Once the relevant code and expected behavior are clear, make or delegate the smallest supported change. Read more only to resolve a concrete uncertainty; if scope, evidence, or permission blocks the change, report that blocker accurately\n"
+         "- agent_type='general' is a deprecated legacy-embedder compatibility route and is rejected by the production Agent Loop\n"
+         "- A committed workflow completes that child task; continue any remaining user-requested work, collect owned async results, and summarize without repeating committed changes\n"
+-        "Do NOT use the task tool for simple lookups — use read_file/grep_files directly.\n"
+         "If you did delegate exploration to a sub-agent, do not repeat that search yourself in the main context — wait for its result and build on it.\n"
+-        "Do NOT use the task tool just to avoid work — use it when it genuinely improves efficiency.\n"
+         "Structured workflow roles do not negotiate or exchange free-form notes; they read Assignment-authorized source paths and scheduler-assigned artifacts, and write one exact result artifact. "
+         "For structured roles the note tools transport only authorized artifacts; independent explore/plan agents may use them for bounded shared notes.\n"
+         "\n"
+--- a/minicode/tools/task.py
++++ b/minicode/tools/task.py
+@@ -3615,24 +3615,38 @@
+ task_tool = ToolDefinition(
+     name="task",
+     description=(
+-        "Run or manage a sub-agent for a complex task. Choose agent_type by "
+-        "the work, not by habit: a task that creates or modifies files -> "
+-        "'workflow' (pass write_paths and verification_commands and the "
+-        "scheduler constructs WorkflowRequest.v1 for you, or provide an "
+-        "explicit workflow_request); broad codebase search or understanding "
+-        "-> 'explore' (read-only; several issued in one step run in "
+-        "parallel); deep analysis or design before acting -> 'plan' "
+-        "(read-only). When to delegate: answering means reading across "
+-        "several files, or you have independent work that can run in "
+-        "parallel — delegate it and keep the conclusion, not the file "
+-        "dumps. When NOT to delegate: a single-fact lookup where you "
+-        "already know the file, symbol, or value — use "
+-        "read_file/grep_files/find_symbols directly. Once you have "
++        "Run or manage a sub-agent for work with a clear handoff result. "
++        "Delegate only when the remaining shared budget and time support "
++        "the work and its return. File count is an auxiliary signal, not a "
++        "delegation rule. Match the task shape:\n"
++        "- Independent investigation question -> 'explore' (read-only): "
++        "trace configuration precedence and return the rule with source "
++        "locations; a single-fact lookup in a known file uses direct tools.\n"
++        "- Specific design uncertainty -> 'plan' (read-only): compare "
++        "locking options for this race and recommend one with trade-offs; "
++        "a known small fix can proceed directly.\n"
++        "- Isolated implementation with authorized scope and executable "
++        "verification -> 'workflow': repair retry handling in named files "
++        "and add/run the stated regression. Pass write_paths and "
++        "verification_commands so the scheduler constructs WorkflowRequest.v1, "
++        "or provide an explicit workflow_request. Start workflow directly, "
++        "without a routine Plan first.\n"
++        "- Known-location lookup or small low-risk, non-sensitive edit -> direct "
++        "read_file/grep_files/find_symbols, or edit_file/write_file then "
++        "run_command: find a constant or fix one known guard. If a permission "
++        "decision requires workflow, use that route for the remaining work.\n"
++        "For independent investigations, keep the conclusion, not the file "
++        "dumps. Once you have "
+         "delegated a search, do not also run it yourself — wait for the "
+         "result. Every call starts in a fresh context: the prompt must be "
+-        "self-contained. In the 'explore'/'plan' prompt you may state the "
++        "self-contained. Keep inline workflow prompts within 3800 characters; "
++        "for a longer brief, save the full text in an authorized workspace "
++        "file and use '@file:relative/path' as the first line, followed by "
++        "an inline summary of at most 800 characters. Preserve all essential "
++        "requirements in the file. In the 'explore'/'plan' prompt you may state the "
+         "breadth ('medium' or 'very thorough'); the sub-agent adapts its "
+-        "search accordingly. The default action "
++        "search accordingly. Several independent read-only calls issued in "
++        "one step run in parallel. The default action "
+         "'run' waits for the final result. Use 'spawn' with read-only "
+         "'explore'/'plan', then 'poll' or 'cancel' with the returned ID, "
+         "when the parent should continue working concurrently. "
+--- a/minicode/coding_progress.py
++++ b/minicode/coding_progress.py
+@@ -88,6 +88,7 @@
+     _pressure_level: int = 0
+     _routine_notice_count: int = 0
+     _deadline_pressure_level: int = 0
++    _delegation_suggested: bool = False
+ 
+     def observe(self, *, successful_read: bool, changed: bool, verified: bool) -> None:
+         if changed or verified:
+@@ -114,6 +115,7 @@
+         *,
+         remaining_steps: int | None = None,
+         remaining_seconds: float | None = None,
++        can_delegate: bool = False,
+     ) -> CodingProgressNotice | None:
+         if not self.enabled:
+             return None
+@@ -207,8 +209,6 @@
+             "smallest authorized change now and run the relevant check. "
+             "If a specific fact is still missing, state that gap briefly and "
+             "read only what resolves it; avoid another broad repository survey. "
+-            "A coordinator should delegate the implementation directly to one "
+-            "workflow, not start another planning agent. "
+             "Do not invent a change, bypass approval or verification, or claim "
+             "success without evidence. If blocked, report the concrete blocker."
+             + budget_text + action_text
+@@ -232,6 +232,21 @@
+                 "invented edits, skipped verification or unsupported success claims."
+                 + budget_text
+             )
++        if (can_delegate and self.read_batches >= 8 and self.mutations == 0
++                and pressure_level == 0 and deadline_level == 0
++                and not self._delegation_suggested):
++            # This sentence shares the existing notice; edits and delivery
++            # retire read streaks but never replenish its once-per-turn limit.
++            text += (
++                " Consider task delegation if the next step has an independent "
++                "question and a concrete handoff: use explore for a focused "
++                "investigation with evidence to return, or workflow for a bounded "
++                "implementation with clear scope and checks. Choose this only "
++                "when the shared budget and time cover the worker, verification "
++                "and handoff; otherwise make the supported change directly or "
++                "read only the missing fact."
++            )
++            self._delegation_suggested = True
+         return CodingProgressNotice(
+             "implementation_deadline_pressure"
+             if deadline_urgent
+--- a/minicode/agent_loop.py
++++ b/minicode/agent_loop.py
+@@ -2301,7 +2301,9 @@
+     # This is feedback, never authorization. Read-only role registries cannot
+     # be turned into executors by a quoted "fix" inside their assignment.
+     progress_capable = (
+-        bool({"edit_file", "write_file", "task"}.intersection(tools.list_all()))
++        any(tool.name in {"edit_file", "write_file", "task"}
++            and (tool.metadata is None or tool.metadata.is_enabled)
++            for tool in tools.list())
+         and getattr(getattr(permissions, "auto_checker", None), "mode", None) != "plan"
+     )
+     progress_intent = parsed_intent
+@@ -4192,11 +4194,22 @@
+                             "calibratedInputEstimate": repair_input_calibration.estimate(_estimated_context_tokens(projected)),
+                         })
+                     request_messages = implementation_request_messages()
++                progress_task = tools.find("task") if coding_progress.enabled else None
++                progress_can_delegate = (
++                    progress_task is not None and agent_depth == 0
++                    and (progress_task.metadata is None or progress_task.metadata.is_enabled)
++                    and getattr(getattr(permissions, "auto_checker", None), "mode", None) != "plan"
++                    and host_native_result_tool is None
++                    # Explicit bounded phases may make task poll-only after
++                    # pricing this notice. Keep their existing phase guidance.
++                    and (implementation_phases is None or not implementation_phases.bounded)
++                )
+                 progress_notice = coding_progress.before_request(
+                     agent_budget.snapshot() if agent_budget is not None and coding_progress.enabled else None,
+                     _estimated_context_tokens(request_messages),
+                     remaining_steps=(max(0, max_steps - step + 1) if max_steps is not None else None),
+                     remaining_seconds=(max(0.0, deadline_monotonic - time.monotonic()) if deadline_monotonic is not None else None),
++                    can_delegate=progress_can_delegate,
+                 )
+                 if progress_notice is not None:
+                     current_messages.append({
+--- a/tests/test_implementation_recovery.py
++++ b/tests/test_implementation_recovery.py
+@@ -252,9 +252,10 @@
+                                  reservation=reservation)
+     worker = _WorkerCallBudget(shared, "executor", max_calls=36,
+                                preserve_calls=1, preserve_tokens=19452)
++    # These cases exercise the explicit legacy quotas, not the continuous default.
+     policy = ImplementationPhaseController(snapshot=worker.snapshot(), max_steps=36,
+         now=0, deadline=600, analysis_complete=True, allow_test_completion=True,
+-        require_structured_handoff=True)
++        require_structured_handoff=True, bounded=True)
+     submit = ToolDefinition(name="executor_submit", description="existing result channel",
+         input_schema={"type": "object"}, validator=lambda value: value,
+         run=lambda _value, _context: ToolResult(ok=True, output="received"))
+--- /dev/null
++++ b/tests/test_progress_delegation.py
+@@ -0,0 +1,197 @@
++"""Capability-aware progress advice through the real loop, without providers."""
++
++from dataclasses import replace
++import time
++
++import pytest
++
++from minicode.agent_budget import AgentTurnBudget
++from minicode.agent_loop import run_agent_turn
++from minicode.auto_mode import PermissionMode
++from minicode.coding_progress import CodingProgressTracker
++from minicode.permissions import PermissionManager
++from minicode.tooling import ToolMetadata, ToolRegistry
++from minicode.tools.edit_file import edit_file_tool
++from minicode.tools.read_file import read_file_tool
++from minicode.tools.task import task_tool
++from minicode.types import AgentStep, ModelAdapter
++
++
++def _delegation_notices(notices):
++    return [text for text in notices if "delegat" in text.lower()]
++
++
++class InspectionModel(ModelAdapter):
++    def __init__(self, reads=12, on_request=None):
++        self.reads = reads
++        self.on_request = on_request
++        self.requests = []
++
++    def next(self, messages, on_stream_chunk=None):
++        self.requests.append([
++            message["content"] for message in messages if message.get("_coding_progress")
++        ])
++        number = len(self.requests)
++        if self.on_request is not None:
++            self.on_request(number)
++        if number <= self.reads:
++            return AgentStep(type="tool_calls", calls=[{
++                "id": f"read-{number}", "toolName": "read_file",
++                "input": {"path": "app.py"},
++            }])
++        return AgentStep(type="assistant", content="Investigation ended; no changes or verification completed.")
++
++
++def _run_inspection(tmp_path, *, task=True, model=None, prompt="Fix the bug in app.py.",
++                    budget=None, permissions=None, agent_depth=0, **kwargs):
++    (tmp_path / "app.py").write_text("value = 0\n")
++    definitions = [read_file_tool, edit_file_tool]
++    if task is not False:
++        definitions.append(task_tool if task is True else task)
++    model = model or InspectionModel()
++    run_agent_turn(
++        model=model, tools=ToolRegistry(definitions),
++        messages=[{"role": "user", "content": prompt}], cwd=str(tmp_path),
++        enable_work_chain=False, max_steps=40, agent_depth=agent_depth,
++        permissions=permissions,
++        agent_budget=budget or AgentTurnBudget(max_total_tokens=1_000_000, max_model_calls=100),
++        **kwargs,
++    )
++    assert len(model.requests) == model.reads + 1
++    assert (tmp_path / "app.py").read_text() == "value = 0\n"
++    return model.requests
++
++
++@pytest.mark.parametrize("agent_depth", [0, 1])
++def test_actual_implementation_loop_without_task_never_suggests_delegation(tmp_path, agent_depth):
++    requests = _run_inspection(tmp_path, task=False, agent_depth=agent_depth)
++    assert len(requests[-1]) == 3  # Ordinary implementation feedback remains.
++    assert not _delegation_notices(requests[-1])
++
++
++def test_actual_loop_suggests_once_after_eight_batches_even_for_one_file(tmp_path):
++    requests = _run_inspection(tmp_path, runtime={"subagentRoutingEnabled": False})
++    assert len(requests[4]) == 1
++    assert not _delegation_notices(requests[4])
++    suggestions = _delegation_notices(requests[8])
++    assert len(suggestions) == 1
++    assert "explore" in suggestions[0] and "workflow" in suggestions[0]
++    assert "if" in suggestions[0].lower() and "otherwise" in suggestions[0].lower()
++    assert "should delegate" not in suggestions[0]
++    assert _delegation_notices(requests[-1]) == suggestions
++    assert len(requests[-1]) == 3
++
++
++@pytest.mark.parametrize("mode", ["readonly-request", "plan", "disabled-task", "nested"])
++def test_actual_loop_does_not_suggest_unavailable_delegation(tmp_path, monkeypatch, mode):
++    options = {}
++    if mode == "readonly-request":
++        options["prompt"] = "Review app.py; do not modify it."
++    elif mode == "plan":
++        permissions = PermissionManager(str(tmp_path))
++        monkeypatch.setattr(permissions.auto_checker, "mode", PermissionMode.PLAN)
++        options["permissions"] = permissions
++    elif mode == "disabled-task":
++        options["task"] = replace(task_tool, metadata=ToolMetadata(
++            name="task", description=task_tool.description, is_enabled=False,
++        ))
++    elif mode == "nested":
++        options["agent_depth"] = 2
++    requests = _run_inspection(tmp_path, **options)
++    assert not _delegation_notices(requests[-1])
++    if mode in {"readonly-request", "plan"}:
++        assert not requests[-1]
++
++
++def test_actual_loop_rechecks_task_enabled_state_at_each_request(tmp_path):
++    metadata = ToolMetadata(name="task", description=task_tool.description)
++
++    def change_enabled(number):
++        if number == 7:
++            metadata.is_enabled = False
++        elif number == 11:
++            metadata.is_enabled = True
++
++    model = InspectionModel(on_request=change_enabled)
++    requests = _run_inspection(tmp_path, model=model, task=replace(task_tool, metadata=metadata))
++    assert not _delegation_notices(requests[8])
++    assert len(_delegation_notices(requests[12])) == 1
++
++
++def test_actual_loop_preserves_call_pressure_feedback_without_delegation(tmp_path):
++    requests = _run_inspection(tmp_path,
++        budget=AgentTurnBudget(max_total_tokens=1_000_000, max_model_calls=14))
++    assert not _delegation_notices(requests[-1])
++    assert any("nearly exhausted" in notice for notice in requests[-1])
++
++
++def test_actual_loop_preserves_deadline_feedback_without_delegation(tmp_path):
++    requests = _run_inspection(tmp_path, deadline_monotonic=time.monotonic() + 170)
++    assert not _delegation_notices(requests[-1])
++    assert sum("[Coding deadline checkpoint]" in notice for notice in requests[-1]) == 1
++    assert len(requests[-1]) == 4  # One deadline and the unchanged three routine notices.
++
++
++def test_actual_bounded_loop_keeps_progress_without_delegation(tmp_path):
++    requests = _run_inspection(tmp_path, bounded_implementation_phases=True)
++    assert len(requests[-1]) == 3
++    assert not _delegation_notices(requests[-1])
++
++
++def _read(tracker, count):
++    for _ in range(count):
++        tracker.observe(successful_read=True, changed=False, verified=False)
++
++
++@pytest.mark.parametrize("reset", ["delivery", "edit", "verified"])
++def test_progress_reset_cannot_replenish_delegation_suggestion(reset):
++    tracker = CodingProgressTracker(enabled=True)
++    _read(tracker, 8)
++    first = tracker.before_request(None, 100, can_delegate=True)
++    assert _delegation_notices([first.text])
++    if reset == "delivery":
++        tracker.authoritative_delivery(changed=False)
++    else:
++        tracker.observe(successful_read=False, changed=reset == "edit", verified=reset == "verified")
++    _read(tracker, 8)
++    second = tracker.before_request(None, 100, can_delegate=True)
++    assert second is not None and not _delegation_notices([second.text])
++    assert tracker._routine_notice_count == 2
++
++
++@pytest.mark.parametrize("remaining_steps,remaining_seconds,total_tokens", [
++    (6, None, None), (None, 180, None), (None, None, 30_000),
++])
++def test_already_announced_pressure_also_suppresses_later_routine_suggestion(
++        remaining_steps, remaining_seconds, total_tokens):
++    tracker = CodingProgressTracker(enabled=True)
++    budget = AgentTurnBudget(max_total_tokens=total_tokens).snapshot()
++    _read(tracker, 8)
++    first = tracker.before_request(budget, 1000, can_delegate=True,
++        remaining_steps=remaining_steps, remaining_seconds=remaining_seconds)
++    _read(tracker, 4)
++    later = tracker.before_request(budget, 1000, can_delegate=True,
++        remaining_steps=remaining_steps, remaining_seconds=remaining_seconds)
++    assert first is not None and later is not None
++    assert later.reason == "inspection_without_delivery"
++    assert not _delegation_notices([first.text, later.text])
++
++
++def test_delegation_does_not_consume_budget_or_deadline_reminder_allowances():
++    tracker = CodingProgressTracker(enabled=True)
++    notices = []
++    for _ in range(3):
++        _read(tracker, 4)
++        notices.append(tracker.before_request(None, 100, remaining_steps=30, can_delegate=True))
++    for steps, seconds in [(30, 170), (6, 160), (3, 150), (2, 80)]:
++        notices.append(tracker.before_request(None, 100,
++            remaining_steps=steps, remaining_seconds=seconds, can_delegate=True))
++    assert all(notice is not None for notice in notices)
++    assert [notice.reason for notice in notices] == [
++        "inspection_without_delivery", "inspection_without_delivery", "inspection_without_delivery",
++        "implementation_deadline_pressure", "implementation_budget_pressure",
++        "implementation_budget_pressure", "implementation_deadline_pressure",
++    ]
++    assert len(_delegation_notices([notice.text for notice in notices])) == 1
++    assert tracker.before_request(None, 100, remaining_steps=1,
++        remaining_seconds=1, can_delegate=True) is None

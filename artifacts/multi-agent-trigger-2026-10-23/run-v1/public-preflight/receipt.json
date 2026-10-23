@@ -1,0 +1,1811 @@
+{
+  "preflightVersion": 1,
+  "passed": true,
+  "taskDocumentSha256": "925d954284d6deaf952a2fb643154d7f825d0b4310849ea0f6e764acc0aec599",
+  "policy": {
+    "version": "archived-public-verification-fixtures-v1",
+    "registered": [
+      {
+        "case": "real-vision-budget",
+        "path": ".mini-code/agents/visual-judge.md",
+        "sha256": "112882e006b335964130255ed339fd28c54c847376e31d82faccf6a8205e4828",
+        "bytes": 1430
+      }
+    ],
+    "source": "frozen-task-public-files-only",
+    "scope": "disposable-verification-workspace-only",
+    "requiresBeforeAfterDigest": true,
+    "modelSelectable": false,
+    "promotable": false
+  },
+  "fixtures": [],
+  "cases": [
+    {
+      "case": "trigger-record-pagination",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_bbdfd751eca553606672d3df",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_trigger_record_pagination",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 171,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 171,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:fcd476841e8af121ff907e81a92a59579b64c007b70cb79f9d096806f703fc7e",
+            "preview": "..                                                                       [100%]\n2 passed in 0.01s\n",
+            "previewBase64": "Li4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQoyIHBhc3NlZCBpbiAwLjAxcwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 2,
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:32c02fef56ae91407723c6dd60e58346a03d2ea04fac27098d78b7f6535a17fe",
+        "caseReport": {
+          "digest": "sha256:4680c9fa5aae3e6dbdea53fdb0209a455398de5f3096fe2def41e36485a05e3c",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_unique_timestamps_and_end",
+              "outcome": "passed"
+            },
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_empty_and_invalid_limit",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_3174f5932bbef9c1aa80c878",
+                  "endColumn": 37,
+                  "endLine": 7,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:3ae560a85b6994047cda53a41dfaeb73dba0bdda2b2e5b5f1da05fe52513ad74",
+                  "startColumn": 4,
+                  "startLine": 7
+                },
+                {
+                  "assertionId": "assert_44c824731d771b0ce5c68e01",
+                  "endColumn": 76,
+                  "endLine": 8,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:3ae560a85b6994047cda53a41dfaeb73dba0bdda2b2e5b5f1da05fe52513ad74",
+                  "startColumn": 4,
+                  "startLine": 8
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_636885fde27c4243df84f747",
+                  "codeDigest": "sha256:97c87fde8787925c66e50b6f32720b7d4fe665573f1e03e8a04378fda428ebd9",
+                  "count": 4,
+                  "firstLine": 6,
+                  "identityVerified": true,
+                  "parentCallId": "call_86c12aa022061351161ce8df",
+                  "path": "minicode/cursors.py",
+                  "qualname": "is_after_cursor",
+                  "sourceDigest": "sha256:37f3484a965bec35cb27b98a27e0bd1db2575f3e87c63656d48c9088136b4a36"
+                },
+                {
+                  "callId": "call_669417316a4787c6e6d45302",
+                  "codeDigest": "sha256:fec8d255d3a67c8e7abdd627bed96766b4138372d5957b5b88a9e58d455ae942",
+                  "count": 1,
+                  "firstLine": 4,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_unique_timestamps_and_end",
+                  "sourceDigest": "sha256:3ae560a85b6994047cda53a41dfaeb73dba0bdda2b2e5b5f1da05fe52513ad74"
+                },
+                {
+                  "callId": "call_86c12aa022061351161ce8df",
+                  "codeDigest": "sha256:46ce65244ae0bc83bcb702a85a6dc6e567e6d71a41d419475f98fec7213ff78c",
+                  "count": 2,
+                  "firstLine": 4,
+                  "identityVerified": true,
+                  "parentCallId": "call_669417316a4787c6e6d45302",
+                  "path": "minicode/feed.py",
+                  "qualname": "page",
+                  "sourceDigest": "sha256:c43c23bd424908a9c7e3a4194da62b2a606d27808dec0ed88bd0f4518d371641"
+                },
+                {
+                  "callId": "call_9f464ed35966d17d7f46f435",
+                  "codeDigest": "sha256:ed5cac17648a6728336658058f325840fa01d853e5d742a3d1797e2dcfa070be",
+                  "count": 4,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_b136ffdcbbe92e6a2fb93bb4",
+                  "path": "minicode/records.py",
+                  "qualname": "ordered_records.<locals>.<lambda>",
+                  "sourceDigest": "sha256:549b721546523efcea30f63746748079b56011330090470b3f90114f7dd92976"
+                },
+                {
+                  "callId": "call_b136ffdcbbe92e6a2fb93bb4",
+                  "codeDigest": "sha256:58de5b632c187cf313c45bfa6b13f0cbb34f03f1155228a017bc8949e618798e",
+                  "count": 2,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_86c12aa022061351161ce8df",
+                  "path": "minicode/records.py",
+                  "qualname": "ordered_records",
+                  "sourceDigest": "sha256:549b721546523efcea30f63746748079b56011330090470b3f90114f7dd92976"
+                },
+                {
+                  "callId": "call_d813366f337fa92c66d76e10",
+                  "codeDigest": "sha256:4a54983af7331ba3c7f1291adebc6aa265a442ec287ed391fd56f96a09cdbace",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_86c12aa022061351161ce8df",
+                  "path": "minicode/cursors.py",
+                  "qualname": "encode_cursor",
+                  "sourceDigest": "sha256:37f3484a965bec35cb27b98a27e0bd1db2575f3e87c63656d48c9088136b4a36"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_unique_timestamps_and_end"
+            },
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_429ed533cf07c8687ef9f4ea",
+                  "endColumn": 53,
+                  "endLine": 11,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:3ae560a85b6994047cda53a41dfaeb73dba0bdda2b2e5b5f1da05fe52513ad74",
+                  "startColumn": 4,
+                  "startLine": 11
+                },
+                {
+                  "assertionId": "assert_458ba509952ef2de056d86b3",
+                  "endColumn": 34,
+                  "endLine": 12,
+                  "kind": "exception_check",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:3ae560a85b6994047cda53a41dfaeb73dba0bdda2b2e5b5f1da05fe52513ad74",
+                  "startColumn": 9,
+                  "startLine": 12
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_34e0da09c5d1b2505550abeb",
+                  "codeDigest": "sha256:58de5b632c187cf313c45bfa6b13f0cbb34f03f1155228a017bc8949e618798e",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_7eae001040d5945da45f0e72",
+                  "path": "minicode/records.py",
+                  "qualname": "ordered_records",
+                  "sourceDigest": "sha256:549b721546523efcea30f63746748079b56011330090470b3f90114f7dd92976"
+                },
+                {
+                  "callId": "call_7eae001040d5945da45f0e72",
+                  "codeDigest": "sha256:46ce65244ae0bc83bcb702a85a6dc6e567e6d71a41d419475f98fec7213ff78c",
+                  "count": 2,
+                  "firstLine": 4,
+                  "identityVerified": true,
+                  "parentCallId": "call_b3dd834363629c3ed80f05a5",
+                  "path": "minicode/feed.py",
+                  "qualname": "page",
+                  "sourceDigest": "sha256:c43c23bd424908a9c7e3a4194da62b2a606d27808dec0ed88bd0f4518d371641"
+                },
+                {
+                  "callId": "call_b3dd834363629c3ed80f05a5",
+                  "codeDigest": "sha256:251e36242b43369f8758156d844659f1f1f7d49b0d35038ae9683f07e37f9086",
+                  "count": 1,
+                  "firstLine": 10,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_empty_and_invalid_limit",
+                  "sourceDigest": "sha256:3ae560a85b6994047cda53a41dfaeb73dba0bdda2b2e5b5f1da05fe52513ad74"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_empty_and_invalid_limit"
+            }
+          ],
+          "digest": "sha256:144aa460a76a21b1e4a02bdbf3e2fbefbb7f70603bbf1ad7a1b3e5703399a0d0",
+          "junitDigest": "sha256:32c02fef56ae91407723c6dd60e58346a03d2ea04fac27098d78b7f6535a17fe",
+          "version": 1
+        }
+      }
+    },
+    {
+      "case": "trigger-import-retry",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_9e48adaba546a548e066c18a",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_trigger_import_retry",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 163,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 163,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:fcd476841e8af121ff907e81a92a59579b64c007b70cb79f9d096806f703fc7e",
+            "preview": "..                                                                       [100%]\n2 passed in 0.01s\n",
+            "previewBase64": "Li4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQoyIHBhc3NlZCBpbiAwLjAxcwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 2,
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:7783a38c1869b8aa523540bc268bf3f97fd959d207fb3826d7cdc30ae408ab13",
+        "caseReport": {
+          "digest": "sha256:55bd55e7d29224e86361d9b116e4e5f8cf1214c1ee9150057d2bb5a9d9282d5d",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_first_batch",
+              "outcome": "passed"
+            },
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_empty_retry",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_6353fde026b1f2315c37cdd1",
+                  "endColumn": 108,
+                  "endLine": 7,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:b002a1c5f882596ace846350e54a7618614ba9da623d437ad272026d43c9651c",
+                  "startColumn": 4,
+                  "startLine": 7
+                },
+                {
+                  "assertionId": "assert_84b3cc8b6fe138ac169c1f0c",
+                  "endColumn": 35,
+                  "endLine": 8,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:b002a1c5f882596ace846350e54a7618614ba9da623d437ad272026d43c9651c",
+                  "startColumn": 4,
+                  "startLine": 8
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_2150dda68014b2c43f75fe2f",
+                  "codeDigest": "sha256:e2548065460ff8eed7b05d7543a24b07404475892419e858074b9817cf271975",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_a8667a574353e4bfe4ee3da5",
+                  "path": "minicode/importer.py",
+                  "qualname": "import_events",
+                  "sourceDigest": "sha256:e106a99eac5a1e257ecbae285a3b838b7b38d95028d07f87e4c416975fff6858"
+                },
+                {
+                  "callId": "call_6d94fe7a1420c0a967c15993",
+                  "codeDigest": "sha256:8981a9a77f217373dba9935692ecdab2dc047e42a34125adcf5bb4f1aef2322b",
+                  "count": 1,
+                  "firstLine": 2,
+                  "identityVerified": true,
+                  "parentCallId": "call_a8667a574353e4bfe4ee3da5",
+                  "path": "minicode/event_store.py",
+                  "qualname": "EventStore.__init__",
+                  "sourceDigest": "sha256:0094ef95ecd092c7ed63dd538f95198d1ba3e3e646c72514dd7aee55d0309a86"
+                },
+                {
+                  "callId": "call_a8667a574353e4bfe4ee3da5",
+                  "codeDigest": "sha256:9b7f60b4228798c8f8a9cbec658b1c1d9101f72c0b8f0c56524d982536f58d14",
+                  "count": 1,
+                  "firstLine": 5,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_first_batch",
+                  "sourceDigest": "sha256:b002a1c5f882596ace846350e54a7618614ba9da623d437ad272026d43c9651c"
+                },
+                {
+                  "callId": "call_c0d97c8dc0fc94f5a0b768e9",
+                  "codeDigest": "sha256:c3aa6a0b7447e553ae3a860d35e84120f796c75f352f90a91dcf49a92a0f4e96",
+                  "count": 1,
+                  "firstLine": 6,
+                  "identityVerified": true,
+                  "parentCallId": "call_2150dda68014b2c43f75fe2f",
+                  "path": "minicode/event_store.py",
+                  "qualname": "EventStore.apply",
+                  "sourceDigest": "sha256:0094ef95ecd092c7ed63dd538f95198d1ba3e3e646c72514dd7aee55d0309a86"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_first_batch"
+            },
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_ab4be58b22e3df3e4bb27086",
+                  "endColumn": 111,
+                  "endLine": 11,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:b002a1c5f882596ace846350e54a7618614ba9da623d437ad272026d43c9651c",
+                  "startColumn": 4,
+                  "startLine": 11
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_1e40405dcf2cba91c37bb116",
+                  "codeDigest": "sha256:8981a9a77f217373dba9935692ecdab2dc047e42a34125adcf5bb4f1aef2322b",
+                  "count": 1,
+                  "firstLine": 2,
+                  "identityVerified": true,
+                  "parentCallId": "call_ace9ab0d09cbd648b403505a",
+                  "path": "minicode/event_store.py",
+                  "qualname": "EventStore.__init__",
+                  "sourceDigest": "sha256:0094ef95ecd092c7ed63dd538f95198d1ba3e3e646c72514dd7aee55d0309a86"
+                },
+                {
+                  "callId": "call_5ebdd5e2f57f11758e50ca2c",
+                  "codeDigest": "sha256:e2548065460ff8eed7b05d7543a24b07404475892419e858074b9817cf271975",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_b04e147102030410067003f6",
+                  "path": "minicode/importer.py",
+                  "qualname": "import_events",
+                  "sourceDigest": "sha256:e106a99eac5a1e257ecbae285a3b838b7b38d95028d07f87e4c416975fff6858"
+                },
+                {
+                  "callId": "call_ace9ab0d09cbd648b403505a",
+                  "codeDigest": "sha256:22c6846bfb3dd25d29807bac2effba2e1ea047c7f2ad82cbfa77e95f11363272",
+                  "count": 1,
+                  "firstLine": 10,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_empty_retry",
+                  "sourceDigest": "sha256:b002a1c5f882596ace846350e54a7618614ba9da623d437ad272026d43c9651c"
+                },
+                {
+                  "callId": "call_b04e147102030410067003f6",
+                  "codeDigest": "sha256:fe71dded56a57edafc63e9be97876f3c585dcea782f62e12216e620f126b1eb0",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_ace9ab0d09cbd648b403505a",
+                  "path": "minicode/retry.py",
+                  "qualname": "retry_job",
+                  "sourceDigest": "sha256:49b18e8303bbfe9171e205b54d722f60bf4c6e60b660697f6c54a603939c04cb"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_empty_retry"
+            }
+          ],
+          "digest": "sha256:00aae4484ef1afa7095bdcf8713d6e47e14161ac36c2beca53acf9b002240e26",
+          "junitDigest": "sha256:7783a38c1869b8aa523540bc268bf3f97fd959d207fb3826d7cdc30ae408ab13",
+          "version": 1
+        }
+      }
+    },
+    {
+      "case": "trigger-cart-discounts",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_378dbd12eb4131fd86e43c32",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_trigger_cart_discounts",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 167,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 167,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:fcd476841e8af121ff907e81a92a59579b64c007b70cb79f9d096806f703fc7e",
+            "preview": "..                                                                       [100%]\n2 passed in 0.01s\n",
+            "previewBase64": "Li4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQoyIHBhc3NlZCBpbiAwLjAxcwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 2,
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:2cd3a67f411e348a8d740e65738219a5185d657f5f0ae8af135418a6118d4e0a",
+        "caseReport": {
+          "digest": "sha256:79c81b5fef0af69bcd36cf332528b19d6cfba1cdc9914b53803f2343df376bc5",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_simple_coupon_and_empty_cart",
+              "outcome": "passed"
+            },
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_non_matching_category",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_b6cd5d46b1528cf907ee771f",
+                  "endColumn": 80,
+                  "endLine": 6,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:7141b87a390230802bcaa1f63450d6f26f5596929e5f35d8489b2edf04076a88",
+                  "startColumn": 4,
+                  "startLine": 6
+                },
+                {
+                  "assertionId": "assert_fee89d09bc24bfb17672bcb4",
+                  "endColumn": 93,
+                  "endLine": 7,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:7141b87a390230802bcaa1f63450d6f26f5596929e5f35d8489b2edf04076a88",
+                  "startColumn": 4,
+                  "startLine": 7
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_0d2434815d98da035d21ed05",
+                  "codeDigest": "sha256:9283b29ae8ec9306bbe30921cf15662580b35f0f264f01a67cf65244f95f705c",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_simple_coupon_and_empty_cart",
+                  "sourceDigest": "sha256:7141b87a390230802bcaa1f63450d6f26f5596929e5f35d8489b2edf04076a88"
+                },
+                {
+                  "callId": "call_2da77f2dda33f18835361745",
+                  "codeDigest": "sha256:f07284bc48ca868ce53b3f7a2bffcb4ad83b6e41a8679e734e8c7bae3fe8fb95",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_41cb8130544663ad2b93d42e",
+                  "path": "minicode/discount_rules.py",
+                  "qualname": "eligible",
+                  "sourceDigest": "sha256:ac8bd733e88956f375458335215401eb89eeea2d92e8e012321fd7f8624cdc79"
+                },
+                {
+                  "callId": "call_3ceb005db23fda03f7b4ea75",
+                  "codeDigest": "sha256:0301851b21874f5f66891758a3de1b723a5308b3610462724ff7922f31c165cf",
+                  "count": 2,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_0d2434815d98da035d21ed05",
+                  "path": "minicode/checkout.py",
+                  "qualname": "receipt",
+                  "sourceDigest": "sha256:39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4"
+                },
+                {
+                  "callId": "call_41cb8130544663ad2b93d42e",
+                  "codeDigest": "sha256:d61b5556948df3583bda92d1ad7403532a0812164046f75208dd4ad2bd620e1a",
+                  "count": 2,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_3ceb005db23fda03f7b4ea75",
+                  "path": "minicode/pricing.py",
+                  "qualname": "price_lines",
+                  "sourceDigest": "sha256:5ebc8ae9b94d282e188f0c72e0e759627c2938f67d047a59c9f91742433d91ee"
+                },
+                {
+                  "callId": "call_5ac6e2786d43131cbbc51e45",
+                  "codeDigest": "sha256:e2c251d2993d2cfc9674c37844d8256806bb5a49be1e0d41393fe7acef0401fb",
+                  "count": 2,
+                  "firstLine": 7,
+                  "identityVerified": true,
+                  "parentCallId": "call_3ceb005db23fda03f7b4ea75",
+                  "path": "minicode/checkout.py",
+                  "qualname": "receipt.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4"
+                },
+                {
+                  "callId": "call_cae74e3f0574385f80392172",
+                  "codeDigest": "sha256:69cebc711e42a91a9770709dbff7690bda90e45b7b2e1e7044ab7fd59e0fb034",
+                  "count": 2,
+                  "firstLine": 8,
+                  "identityVerified": true,
+                  "parentCallId": "call_3ceb005db23fda03f7b4ea75",
+                  "path": "minicode/checkout.py",
+                  "qualname": "receipt.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4"
+                },
+                {
+                  "callId": "call_d8bef5408100cd642257cf34",
+                  "codeDigest": "sha256:6313f7493d7baa3bf6175c644ba0574c2f6b46bc45c29b7ce6e26b67f93d0ee2",
+                  "count": 2,
+                  "firstLine": 6,
+                  "identityVerified": true,
+                  "parentCallId": "call_3ceb005db23fda03f7b4ea75",
+                  "path": "minicode/checkout.py",
+                  "qualname": "receipt.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_simple_coupon_and_empty_cart"
+            },
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_06caaa41f2adca947a545748",
+                  "endColumn": 84,
+                  "endLine": 11,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:7141b87a390230802bcaa1f63450d6f26f5596929e5f35d8489b2edf04076a88",
+                  "startColumn": 4,
+                  "startLine": 11
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_23c2440b06f3306afc0f2502",
+                  "codeDigest": "sha256:6313f7493d7baa3bf6175c644ba0574c2f6b46bc45c29b7ce6e26b67f93d0ee2",
+                  "count": 1,
+                  "firstLine": 6,
+                  "identityVerified": true,
+                  "parentCallId": "call_9ee7c6ed702b79d766ee7c01",
+                  "path": "minicode/checkout.py",
+                  "qualname": "receipt.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4"
+                },
+                {
+                  "callId": "call_2bb02aa4b720107205816c31",
+                  "codeDigest": "sha256:7ac857ef0ae3bd9eda87ab7b87a2ad86dcb4f9b4c36e06e38e41d1bd70874514",
+                  "count": 1,
+                  "firstLine": 9,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_non_matching_category",
+                  "sourceDigest": "sha256:7141b87a390230802bcaa1f63450d6f26f5596929e5f35d8489b2edf04076a88"
+                },
+                {
+                  "callId": "call_7461b3eaca2fe60e242adfc9",
+                  "codeDigest": "sha256:f07284bc48ca868ce53b3f7a2bffcb4ad83b6e41a8679e734e8c7bae3fe8fb95",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_9ada7a8eecb9b1a1abf935c6",
+                  "path": "minicode/discount_rules.py",
+                  "qualname": "eligible",
+                  "sourceDigest": "sha256:ac8bd733e88956f375458335215401eb89eeea2d92e8e012321fd7f8624cdc79"
+                },
+                {
+                  "callId": "call_9ada7a8eecb9b1a1abf935c6",
+                  "codeDigest": "sha256:d61b5556948df3583bda92d1ad7403532a0812164046f75208dd4ad2bd620e1a",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_9ee7c6ed702b79d766ee7c01",
+                  "path": "minicode/pricing.py",
+                  "qualname": "price_lines",
+                  "sourceDigest": "sha256:5ebc8ae9b94d282e188f0c72e0e759627c2938f67d047a59c9f91742433d91ee"
+                },
+                {
+                  "callId": "call_9ee7c6ed702b79d766ee7c01",
+                  "codeDigest": "sha256:0301851b21874f5f66891758a3de1b723a5308b3610462724ff7922f31c165cf",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_2bb02aa4b720107205816c31",
+                  "path": "minicode/checkout.py",
+                  "qualname": "receipt",
+                  "sourceDigest": "sha256:39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4"
+                },
+                {
+                  "callId": "call_ae1442adae5bc9e418d20e18",
+                  "codeDigest": "sha256:e2c251d2993d2cfc9674c37844d8256806bb5a49be1e0d41393fe7acef0401fb",
+                  "count": 1,
+                  "firstLine": 7,
+                  "identityVerified": true,
+                  "parentCallId": "call_9ee7c6ed702b79d766ee7c01",
+                  "path": "minicode/checkout.py",
+                  "qualname": "receipt.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4"
+                },
+                {
+                  "callId": "call_bea2759ad84515faf408e2c1",
+                  "codeDigest": "sha256:69cebc711e42a91a9770709dbff7690bda90e45b7b2e1e7044ab7fd59e0fb034",
+                  "count": 1,
+                  "firstLine": 8,
+                  "identityVerified": true,
+                  "parentCallId": "call_9ee7c6ed702b79d766ee7c01",
+                  "path": "minicode/checkout.py",
+                  "qualname": "receipt.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_non_matching_category"
+            }
+          ],
+          "digest": "sha256:0dcdd0c851999e0859c1cd2d3d62eb0504590dd71035d1c03aaac81f3b431997",
+          "junitDigest": "sha256:2cd3a67f411e348a8d740e65738219a5185d657f5f0ae8af135418a6118d4e0a",
+          "version": 1
+        }
+      }
+    },
+    {
+      "case": "trigger-stock-allocation",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_3ebaf182ebd609d0e781c5c8",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_trigger_stock_allocation",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 168,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 168,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:fcd476841e8af121ff907e81a92a59579b64c007b70cb79f9d096806f703fc7e",
+            "preview": "..                                                                       [100%]\n2 passed in 0.01s\n",
+            "previewBase64": "Li4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQoyIHBhc3NlZCBpbiAwLjAxcwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 2,
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:1161244c5087f8c15d4a0c48014fc1cae1d73570f1fdea3cd8f05b5fc53a9f1a",
+        "caseReport": {
+          "digest": "sha256:9b0194695351233efbb75eaea82213ec398a338e2676bc406e4bc7f6b55e10d4",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_single_bin_request",
+              "outcome": "passed"
+            },
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_empty",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_16b3aa3dc70d3b1d9016de9c",
+                  "endColumn": 44,
+                  "endLine": 7,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef",
+                  "startColumn": 4,
+                  "startLine": 7
+                },
+                {
+                  "assertionId": "assert_1feff3ac8bbef0c7ab87a096",
+                  "endColumn": 85,
+                  "endLine": 9,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef",
+                  "startColumn": 4,
+                  "startLine": 9
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_046c92cf14d650c01f020515",
+                  "codeDigest": "sha256:b048d7db5bd4e00e510833e577b7ea796211e012588e858d85cd47472399ed5e",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_86334cf7ffdb68219444c32a",
+                  "path": "minicode/stock.py",
+                  "qualname": "available_stock",
+                  "sourceDigest": "sha256:b3cae8e9f3280789f3b499b6b1a598a9761f4a64e947decd91e9c01e1c1e5dee"
+                },
+                {
+                  "callId": "call_86334cf7ffdb68219444c32a",
+                  "codeDigest": "sha256:f74c7ed3426882d2a2899c72d0d89c3790904c5c35a93e843e9a2a3396c45efa",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_9bf0a24ea81cfafad04922a1",
+                  "path": "minicode/allocation.py",
+                  "qualname": "allocate",
+                  "sourceDigest": "sha256:8274b9309d1ee4d4165130103cbd73494219fcd089d81523fa004aa7223369e3"
+                },
+                {
+                  "callId": "call_9bf0a24ea81cfafad04922a1",
+                  "codeDigest": "sha256:b29d8ba783d5ae056e3a9ad547b2494b28ec0652d4641846f3fa095ecff54946",
+                  "count": 1,
+                  "firstLine": 5,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_single_bin_request",
+                  "sourceDigest": "sha256:323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef"
+                },
+                {
+                  "callId": "call_d06cfef0f8ad469b7556b0e0",
+                  "codeDigest": "sha256:b048d7db5bd4e00e510833e577b7ea796211e012588e858d85cd47472399ed5e",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_9bf0a24ea81cfafad04922a1",
+                  "path": "minicode/stock.py",
+                  "qualname": "available_stock",
+                  "sourceDigest": "sha256:b3cae8e9f3280789f3b499b6b1a598a9761f4a64e947decd91e9c01e1c1e5dee"
+                },
+                {
+                  "callId": "call_d76d351dd84514d8584dee75",
+                  "codeDigest": "sha256:c19f51e90e49b85e338e0f650bcdaa5dbeed223ef363425b85f83d24979f3f02",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_9bf0a24ea81cfafad04922a1",
+                  "path": "minicode/allocation_report.py",
+                  "qualname": "summarize",
+                  "sourceDigest": "sha256:0853ee414df7f648c31422d29ca2f04a094b746820a27b7c8141aa7201ac87e9"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_single_bin_request"
+            },
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_7d91cc86f724ee2d08ca9be8",
+                  "endColumn": 33,
+                  "endLine": 12,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef",
+                  "startColumn": 4,
+                  "startLine": 12
+                },
+                {
+                  "assertionId": "assert_e886e3ec0d935747367bb5a8",
+                  "endColumn": 30,
+                  "endLine": 13,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef",
+                  "startColumn": 4,
+                  "startLine": 13
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_09c5b99d00e61d026b5fb527",
+                  "codeDigest": "sha256:b048d7db5bd4e00e510833e577b7ea796211e012588e858d85cd47472399ed5e",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_3ef7033ac7bbade0d4648454",
+                  "path": "minicode/stock.py",
+                  "qualname": "available_stock",
+                  "sourceDigest": "sha256:b3cae8e9f3280789f3b499b6b1a598a9761f4a64e947decd91e9c01e1c1e5dee"
+                },
+                {
+                  "callId": "call_2ae2a49ebce63eaeadeabd53",
+                  "codeDigest": "sha256:de3f38dd1b29e1717eb3f7e8d031e63d697c4f6307717ab51ef16a2398f3da9f",
+                  "count": 1,
+                  "firstLine": 11,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_empty",
+                  "sourceDigest": "sha256:323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef"
+                },
+                {
+                  "callId": "call_3ef7033ac7bbade0d4648454",
+                  "codeDigest": "sha256:f74c7ed3426882d2a2899c72d0d89c3790904c5c35a93e843e9a2a3396c45efa",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_2ae2a49ebce63eaeadeabd53",
+                  "path": "minicode/allocation.py",
+                  "qualname": "allocate",
+                  "sourceDigest": "sha256:8274b9309d1ee4d4165130103cbd73494219fcd089d81523fa004aa7223369e3"
+                },
+                {
+                  "callId": "call_c364435f0f7fd26d4f365b5e",
+                  "codeDigest": "sha256:c19f51e90e49b85e338e0f650bcdaa5dbeed223ef363425b85f83d24979f3f02",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_2ae2a49ebce63eaeadeabd53",
+                  "path": "minicode/allocation_report.py",
+                  "qualname": "summarize",
+                  "sourceDigest": "sha256:0853ee414df7f648c31422d29ca2f04a094b746820a27b7c8141aa7201ac87e9"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_empty"
+            }
+          ],
+          "digest": "sha256:9c29c65b6df92e30b16a73ea86673976f75969e9abed3a2385e3f60c8b5a45f4",
+          "junitDigest": "sha256:1161244c5087f8c15d4a0c48014fc1cae1d73570f1fdea3cd8f05b5fc53a9f1a",
+          "version": 1
+        }
+      }
+    },
+    {
+      "case": "trigger-report-timezones",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_a196b451634e9ff1ba1bbaac",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_trigger_report_timezones",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 171,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 171,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:4bcefcc9f6c645923b9993ccf73ad92e6b400ca25458ea14e095857fc2131342",
+            "preview": ".                                                                        [100%]\n1 passed in 0.01s\n",
+            "previewBase64": "LiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQoxIHBhc3NlZCBpbiAwLjAxcwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 1,
+        "passed": 1,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:379fb688df4187941ab6a2f9c46e8bb9b4ef5a8d8f9f9ab5927e00863aeea629",
+        "caseReport": {
+          "digest": "sha256:e1df75b9938bb14e94d246d2214c80a3937f2089c6635983e2a94f64d0339226",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_utc_noon_and_empty",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_99d490154c5846533b475af1",
+                  "endColumn": 78,
+                  "endLine": 5,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:bf258c57d85e7472046ca353291188ab4ada907c748df9bc6b14d76a75b37b19",
+                  "startColumn": 4,
+                  "startLine": 5
+                },
+                {
+                  "assertionId": "assert_a670d4cc6c91333ab8debf3f",
+                  "endColumn": 71,
+                  "endLine": 6,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:bf258c57d85e7472046ca353291188ab4ada907c748df9bc6b14d76a75b37b19",
+                  "startColumn": 4,
+                  "startLine": 6
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_5e00d3be50e504b61bbb6843",
+                  "codeDigest": "sha256:555b9a86cc57247e3ec8a0093227965bd2754955dbffd4324c78547f25996acf",
+                  "count": 2,
+                  "firstLine": 4,
+                  "identityVerified": true,
+                  "parentCallId": "call_aa8ec40f640c2ae6e28909e3",
+                  "path": "minicode/daily_report.py",
+                  "qualname": "daily_totals",
+                  "sourceDigest": "sha256:c5e9dfd877a9d85dde61861405d2c5329bb8d5e20e4c4ea13fd0605425826de6"
+                },
+                {
+                  "callId": "call_aa8ec40f640c2ae6e28909e3",
+                  "codeDigest": "sha256:560e596edc53ff8ea66620b07b8025b33edbbe065863612868883e1d43557b37",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_utc_noon_and_empty",
+                  "sourceDigest": "sha256:bf258c57d85e7472046ca353291188ab4ada907c748df9bc6b14d76a75b37b19"
+                },
+                {
+                  "callId": "call_b20d7e087e9884f521bcfa5d",
+                  "codeDigest": "sha256:8c27c0c773a4ac15510a6f0b162ea41f906bf5149f29e89cb94304385c0b137a",
+                  "count": 2,
+                  "firstLine": 9,
+                  "identityVerified": true,
+                  "parentCallId": "call_5e00d3be50e504b61bbb6843",
+                  "path": "minicode/daily_report.py",
+                  "qualname": "daily_totals.<locals>.<genexpr>",
+                  "sourceDigest": "sha256:c5e9dfd877a9d85dde61861405d2c5329bb8d5e20e4c4ea13fd0605425826de6"
+                },
+                {
+                  "callId": "call_ed710dde84415dd0c9ba972e",
+                  "codeDigest": "sha256:0df88dfc26e965df5652934d9b533540ce7c2fe247797ca511efdc64b4b95ea7",
+                  "count": 2,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_5e00d3be50e504b61bbb6843",
+                  "path": "minicode/time_window.py",
+                  "qualname": "day_bounds",
+                  "sourceDigest": "sha256:1631bbbbf104e6048212c963e03a19543de15830211543a04831d6aeda8f592a"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_utc_noon_and_empty"
+            }
+          ],
+          "digest": "sha256:686b7ca23a645055258e90dda83e2bd65f12242b23b6354fa40c20d9c005be19",
+          "junitDigest": "sha256:379fb688df4187941ab6a2f9c46e8bb9b4ef5a8d8f9f9ab5927e00863aeea629",
+          "version": 1
+        }
+      }
+    },
+    {
+      "case": "trigger-config-overlay",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_720e351ed25379c0e7949529",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_trigger_config_overlay",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 163,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 163,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:fcd476841e8af121ff907e81a92a59579b64c007b70cb79f9d096806f703fc7e",
+            "preview": "..                                                                       [100%]\n2 passed in 0.01s\n",
+            "previewBase64": "Li4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQoyIHBhc3NlZCBpbiAwLjAxcwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 2,
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:15ec6afa507d53206818cb0e3975f446408ff92f4ea50e322f416d40fd32eeba",
+        "caseReport": {
+          "digest": "sha256:ff3645ed16c5d5483b723c229e4497a0f7f4d9b50f17c89a14a706705dbb884d",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_ordinary_values_and_precedence",
+              "outcome": "passed"
+            },
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_missing_values_keep_defaults",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_0fa1bda23b6180cec0372113",
+                  "endColumn": 146,
+                  "endLine": 6,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:54ed854c15043668635c20fd1642b822ea281862e5cbb3dc508bf6c859657fd3",
+                  "startColumn": 4,
+                  "startLine": 6
+                },
+                {
+                  "assertionId": "assert_737762fb0df251735eeb2c54",
+                  "endColumn": 69,
+                  "endLine": 5,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:54ed854c15043668635c20fd1642b822ea281862e5cbb3dc508bf6c859657fd3",
+                  "startColumn": 4,
+                  "startLine": 5
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_87adf41a5a37711d4c7d3df5",
+                  "codeDigest": "sha256:c381be44fb58a8c3d544aee4859474a033b42b970261ad96c5e6e0f58ef09e3e",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_ef3e9393a99c1af82e6a057c",
+                  "path": "minicode/config_merge.py",
+                  "qualname": "merge_settings",
+                  "sourceDigest": "sha256:aabe11cf1254c5bfdf681f8970bc1804e67194d412c7b8ecd03e1ec4d803720c"
+                },
+                {
+                  "callId": "call_af400d6b39441a4cfa57cd8b",
+                  "codeDigest": "sha256:bda476bc0ad9a2cde7bda32cfc530b2662040b85ed9b022be29bf08ccba9943d",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_ef3e9393a99c1af82e6a057c",
+                  "path": "minicode/settings.py",
+                  "qualname": "load_settings",
+                  "sourceDigest": "sha256:3cfec330dfba7c4f443aa105072056ecfbf1022416a18dca2ef0664e1c4c5c3c"
+                },
+                {
+                  "callId": "call_bcba172a4049a668e3ee7d7f",
+                  "codeDigest": "sha256:c381be44fb58a8c3d544aee4859474a033b42b970261ad96c5e6e0f58ef09e3e",
+                  "count": 2,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_af400d6b39441a4cfa57cd8b",
+                  "path": "minicode/config_merge.py",
+                  "qualname": "merge_settings",
+                  "sourceDigest": "sha256:aabe11cf1254c5bfdf681f8970bc1804e67194d412c7b8ecd03e1ec4d803720c"
+                },
+                {
+                  "callId": "call_ef3e9393a99c1af82e6a057c",
+                  "codeDigest": "sha256:59d1b076603e3c8b30a5461e10168978b89ff6d9a6b4eb6b38bca7dbbc78a802",
+                  "count": 1,
+                  "firstLine": 4,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_ordinary_values_and_precedence",
+                  "sourceDigest": "sha256:54ed854c15043668635c20fd1642b822ea281862e5cbb3dc508bf6c859657fd3"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_ordinary_values_and_precedence"
+            },
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_603e8a08e11fd76ba0a12f2f",
+                  "endColumn": 78,
+                  "endLine": 9,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:54ed854c15043668635c20fd1642b822ea281862e5cbb3dc508bf6c859657fd3",
+                  "startColumn": 4,
+                  "startLine": 9
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_3d6a55c6d8d02aff7270c546",
+                  "codeDigest": "sha256:3bcfd009eeeac2aed7fae34f8e2241764c3878a8b6486021e07ec89020d6cc7a",
+                  "count": 1,
+                  "firstLine": 8,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_missing_values_keep_defaults",
+                  "sourceDigest": "sha256:54ed854c15043668635c20fd1642b822ea281862e5cbb3dc508bf6c859657fd3"
+                },
+                {
+                  "callId": "call_5bd6d74f28d14738fa4eea2f",
+                  "codeDigest": "sha256:c381be44fb58a8c3d544aee4859474a033b42b970261ad96c5e6e0f58ef09e3e",
+                  "count": 2,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_e0eb6d2790a6f4e57f783b92",
+                  "path": "minicode/config_merge.py",
+                  "qualname": "merge_settings",
+                  "sourceDigest": "sha256:aabe11cf1254c5bfdf681f8970bc1804e67194d412c7b8ecd03e1ec4d803720c"
+                },
+                {
+                  "callId": "call_e0eb6d2790a6f4e57f783b92",
+                  "codeDigest": "sha256:bda476bc0ad9a2cde7bda32cfc530b2662040b85ed9b022be29bf08ccba9943d",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_3d6a55c6d8d02aff7270c546",
+                  "path": "minicode/settings.py",
+                  "qualname": "load_settings",
+                  "sourceDigest": "sha256:3cfec330dfba7c4f443aa105072056ecfbf1022416a18dca2ef0664e1c4c5c3c"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_missing_values_keep_defaults"
+            }
+          ],
+          "digest": "sha256:3881485405c5201d3234028198b4e71c8757b3d7660608e6260cb8f0530b0d77",
+          "junitDigest": "sha256:15ec6afa507d53206818cb0e3975f446408ff92f4ea50e322f416d40fd32eeba",
+          "version": 1
+        }
+      }
+    },
+    {
+      "case": "trigger-limit-clamp",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_beea34d866fdad3f8684156a",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_trigger_limit_clamp",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 167,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 167,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:fcd476841e8af121ff907e81a92a59579b64c007b70cb79f9d096806f703fc7e",
+            "preview": "..                                                                       [100%]\n2 passed in 0.01s\n",
+            "previewBase64": "Li4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQoyIHBhc3NlZCBpbiAwLjAxcwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 2,
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:60b9ed5eb4c1e40d05d4ebafc24914a3c376cbecceb0a5c66262cf5902c0ac9b",
+        "caseReport": {
+          "digest": "sha256:a0772385106e5e8d161667c840d9f4dba77232b7c997fb1decd39b557ddb820e",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_within_and_below_interval",
+              "outcome": "passed"
+            },
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_invalid_interval",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_5d61141273cb2e688ed8d6b3",
+                  "endColumn": 36,
+                  "endLine": 6,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:09ea60e64e800b31ec40fbf95e499096118c68457cef86b48a89ed783ddfa829",
+                  "startColumn": 4,
+                  "startLine": 6
+                },
+                {
+                  "assertionId": "assert_d95a7dc3b8a91e649a19b2f6",
+                  "endColumn": 36,
+                  "endLine": 5,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:09ea60e64e800b31ec40fbf95e499096118c68457cef86b48a89ed783ddfa829",
+                  "startColumn": 4,
+                  "startLine": 5
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_0c3bdbb624a688a97eb11411",
+                  "codeDigest": "sha256:d64da59220cfae14f698ad077128b44014a3c03e74c6f2887bd510e7223dcacb",
+                  "count": 1,
+                  "firstLine": 4,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_within_and_below_interval",
+                  "sourceDigest": "sha256:09ea60e64e800b31ec40fbf95e499096118c68457cef86b48a89ed783ddfa829"
+                },
+                {
+                  "callId": "call_4bdad9dba592e2a36851ebb3",
+                  "codeDigest": "sha256:24880e0909d08c1ac4c2675b45c8c9f0b461e86fe001fb4da34078d6511145fa",
+                  "count": 2,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_0c3bdbb624a688a97eb11411",
+                  "path": "minicode/limits.py",
+                  "qualname": "clamp_limit",
+                  "sourceDigest": "sha256:d14d3457ae2fea126b7363c1dd3bbe8aae53553b5dc046738bcfe3ecdd6cf845"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_within_and_below_interval"
+            },
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_a52be82ce3f27e78442b2372",
+                  "endColumn": 34,
+                  "endLine": 9,
+                  "kind": "exception_check",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:09ea60e64e800b31ec40fbf95e499096118c68457cef86b48a89ed783ddfa829",
+                  "startColumn": 9,
+                  "startLine": 9
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_3feedbdbf78e51ea60b5d95d",
+                  "codeDigest": "sha256:4515852225445f87f67c46715425be5e76ce54274e74759713b4d38c899ac2b4",
+                  "count": 1,
+                  "firstLine": 8,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_invalid_interval",
+                  "sourceDigest": "sha256:09ea60e64e800b31ec40fbf95e499096118c68457cef86b48a89ed783ddfa829"
+                },
+                {
+                  "callId": "call_774b5f8a40a0f50478fa846a",
+                  "codeDigest": "sha256:24880e0909d08c1ac4c2675b45c8c9f0b461e86fe001fb4da34078d6511145fa",
+                  "count": 1,
+                  "firstLine": 1,
+                  "identityVerified": true,
+                  "parentCallId": "call_3feedbdbf78e51ea60b5d95d",
+                  "path": "minicode/limits.py",
+                  "qualname": "clamp_limit",
+                  "sourceDigest": "sha256:d14d3457ae2fea126b7363c1dd3bbe8aae53553b5dc046738bcfe3ecdd6cf845"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_invalid_interval"
+            }
+          ],
+          "digest": "sha256:76c292fab8e70a08093ab954ee16b3a849ed4b0d01b50818b25138db53063ddd",
+          "junitDigest": "sha256:60b9ed5eb4c1e40d05d4ebafc24914a3c376cbecceb0a5c66262cf5902c0ac9b",
+          "version": 1
+        }
+      }
+    },
+    {
+      "case": "trigger-extension-case",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "passed",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_3afe6f891a39c47b86daef05",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_trigger_extension_case",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "passed",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 161,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "passed",
+          "exitCode": 0,
+          "durationMs": 161,
+          "failureReason": null,
+          "stdout": {
+            "byteCount": 98,
+            "digest": "sha256:4bcefcc9f6c645923b9993ccf73ad92e6b400ca25458ea14e095857fc2131342",
+            "preview": ".                                                                        [100%]\n1 passed in 0.01s\n",
+            "previewBase64": "LiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQoxIHBhc3NlZCBpbiAwLjAxcwo=",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 127,
+            "digest": "sha256:bac892b4efc820269ec9c46bb48cff4b927e468077d11350b7c4b95ae38e69ba",
+            "preview": "xcode-select: error: unable to read data link at '/var/select/developer_dir', expected symbolic link (Operation not permitted)\n",
+            "previewBase64": "eGNvZGUtc2VsZWN0OiBlcnJvcjogdW5hYmxlIHRvIHJlYWQgZGF0YSBsaW5rIGF0ICcvdmFyL3NlbGVjdC9kZXZlbG9wZXJfZGlyJywgZXhwZWN0ZWQgc3ltYm9saWMgbGluayAoT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQpCg==",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": {
+        "collected": 1,
+        "passed": 1,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reportDigest": "sha256:1f260c7782f3339257cdfb85e918010cbc3c743abb0e28d8dec8a47af3d6a410",
+        "caseReport": {
+          "digest": "sha256:ca91cb6da097ef9fed3187afcf836295ba430f865801ac0cf86373954aa17a13",
+          "cases": [
+            {
+              "failureKind": null,
+              "nodeId": "tests/test_public.py::test_lowercase_and_absent_suffix",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "executionReport": {
+          "cases": [
+            {
+              "assertions": [
+                {
+                  "assertionId": "assert_2ab238ca34f694f058442598",
+                  "endColumn": 55,
+                  "endLine": 6,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:636733bb5991519b7e814a16551b05e5df0e5cc336075bb0b16843b614d65381",
+                  "startColumn": 4,
+                  "startLine": 6
+                },
+                {
+                  "assertionId": "assert_330f56678194cd4215f32051",
+                  "endColumn": 51,
+                  "endLine": 4,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:636733bb5991519b7e814a16551b05e5df0e5cc336075bb0b16843b614d65381",
+                  "startColumn": 4,
+                  "startLine": 4
+                },
+                {
+                  "assertionId": "assert_591eb7729701a7f98705c6f6",
+                  "endColumn": 51,
+                  "endLine": 5,
+                  "kind": "assert",
+                  "path": "tests/test_public.py",
+                  "raised": false,
+                  "sourceDigest": "sha256:636733bb5991519b7e814a16551b05e5df0e5cc336075bb0b16843b614d65381",
+                  "startColumn": 4,
+                  "startLine": 5
+                }
+              ],
+              "calls": [
+                {
+                  "callId": "call_9d40b04e76d363c4e6f69c58",
+                  "codeDigest": "sha256:9edb2963e6c7ba9828cb7af076283ff312bebf89f1213b2e8680785732175b3c",
+                  "count": 1,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": null,
+                  "path": "tests/test_public.py",
+                  "qualname": "test_lowercase_and_absent_suffix",
+                  "sourceDigest": "sha256:636733bb5991519b7e814a16551b05e5df0e5cc336075bb0b16843b614d65381"
+                },
+                {
+                  "callId": "call_fda5cccec4f9a3c7959c4dae",
+                  "codeDigest": "sha256:f1c5b8fa32279e1c88cf6d351f7da099b02b53eea81c91b3a4cd20ecbdb865ea",
+                  "count": 3,
+                  "firstLine": 3,
+                  "identityVerified": true,
+                  "parentCallId": "call_9d40b04e76d363c4e6f69c58",
+                  "path": "minicode/formats.py",
+                  "qualname": "accepts_extension",
+                  "sourceDigest": "sha256:18ed93e83dc746b61e844ffb12e0d4ad8cca1649dc7a4c9b5d24915583b34981"
+                }
+              ],
+              "complete": true,
+              "limitations": [],
+              "nodeId": "tests/test_public.py::test_lowercase_and_absent_suffix"
+            }
+          ],
+          "digest": "sha256:1cda52edd08985159b747b854f2168915b22a255b907861916f0f0c6423dfc5b",
+          "junitDigest": "sha256:1f260c7782f3339257cdfb85e918010cbc3c743abb0e28d8dec8a47af3d6a410",
+          "version": 1
+        }
+      }
+    }
+  ],
+  "pytestReportRequired": true
+}

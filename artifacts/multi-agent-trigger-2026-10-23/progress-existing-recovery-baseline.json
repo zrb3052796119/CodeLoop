@@ -1,0 +1,29 @@
+{
+  "before": {
+    "returncode": 1,
+    "expectedAssertionFailures": 5,
+    "nodes": [
+      "test_phase_preview_never_mutates_closing_state_or_consumes_allowance",
+      "test_anchor_repair_and_submit_are_admitted_inside_original_worker_floor",
+      "test_anchor_failure_never_reopens_a_real_handoff_boundary[tokens]",
+      "test_anchor_failure_never_reopens_a_real_handoff_boundary[calls]",
+      "test_anchor_failure_never_reopens_a_real_handoff_boundary[admitted]"
+    ],
+    "testSha256": "00035fdbb669c60bf83a2d99c1823adcedebcb89414505390e4188ab48768603",
+    "phaseControllerSha256": "99e9237de38c54d8aa32f121ba45ffe0f51f45501c0f304d08d1b847da5c8f89"
+  },
+  "after": {
+    "returncode": 1,
+    "expectedAssertionFailures": 5,
+    "nodes": [
+      "test_phase_preview_never_mutates_closing_state_or_consumes_allowance",
+      "test_anchor_repair_and_submit_are_admitted_inside_original_worker_floor",
+      "test_anchor_failure_never_reopens_a_real_handoff_boundary[tokens]",
+      "test_anchor_failure_never_reopens_a_real_handoff_boundary[calls]",
+      "test_anchor_failure_never_reopens_a_real_handoff_boundary[admitted]"
+    ],
+    "testSha256": "00035fdbb669c60bf83a2d99c1823adcedebcb89414505390e4188ab48768603",
+    "phaseControllerSha256": "99e9237de38c54d8aa32f121ba45ffe0f51f45501c0f304d08d1b847da5c8f89"
+  },
+  "diagnosis": "Existing recovery fixture uses default bounded=False but asserts legacy bounded handoff/call floors. Same five assertion failures on saved pre-Phase2 loop/progress pair and current candidate; phase controller bytes identical."
+}

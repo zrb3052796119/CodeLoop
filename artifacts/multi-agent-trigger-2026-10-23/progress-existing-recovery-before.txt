@@ -1,0 +1,143 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_____ test_phase_preview_never_mutates_closing_state_or_consumes_allowance _____
+
+    def test_phase_preview_never_mutates_closing_state_or_consumes_allowance():
+        shared, worker, policy, _registry = _phase_fixture()
+        policy.observe_edit(path="task.py", anchor_failed=True, changed=False)
+        before = copy.deepcopy(vars(policy))
+        snapshot = shared.snapshot()
+        for estimate in (35061, 16797, 35061):
+            policy.preview(worker.snapshot(), estimated_input=estimate, now=480)
+            assert vars(policy) == before
+            assert shared.snapshot() == snapshot
+>       assert policy.preview(worker.snapshot(), estimated_input=35061, now=480).handoff_only
+E       AssertionError: assert False
+E        +  where False = PhaseRequest(phase=<ImplementationPhase.IMPLEMENT: 'implement'>, preserve_calls=0, preserve_tokens=8192, output_limit=8192, deadline=600, message=None, handoff_only=False, conditional_handoff=False).handoff_only
+E        +    where PhaseRequest(phase=<ImplementationPhase.IMPLEMENT: 'implement'>, preserve_calls=0, preserve_tokens=8192, output_limit=8192, deadline=600, message=None, handoff_only=False, conditional_handoff=False) = preview(AgentBudgetSnapshot(limit_total_tokens=480548, limit_model_calls=39, limit_cost_usd=None, used_total_tokens=419736, re...ens=0, used_model_calls=18, used_cost_usd='0.0', used_input_tokens=419736, used_output_tokens=0, usage_uncertain=False), estimated_input=35061, now=480)
+E        +      where preview = <minicode.implementation_phases.ImplementationPhaseController object at 0x105ead070>.preview
+E        +      and   AgentBudgetSnapshot(limit_total_tokens=480548, limit_model_calls=39, limit_cost_usd=None, used_total_tokens=419736, re...ens=0, used_model_calls=18, used_cost_usd='0.0', used_input_tokens=419736, used_output_tokens=0, usage_uncertain=False) = snapshot()
+E        +        where snapshot = <minicode.workflow_runner._WorkerCallBudget object at 0x1072d1f10>.snapshot
+
+test_implementation_recovery.py:273: AssertionError
+___ test_anchor_repair_and_submit_are_admitted_inside_original_worker_floor ____
+
+    def test_anchor_repair_and_submit_are_admitted_inside_original_worker_floor():
+        shared, worker, policy, registry = _phase_fixture()
+        policy.observe_edit(path="task.py", anchor_failed=True, changed=False)
+        assert worker.snapshot().limit_total_tokens == 480548
+        request = policy.request(worker.snapshot(), estimated_input=25200, now=480)
+        assert not request.handoff_only
+>       assert request.preserve_calls == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = PhaseRequest(phase=<ImplementationPhase.IMPLEMENT: 'implement'>, preserve_calls=0, preserve_tokens=8192, output_limit=8192, deadline=600, message=None, handoff_only=False, conditional_handoff=False).preserve_calls
+
+test_implementation_recovery.py:283: AssertionError
+______ test_anchor_failure_never_reopens_a_real_handoff_boundary[tokens] _______
+
+boundary = 'tokens'
+
+    @pytest.mark.parametrize("boundary", ["tokens", "calls", "time", "admitted"])
+    def test_anchor_failure_never_reopens_a_real_handoff_boundary(boundary):
+        used_calls = 38 if boundary == "calls" else 18
+        _shared, worker, policy, registry = _phase_fixture(used_calls=used_calls)
+        policy.observe_edit(path="task.py", anchor_failed=True, changed=False)
+        estimate = 35061 if boundary == "tokens" else 1000
+        now = 480
+        if boundary == "time":
+            import time
+            from types import SimpleNamespace
+            from minicode.model_call_control import ModelCallDeadlineExceeded, call_model_next
+    
+            policy.deadline = time.monotonic() - 1
+            now = policy.deadline
+            decision = policy.request(worker.snapshot(), estimated_input=estimate, now=now)
+            assert decision.deadline <= now
+            model = SimpleNamespace(next=lambda *_args, **_kwargs: pytest.fail("expired owner called the model"))
+            with pytest.raises(ModelCallDeadlineExceeded):
+                call_model_next(model, [], deadline_monotonic=decision.deadline)
+            return
+        if boundary == "admitted":
+            decision = policy.request(worker.snapshot(), estimated_input=35061, now=480)
+            assert decision.handoff_only
+            policy.tool_view(registry)
+            policy.admitted()
+        decision = policy.request(worker.snapshot(), estimated_input=estimate, now=now)
+>       assert decision.handoff_only
+E       AssertionError: assert False
+E        +  where False = PhaseRequest(phase=<ImplementationPhase.IMPLEMENT: 'implement'>, preserve_calls=0, preserve_tokens=8192, output_limit=8192, deadline=600, message=None, handoff_only=False, conditional_handoff=False).handoff_only
+
+test_implementation_recovery.py:339: AssertionError
+_______ test_anchor_failure_never_reopens_a_real_handoff_boundary[calls] _______
+
+boundary = 'calls'
+
+    @pytest.mark.parametrize("boundary", ["tokens", "calls", "time", "admitted"])
+    def test_anchor_failure_never_reopens_a_real_handoff_boundary(boundary):
+        used_calls = 38 if boundary == "calls" else 18
+        _shared, worker, policy, registry = _phase_fixture(used_calls=used_calls)
+        policy.observe_edit(path="task.py", anchor_failed=True, changed=False)
+        estimate = 35061 if boundary == "tokens" else 1000
+        now = 480
+        if boundary == "time":
+            import time
+            from types import SimpleNamespace
+            from minicode.model_call_control import ModelCallDeadlineExceeded, call_model_next
+    
+            policy.deadline = time.monotonic() - 1
+            now = policy.deadline
+            decision = policy.request(worker.snapshot(), estimated_input=estimate, now=now)
+            assert decision.deadline <= now
+            model = SimpleNamespace(next=lambda *_args, **_kwargs: pytest.fail("expired owner called the model"))
+            with pytest.raises(ModelCallDeadlineExceeded):
+                call_model_next(model, [], deadline_monotonic=decision.deadline)
+            return
+        if boundary == "admitted":
+            decision = policy.request(worker.snapshot(), estimated_input=35061, now=480)
+            assert decision.handoff_only
+            policy.tool_view(registry)
+            policy.admitted()
+        decision = policy.request(worker.snapshot(), estimated_input=estimate, now=now)
+>       assert decision.handoff_only
+E       AssertionError: assert False
+E        +  where False = PhaseRequest(phase=<ImplementationPhase.IMPLEMENT: 'implement'>, preserve_calls=0, preserve_tokens=8192, output_limit=8192, deadline=600, message=None, handoff_only=False, conditional_handoff=False).handoff_only
+
+test_implementation_recovery.py:339: AssertionError
+_____ test_anchor_failure_never_reopens_a_real_handoff_boundary[admitted] ______
+
+boundary = 'admitted'
+
+    @pytest.mark.parametrize("boundary", ["tokens", "calls", "time", "admitted"])
+    def test_anchor_failure_never_reopens_a_real_handoff_boundary(boundary):
+        used_calls = 38 if boundary == "calls" else 18
+        _shared, worker, policy, registry = _phase_fixture(used_calls=used_calls)
+        policy.observe_edit(path="task.py", anchor_failed=True, changed=False)
+        estimate = 35061 if boundary == "tokens" else 1000
+        now = 480
+        if boundary == "time":
+            import time
+            from types import SimpleNamespace
+            from minicode.model_call_control import ModelCallDeadlineExceeded, call_model_next
+    
+            policy.deadline = time.monotonic() - 1
+            now = policy.deadline
+            decision = policy.request(worker.snapshot(), estimated_input=estimate, now=now)
+            assert decision.deadline <= now
+            model = SimpleNamespace(next=lambda *_args, **_kwargs: pytest.fail("expired owner called the model"))
+            with pytest.raises(ModelCallDeadlineExceeded):
+                call_model_next(model, [], deadline_monotonic=decision.deadline)
+            return
+        if boundary == "admitted":
+            decision = policy.request(worker.snapshot(), estimated_input=35061, now=480)
+>           assert decision.handoff_only
+E           AssertionError: assert False
+E            +  where False = PhaseRequest(phase=<ImplementationPhase.IMPLEMENT: 'implement'>, preserve_calls=0, preserve_tokens=8192, output_limit=8192, deadline=600, message=None, handoff_only=False, conditional_handoff=False).handoff_only
+
+test_implementation_recovery.py:335: AssertionError
+=========================== short test summary info ============================
+FAILED test_implementation_recovery.py::test_phase_preview_never_mutates_closing_state_or_consumes_allowance
+FAILED test_implementation_recovery.py::test_anchor_repair_and_submit_are_admitted_inside_original_worker_floor
+FAILED test_implementation_recovery.py::test_anchor_failure_never_reopens_a_real_handoff_boundary[tokens]
+FAILED test_implementation_recovery.py::test_anchor_failure_never_reopens_a_real_handoff_boundary[calls]
+FAILED test_implementation_recovery.py::test_anchor_failure_never_reopens_a_real_handoff_boundary[admitted]
+5 failed in 0.36s

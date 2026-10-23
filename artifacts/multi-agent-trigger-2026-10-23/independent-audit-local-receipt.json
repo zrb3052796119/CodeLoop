@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+    "-m",
+    "pytest",
+    "-q",
+    "-o",
+    "addopts=",
+    "tests/test_multi_agent_trigger_audit.py",
+    "tests/test_multi_agent_trigger_analysis.py"
+  ],
+  "returncode": 0,
+  "modelCalls": 0,
+  "runnerImported": false,
+  "sourceSha256": {
+    "scripts/audit_multi_agent_trigger.py": "ea47f7d5a375d07414aab93ddb74957b750b04040795aba94c022158f3992364",
+    "scripts/analyze_multi_agent_trigger.py": "87cbf20c6c985948fb9e40477e9eb68543a05e20edc8dfe9e798df90645262aa",
+    "tests/test_multi_agent_trigger_audit.py": "6601f662d32f12c759e0d3e0c65041ac88ae4664676eea93f068d6b5f4ee5c48",
+    "tests/test_multi_agent_trigger_analysis.py": "2d487bf909f597f3e516c39dbd21e0fc92ec8e91befbe3b6a470c6736cd69f5b"
+  },
+  "pack": "artifacts/multi-agent-trigger-2026-10-23/materials/pack-v3",
+  "proofSha256": "f9d72889f97194e15c91d97b3009f8142cc3bbc33a0f88ac28a6ece5e5ed757f",
+  "cases": 8,
+  "baselineTargetProofs": 8,
+  "referenceProofs": 8,
+  "checkNodes": 83,
+  "baselineFailedNodes": 45,
+  "referenceFailedNodes": 0,
+  "note": "All frozen material was read only; no frozen source, oracle, runner or model request executed by this audit. The independent tests include synthetic full manifest/archive preflight. An earlier expanded legacy test command had one judge_cleanup_incomplete failure under restricted ps; unchanged legacy test requires process visibility.",
+  "queuedCancellationCoverage": "Real lifecycle queued and running cancellation verified separately by runner tests against Audit.collaboration; independent tests also reject orphan ACK physical activity, wrong owner, unsupported async type and malformed terminal snapshots. No worker execution or result is fabricated."
+}

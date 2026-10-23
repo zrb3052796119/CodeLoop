@@ -1,0 +1,25 @@
+{
+  "scope": "Optional once-per-turn delegation sentence in existing progress notices; default continuous parent execution only; finite shared budget remains supported. Explicit bounded phases retain existing notices and do not receive the new sentence.",
+  "sourceSha256": {
+    "minicode/coding_progress.py": "d63326b8f89033595b27602dbf130416490981554c70ef96c1e674b1d3979941",
+    "minicode/agent_loop.py": "85a0cd49eca519adc7ce165cba6709b5031acf1b478e8e0c6b7a25e36a2d8851",
+    "tests/test_progress_delegation.py": "5b193664322b8f476e067b70896076ba7cccc301a33756bf5bf0f4f8c487e7f3"
+  },
+  "finalTestResult": {
+    "command": "python3 -m pytest -q tests/test_progress_delegation.py",
+    "passed": 18,
+    "failed": 0
+  },
+  "publicLoopCounterexamples": {
+    "beforeTargetAssertionsFailed": 2,
+    "afterPassed": 2,
+    "sameTestSha256": "5b193664322b8f476e067b70896076ba7cccc301a33756bf5bf0f4f8c487e7f3",
+    "pairedOldLoopAndTracker": true,
+    "isPristineHead": false
+  },
+  "existingPhasePricingBlockUnchanged": true,
+  "existingPhasePricingBlockSha256": "d4142024b78e67871b4a34f826b735ded8b7242eaa439cc7857fc118ee6cc286",
+  "newRuntimeSwitch": false,
+  "modelCalls": 0,
+  "gitCommitCreated": false
+}

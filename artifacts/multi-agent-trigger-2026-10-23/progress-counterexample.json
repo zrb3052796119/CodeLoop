@@ -1,0 +1,29 @@
+{
+  "before": {
+    "returncode": 1,
+    "sourceSha256": {
+      "coding_progress.py": "a57b94c88405a5d4c70c1b2cd3865c901f4c504c888a567ac6fcd466c5c0f49f",
+      "agent_loop.py": "978aaba198cea97265046a47091279e6b356bd36d96b5361159f6bbd3c8cdec3"
+    },
+    "samePublicLoopTests": [
+      "test_actual_implementation_loop_without_task_never_suggests_delegation[0]",
+      "test_actual_loop_suggests_once_after_eight_batches_even_for_one_file"
+    ],
+    "testSha256": "5b193664322b8f476e067b70896076ba7cccc301a33756bf5bf0f4f8c487e7f3",
+    "importOriginsVerified": true
+  },
+  "after": {
+    "returncode": 0,
+    "sourceSha256": {
+      "coding_progress.py": "d63326b8f89033595b27602dbf130416490981554c70ef96c1e674b1d3979941",
+      "agent_loop.py": "85a0cd49eca519adc7ce165cba6709b5031acf1b478e8e0c6b7a25e36a2d8851"
+    },
+    "samePublicLoopTests": [
+      "test_actual_implementation_loop_without_task_never_suggests_delegation[0]",
+      "test_actual_loop_suggests_once_after_eight_batches_even_for_one_file"
+    ],
+    "testSha256": "5b193664322b8f476e067b70896076ba7cccc301a33756bf5bf0f4f8c487e7f3",
+    "importOriginsVerified": true
+  },
+  "scope": "Working-tree source pair saved before Phase 2; not a pristine HEAD claim. No provider requests."
+}

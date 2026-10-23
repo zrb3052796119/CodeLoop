@@ -1,0 +1,32 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__ test_actual_implementation_loop_without_task_never_suggests_delegation[0] ___
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-364/test_actual_implementation_loo0')
+agent_depth = 0
+
+    @pytest.mark.parametrize("agent_depth", [0, 1])
+    def test_actual_implementation_loop_without_task_never_suggests_delegation(tmp_path, agent_depth):
+        requests = _run_inspection(tmp_path, task=False, agent_depth=agent_depth)
+        assert len(requests[-1]) == 3  # Ordinary implementation feedback remains.
+>       assert not _delegation_notices(requests[-1])
+E       AssertionError: assert not ['[Coding progress checkpoint] 4 inspection batches have completed without an observed code change or verification. Mo...r accounting for context size, a small output allowance and call/step limits. This is an estimate, not a reservation.']
+E        +  where ['[Coding progress checkpoint] 4 inspection batches have completed without an observed code change or verification. Mo...r accounting for context size, a small output allowance and call/step limits. This is an estimate, not a reservation.'] = _delegation_notices(['[Coding progress checkpoint] 4 inspection batches have completed without an observed code change or verification. Mo...r accounting for context size, a small output allowance and call/step limits. This is an estimate, not a reservation.'])
+
+test_progress_delegation.py:69: AssertionError
+_____ test_actual_loop_suggests_once_after_eight_batches_even_for_one_file _____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-364/test_actual_loop_suggests_once0')
+
+    def test_actual_loop_suggests_once_after_eight_batches_even_for_one_file(tmp_path):
+        requests = _run_inspection(tmp_path, runtime={"subagentRoutingEnabled": False})
+        assert len(requests[4]) == 1
+>       assert not _delegation_notices(requests[4])
+E       AssertionError: assert not ['[Coding progress checkpoint] 4 inspection batches have completed without an observed code change or verification. Mo...r accounting for context size, a small output allowance and call/step limits. This is an estimate, not a reservation.']
+E        +  where ['[Coding progress checkpoint] 4 inspection batches have completed without an observed code change or verification. Mo...r accounting for context size, a small output allowance and call/step limits. This is an estimate, not a reservation.'] = _delegation_notices(['[Coding progress checkpoint] 4 inspection batches have completed without an observed code change or verification. Mo...r accounting for context size, a small output allowance and call/step limits. This is an estimate, not a reservation.'])
+
+test_progress_delegation.py:75: AssertionError
+=========================== short test summary info ============================
+FAILED test_progress_delegation.py::test_actual_implementation_loop_without_task_never_suggests_delegation[0]
+FAILED test_progress_delegation.py::test_actual_loop_suggests_once_after_eight_batches_even_for_one_file
+2 failed in 0.30s

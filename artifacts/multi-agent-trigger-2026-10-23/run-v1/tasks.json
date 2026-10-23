@@ -1,0 +1,329 @@
+{
+  "generation": "trigger-v1",
+  "shared_files": {
+    "minicode/__init__.py": "",
+    "pytest.ini": "[pytest]\naddopts =\n"
+  },
+  "cases": [
+    {
+      "id": "trigger-record-pagination",
+      "category": "feed-pagination",
+      "prompt": "The activity-feed API loses records when several records share a timestamp, and\ntheir order can change with input order. Investigate ordering, cursor comparison,\nand page composition in minicode/records.py, cursors.py and feed.py, then repair\ntheir shared contract. Each record has a unique string id and integer created.\nFeed order must be descending by (created, id), including lexicographic id ties.\nAn encoded cursor identifies an exclusive position in that same order: later\npages must neither repeat nor omit records with the same created value. page()\nreturns at most limit items and a next cursor only when additional items remain;\nempty pages have next=None. Preserve positive-limit validation and cursor format.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/records.py, minicode/cursors.py, minicode/feed.py, tests/test_eval_regression.py.",
+      "files": {
+        "minicode/records.py": "def ordered_records(records):\n    \"\"\"Return records in feed order without changing the caller's list.\"\"\"\n    return sorted(records, key=lambda row: row[\"created\"], reverse=True)\n",
+        "minicode/cursors.py": "import json\n\ndef encode_cursor(record):\n    return json.dumps([record[\"created\"], record[\"id\"]])\n\ndef is_after_cursor(record, cursor):\n    if cursor is None:\n        return True\n    created, identity = json.loads(cursor)\n    return record[\"created\"] < created\n",
+        "minicode/feed.py": "from minicode.records import ordered_records\nfrom minicode.cursors import encode_cursor, is_after_cursor\n\ndef page(records, limit, cursor=None):\n    if limit <= 0:\n        raise ValueError(\"limit must be positive\")\n    remaining = [row for row in ordered_records(records)\n                 if is_after_cursor(row, cursor)]\n    selected = remaining[:limit]\n    return {\"items\": selected,\n            \"next\": encode_cursor(selected[-1]) if len(remaining) > limit else None}\n",
+        "tests/test_public.py": "import pytest\nfrom minicode.feed import page\n\ndef test_unique_timestamps_and_end():\n    rows = [{\"id\": \"b\", \"created\": 2}, {\"id\": \"a\", \"created\": 1}]\n    first = page(rows, 1)\n    assert first[\"items\"] == rows[:1]\n    assert page(rows, 1, first[\"next\"]) == {\"items\": rows[1:], \"next\": None}\n\ndef test_empty_and_invalid_limit():\n    assert page([], 2) == {\"items\": [], \"next\": None}\n    with pytest.raises(ValueError):\n        page([], 0)\n"
+      },
+      "authorized_paths": [
+        "minicode/records.py",
+        "minicode/cursors.py",
+        "minicode/feed.py",
+        "tests/test_eval_regression.py"
+      ],
+      "verification_argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "sourcePaths": [
+        "minicode/records.py",
+        "minicode/cursors.py",
+        "minicode/feed.py"
+      ],
+      "oracle_source": "from copy import deepcopy\nimport json\nfrom pathlib import Path\nimport sys\n\nworkspace = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(workspace))\nimport minicode\nassert Path(minicode.__file__).resolve().is_relative_to(workspace)\nchecks = []\n\ndef check(label, actual, expected):\n    checks.append({\"label\": label, \"actual\": deepcopy(actual), \"expected\": deepcopy(expected),\n                   \"passed\": actual == expected})\n\ndef raises_value_error(function):\n    try:\n        function()\n    except ValueError:\n        return True\n    return False\n\nfrom copy import deepcopy\nfrom minicode.feed import page\nfrom minicode.cursors import encode_cursor, is_after_cursor\nfrom minicode.records import ordered_records\nrows = [{\"id\": \"b\", \"created\": 8}, {\"id\": \"d\", \"created\": 9},\n        {\"id\": \"a\", \"created\": 8}, {\"id\": \"c\", \"created\": 8},\n        {\"id\": \"z\", \"created\": 7}]\nbefore = deepcopy(rows)\nexpected = [\"d\", \"c\", \"b\", \"a\", \"z\"]\ncheck(\"total_order\", [r[\"id\"] for r in ordered_records(rows)], expected)\ncheck(\"input_order_independent\", [r[\"id\"] for r in ordered_records(list(reversed(rows)))], expected)\nfor limit in (1, 2, 3, 5, 9):\n    cursor, found = None, []\n    for _ in range(len(rows) + 2):\n        result = page(rows, limit, cursor)\n        found.extend(r[\"id\"] for r in result[\"items\"])\n        cursor = result[\"next\"]\n        if cursor is None:\n            break\n    check(\"complete_pages_\" + str(limit), found, expected)\n    check(\"terminal_cursor_\" + str(limit), cursor, None)\ncheck(\"exclusive_tie_position\", [r[\"id\"] for r in page(rows, 9, encode_cursor({\"created\": 8, \"id\": \"b\"}))[\"items\"]], [\"a\", \"z\"])\nposition = encode_cursor({\"created\": 8, \"id\": \"b\"})\ncheck(\"cursor_tie_after\", is_after_cursor({\"created\": 8, \"id\": \"a\"}, position), True)\ncheck(\"cursor_tie_before\", is_after_cursor({\"created\": 8, \"id\": \"c\"}, position), False)\ncheck(\"cursor_position_excluded\", is_after_cursor({\"created\": 8, \"id\": \"b\"}, position), False)\ncheck(\"empty_page\", page([], 3), {\"items\": [], \"next\": None})\ncheck(\"invalid_limit\", raises_value_error(lambda: page(rows, 0)), True)\ncheck(\"input_unchanged\", rows, before)\n\nfor name, module in tuple(sys.modules.items()):\n    if name.startswith(\"minicode.\") and getattr(module, \"__file__\", None):\n        assert Path(module.__file__).resolve().is_relative_to(workspace), name\nerrors = [item[\"label\"] for item in checks if not item[\"passed\"]]\nprint(json.dumps({\"passed\": not errors, \"errors\": errors, \"checks\": checks},\n                 ensure_ascii=False, sort_keys=True))\nraise SystemExit(1 if errors else 0)\n",
+      "triggerExpectation": "positive",
+      "provenance": {
+        "origin": "synthetic",
+        "generation": "trigger-v1",
+        "behaviorBoundaries": [
+          "repository total order",
+          "exclusive cursor position",
+          "page continuation"
+        ],
+        "expectationRationale": "Distinct contracts can be investigated separately; direct execution remains valid.",
+        "notHistoricalReplay": true,
+        "distinctFromGen2": "No source-coordinate, registry-lifetime, or model-request-budget defect."
+      }
+    },
+    {
+      "id": "trigger-import-retry",
+      "category": "event-import-retry",
+      "prompt": "Retrying an account-event import currently changes balances twice. Trace how\nevent identity crosses import_events(), EventStore.apply() and retry_job(), and\nmake retries idempotent for one EventStore lifetime. Each event contains string\nid/account and integer amount; repeated ids always carry the same payload.\nAn id must affect totals once even when repeated inside a batch, in a later\nbatch, or in a retry. Distinct ids with equal amounts are distinct events.\nEventStore.apply returns True only for a newly applied event; import_events\nreports received as the number submitted and applied as the number newly used.\nretry_job must preserve event ids, return attempt=job['attempt']+1 with those\nsame counts, and leave job/events unchanged. Negative and zero amounts are valid.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/event_store.py, minicode/importer.py, minicode/retry.py, tests/test_eval_regression.py.",
+      "files": {
+        "minicode/event_store.py": "class EventStore:\n    def __init__(self):\n        self.totals = {}\n        self.applied_ids = set()\n\n    def apply(self, event):\n        key = event[\"account\"]\n        self.totals[key] = self.totals.get(key, 0) + event[\"amount\"]\n        self.applied_ids.add(event[\"id\"])\n        return True\n",
+        "minicode/importer.py": "def import_events(store, events):\n    for event in events:\n        store.apply(event)\n    return {\"received\": len(events), \"applied\": len(events)}\n",
+        "minicode/retry.py": "from minicode.importer import import_events\n\ndef retry_job(store, job):\n    attempt = job[\"attempt\"] + 1\n    events = [{**event, \"id\": event[\"id\"] + \":\" + str(attempt)}\n              for event in job[\"events\"]]\n    return {\"attempt\": attempt, **import_events(store, events)}\n",
+        "tests/test_public.py": "from minicode.event_store import EventStore\nfrom minicode.importer import import_events\nfrom minicode.retry import retry_job\n\ndef test_first_batch():\n    store = EventStore()\n    assert import_events(store, [{\"id\": \"x\", \"account\": \"a\", \"amount\": 4}]) == {\"received\": 1, \"applied\": 1}\n    assert store.totals == {\"a\": 4}\n\ndef test_empty_retry():\n    assert retry_job(EventStore(), {\"attempt\": 2, \"events\": []}) == {\"attempt\": 3, \"received\": 0, \"applied\": 0}\n"
+      },
+      "authorized_paths": [
+        "minicode/event_store.py",
+        "minicode/importer.py",
+        "minicode/retry.py",
+        "tests/test_eval_regression.py"
+      ],
+      "verification_argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "sourcePaths": [
+        "minicode/event_store.py",
+        "minicode/importer.py",
+        "minicode/retry.py"
+      ],
+      "oracle_source": "from copy import deepcopy\nimport json\nfrom pathlib import Path\nimport sys\n\nworkspace = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(workspace))\nimport minicode\nassert Path(minicode.__file__).resolve().is_relative_to(workspace)\nchecks = []\n\ndef check(label, actual, expected):\n    checks.append({\"label\": label, \"actual\": deepcopy(actual), \"expected\": deepcopy(expected),\n                   \"passed\": actual == expected})\n\ndef raises_value_error(function):\n    try:\n        function()\n    except ValueError:\n        return True\n    return False\n\nfrom copy import deepcopy\nfrom minicode.event_store import EventStore\nfrom minicode.importer import import_events\nfrom minicode.retry import retry_job\nfirst = {\"id\": \"x\", \"account\": \"a\", \"amount\": 7}\nsecond = {\"id\": \"y\", \"account\": \"a\", \"amount\": 7}\ndebit = {\"id\": \"z\", \"account\": \"a\", \"amount\": -3}\nzero = {\"id\": \"zero\", \"account\": \"b\", \"amount\": 0}\nstore = EventStore()\ncheck(\"within_batch_counts\", import_events(store, [first, first, second]), {\"received\": 3, \"applied\": 2})\ncheck(\"within_batch_total\", store.totals, {\"a\": 14})\ncheck(\"later_batch_counts\", import_events(store, [first, debit, zero]), {\"received\": 3, \"applied\": 2})\njob = {\"attempt\": 4, \"events\": [first, second, debit, zero]}\nbefore = deepcopy(job)\ncheck(\"retry_counts\", retry_job(store, job), {\"attempt\": 5, \"received\": 4, \"applied\": 0})\ncheck(\"retry_keeps_totals\", store.totals, {\"a\": 11, \"b\": 0})\ncheck(\"repeat_retry\", retry_job(store, job), {\"attempt\": 5, \"received\": 4, \"applied\": 0})\ncheck(\"stable_identity_set\", sorted(store.applied_ids), [\"x\", \"y\", \"z\", \"zero\"])\ncheck(\"apply_duplicate_returns_false\", store.apply(first), False)\ncheck(\"job_unchanged\", job, before)\n\nfor name, module in tuple(sys.modules.items()):\n    if name.startswith(\"minicode.\") and getattr(module, \"__file__\", None):\n        assert Path(module.__file__).resolve().is_relative_to(workspace), name\nerrors = [item[\"label\"] for item in checks if not item[\"passed\"]]\nprint(json.dumps({\"passed\": not errors, \"errors\": errors, \"checks\": checks},\n                 ensure_ascii=False, sort_keys=True))\nraise SystemExit(1 if errors else 0)\n",
+      "triggerExpectation": "positive",
+      "provenance": {
+        "origin": "synthetic",
+        "generation": "trigger-v1",
+        "behaviorBoundaries": [
+          "store idempotency boundary",
+          "batch accounting",
+          "retry identity preservation"
+        ],
+        "expectationRationale": "Distinct contracts can be investigated separately; direct execution remains valid.",
+        "notHistoricalReplay": true,
+        "distinctFromGen2": "No source-coordinate, registry-lifetime, or model-request-budget defect."
+      }
+    },
+    {
+      "id": "trigger-cart-discounts",
+      "category": "cart-discount-allocation",
+      "prompt": "Repair coupon handling across discount_rules, pricing and checkout. A line has\nsku/category plus nonnegative integer unit_cents and quantity. A coupon has an\ninteger percent in 0..100, optional categories and excluded_skus, and optional\ncap_cents. Empty/missing categories allow every category; excluded skus never\nreceive a discount. Compute each eligible line's discount by flooring the\npercentage of the whole line gross (unit_cents * quantity), not each unit.\ncap_cents is a single order-wide limit allocated in input line order; None or\nmissing means unlimited and zero means no discount. Ineligible lines do not\nconsume this cap. Preserve the existing line and receipt shapes; receipt totals\nmust equal the sums of its lines. Zero-price/quantity lines and empty carts work.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/discount_rules.py, minicode/pricing.py, minicode/checkout.py, tests/test_eval_regression.py.",
+      "files": {
+        "minicode/discount_rules.py": "def eligible(line, coupon):\n    categories = coupon.get(\"categories\", [])\n    return not categories or line[\"category\"] in categories\n",
+        "minicode/pricing.py": "from minicode.discount_rules import eligible\n\ndef price_lines(lines, coupon):\n    result = []\n    for line in lines:\n        gross = line[\"unit_cents\"] * line[\"quantity\"]\n        discount = (line[\"unit_cents\"] * coupon[\"percent\"] // 100) * line[\"quantity\"] if eligible(line, coupon) else 0\n        cap = coupon.get(\"cap_cents\")\n        if cap is not None:\n            discount = min(discount, cap)\n        result.append({\"sku\": line[\"sku\"], \"gross\": gross,\n                       \"discount\": discount, \"net\": gross - discount})\n    return result\n",
+        "minicode/checkout.py": "from minicode.pricing import price_lines\n\ndef receipt(lines, coupon):\n    priced = price_lines(lines, coupon)\n    return {\"lines\": priced,\n            \"gross\": sum(line[\"gross\"] for line in priced),\n            \"discount\": sum(line[\"discount\"] for line in priced),\n            \"net\": sum(line[\"net\"] for line in priced)}\n",
+        "tests/test_public.py": "from minicode.checkout import receipt\n\ndef test_simple_coupon_and_empty_cart():\n    line = {\"sku\": \"a\", \"category\": \"book\", \"unit_cents\": 100, \"quantity\": 1}\n    result = receipt([line], {\"percent\": 10})\n    assert (result[\"gross\"], result[\"discount\"], result[\"net\"]) == (100, 10, 90)\n    assert receipt([], {\"percent\": 10}) == {\"lines\": [], \"gross\": 0, \"discount\": 0, \"net\": 0}\n\ndef test_non_matching_category():\n    line = {\"sku\": \"a\", \"category\": \"book\", \"unit_cents\": 100, \"quantity\": 1}\n    assert receipt([line], {\"percent\": 25, \"categories\": [\"food\"]})[\"discount\"] == 0\n"
+      },
+      "authorized_paths": [
+        "minicode/discount_rules.py",
+        "minicode/pricing.py",
+        "minicode/checkout.py",
+        "tests/test_eval_regression.py"
+      ],
+      "verification_argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "sourcePaths": [
+        "minicode/discount_rules.py",
+        "minicode/pricing.py",
+        "minicode/checkout.py"
+      ],
+      "oracle_source": "from copy import deepcopy\nimport json\nfrom pathlib import Path\nimport sys\n\nworkspace = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(workspace))\nimport minicode\nassert Path(minicode.__file__).resolve().is_relative_to(workspace)\nchecks = []\n\ndef check(label, actual, expected):\n    checks.append({\"label\": label, \"actual\": deepcopy(actual), \"expected\": deepcopy(expected),\n                   \"passed\": actual == expected})\n\ndef raises_value_error(function):\n    try:\n        function()\n    except ValueError:\n        return True\n    return False\n\nfrom copy import deepcopy\nfrom minicode.checkout import receipt\nfrom minicode.discount_rules import eligible\nfrom minicode.pricing import price_lines\nlines = [{\"sku\": \"a\", \"category\": \"book\", \"unit_cents\": 3, \"quantity\": 3},\n         {\"sku\": \"blocked\", \"category\": \"book\", \"unit_cents\": 100, \"quantity\": 1},\n         {\"sku\": \"b\", \"category\": \"book\", \"unit_cents\": 9, \"quantity\": 1},\n         {\"sku\": \"food\", \"category\": \"food\", \"unit_cents\": 20, \"quantity\": 1}]\ncoupon = {\"percent\": 50, \"categories\": [\"book\"], \"excluded_skus\": [\"blocked\"], \"cap_cents\": 6}\nbefore = deepcopy((lines, coupon))\nresult = receipt(lines, coupon)\ncheck(\"excluded_sku\", eligible(lines[1], coupon), False)\ncheck(\"line_rounding_and_shared_cap\", [r[\"discount\"] for r in result[\"lines\"]], [4, 0, 2, 0])\ncheck(\"pricing_interface\", price_lines(lines, coupon), [\n    {\"sku\": \"a\", \"gross\": 9, \"discount\": 4, \"net\": 5},\n    {\"sku\": \"blocked\", \"gross\": 100, \"discount\": 0, \"net\": 100},\n    {\"sku\": \"b\", \"gross\": 9, \"discount\": 2, \"net\": 7},\n    {\"sku\": \"food\", \"gross\": 20, \"discount\": 0, \"net\": 20}])\ncheck(\"receipt_totals\", [result[k] for k in (\"gross\", \"discount\", \"net\")], [138, 6, 132])\ncheck(\"unlimited_cap\", receipt([lines[0], lines[2]], {\"percent\": 50})[\"discount\"], 8)\ncheck(\"explicit_none_cap\", receipt([lines[0], lines[2]], {\"percent\": 50, \"cap_cents\": None})[\"discount\"], 8)\ncheck(\"zero_cap\", receipt(lines, {\"percent\": 50, \"cap_cents\": 0})[\"discount\"], 0)\ncheck(\"zero_percent\", receipt(lines, {\"percent\": 0})[\"discount\"], 0)\ncheck(\"empty_categories_allow_all\", receipt([lines[3]], {\"percent\": 50, \"categories\": []})[\"discount\"], 10)\ncheck(\"full_discount\", receipt([lines[0]], {\"percent\": 100})[\"net\"], 0)\ncheck(\"zero_quantity\", receipt([{**lines[0], \"quantity\": 0}], {\"percent\": 50})[\"net\"], 0)\ncheck(\"inputs_unchanged\", (lines, coupon), before)\n\nfor name, module in tuple(sys.modules.items()):\n    if name.startswith(\"minicode.\") and getattr(module, \"__file__\", None):\n        assert Path(module.__file__).resolve().is_relative_to(workspace), name\nerrors = [item[\"label\"] for item in checks if not item[\"passed\"]]\nprint(json.dumps({\"passed\": not errors, \"errors\": errors, \"checks\": checks},\n                 ensure_ascii=False, sort_keys=True))\nraise SystemExit(1 if errors else 0)\n",
+      "triggerExpectation": "positive",
+      "provenance": {
+        "origin": "synthetic",
+        "generation": "trigger-v1",
+        "behaviorBoundaries": [
+          "coupon eligibility",
+          "line rounding and order-wide cap",
+          "receipt reconciliation"
+        ],
+        "expectationRationale": "Distinct contracts can be investigated separately; direct execution remains valid.",
+        "notHistoricalReplay": true,
+        "distinctFromGen2": "No source-coordinate, registry-lifetime, or model-request-budget defect."
+      }
+    },
+    {
+      "id": "trigger-stock-allocation",
+      "category": "stock-allocation-report",
+      "prompt": "Make warehouse allocation and its summary agree when a SKU occurs more than\nonce. Bins and requests contain string sku and nonnegative integer quantity.\navailable_stock must sum all bins for the same SKU. allocate must process\nrequest lines in input order, consuming that shared available stock, retaining\none output row per request, with requested, allocated and shortfall values.\nUnknown SKUs allocate zero; zero quantities and empty inputs are valid.\nsummarize must aggregate all allocation rows by SKU, adding each of requested,\nallocated and shortfall; it must not overwrite earlier request lines. Preserve\npublic function signatures and return shapes. Allocation must never overdraw\nstock or modify the supplied bins or requests.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/stock.py, minicode/allocation.py, minicode/allocation_report.py, tests/test_eval_regression.py.",
+      "files": {
+        "minicode/stock.py": "def available_stock(bins):\n    return {item[\"sku\"]: item[\"quantity\"] for item in bins}\n",
+        "minicode/allocation.py": "from minicode.stock import available_stock\n\ndef allocate(bins, requests):\n    stock = available_stock(bins)\n    result = []\n    for request in requests:\n        sku, quantity = request[\"sku\"], request[\"quantity\"]\n        allocated = min(quantity, stock.get(sku, 0))\n        result.append({\"sku\": sku, \"requested\": quantity,\n                       \"allocated\": allocated, \"shortfall\": quantity - allocated})\n    return result\n",
+        "minicode/allocation_report.py": "def summarize(allocations):\n    return {row[\"sku\"]: {key: row[key] for key in (\"requested\", \"allocated\", \"shortfall\")}\n            for row in allocations}\n",
+        "tests/test_public.py": "from minicode.stock import available_stock\nfrom minicode.allocation import allocate\nfrom minicode.allocation_report import summarize\n\ndef test_single_bin_request():\n    bins = [{\"sku\": \"a\", \"quantity\": 5}]\n    assert available_stock(bins) == {\"a\": 5}\n    rows = allocate(bins, [{\"sku\": \"a\", \"quantity\": 2}])\n    assert summarize(rows) == {\"a\": {\"requested\": 2, \"allocated\": 2, \"shortfall\": 0}}\n\ndef test_empty():\n    assert allocate([], []) == []\n    assert summarize([]) == {}\n"
+      },
+      "authorized_paths": [
+        "minicode/stock.py",
+        "minicode/allocation.py",
+        "minicode/allocation_report.py",
+        "tests/test_eval_regression.py"
+      ],
+      "verification_argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "sourcePaths": [
+        "minicode/stock.py",
+        "minicode/allocation.py",
+        "minicode/allocation_report.py"
+      ],
+      "oracle_source": "from copy import deepcopy\nimport json\nfrom pathlib import Path\nimport sys\n\nworkspace = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(workspace))\nimport minicode\nassert Path(minicode.__file__).resolve().is_relative_to(workspace)\nchecks = []\n\ndef check(label, actual, expected):\n    checks.append({\"label\": label, \"actual\": deepcopy(actual), \"expected\": deepcopy(expected),\n                   \"passed\": actual == expected})\n\ndef raises_value_error(function):\n    try:\n        function()\n    except ValueError:\n        return True\n    return False\n\nfrom copy import deepcopy\nfrom minicode.stock import available_stock\nfrom minicode.allocation import allocate\nfrom minicode.allocation_report import summarize\nbins = [{\"sku\": \"a\", \"quantity\": 3}, {\"sku\": \"b\", \"quantity\": 1}, {\"sku\": \"a\", \"quantity\": 4}]\nrequests = [{\"sku\": \"a\", \"quantity\": 5}, {\"sku\": \"b\", \"quantity\": 2},\n            {\"sku\": \"a\", \"quantity\": 4}, {\"sku\": \"missing\", \"quantity\": 2}, {\"sku\": \"a\", \"quantity\": 0}]\nbefore = deepcopy((bins, requests))\ncheck(\"bin_aggregation\", available_stock(bins), {\"a\": 7, \"b\": 1})\nrows = allocate(bins, requests)\ncheck(\"allocation_order_and_consumption\", [r[\"allocated\"] for r in rows], [5, 1, 2, 0, 0])\ncheck(\"shortfalls\", [r[\"shortfall\"] for r in rows], [0, 1, 2, 2, 0])\ncheck(\"summary_all_rows\", summarize(rows), {\"a\": {\"requested\": 9, \"allocated\": 7, \"shortfall\": 2}, \"b\": {\"requested\": 2, \"allocated\": 1, \"shortfall\": 1}, \"missing\": {\"requested\": 2, \"allocated\": 0, \"shortfall\": 2}})\nexplicit_rows = [{\"sku\": \"x\", \"requested\": 2, \"allocated\": 1, \"shortfall\": 1}, {\"sku\": \"x\", \"requested\": 4, \"allocated\": 3, \"shortfall\": 1}]\ncheck(\"independent_summary\", summarize(explicit_rows), {\"x\": {\"requested\": 6, \"allocated\": 4, \"shortfall\": 2}})\ncheck(\"inputs_unchanged\", (bins, requests), before)\ncheck(\"empty_allocation\", allocate([], []), [])\n\nfor name, module in tuple(sys.modules.items()):\n    if name.startswith(\"minicode.\") and getattr(module, \"__file__\", None):\n        assert Path(module.__file__).resolve().is_relative_to(workspace), name\nerrors = [item[\"label\"] for item in checks if not item[\"passed\"]]\nprint(json.dumps({\"passed\": not errors, \"errors\": errors, \"checks\": checks},\n                 ensure_ascii=False, sort_keys=True))\nraise SystemExit(1 if errors else 0)\n",
+      "triggerExpectation": "positive",
+      "provenance": {
+        "origin": "synthetic",
+        "generation": "trigger-v1",
+        "behaviorBoundaries": [
+          "bin-to-stock aggregation",
+          "sequential stock consumption",
+          "per-SKU reporting"
+        ],
+        "expectationRationale": "Distinct contracts can be investigated separately; direct execution remains valid.",
+        "notHistoricalReplay": true,
+        "distinctFromGen2": "No source-coordinate, registry-lifetime, or model-request-budget defect."
+      }
+    },
+    {
+      "id": "trigger-report-timezones",
+      "category": "local-day-report",
+      "prompt": "Correct daily reporting across time_window and daily_report. day is an ISO\ncalendar date; offset_minutes is a fixed UTC offset, not a timezone with DST.\nday_bounds must return timezone-aware UTC instants for local midnight and the\nnext local midnight. daily_totals includes events in [start, end), so an event\nat the next day's midnight belongs only to that next day. Event at values are\nISO strings with explicit offsets (possibly different from the report offset);\ncompare their instants correctly. Offsets may be positive, negative or zero,\nincluding half-hour offsets, and days may cross month/year boundaries. Preserve\ninput order in the ids result, sum integer amounts including negatives/zero,\nand return ids=[]/total=0 for no matching events.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/time_window.py, minicode/daily_report.py, tests/test_eval_regression.py.",
+      "files": {
+        "minicode/time_window.py": "from datetime import datetime, timedelta, timezone\n\ndef day_bounds(day, offset_minutes):\n    start = datetime.fromisoformat(day).replace(tzinfo=timezone.utc)\n    return start, start + timedelta(days=1)\n",
+        "minicode/daily_report.py": "from datetime import datetime\nfrom minicode.time_window import day_bounds\n\ndef daily_totals(events, day, offset_minutes):\n    start, end = day_bounds(day, offset_minutes)\n    selected = [event for event in events\n                if start <= datetime.fromisoformat(event[\"at\"]) <= end]\n    return {\"ids\": [event[\"id\"] for event in selected],\n            \"total\": sum(event[\"amount\"] for event in selected)}\n",
+        "tests/test_public.py": "from minicode.daily_report import daily_totals\n\ndef test_utc_noon_and_empty():\n    events = [{\"id\": \"a\", \"at\": \"2026-01-02T12:00:00+00:00\", \"amount\": 4}]\n    assert daily_totals(events, \"2026-01-02\", 0) == {\"ids\": [\"a\"], \"total\": 4}\n    assert daily_totals([], \"2026-01-02\", 0) == {\"ids\": [], \"total\": 0}\n"
+      },
+      "authorized_paths": [
+        "minicode/time_window.py",
+        "minicode/daily_report.py",
+        "tests/test_eval_regression.py"
+      ],
+      "verification_argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "sourcePaths": [
+        "minicode/time_window.py",
+        "minicode/daily_report.py"
+      ],
+      "oracle_source": "from copy import deepcopy\nimport json\nfrom pathlib import Path\nimport sys\n\nworkspace = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(workspace))\nimport minicode\nassert Path(minicode.__file__).resolve().is_relative_to(workspace)\nchecks = []\n\ndef check(label, actual, expected):\n    checks.append({\"label\": label, \"actual\": deepcopy(actual), \"expected\": deepcopy(expected),\n                   \"passed\": actual == expected})\n\ndef raises_value_error(function):\n    try:\n        function()\n    except ValueError:\n        return True\n    return False\n\nfrom copy import deepcopy\nfrom datetime import datetime, timedelta, timezone\nfrom minicode.time_window import day_bounds\nfrom minicode.daily_report import daily_totals\nfor day, offset in ((\"2026-01-01\", 330), (\"2026-03-01\", -420), (\"2026-12-31\", 0)):\n    expected_start = datetime.fromisoformat(day).replace(tzinfo=timezone(timedelta(minutes=offset))).astimezone(timezone.utc)\n    expected_end = expected_start + timedelta(days=1)\n    start, end = day_bounds(day, offset)\n    check(\"utc_bounds_\" + str(offset), [start.isoformat(), end.isoformat()], [expected_start.isoformat(), expected_end.isoformat()])\n    events = [{\"id\": \"end\", \"at\": expected_end.isoformat(), \"amount\": 100},\n              {\"id\": \"middle\", \"at\": (expected_start + timedelta(hours=12)).astimezone(timezone(timedelta(hours=-2))).isoformat(), \"amount\": -2},\n              {\"id\": \"start\", \"at\": expected_start.isoformat(), \"amount\": 5},\n              {\"id\": \"before\", \"at\": (expected_start - timedelta(seconds=1)).isoformat(), \"amount\": 100}]\n    before = deepcopy(events)\n    check(\"half_open_and_order_\" + str(offset), daily_totals(events, day, offset), {\"ids\": [\"middle\", \"start\"], \"total\": 3})\n    check(\"events_unchanged_\" + str(offset), events, before)\ncheck(\"empty_report\", daily_totals([], \"2026-02-01\", 0), {\"ids\": [], \"total\": 0})\n\nfor name, module in tuple(sys.modules.items()):\n    if name.startswith(\"minicode.\") and getattr(module, \"__file__\", None):\n        assert Path(module.__file__).resolve().is_relative_to(workspace), name\nerrors = [item[\"label\"] for item in checks if not item[\"passed\"]]\nprint(json.dumps({\"passed\": not errors, \"errors\": errors, \"checks\": checks},\n                 ensure_ascii=False, sort_keys=True))\nraise SystemExit(1 if errors else 0)\n",
+      "triggerExpectation": "positive",
+      "provenance": {
+        "origin": "synthetic",
+        "generation": "trigger-v1",
+        "behaviorBoundaries": [
+          "local calendar day to UTC interval",
+          "event-offset normalization and exclusive end"
+        ],
+        "expectationRationale": "Distinct contracts can be investigated separately; direct execution remains valid.",
+        "notHistoricalReplay": true,
+        "distinctFromGen2": "No source-coordinate, registry-lifetime, or model-request-budget defect."
+      }
+    },
+    {
+      "id": "trigger-config-overlay",
+      "category": "settings-overlay",
+      "prompt": "Repair the configuration overlay contract shared by config_merge and settings.\nPrecedence is defaults, then file_values, then recognized environment variables.\nmerge_settings recursively merges nonempty dictionaries, retaining unspecified\nnested defaults; an explicit empty dictionary clears that value. None means\n'unset, keep the previous value'. False, 0, empty strings and empty lists are\nexplicit values and must override defaults. Return independent data without\nmodifying or sharing mutable nested objects with either input.\nRecursive rules also apply to newly introduced dictionaries: a None entry with\nno previous value is omitted, while explicit empty dictionaries still clear.\nload_settings recognizes APP_ENABLED (trimmed, case-insensitive true/false;\nother values raise ValueError), APP_LIMIT (an integer string, including zero),\nand APP_TAGS (comma-separated trimmed tags, dropping empty entries; blank means\nan empty list). Ignore unknown environment names. Preserve these public APIs.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/config_merge.py, minicode/settings.py, tests/test_eval_regression.py.",
+      "files": {
+        "minicode/config_merge.py": "from copy import deepcopy\n\ndef merge_settings(base, override):\n    result = deepcopy(base)\n    for key, value in override.items():\n        if value:\n            result[key] = deepcopy(value)\n    return result\n",
+        "minicode/settings.py": "from minicode.config_merge import merge_settings\n\ndef load_settings(defaults, file_values, environment):\n    overrides = {}\n    if \"APP_ENABLED\" in environment:\n        overrides[\"enabled\"] = bool(environment[\"APP_ENABLED\"])\n    if \"APP_LIMIT\" in environment:\n        overrides[\"limit\"] = int(environment[\"APP_LIMIT\"])\n    if \"APP_TAGS\" in environment:\n        overrides[\"tags\"] = environment[\"APP_TAGS\"].split(\",\")\n    return merge_settings(merge_settings(defaults, file_values), overrides)\n",
+        "tests/test_public.py": "from minicode.config_merge import merge_settings\nfrom minicode.settings import load_settings\n\ndef test_ordinary_values_and_precedence():\n    assert merge_settings({\"limit\": 3}, {\"limit\": 5}) == {\"limit\": 5}\n    assert load_settings({\"enabled\": False, \"limit\": 3}, {\"limit\": 5}, {\"APP_ENABLED\": \"true\", \"APP_LIMIT\": \"8\"}) == {\"enabled\": True, \"limit\": 8}\n\ndef test_missing_values_keep_defaults():\n    assert load_settings({\"limit\": 3}, {}, {\"UNRELATED\": \"9\"}) == {\"limit\": 3}\n"
+      },
+      "authorized_paths": [
+        "minicode/config_merge.py",
+        "minicode/settings.py",
+        "tests/test_eval_regression.py"
+      ],
+      "verification_argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "sourcePaths": [
+        "minicode/config_merge.py",
+        "minicode/settings.py"
+      ],
+      "oracle_source": "from copy import deepcopy\nimport json\nfrom pathlib import Path\nimport sys\n\nworkspace = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(workspace))\nimport minicode\nassert Path(minicode.__file__).resolve().is_relative_to(workspace)\nchecks = []\n\ndef check(label, actual, expected):\n    checks.append({\"label\": label, \"actual\": deepcopy(actual), \"expected\": deepcopy(expected),\n                   \"passed\": actual == expected})\n\ndef raises_value_error(function):\n    try:\n        function()\n    except ValueError:\n        return True\n    return False\n\nfrom copy import deepcopy\nfrom minicode.config_merge import merge_settings\nfrom minicode.settings import load_settings\nbase = {\"enabled\": True, \"limit\": 10, \"tags\": [\"default\"], \"name\": \"demo\", \"db\": {\"host\": \"db\", \"timeout\": 3}, \"clear\": {\"old\": 1}}\noverride = {\"enabled\": False, \"limit\": 0, \"tags\": [], \"name\": \"\", \"db\": {\"timeout\": 0}, \"clear\": {}}\nbefore = deepcopy((base, override))\nexpected = {\"enabled\": False, \"limit\": 0, \"tags\": [], \"name\": \"\", \"db\": {\"host\": \"db\", \"timeout\": 0}, \"clear\": {}}\ncheck(\"falsey_recursive_values\", merge_settings(base, override), expected)\ncheck(\"none_keeps_value\", merge_settings(base, {\"limit\": None, \"db\": {\"host\": None}}), base)\ncheck(\"new_dictionary_none_unset\", merge_settings({}, {\"new\": {\"unset\": None, \"zero\": 0}}), {\"new\": {\"zero\": 0}})\nenv = {\"APP_ENABLED\": \" FaLsE \", \"APP_LIMIT\": \"0\", \"APP_TAGS\": \" \", \"UNKNOWN\": \"ignored\"}\ncheck(\"environment_zero_false_empty\", load_settings(base, {\"limit\": 4}, env), {**base, \"enabled\": False, \"limit\": 0, \"tags\": []})\ncheck(\"tag_whitespace\", load_settings({}, {}, {\"APP_TAGS\": \" red, , blue,, \"}), {\"tags\": [\"red\", \"blue\"]})\ncheck(\"invalid_boolean\", raises_value_error(lambda: load_settings({}, {}, {\"APP_ENABLED\": \"yes\"})), True)\nmerged = merge_settings(base, {\"db\": {\"port\": 9000}})\nmerged[\"db\"][\"host\"] = \"changed\"\nmerged[\"tags\"].append(\"changed\")\ncheck(\"inputs_unchanged_and_unaliased\", (base, override), before)\nnew_values = {\"new\": {\"items\": [1]}}\ncopied_values = deepcopy(new_values)\nfrom_override = merge_settings({}, new_values)\nfrom_override[\"new\"][\"items\"].append(2)\ncheck(\"override_nested_unaliased\", new_values, copied_values)\n\nfor name, module in tuple(sys.modules.items()):\n    if name.startswith(\"minicode.\") and getattr(module, \"__file__\", None):\n        assert Path(module.__file__).resolve().is_relative_to(workspace), name\nerrors = [item[\"label\"] for item in checks if not item[\"passed\"]]\nprint(json.dumps({\"passed\": not errors, \"errors\": errors, \"checks\": checks},\n                 ensure_ascii=False, sort_keys=True))\nraise SystemExit(1 if errors else 0)\n",
+      "triggerExpectation": "positive",
+      "provenance": {
+        "origin": "synthetic",
+        "generation": "trigger-v1",
+        "behaviorBoundaries": [
+          "recursive value-preserving merge",
+          "environment decoding and layer precedence"
+        ],
+        "expectationRationale": "Distinct contracts can be investigated separately; direct execution remains valid.",
+        "notHistoricalReplay": true,
+        "distinctFromGen2": "No source-coordinate, registry-lifetime, or model-request-budget defect."
+      }
+    },
+    {
+      "id": "trigger-limit-clamp",
+      "category": "known-function-clamp",
+      "prompt": "Fix clamp_limit(value, minimum, maximum) in minicode/limits.py. Values above\nmaximum currently escape the documented upper bound. All inputs are integers;\nreturn the nearest bound outside the inclusive interval, otherwise value itself.\nEqual bounds are valid and minimum > maximum must still raise ValueError. This\nis a local function correction; its location and required behavior are known.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/limits.py, tests/test_eval_regression.py.",
+      "files": {
+        "minicode/limits.py": "def clamp_limit(value, minimum, maximum):\n    \"\"\"Clamp an integer setting to the inclusive supported interval.\"\"\"\n    if minimum > maximum:\n        raise ValueError(\"minimum exceeds maximum\")\n    return max(minimum, value)\n",
+        "tests/test_public.py": "import pytest\nfrom minicode.limits import clamp_limit\n\ndef test_within_and_below_interval():\n    assert clamp_limit(4, 2, 8) == 4\n    assert clamp_limit(0, 2, 8) == 2\n\ndef test_invalid_interval():\n    with pytest.raises(ValueError):\n        clamp_limit(4, 8, 2)\n"
+      },
+      "authorized_paths": [
+        "minicode/limits.py",
+        "tests/test_eval_regression.py"
+      ],
+      "verification_argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "sourcePaths": [
+        "minicode/limits.py"
+      ],
+      "oracle_source": "from copy import deepcopy\nimport json\nfrom pathlib import Path\nimport sys\n\nworkspace = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(workspace))\nimport minicode\nassert Path(minicode.__file__).resolve().is_relative_to(workspace)\nchecks = []\n\ndef check(label, actual, expected):\n    checks.append({\"label\": label, \"actual\": deepcopy(actual), \"expected\": deepcopy(expected),\n                   \"passed\": actual == expected})\n\ndef raises_value_error(function):\n    try:\n        function()\n    except ValueError:\n        return True\n    return False\n\nfrom minicode.limits import clamp_limit\nfor value, low, high, expected in ((9, 2, 8, 8), (2, 2, 8, 2), (8, 2, 8, 8),\n                                  (-1, -8, -3, -3), (-10, -8, -3, -8),\n                                  (20, 5, 5, 5), (0, 5, 5, 5)):\n    check(\"clamp_\" + str((value, low, high)), clamp_limit(value, low, high), expected)\ncheck(\"invalid_interval\", raises_value_error(lambda: clamp_limit(0, 2, 1)), True)\n\nfor name, module in tuple(sys.modules.items()):\n    if name.startswith(\"minicode.\") and getattr(module, \"__file__\", None):\n        assert Path(module.__file__).resolve().is_relative_to(workspace), name\nerrors = [item[\"label\"] for item in checks if not item[\"passed\"]]\nprint(json.dumps({\"passed\": not errors, \"errors\": errors, \"checks\": checks},\n                 ensure_ascii=False, sort_keys=True))\nraise SystemExit(1 if errors else 0)\n",
+      "triggerExpectation": "negative",
+      "provenance": {
+        "origin": "synthetic",
+        "generation": "trigger-v1",
+        "behaviorBoundaries": [
+          "known clamp_limit function"
+        ],
+        "expectationRationale": "Known file and function; local repair with no independent investigation needed.",
+        "notHistoricalReplay": true,
+        "distinctFromGen2": "No source-coordinate, registry-lifetime, or model-request-budget defect."
+      }
+    },
+    {
+      "id": "trigger-extension-case",
+      "category": "known-function-extension",
+      "prompt": "Fix accepts_extension(filename, allowed) in minicode/formats.py so extension\nmatching is case-insensitive on both the filename and allowed names. allowed\ncontains extension names without a leading dot. Only the final extension counts\n(archive.TAR.GZ is gz); a filename with no nonempty extension, a dotfile such as\n.env, or an empty allowed list returns False. Paths use POSIX separators.\nThe problem is confined to this known function; preserve its boolean API and\ndo not change the supplied allowed collection.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/formats.py, tests/test_eval_regression.py.",
+      "files": {
+        "minicode/formats.py": "from pathlib import PurePosixPath\n\ndef accepts_extension(filename, allowed):\n    \"\"\"Match a nonempty final filename extension against allowed names.\"\"\"\n    suffix = PurePosixPath(filename).suffix.lstrip(\".\")\n    return bool(suffix) and suffix in allowed\n",
+        "tests/test_public.py": "from minicode.formats import accepts_extension\n\ndef test_lowercase_and_absent_suffix():\n    assert accepts_extension(\"report.txt\", [\"txt\"])\n    assert not accepts_extension(\"README\", [\"txt\"])\n    assert not accepts_extension(\"report.csv\", [\"txt\"])\n"
+      },
+      "authorized_paths": [
+        "minicode/formats.py",
+        "tests/test_eval_regression.py"
+      ],
+      "verification_argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "sourcePaths": [
+        "minicode/formats.py"
+      ],
+      "oracle_source": "from copy import deepcopy\nimport json\nfrom pathlib import Path\nimport sys\n\nworkspace = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(workspace))\nimport minicode\nassert Path(minicode.__file__).resolve().is_relative_to(workspace)\nchecks = []\n\ndef check(label, actual, expected):\n    checks.append({\"label\": label, \"actual\": deepcopy(actual), \"expected\": deepcopy(expected),\n                   \"passed\": actual == expected})\n\ndef raises_value_error(function):\n    try:\n        function()\n    except ValueError:\n        return True\n    return False\n\nfrom minicode.formats import accepts_extension\nallowed = [\"TxT\", \"gz\"]\nfor filename, expected in ((\"report.TXT\", True), (\"report.txt\", True),\n                           (\"folder/archive.TAR.GZ\", True), (\"archive.gz.zip\", False),\n                           (\"README\", False), (\".env\", False), (\"trailing.\", False)):\n    check(filename, accepts_extension(filename, allowed), expected)\ncheck(\"empty_allowlist\", accepts_extension(\"report.txt\", []), False)\ncheck(\"no_empty_extension\", accepts_extension(\"README\", [\"\"]), False)\ncheck(\"allowed_unchanged\", allowed, [\"TxT\", \"gz\"])\n\nfor name, module in tuple(sys.modules.items()):\n    if name.startswith(\"minicode.\") and getattr(module, \"__file__\", None):\n        assert Path(module.__file__).resolve().is_relative_to(workspace), name\nerrors = [item[\"label\"] for item in checks if not item[\"passed\"]]\nprint(json.dumps({\"passed\": not errors, \"errors\": errors, \"checks\": checks},\n                 ensure_ascii=False, sort_keys=True))\nraise SystemExit(1 if errors else 0)\n",
+      "triggerExpectation": "negative",
+      "provenance": {
+        "origin": "synthetic",
+        "generation": "trigger-v1",
+        "behaviorBoundaries": [
+          "known accepts_extension function"
+        ],
+        "expectationRationale": "Known file and function; local repair with no independent investigation needed.",
+        "notHistoricalReplay": true,
+        "distinctFromGen2": "No source-coordinate, registry-lifetime, or model-request-budget defect."
+      }
+    }
+  ]
+}

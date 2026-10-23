@@ -1,0 +1,482 @@
+[
+  {
+    "case": "trigger-record-pagination",
+    "origin": "synthetic",
+    "oracleSha256": "d2eefb4ba703554ed917ad435effdff27918cc59793da7032a31c545b74ca907",
+    "publicTestSha256": "3ae560a85b6994047cda53a41dfaeb73dba0bdda2b2e5b5f1da05fe52513ad74",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-yrl7uatp/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-yrl7uatp/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-yrl7uatp/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"actual\": [\"d\", \"b\", \"a\", \"c\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"total_order\", \"passed\": false}, {\"actual\": [\"d\", \"c\", \"a\", \"b\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"input_order_independent\", \"passed\": false}, {\"actual\": [\"d\", \"b\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"complete_pages_1\", \"passed\": false}, {\"actual\": null, \"expected\": null, \"label\": \"terminal_cursor_1\", \"passed\": true}, {\"actual\": [\"d\", \"b\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"complete_pages_2\", \"passed\": false}, {\"actual\": null, \"expected\": null, \"label\": \"terminal_cursor_2\", \"passed\": true}, {\"actual\": [\"d\", \"b\", \"a\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"complete_pages_3\", \"passed\": false}, {\"actual\": null, \"expected\": null, \"label\": \"terminal_cursor_3\", \"passed\": true}, {\"actual\": [\"d\", \"b\", \"a\", \"c\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"complete_pages_5\", \"passed\": false}, {\"actual\": null, \"expected\": null, \"label\": \"terminal_cursor_5\", \"passed\": true}, {\"actual\": [\"d\", \"b\", \"a\", \"c\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"complete_pages_9\", \"passed\": false}, {\"actual\": null, \"expected\": null, \"label\": \"terminal_cursor_9\", \"passed\": true}, {\"actual\": [\"z\"], \"expected\": [\"a\", \"z\"], \"label\": \"exclusive_tie_position\", \"passed\": false}, {\"actual\": false, \"expected\": true, \"label\": \"cursor_tie_after\", \"passed\": false}, {\"actual\": false, \"expected\": false, \"label\": \"cursor_tie_before\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"cursor_position_excluded\", \"passed\": true}, {\"actual\": {\"items\": [], \"next\": null}, \"expected\": {\"items\": [], \"next\": null}, \"label\": \"empty_page\", \"passed\": true}, {\"actual\": true, \"expected\": true, \"label\": \"invalid_limit\", \"passed\": true}, {\"actual\": [{\"created\": 8, \"id\": \"b\"}, {\"created\": 9, \"id\": \"d\"}, {\"created\": 8, \"id\": \"a\"}, {\"created\": 8, \"id\": \"c\"}, {\"created\": 7, \"id\": \"z\"}], \"expected\": [{\"created\": 8, \"id\": \"b\"}, {\"created\": 9, \"id\": \"d\"}, {\"created\": 8, \"id\": \"a\"}, {\"created\": 8, \"id\": \"c\"}, {\"created\": 7, \"id\": \"z\"}], \"label\": \"input_unchanged\", \"passed\": true}], \"errors\": [\"total_order\", \"input_order_independent\", \"complete_pages_1\", \"complete_pages_2\", \"complete_pages_3\", \"complete_pages_5\", \"complete_pages_9\", \"exclusive_tie_position\", \"cursor_tie_after\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-yrl7uatp/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-yrl7uatp/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-yrl7uatp/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"actual\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"total_order\", \"passed\": true}, {\"actual\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"input_order_independent\", \"passed\": true}, {\"actual\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"complete_pages_1\", \"passed\": true}, {\"actual\": null, \"expected\": null, \"label\": \"terminal_cursor_1\", \"passed\": true}, {\"actual\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"complete_pages_2\", \"passed\": true}, {\"actual\": null, \"expected\": null, \"label\": \"terminal_cursor_2\", \"passed\": true}, {\"actual\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"complete_pages_3\", \"passed\": true}, {\"actual\": null, \"expected\": null, \"label\": \"terminal_cursor_3\", \"passed\": true}, {\"actual\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"complete_pages_5\", \"passed\": true}, {\"actual\": null, \"expected\": null, \"label\": \"terminal_cursor_5\", \"passed\": true}, {\"actual\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"expected\": [\"d\", \"c\", \"b\", \"a\", \"z\"], \"label\": \"complete_pages_9\", \"passed\": true}, {\"actual\": null, \"expected\": null, \"label\": \"terminal_cursor_9\", \"passed\": true}, {\"actual\": [\"a\", \"z\"], \"expected\": [\"a\", \"z\"], \"label\": \"exclusive_tie_position\", \"passed\": true}, {\"actual\": true, \"expected\": true, \"label\": \"cursor_tie_after\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"cursor_tie_before\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"cursor_position_excluded\", \"passed\": true}, {\"actual\": {\"items\": [], \"next\": null}, \"expected\": {\"items\": [], \"next\": null}, \"label\": \"empty_page\", \"passed\": true}, {\"actual\": true, \"expected\": true, \"label\": \"invalid_limit\", \"passed\": true}, {\"actual\": [{\"created\": 8, \"id\": \"b\"}, {\"created\": 9, \"id\": \"d\"}, {\"created\": 8, \"id\": \"a\"}, {\"created\": 8, \"id\": \"c\"}, {\"created\": 7, \"id\": \"z\"}], \"expected\": [{\"created\": 8, \"id\": \"b\"}, {\"created\": 9, \"id\": \"d\"}, {\"created\": 8, \"id\": \"a\"}, {\"created\": 8, \"id\": \"c\"}, {\"created\": 7, \"id\": \"z\"}], \"label\": \"input_unchanged\", \"passed\": true}], \"errors\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  },
+  {
+    "case": "trigger-import-retry",
+    "origin": "synthetic",
+    "oracleSha256": "10365a3e39ad8bfa4ed0e2de22bf4d7f77d9ed30ccf786082164e4c64c69a7f0",
+    "publicTestSha256": "b002a1c5f882596ace846350e54a7618614ba9da623d437ad272026d43c9651c",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-vd4qav43/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-vd4qav43/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-vd4qav43/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"actual\": {\"applied\": 3, \"received\": 3}, \"expected\": {\"applied\": 2, \"received\": 3}, \"label\": \"within_batch_counts\", \"passed\": false}, {\"actual\": {\"a\": 21}, \"expected\": {\"a\": 14}, \"label\": \"within_batch_total\", \"passed\": false}, {\"actual\": {\"applied\": 3, \"received\": 3}, \"expected\": {\"applied\": 2, \"received\": 3}, \"label\": \"later_batch_counts\", \"passed\": false}, {\"actual\": {\"applied\": 4, \"attempt\": 5, \"received\": 4}, \"expected\": {\"applied\": 0, \"attempt\": 5, \"received\": 4}, \"label\": \"retry_counts\", \"passed\": false}, {\"actual\": {\"a\": 36, \"b\": 0}, \"expected\": {\"a\": 11, \"b\": 0}, \"label\": \"retry_keeps_totals\", \"passed\": false}, {\"actual\": {\"applied\": 4, \"attempt\": 5, \"received\": 4}, \"expected\": {\"applied\": 0, \"attempt\": 5, \"received\": 4}, \"label\": \"repeat_retry\", \"passed\": false}, {\"actual\": [\"x\", \"x:5\", \"y\", \"y:5\", \"z\", \"z:5\", \"zero\", \"zero:5\"], \"expected\": [\"x\", \"y\", \"z\", \"zero\"], \"label\": \"stable_identity_set\", \"passed\": false}, {\"actual\": true, \"expected\": false, \"label\": \"apply_duplicate_returns_false\", \"passed\": false}, {\"actual\": {\"attempt\": 4, \"events\": [{\"account\": \"a\", \"amount\": 7, \"id\": \"x\"}, {\"account\": \"a\", \"amount\": 7, \"id\": \"y\"}, {\"account\": \"a\", \"amount\": -3, \"id\": \"z\"}, {\"account\": \"b\", \"amount\": 0, \"id\": \"zero\"}]}, \"expected\": {\"attempt\": 4, \"events\": [{\"account\": \"a\", \"amount\": 7, \"id\": \"x\"}, {\"account\": \"a\", \"amount\": 7, \"id\": \"y\"}, {\"account\": \"a\", \"amount\": -3, \"id\": \"z\"}, {\"account\": \"b\", \"amount\": 0, \"id\": \"zero\"}]}, \"label\": \"job_unchanged\", \"passed\": true}], \"errors\": [\"within_batch_counts\", \"within_batch_total\", \"later_batch_counts\", \"retry_counts\", \"retry_keeps_totals\", \"repeat_retry\", \"stable_identity_set\", \"apply_duplicate_returns_false\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-vd4qav43/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-vd4qav43/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-vd4qav43/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"actual\": {\"applied\": 2, \"received\": 3}, \"expected\": {\"applied\": 2, \"received\": 3}, \"label\": \"within_batch_counts\", \"passed\": true}, {\"actual\": {\"a\": 14}, \"expected\": {\"a\": 14}, \"label\": \"within_batch_total\", \"passed\": true}, {\"actual\": {\"applied\": 2, \"received\": 3}, \"expected\": {\"applied\": 2, \"received\": 3}, \"label\": \"later_batch_counts\", \"passed\": true}, {\"actual\": {\"applied\": 0, \"attempt\": 5, \"received\": 4}, \"expected\": {\"applied\": 0, \"attempt\": 5, \"received\": 4}, \"label\": \"retry_counts\", \"passed\": true}, {\"actual\": {\"a\": 11, \"b\": 0}, \"expected\": {\"a\": 11, \"b\": 0}, \"label\": \"retry_keeps_totals\", \"passed\": true}, {\"actual\": {\"applied\": 0, \"attempt\": 5, \"received\": 4}, \"expected\": {\"applied\": 0, \"attempt\": 5, \"received\": 4}, \"label\": \"repeat_retry\", \"passed\": true}, {\"actual\": [\"x\", \"y\", \"z\", \"zero\"], \"expected\": [\"x\", \"y\", \"z\", \"zero\"], \"label\": \"stable_identity_set\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"apply_duplicate_returns_false\", \"passed\": true}, {\"actual\": {\"attempt\": 4, \"events\": [{\"account\": \"a\", \"amount\": 7, \"id\": \"x\"}, {\"account\": \"a\", \"amount\": 7, \"id\": \"y\"}, {\"account\": \"a\", \"amount\": -3, \"id\": \"z\"}, {\"account\": \"b\", \"amount\": 0, \"id\": \"zero\"}]}, \"expected\": {\"attempt\": 4, \"events\": [{\"account\": \"a\", \"amount\": 7, \"id\": \"x\"}, {\"account\": \"a\", \"amount\": 7, \"id\": \"y\"}, {\"account\": \"a\", \"amount\": -3, \"id\": \"z\"}, {\"account\": \"b\", \"amount\": 0, \"id\": \"zero\"}]}, \"label\": \"job_unchanged\", \"passed\": true}], \"errors\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  },
+  {
+    "case": "trigger-cart-discounts",
+    "origin": "synthetic",
+    "oracleSha256": "e71bc9c681c2f4cf1cd417cf41076205f55763ea7a9a811c7224b700796d4c28",
+    "publicTestSha256": "7141b87a390230802bcaa1f63450d6f26f5596929e5f35d8489b2edf04076a88",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-_whotrar/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-_whotrar/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-_whotrar/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"actual\": true, \"expected\": false, \"label\": \"excluded_sku\", \"passed\": false}, {\"actual\": [3, 6, 4, 0], \"expected\": [4, 0, 2, 0], \"label\": \"line_rounding_and_shared_cap\", \"passed\": false}, {\"actual\": [{\"discount\": 3, \"gross\": 9, \"net\": 6, \"sku\": \"a\"}, {\"discount\": 6, \"gross\": 100, \"net\": 94, \"sku\": \"blocked\"}, {\"discount\": 4, \"gross\": 9, \"net\": 5, \"sku\": \"b\"}, {\"discount\": 0, \"gross\": 20, \"net\": 20, \"sku\": \"food\"}], \"expected\": [{\"discount\": 4, \"gross\": 9, \"net\": 5, \"sku\": \"a\"}, {\"discount\": 0, \"gross\": 100, \"net\": 100, \"sku\": \"blocked\"}, {\"discount\": 2, \"gross\": 9, \"net\": 7, \"sku\": \"b\"}, {\"discount\": 0, \"gross\": 20, \"net\": 20, \"sku\": \"food\"}], \"label\": \"pricing_interface\", \"passed\": false}, {\"actual\": [138, 13, 125], \"expected\": [138, 6, 132], \"label\": \"receipt_totals\", \"passed\": false}, {\"actual\": 7, \"expected\": 8, \"label\": \"unlimited_cap\", \"passed\": false}, {\"actual\": 7, \"expected\": 8, \"label\": \"explicit_none_cap\", \"passed\": false}, {\"actual\": 0, \"expected\": 0, \"label\": \"zero_cap\", \"passed\": true}, {\"actual\": 0, \"expected\": 0, \"label\": \"zero_percent\", \"passed\": true}, {\"actual\": 10, \"expected\": 10, \"label\": \"empty_categories_allow_all\", \"passed\": true}, {\"actual\": 0, \"expected\": 0, \"label\": \"full_discount\", \"passed\": true}, {\"actual\": 0, \"expected\": 0, \"label\": \"zero_quantity\", \"passed\": true}, {\"actual\": [[{\"category\": \"book\", \"quantity\": 3, \"sku\": \"a\", \"unit_cents\": 3}, {\"category\": \"book\", \"quantity\": 1, \"sku\": \"blocked\", \"unit_cents\": 100}, {\"category\": \"book\", \"quantity\": 1, \"sku\": \"b\", \"unit_cents\": 9}, {\"category\": \"food\", \"quantity\": 1, \"sku\": \"food\", \"unit_cents\": 20}], {\"cap_cents\": 6, \"categories\": [\"book\"], \"excluded_skus\": [\"blocked\"], \"percent\": 50}], \"expected\": [[{\"category\": \"book\", \"quantity\": 3, \"sku\": \"a\", \"unit_cents\": 3}, {\"category\": \"book\", \"quantity\": 1, \"sku\": \"blocked\", \"unit_cents\": 100}, {\"category\": \"book\", \"quantity\": 1, \"sku\": \"b\", \"unit_cents\": 9}, {\"category\": \"food\", \"quantity\": 1, \"sku\": \"food\", \"unit_cents\": 20}], {\"cap_cents\": 6, \"categories\": [\"book\"], \"excluded_skus\": [\"blocked\"], \"percent\": 50}], \"label\": \"inputs_unchanged\", \"passed\": true}], \"errors\": [\"excluded_sku\", \"line_rounding_and_shared_cap\", \"pricing_interface\", \"receipt_totals\", \"unlimited_cap\", \"explicit_none_cap\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-_whotrar/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-_whotrar/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-_whotrar/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"actual\": false, \"expected\": false, \"label\": \"excluded_sku\", \"passed\": true}, {\"actual\": [4, 0, 2, 0], \"expected\": [4, 0, 2, 0], \"label\": \"line_rounding_and_shared_cap\", \"passed\": true}, {\"actual\": [{\"discount\": 4, \"gross\": 9, \"net\": 5, \"sku\": \"a\"}, {\"discount\": 0, \"gross\": 100, \"net\": 100, \"sku\": \"blocked\"}, {\"discount\": 2, \"gross\": 9, \"net\": 7, \"sku\": \"b\"}, {\"discount\": 0, \"gross\": 20, \"net\": 20, \"sku\": \"food\"}], \"expected\": [{\"discount\": 4, \"gross\": 9, \"net\": 5, \"sku\": \"a\"}, {\"discount\": 0, \"gross\": 100, \"net\": 100, \"sku\": \"blocked\"}, {\"discount\": 2, \"gross\": 9, \"net\": 7, \"sku\": \"b\"}, {\"discount\": 0, \"gross\": 20, \"net\": 20, \"sku\": \"food\"}], \"label\": \"pricing_interface\", \"passed\": true}, {\"actual\": [138, 6, 132], \"expected\": [138, 6, 132], \"label\": \"receipt_totals\", \"passed\": true}, {\"actual\": 8, \"expected\": 8, \"label\": \"unlimited_cap\", \"passed\": true}, {\"actual\": 8, \"expected\": 8, \"label\": \"explicit_none_cap\", \"passed\": true}, {\"actual\": 0, \"expected\": 0, \"label\": \"zero_cap\", \"passed\": true}, {\"actual\": 0, \"expected\": 0, \"label\": \"zero_percent\", \"passed\": true}, {\"actual\": 10, \"expected\": 10, \"label\": \"empty_categories_allow_all\", \"passed\": true}, {\"actual\": 0, \"expected\": 0, \"label\": \"full_discount\", \"passed\": true}, {\"actual\": 0, \"expected\": 0, \"label\": \"zero_quantity\", \"passed\": true}, {\"actual\": [[{\"category\": \"book\", \"quantity\": 3, \"sku\": \"a\", \"unit_cents\": 3}, {\"category\": \"book\", \"quantity\": 1, \"sku\": \"blocked\", \"unit_cents\": 100}, {\"category\": \"book\", \"quantity\": 1, \"sku\": \"b\", \"unit_cents\": 9}, {\"category\": \"food\", \"quantity\": 1, \"sku\": \"food\", \"unit_cents\": 20}], {\"cap_cents\": 6, \"categories\": [\"book\"], \"excluded_skus\": [\"blocked\"], \"percent\": 50}], \"expected\": [[{\"category\": \"book\", \"quantity\": 3, \"sku\": \"a\", \"unit_cents\": 3}, {\"category\": \"book\", \"quantity\": 1, \"sku\": \"blocked\", \"unit_cents\": 100}, {\"category\": \"book\", \"quantity\": 1, \"sku\": \"b\", \"unit_cents\": 9}, {\"category\": \"food\", \"quantity\": 1, \"sku\": \"food\", \"unit_cents\": 20}], {\"cap_cents\": 6, \"categories\": [\"book\"], \"excluded_skus\": [\"blocked\"], \"percent\": 50}], \"label\": \"inputs_unchanged\", \"passed\": true}], \"errors\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  },
+  {
+    "case": "trigger-stock-allocation",
+    "origin": "synthetic",
+    "oracleSha256": "22a7a76dd5e333434c3192f743c57a9ffa9356fe1a78649ad1058da689afe85f",
+    "publicTestSha256": "323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"actual\": {\"a\": 4, \"b\": 1}, \"expected\": {\"a\": 7, \"b\": 1}, \"label\": \"bin_aggregation\", \"passed\": false}, {\"actual\": [4, 1, 4, 0, 0], \"expected\": [5, 1, 2, 0, 0], \"label\": \"allocation_order_and_consumption\", \"passed\": false}, {\"actual\": [1, 1, 0, 2, 0], \"expected\": [0, 1, 2, 2, 0], \"label\": \"shortfalls\", \"passed\": false}, {\"actual\": {\"a\": {\"allocated\": 0, \"requested\": 0, \"shortfall\": 0}, \"b\": {\"allocated\": 1, \"requested\": 2, \"shortfall\": 1}, \"missing\": {\"allocated\": 0, \"requested\": 2, \"shortfall\": 2}}, \"expected\": {\"a\": {\"allocated\": 7, \"requested\": 9, \"shortfall\": 2}, \"b\": {\"allocated\": 1, \"requested\": 2, \"shortfall\": 1}, \"missing\": {\"allocated\": 0, \"requested\": 2, \"shortfall\": 2}}, \"label\": \"summary_all_rows\", \"passed\": false}, {\"actual\": {\"x\": {\"allocated\": 3, \"requested\": 4, \"shortfall\": 1}}, \"expected\": {\"x\": {\"allocated\": 4, \"requested\": 6, \"shortfall\": 2}}, \"label\": \"independent_summary\", \"passed\": false}, {\"actual\": [[{\"quantity\": 3, \"sku\": \"a\"}, {\"quantity\": 1, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}], [{\"quantity\": 5, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"missing\"}, {\"quantity\": 0, \"sku\": \"a\"}]], \"expected\": [[{\"quantity\": 3, \"sku\": \"a\"}, {\"quantity\": 1, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}], [{\"quantity\": 5, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"missing\"}, {\"quantity\": 0, \"sku\": \"a\"}]], \"label\": \"inputs_unchanged\", \"passed\": true}, {\"actual\": [], \"expected\": [], \"label\": \"empty_allocation\", \"passed\": true}], \"errors\": [\"bin_aggregation\", \"allocation_order_and_consumption\", \"shortfalls\", \"summary_all_rows\", \"independent_summary\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"actual\": {\"a\": 7, \"b\": 1}, \"expected\": {\"a\": 7, \"b\": 1}, \"label\": \"bin_aggregation\", \"passed\": true}, {\"actual\": [5, 1, 2, 0, 0], \"expected\": [5, 1, 2, 0, 0], \"label\": \"allocation_order_and_consumption\", \"passed\": true}, {\"actual\": [0, 1, 2, 2, 0], \"expected\": [0, 1, 2, 2, 0], \"label\": \"shortfalls\", \"passed\": true}, {\"actual\": {\"a\": {\"allocated\": 7, \"requested\": 9, \"shortfall\": 2}, \"b\": {\"allocated\": 1, \"requested\": 2, \"shortfall\": 1}, \"missing\": {\"allocated\": 0, \"requested\": 2, \"shortfall\": 2}}, \"expected\": {\"a\": {\"allocated\": 7, \"requested\": 9, \"shortfall\": 2}, \"b\": {\"allocated\": 1, \"requested\": 2, \"shortfall\": 1}, \"missing\": {\"allocated\": 0, \"requested\": 2, \"shortfall\": 2}}, \"label\": \"summary_all_rows\", \"passed\": true}, {\"actual\": {\"x\": {\"allocated\": 4, \"requested\": 6, \"shortfall\": 2}}, \"expected\": {\"x\": {\"allocated\": 4, \"requested\": 6, \"shortfall\": 2}}, \"label\": \"independent_summary\", \"passed\": true}, {\"actual\": [[{\"quantity\": 3, \"sku\": \"a\"}, {\"quantity\": 1, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}], [{\"quantity\": 5, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"missing\"}, {\"quantity\": 0, \"sku\": \"a\"}]], \"expected\": [[{\"quantity\": 3, \"sku\": \"a\"}, {\"quantity\": 1, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}], [{\"quantity\": 5, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"missing\"}, {\"quantity\": 0, \"sku\": \"a\"}]], \"label\": \"inputs_unchanged\", \"passed\": true}, {\"actual\": [], \"expected\": [], \"label\": \"empty_allocation\", \"passed\": true}], \"errors\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  },
+  {
+    "case": "trigger-report-timezones",
+    "origin": "synthetic",
+    "oracleSha256": "6e3e39b75e12135013d24650ecbdab820818cc03b59a996aaf0badeb55a04ea4",
+    "publicTestSha256": "bf258c57d85e7472046ca353291188ab4ada907c748df9bc6b14d76a75b37b19",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": ".                                                                        [100%]\n1 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-jbpjfbcj/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-jbpjfbcj/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-jbpjfbcj/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"actual\": [\"2026-01-01T00:00:00+00:00\", \"2026-01-02T00:00:00+00:00\"], \"expected\": [\"2025-12-31T18:30:00+00:00\", \"2026-01-01T18:30:00+00:00\"], \"label\": \"utc_bounds_330\", \"passed\": false}, {\"actual\": {\"ids\": [\"end\", \"middle\"], \"total\": 98}, \"expected\": {\"ids\": [\"middle\", \"start\"], \"total\": 3}, \"label\": \"half_open_and_order_330\", \"passed\": false}, {\"actual\": [{\"amount\": 100, \"at\": \"2026-01-01T18:30:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-01-01T04:30:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2025-12-31T18:30:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2025-12-31T18:29:59+00:00\", \"id\": \"before\"}], \"expected\": [{\"amount\": 100, \"at\": \"2026-01-01T18:30:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-01-01T04:30:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2025-12-31T18:30:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2025-12-31T18:29:59+00:00\", \"id\": \"before\"}], \"label\": \"events_unchanged_330\", \"passed\": true}, {\"actual\": [\"2026-03-01T00:00:00+00:00\", \"2026-03-02T00:00:00+00:00\"], \"expected\": [\"2026-03-01T07:00:00+00:00\", \"2026-03-02T07:00:00+00:00\"], \"label\": \"utc_bounds_-420\", \"passed\": false}, {\"actual\": {\"ids\": [\"middle\", \"start\", \"before\"], \"total\": 103}, \"expected\": {\"ids\": [\"middle\", \"start\"], \"total\": 3}, \"label\": \"half_open_and_order_-420\", \"passed\": false}, {\"actual\": [{\"amount\": 100, \"at\": \"2026-03-02T07:00:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-03-01T17:00:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2026-03-01T07:00:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2026-03-01T06:59:59+00:00\", \"id\": \"before\"}], \"expected\": [{\"amount\": 100, \"at\": \"2026-03-02T07:00:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-03-01T17:00:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2026-03-01T07:00:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2026-03-01T06:59:59+00:00\", \"id\": \"before\"}], \"label\": \"events_unchanged_-420\", \"passed\": true}, {\"actual\": [\"2026-12-31T00:00:00+00:00\", \"2027-01-01T00:00:00+00:00\"], \"expected\": [\"2026-12-31T00:00:00+00:00\", \"2027-01-01T00:00:00+00:00\"], \"label\": \"utc_bounds_0\", \"passed\": true}, {\"actual\": {\"ids\": [\"end\", \"middle\", \"start\"], \"total\": 103}, \"expected\": {\"ids\": [\"middle\", \"start\"], \"total\": 3}, \"label\": \"half_open_and_order_0\", \"passed\": false}, {\"actual\": [{\"amount\": 100, \"at\": \"2027-01-01T00:00:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-12-31T10:00:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2026-12-31T00:00:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2026-12-30T23:59:59+00:00\", \"id\": \"before\"}], \"expected\": [{\"amount\": 100, \"at\": \"2027-01-01T00:00:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-12-31T10:00:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2026-12-31T00:00:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2026-12-30T23:59:59+00:00\", \"id\": \"before\"}], \"label\": \"events_unchanged_0\", \"passed\": true}, {\"actual\": {\"ids\": [], \"total\": 0}, \"expected\": {\"ids\": [], \"total\": 0}, \"label\": \"empty_report\", \"passed\": true}], \"errors\": [\"utc_bounds_330\", \"half_open_and_order_330\", \"utc_bounds_-420\", \"half_open_and_order_-420\", \"half_open_and_order_0\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": ".                                                                        [100%]\n1 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-jbpjfbcj/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-jbpjfbcj/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-jbpjfbcj/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"actual\": [\"2025-12-31T18:30:00+00:00\", \"2026-01-01T18:30:00+00:00\"], \"expected\": [\"2025-12-31T18:30:00+00:00\", \"2026-01-01T18:30:00+00:00\"], \"label\": \"utc_bounds_330\", \"passed\": true}, {\"actual\": {\"ids\": [\"middle\", \"start\"], \"total\": 3}, \"expected\": {\"ids\": [\"middle\", \"start\"], \"total\": 3}, \"label\": \"half_open_and_order_330\", \"passed\": true}, {\"actual\": [{\"amount\": 100, \"at\": \"2026-01-01T18:30:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-01-01T04:30:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2025-12-31T18:30:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2025-12-31T18:29:59+00:00\", \"id\": \"before\"}], \"expected\": [{\"amount\": 100, \"at\": \"2026-01-01T18:30:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-01-01T04:30:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2025-12-31T18:30:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2025-12-31T18:29:59+00:00\", \"id\": \"before\"}], \"label\": \"events_unchanged_330\", \"passed\": true}, {\"actual\": [\"2026-03-01T07:00:00+00:00\", \"2026-03-02T07:00:00+00:00\"], \"expected\": [\"2026-03-01T07:00:00+00:00\", \"2026-03-02T07:00:00+00:00\"], \"label\": \"utc_bounds_-420\", \"passed\": true}, {\"actual\": {\"ids\": [\"middle\", \"start\"], \"total\": 3}, \"expected\": {\"ids\": [\"middle\", \"start\"], \"total\": 3}, \"label\": \"half_open_and_order_-420\", \"passed\": true}, {\"actual\": [{\"amount\": 100, \"at\": \"2026-03-02T07:00:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-03-01T17:00:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2026-03-01T07:00:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2026-03-01T06:59:59+00:00\", \"id\": \"before\"}], \"expected\": [{\"amount\": 100, \"at\": \"2026-03-02T07:00:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-03-01T17:00:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2026-03-01T07:00:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2026-03-01T06:59:59+00:00\", \"id\": \"before\"}], \"label\": \"events_unchanged_-420\", \"passed\": true}, {\"actual\": [\"2026-12-31T00:00:00+00:00\", \"2027-01-01T00:00:00+00:00\"], \"expected\": [\"2026-12-31T00:00:00+00:00\", \"2027-01-01T00:00:00+00:00\"], \"label\": \"utc_bounds_0\", \"passed\": true}, {\"actual\": {\"ids\": [\"middle\", \"start\"], \"total\": 3}, \"expected\": {\"ids\": [\"middle\", \"start\"], \"total\": 3}, \"label\": \"half_open_and_order_0\", \"passed\": true}, {\"actual\": [{\"amount\": 100, \"at\": \"2027-01-01T00:00:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-12-31T10:00:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2026-12-31T00:00:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2026-12-30T23:59:59+00:00\", \"id\": \"before\"}], \"expected\": [{\"amount\": 100, \"at\": \"2027-01-01T00:00:00+00:00\", \"id\": \"end\"}, {\"amount\": -2, \"at\": \"2026-12-31T10:00:00-02:00\", \"id\": \"middle\"}, {\"amount\": 5, \"at\": \"2026-12-31T00:00:00+00:00\", \"id\": \"start\"}, {\"amount\": 100, \"at\": \"2026-12-30T23:59:59+00:00\", \"id\": \"before\"}], \"label\": \"events_unchanged_0\", \"passed\": true}, {\"actual\": {\"ids\": [], \"total\": 0}, \"expected\": {\"ids\": [], \"total\": 0}, \"label\": \"empty_report\", \"passed\": true}], \"errors\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  },
+  {
+    "case": "trigger-config-overlay",
+    "origin": "synthetic",
+    "oracleSha256": "5e2189d08d21dc64c832e9f954fa37caf60e4e0a3c832baefd98f05acad98d5c",
+    "publicTestSha256": "54ed854c15043668635c20fd1642b822ea281862e5cbb3dc508bf6c859657fd3",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"actual\": {\"clear\": {\"old\": 1}, \"db\": {\"timeout\": 0}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, \"expected\": {\"clear\": {}, \"db\": {\"host\": \"db\", \"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}, \"label\": \"falsey_recursive_values\", \"passed\": false}, {\"actual\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": null}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, \"expected\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, \"label\": \"none_keeps_value\", \"passed\": false}, {\"actual\": {\"new\": {\"unset\": null, \"zero\": 0}}, \"expected\": {\"new\": {\"zero\": 0}}, \"label\": \"new_dictionary_none_unset\", \"passed\": false}, {\"actual\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 4, \"name\": \"demo\", \"tags\": [\" \"]}, \"expected\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": false, \"limit\": 0, \"name\": \"demo\", \"tags\": []}, \"label\": \"environment_zero_false_empty\", \"passed\": false}, {\"actual\": {\"tags\": [\" red\", \" \", \" blue\", \"\", \" \"]}, \"expected\": {\"tags\": [\"red\", \"blue\"]}, \"label\": \"tag_whitespace\", \"passed\": false}, {\"actual\": false, \"expected\": true, \"label\": \"invalid_boolean\", \"passed\": false}, {\"actual\": [{\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, {\"clear\": {}, \"db\": {\"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}], \"expected\": [{\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, {\"clear\": {}, \"db\": {\"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}], \"label\": \"inputs_unchanged_and_unaliased\", \"passed\": true}, {\"actual\": {\"new\": {\"items\": [1]}}, \"expected\": {\"new\": {\"items\": [1]}}, \"label\": \"override_nested_unaliased\", \"passed\": true}], \"errors\": [\"falsey_recursive_values\", \"none_keeps_value\", \"new_dictionary_none_unset\", \"environment_zero_false_empty\", \"tag_whitespace\", \"invalid_boolean\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"actual\": {\"clear\": {}, \"db\": {\"host\": \"db\", \"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}, \"expected\": {\"clear\": {}, \"db\": {\"host\": \"db\", \"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}, \"label\": \"falsey_recursive_values\", \"passed\": true}, {\"actual\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, \"expected\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, \"label\": \"none_keeps_value\", \"passed\": true}, {\"actual\": {\"new\": {\"zero\": 0}}, \"expected\": {\"new\": {\"zero\": 0}}, \"label\": \"new_dictionary_none_unset\", \"passed\": true}, {\"actual\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": false, \"limit\": 0, \"name\": \"demo\", \"tags\": []}, \"expected\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": false, \"limit\": 0, \"name\": \"demo\", \"tags\": []}, \"label\": \"environment_zero_false_empty\", \"passed\": true}, {\"actual\": {\"tags\": [\"red\", \"blue\"]}, \"expected\": {\"tags\": [\"red\", \"blue\"]}, \"label\": \"tag_whitespace\", \"passed\": true}, {\"actual\": true, \"expected\": true, \"label\": \"invalid_boolean\", \"passed\": true}, {\"actual\": [{\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, {\"clear\": {}, \"db\": {\"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}], \"expected\": [{\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, {\"clear\": {}, \"db\": {\"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}], \"label\": \"inputs_unchanged_and_unaliased\", \"passed\": true}, {\"actual\": {\"new\": {\"items\": [1]}}, \"expected\": {\"new\": {\"items\": [1]}}, \"label\": \"override_nested_unaliased\", \"passed\": true}], \"errors\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  },
+  {
+    "case": "trigger-limit-clamp",
+    "origin": "synthetic",
+    "oracleSha256": "ad219b86586ea28c6222a4b7453efee34b833e7af7b2a23b6690d991a16304ce",
+    "publicTestSha256": "09ea60e64e800b31ec40fbf95e499096118c68457cef86b48a89ed783ddfa829",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-1sod6vwi/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-1sod6vwi/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-1sod6vwi/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"actual\": 9, \"expected\": 8, \"label\": \"clamp_(9, 2, 8)\", \"passed\": false}, {\"actual\": 2, \"expected\": 2, \"label\": \"clamp_(2, 2, 8)\", \"passed\": true}, {\"actual\": 8, \"expected\": 8, \"label\": \"clamp_(8, 2, 8)\", \"passed\": true}, {\"actual\": -1, \"expected\": -3, \"label\": \"clamp_(-1, -8, -3)\", \"passed\": false}, {\"actual\": -8, \"expected\": -8, \"label\": \"clamp_(-10, -8, -3)\", \"passed\": true}, {\"actual\": 20, \"expected\": 5, \"label\": \"clamp_(20, 5, 5)\", \"passed\": false}, {\"actual\": 5, \"expected\": 5, \"label\": \"clamp_(0, 5, 5)\", \"passed\": true}, {\"actual\": true, \"expected\": true, \"label\": \"invalid_interval\", \"passed\": true}], \"errors\": [\"clamp_(9, 2, 8)\", \"clamp_(-1, -8, -3)\", \"clamp_(20, 5, 5)\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-1sod6vwi/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-1sod6vwi/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-1sod6vwi/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"actual\": 8, \"expected\": 8, \"label\": \"clamp_(9, 2, 8)\", \"passed\": true}, {\"actual\": 2, \"expected\": 2, \"label\": \"clamp_(2, 2, 8)\", \"passed\": true}, {\"actual\": 8, \"expected\": 8, \"label\": \"clamp_(8, 2, 8)\", \"passed\": true}, {\"actual\": -3, \"expected\": -3, \"label\": \"clamp_(-1, -8, -3)\", \"passed\": true}, {\"actual\": -8, \"expected\": -8, \"label\": \"clamp_(-10, -8, -3)\", \"passed\": true}, {\"actual\": 5, \"expected\": 5, \"label\": \"clamp_(20, 5, 5)\", \"passed\": true}, {\"actual\": 5, \"expected\": 5, \"label\": \"clamp_(0, 5, 5)\", \"passed\": true}, {\"actual\": true, \"expected\": true, \"label\": \"invalid_interval\", \"passed\": true}], \"errors\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  },
+  {
+    "case": "trigger-extension-case",
+    "origin": "synthetic",
+    "oracleSha256": "1644d5cf9f61a37dc57dc2fd91993433ba4bfd22e728e28d2b1a25858278d082",
+    "publicTestSha256": "636733bb5991519b7e814a16551b05e5df0e5cc336075bb0b16843b614d65381",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": ".                                                                        [100%]\n1 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-4b02n9bt/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-4b02n9bt/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-4b02n9bt/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"actual\": false, \"expected\": true, \"label\": \"report.TXT\", \"passed\": false}, {\"actual\": false, \"expected\": true, \"label\": \"report.txt\", \"passed\": false}, {\"actual\": false, \"expected\": true, \"label\": \"folder/archive.TAR.GZ\", \"passed\": false}, {\"actual\": false, \"expected\": false, \"label\": \"archive.gz.zip\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"README\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \".env\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"trailing.\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"empty_allowlist\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"no_empty_extension\", \"passed\": true}, {\"actual\": [\"TxT\", \"gz\"], \"expected\": [\"TxT\", \"gz\"], \"label\": \"allowed_unchanged\", \"passed\": true}], \"errors\": [\"report.TXT\", \"report.txt\", \"folder/archive.TAR.GZ\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": ".                                                                        [100%]\n1 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-4b02n9bt/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-4b02n9bt/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-4b02n9bt/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"actual\": true, \"expected\": true, \"label\": \"report.TXT\", \"passed\": true}, {\"actual\": true, \"expected\": true, \"label\": \"report.txt\", \"passed\": true}, {\"actual\": true, \"expected\": true, \"label\": \"folder/archive.TAR.GZ\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"archive.gz.zip\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"README\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \".env\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"trailing.\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"empty_allowlist\", \"passed\": true}, {\"actual\": false, \"expected\": false, \"label\": \"no_empty_extension\", \"passed\": true}, {\"actual\": [\"TxT\", \"gz\"], \"expected\": [\"TxT\", \"gz\"], \"label\": \"allowed_unchanged\", \"passed\": true}], \"errors\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  }
+]

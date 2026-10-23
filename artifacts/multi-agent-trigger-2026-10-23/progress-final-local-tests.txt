@@ -1,0 +1,5 @@
+Final candidate command: /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 -m pytest -q tests/test_progress_delegation.py
+..................                                                       [100%]
+18 passed in 0.60s
+
+Exit code: 0
