@@ -1,0 +1,1055 @@
+--- a/minicode/agent_budget.py
++++ b/minicode/agent_budget.py
+@@ -13,7 +13,7 @@
+ import secrets
+ import threading
+ from collections.abc import Mapping
+-from dataclasses import dataclass
++from dataclasses import dataclass, replace
+ from decimal import Decimal, DecimalException
+ from typing import Any
+ 
+@@ -940,6 +940,80 @@
+             return self._input_tokens, self._output_tokens
+ 
+ 
++class LimitedBudgetView(AttributedBudgetView):
++    """Bound one Assignment on the existing ledger, including retry/closing calls.
++
++    This is not a new grant: every admission still uses the shared atomic
++    reservation. The floor prevents this Worker from consuming required later
++    work; other concurrent consumers can still exhaust the shared budget, in
++    which case this Worker fails closed rather than borrowing their allowance.
++    """
++
++    def __init__(self, budget, key: str, *, max_calls: int | None, preserve_calls: int,
++                 max_tokens: int | None = None, preserve_tokens: int = 0):
++        super().__init__(budget, key)
++        self._max_calls = max_calls
++        self._preserve_calls = preserve_calls
++        self._admitted_calls = 0
++        self._max_tokens = max_tokens
++        self._preserve_tokens = preserve_tokens
++        initial = super().snapshot()
++        self._initial_used_tokens = initial.used_total_tokens
++        self._initial_used_calls = initial.used_model_calls
++        self._call_lock = threading.Lock()
++
++    def snapshot(self):
++        # The worker's planning view must exclude downstream floors that its
++        # admission path protects. Keep usage counters and the shared budget
++        # untouched; the same snapshot also crosses the existing worker RPC.
++        shared = super().snapshot()
++        tokens = shared.limit_total_tokens
++        if tokens is not None:
++            tokens = max(0, tokens - self._preserve_tokens)
++        if self._max_tokens is not None:
++            local = self._initial_used_tokens + self._max_tokens
++            tokens = local if tokens is None else min(tokens, local)
++        calls = shared.limit_model_calls
++        if calls is not None:
++            calls = max(0, calls - self._preserve_calls)
++        if self._max_calls is not None:
++            local_calls = shared.used_model_calls + max(0, self._max_calls - self._admitted_calls)
++            calls = local_calls if calls is None else min(calls, local_calls)
++        return replace(shared, limit_total_tokens=tokens, limit_model_calls=calls)
++
++    @property
++    def admitted_model_calls(self) -> int:
++        with self._call_lock:
++            return self._admitted_calls
++
++    def reserve_model_call(
++        self, estimated_input_tokens=0, *, preserve_model_calls=0,
++        preserve_total_tokens=0,
++    ):
++        if type(preserve_model_calls) is not int or preserve_model_calls < 0:
++            raise ValueError("preserve_model_calls must be a non-negative integer")
++        with self._call_lock:
++            snapshot = self.snapshot()
++            if self._max_tokens is not None and (
++                snapshot.used_total_tokens - self._initial_used_tokens
++                + snapshot.reserved_total_tokens + max(0, estimated_input_tokens)
++                + preserve_total_tokens > self._max_tokens
++            ):
++                raise AgentBudgetExceeded("worker token allowance exhausted", snapshot)
++            if (self._max_calls is not None
++                    and self._admitted_calls + 1 + preserve_model_calls > self._max_calls):
++                raise AgentBudgetExceeded(
++                    "worker model call budget exhausted", self.snapshot()
++                )
++            reservation = super().reserve_model_call(
++                estimated_input_tokens,
++                preserve_model_calls=self._preserve_calls + preserve_model_calls,
++                preserve_total_tokens=self._preserve_tokens + preserve_total_tokens,
++            )
++            self._admitted_calls += 1
++            return reservation
++
++
+ def record_budgeted_model_call(
+     agent_budget: AgentTurnBudget | None,
+     *,
+@@ -1028,6 +1102,7 @@
+     "AgentBudgetSnapshot",
+     "AgentTurnBudget",
+     "AttributedBudgetView",
++    "LimitedBudgetView",
+     "SubprocessBudgetLease",
+     "SubprocessBudgetUsage",
+     "record_budgeted_model_call",
+--- a/minicode/workflow_runner.py
++++ b/minicode/workflow_runner.py
+@@ -24,7 +24,7 @@
+ from types import SimpleNamespace
+ 
+ from minicode.agent_budget import (
+-    AgentBudgetExceeded, AgentTurnBudget, AttributedBudgetView,
++    AgentBudgetExceeded, AgentTurnBudget, LimitedBudgetView,
+ )
+ from minicode.agent_loop import AgentTurnDeadlineExceeded
+ from minicode.central_scheduler import (
+@@ -604,79 +604,7 @@
+     }
+ 
+ 
+-class _WorkerCallBudget(AttributedBudgetView):
+-    """Bound one Assignment on the existing ledger, including retry/closing calls.
+-
+-    This is not a new grant: every admission still uses the shared atomic
+-    reservation. The floor prevents this Worker from consuming required later
+-    work; other concurrent consumers can still exhaust the shared budget, in
+-    which case this Worker fails closed rather than borrowing their allowance.
+-    """
+-
+-    def __init__(self, budget, key: str, *, max_calls: int | None, preserve_calls: int,
+-                 max_tokens: int | None = None, preserve_tokens: int = 0):
+-        super().__init__(budget, key)
+-        self._max_calls = max_calls
+-        self._preserve_calls = preserve_calls
+-        self._admitted_calls = 0
+-        self._max_tokens = max_tokens
+-        self._preserve_tokens = preserve_tokens
+-        initial = super().snapshot()
+-        self._initial_used_tokens = initial.used_total_tokens
+-        self._initial_used_calls = initial.used_model_calls
+-        self._call_lock = threading.Lock()
+-
+-    def snapshot(self):
+-        # The worker's planning view must exclude downstream floors that its
+-        # admission path protects. Keep usage counters and the shared budget
+-        # untouched; the same snapshot also crosses the existing worker RPC.
+-        shared = super().snapshot()
+-        tokens = shared.limit_total_tokens
+-        if tokens is not None:
+-            tokens = max(0, tokens - self._preserve_tokens)
+-        if self._max_tokens is not None:
+-            local = self._initial_used_tokens + self._max_tokens
+-            tokens = local if tokens is None else min(tokens, local)
+-        calls = shared.limit_model_calls
+-        if calls is not None:
+-            calls = max(0, calls - self._preserve_calls)
+-        if self._max_calls is not None:
+-            local_calls = self._initial_used_calls + self._max_calls
+-            calls = local_calls if calls is None else min(calls, local_calls)
+-        return replace(shared, limit_total_tokens=tokens, limit_model_calls=calls)
+-
+-    @property
+-    def admitted_model_calls(self) -> int:
+-        with self._call_lock:
+-            return self._admitted_calls
+-
+-    def reserve_model_call(
+-        self, estimated_input_tokens=0, *, preserve_model_calls=0,
+-        preserve_total_tokens=0,
+-    ):
+-        if type(preserve_model_calls) is not int or preserve_model_calls < 0:
+-            raise ValueError("preserve_model_calls must be a non-negative integer")
+-        with self._call_lock:
+-            snapshot = self.snapshot()
+-            if self._max_tokens is not None and (
+-                snapshot.used_total_tokens - self._initial_used_tokens
+-                + snapshot.reserved_total_tokens + max(0, estimated_input_tokens)
+-                + preserve_total_tokens > self._max_tokens
+-            ):
+-                raise AgentBudgetExceeded("worker token allowance exhausted", snapshot)
+-            if (self._max_calls is not None
+-                    and self._admitted_calls + 1 + preserve_model_calls > self._max_calls):
+-                raise AgentBudgetExceeded(
+-                    "worker model call budget exhausted", self.snapshot()
+-                )
+-            reservation = super().reserve_model_call(
+-                estimated_input_tokens,
+-                preserve_model_calls=self._preserve_calls + preserve_model_calls,
+-                preserve_total_tokens=self._preserve_tokens + preserve_total_tokens,
+-            )
+-            self._admitted_calls += 1
+-            return reservation
+-
++_WorkerCallBudget = LimitedBudgetView
+ 
+ def _executor_followup_calls(profile: TaskProfile) -> int:
+     # Verifier/commit/receipt transport are deterministic. Leave one parent
+--- a/minicode/agent_loop.py
++++ b/minicode/agent_loop.py
+@@ -2109,6 +2109,7 @@
+     permissions: PermissionManager | None = None,
+     store: Store[AppState] | None = None,
+     max_steps: int | None = None,
++    max_retries_override: int | None = None,
+     on_tool_start: Callable[[str, dict], None] | None = None,
+     on_tool_result: Callable[[str, str, bool], None] | None = None,
+     on_assistant_message: Callable[[str], None] | None = None,
+@@ -3247,6 +3248,9 @@
+     )
+     has_structured_handoff = any(tool.name == "executor_submit" for tool in tools.list())
+     direct_completion_review = restored_completion_review
++    direct_completion_limits = None
++    direct_completion_limits_initialized = False
++    direct_completion_classification = None
+     direct_migration_state = (implementation_continuation.migration_state
+         if implementation_continuation is not None else None)
+     direct_completion_accepted = False
+@@ -3475,6 +3479,9 @@
+                 **_phase_reasoning_options(model),
+             } if implementation_phases is not None or completion_policy is not None
+                else {"tools_override": tools})
++            if max_retries_override is not None:
++                closing_options["max_retries_override"] = min(
++                    closing_options.get("max_retries_override", max_retries_override), max_retries_override)
+             if agent_budget is not None:
+                 closing_input = (completion_input_estimate() if completion_policy is not None
+                     else (repair_input_calibration.estimate(_estimated_context_tokens(closing_messages))
+@@ -3685,10 +3692,13 @@
+         nonlocal direct_completion_review, direct_completion_accepted, direct_completion_attempt
+         nonlocal implementation_completion_feedback, direct_implementation_checks_failed
+         nonlocal direct_implementation_batch_status, direct_migration_state
++        nonlocal direct_completion_limits, direct_completion_limits_initialized, direct_completion_classification
+         if owned_implementation_feedback is None or has_structured_handoff:
+             return "ok"
+         from minicode.implementation_completion_review import ImplementationCompletionReview
+         from minicode.implementation_execution import implementation_candidate_digest
++        from minicode.completion_review_limits import create_review_limits, select_review_phase, review_exhaustion
++        from minicode.task_deadline import TaskDeadlineExceeded
+         from minicode.verifier_sandbox import (
+             resolve_verifier_host_capabilities, user_registered_trusted_executables,
+         )
+@@ -3706,6 +3716,7 @@
+             _verifier_sandbox_backend=backend, _verifier_trusted_executables=executables,
+             _verifier_explicit_trusted_executables=user_registered_trusted_executables() or None)
+         prior_completion_attempt = direct_completion_attempt
++        review_budget_stopped = False
+         direct_completion_attempt += 1
+         checks = owned_implementation_feedback.ensure_completion_checks(context)
+         if (direct_migration_state is not None
+@@ -3728,7 +3739,7 @@
+ 
+                 # A stored slot is not enough: checks, actual source anchors
+                 # and the current candidate must still validate before reuse.
+-                retained = direct_completion_review._accepted_repair_for_candidate(
++                retained = direct_completion_review._current_repair_feedback(
+                     checks.get("patchDigest"), context)
+                 if (retained is not None
+                         and implementation_candidate_digest(implementation_spec, context) == checks.get("patchDigest")
+@@ -3742,41 +3753,77 @@
+                     return "retry"
+             if on_progress_message:
+                 on_progress_message("Checking the requested behaviors and their evidence before delivery.")
++            if not direct_completion_limits_initialized:
++                # Freeze this parent's closing estimate and the review chain
++                # once per turn. Repeated finals cannot refresh an allowance.
++                closing_tokens = 0
++                if os.environ.get("MINI_CODE_COMPLETION_REVIEW_MODE", "bounded").strip().lower() != "full":
++                    closing_input = estimate_budgeted_request_input(model, current_messages,
++                        agent_budget=agent_budget, estimated_input=completion_input_estimate(),
++                        optional_kwargs={"tools_override": tools}, default_tools=tools)
++                    closing_tokens = 2 * (closing_input + configured_output_limit() + 2048)
++                direct_completion_limits = create_review_limits(context, closing_tokens=closing_tokens)
++                direct_completion_limits_initialized = True
++            context._completion_review_limits = direct_completion_limits
+             emit_event_safely(event_sink, "implementation.completion_review_started", step=step,
+                 payload={"executorId": direct_completion_owner, "attempt": direct_completion_attempt,
+                          "patchDigest": checks.get("patchDigest")})
+             decision = None
+-            pending_migration = direct_completion_review.state.get("pendingLegacyResolution")
+-            if (direct_completion_review.has_legacy_probes and not (
+-                    isinstance(pending_migration, dict)
+-                    and pending_migration.get("candidateDigest") == checks.get("patchDigest"))):
+-                from minicode.completion_probe_migration import CompletionProbeMigration
+-
+-                def retain_migration_checkpoint(state):
+-                    nonlocal direct_migration_state
+-                    from copy import deepcopy
+-                    direct_migration_state = deepcopy(state)
+-
+-                migration = CompletionProbeMigration(implementation_spec).assess(
+-                    legacy_state=direct_completion_review.state,
+-                    continuation_state=direct_migration_state, checkpoint_sink=retain_migration_checkpoint,
+-                    model=model, tools=tools, context=context, agent_budget=agent_budget,
+-                    event_sink=event_sink, cancellation_token=cancellation_token,
+-                    deadline_monotonic=deadline_monotonic)
+-                if migration.get("status") == "resolved":
+-                    direct_completion_review.queue_legacy_resolution(migration["resolution"])
+-                    direct_migration_state = None
+-                else:
+-                    # An unchanged ambiguous classification cannot be repaired
+-                    # by another implementation rewrite or repeated final.
+-                    decision = {"status": "inconclusive", "reason": "legacy_probe_purpose_unresolved",
+-                        "patchDigest": checks.get("patchDigest"), "canContinue": False,
+-                        "migrationEvidence": migration}
+-            if decision is None:
+-                decision = direct_completion_review.assess(model=model, tools=tools, context=context,
+-                    agent_budget=agent_budget, event_sink=event_sink,
+-                    cancellation_token=cancellation_token, deadline_monotonic=deadline_monotonic,
+-                    checks_receipt=checks)
++            try:
++                select_review_phase(context, None)
++                pending_migration = direct_completion_review.state.get("pendingLegacyResolution")
++                if (direct_completion_review.has_legacy_probes and not (
++                        isinstance(pending_migration, dict)
++                        and pending_migration.get("candidateDigest") == checks.get("patchDigest"))):
++                    from minicode.completion_probe_migration import CompletionProbeMigration
++
++                    def retain_migration_checkpoint(state):
++                        nonlocal direct_migration_state
++                        from copy import deepcopy
++                        direct_migration_state = deepcopy(state)
++
++                    select_review_phase(context, "review")
++                    migration = CompletionProbeMigration(implementation_spec).assess(
++                        legacy_state=direct_completion_review.state,
++                        continuation_state=direct_migration_state, checkpoint_sink=retain_migration_checkpoint,
++                        model=model, tools=tools, context=context, agent_budget=context._agent_budget,
++                        event_sink=event_sink, cancellation_token=cancellation_token,
++                        deadline_monotonic=context._task_deadline_monotonic)
++                    if migration.get("status") == "resolved":
++                        direct_completion_review.queue_legacy_resolution(migration["resolution"])
++                        direct_migration_state = None
++                    else:
++                        # An unchanged ambiguous classification cannot be repaired
++                        # by another implementation rewrite or repeated final.
++                        decision = {"status": "inconclusive", "reason": "legacy_probe_purpose_unresolved",
++                            "patchDigest": checks.get("patchDigest"), "canContinue": False,
++                            "migrationEvidence": migration}
++                if decision is None:
++                    select_review_phase(context, None)
++                    decision = direct_completion_review.assess(model=model, tools=tools, context=context,
++                        agent_budget=context._agent_budget, event_sink=event_sink,
++                        cancellation_token=cancellation_token, deadline_monotonic=context._task_deadline_monotonic,
++                        checks_receipt=checks)
++            except (AgentBudgetExceeded, AgentTurnDeadlineExceeded, TaskDeadlineExceeded) as error:
++                raise_if_cancelled(cancellation_token)
++                classified_error = TaskDeadlineExceeded(None) if isinstance(error, AgentTurnDeadlineExceeded) else error
++                reason = review_exhaustion(direct_completion_limits, classified_error)
++                if reason is None:
++                    raise
++                review_budget_stopped = True
++                # Negative evidence already committed under this candidate
++                # keeps its authority; exhaustion supplies no acceptance.
++                context._agent_budget = agent_budget
++                context._task_deadline_monotonic = deadline_monotonic
++                decision = direct_completion_review.review_budget_exhausted_result(
++                    checks.get("patchDigest"), context, reason)
++                emit_event_safely(event_sink, "implementation.completion_review_budget_exhausted", step=step,
++                    payload={"executorId": direct_completion_owner, "attempt": direct_completion_attempt,
++                        "patchDigest": checks.get("patchDigest"), "reason": reason,
++                        "phase": direct_completion_limits["active"], "requirementsAccepted": False})
++            finally:
++                context._agent_budget = agent_budget
++                context._task_deadline_monotonic = deadline_monotonic
+             raise_if_cancelled(cancellation_token)
+             raise_if_deadline_exceeded()
+             current_digest = implementation_candidate_digest(implementation_spec, context)
+@@ -3792,12 +3839,19 @@
+             # old assertion as a repair request to this owner.
+             decision = {**decision, "canContinue": False}
+         direct_completion_accepted = decision.get("status") == "approved"
++        direct_completion_classification = (
++            "approved" if direct_completion_accepted else
++            "rejected" if decision.get("status") == "changes_required" else
++            "budget_exhausted" if decision.get("reason") == "completion_review_budget_exhausted" else None)
+         receipt = {"completionVersion": 1, "executorId": direct_completion_owner,
+                    "attempt": direct_completion_attempt,
+-                   "continuesSameExecutor": not direct_completion_accepted and decision.get("canContinue") is not False,
++                   "continuesSameExecutor": not review_budget_stopped and not direct_completion_accepted and decision.get("canContinue") is not False,
+                    **decision}
+-        emit_event_safely(event_sink, "implementation.completion_decided", step=step, payload=receipt)
+-        _append_trace_event(execution_trace, {"type": "implementation_completion", "step": step, **receipt})
++        decision_event = {**receipt, "requirementsAccepted": direct_completion_accepted,
++            **({"completionReview": direct_completion_classification}
++                if direct_completion_classification is not None else {})}
++        emit_event_safely(event_sink, "implementation.completion_decided", step=step, payload=decision_event)
++        _append_trace_event(execution_trace, {"type": "implementation_completion", "step": step, **decision_event})
+         if direct_completion_accepted:
+             # These are actual current-candidate verifier executions. Ordinary
+             # model completion text never contributes verification observations.
+@@ -3824,7 +3878,11 @@
+             supersede_completion_feedback()
+         implementation_completion_feedback = {
+             "role": "user", "_implementation_completion_feedback": True,
+-            "content": (("Host completion decision: the independent coverage audit is paused. "
++            "content": (("Host completion decision: the native review allowance is exhausted. "
++                "The candidate and actual evidence are retained, but requirements have not been accepted. "
++                "This turn ends without inferred product repairs; a later turn may resume the retained review.\n"
++                if decision.get("reason") == "completion_review_budget_exhausted" else
++                "Host completion decision: the independent coverage audit is paused. "
+                 "Its original context, delivered evidence and unaccepted drafts are retained for the same owner. "
+                 "Resume that audit before deciding completion; no product repair is inferred.\n" if pending_coverage_audit else
+                 "Host completion decision: independent failure adjudication remains unresolved. "
+@@ -3847,7 +3905,7 @@
+         current_messages[:] = reconcile_task_ledger(current_messages)
+         if context_manager is not None:
+             context_manager.messages = list(current_messages)
+-        return "stop" if decision.get("canContinue") is False else "retry"
++        return "stop" if review_budget_stopped or decision.get("canContinue") is False else "retry"
+ 
+     try:
+         if (implementation_continuation is not None and direct_completion_review is not None
+@@ -4287,6 +4345,9 @@
+                         ),
+ 
+                     } if phase_request else {"tools_override": tools})
++                if max_retries_override is not None:
++                    request_options["max_retries_override"] = min(
++                        request_options.get("max_retries_override", max_retries_override), max_retries_override)
+                 # The provider must see this invocation's executable registry,
+                 # including nested reviewers which reuse the parent's adapter.
+                 # Tool visibility does not depend on phase/budget scheduling.
+@@ -6608,6 +6669,8 @@
+                 "delivery": "partial",
+                 "lastPublicChecks": direct_implementation_batch_status or "unavailable",
+                 "requirementsAccepted": direct_completion_accepted,
++                **({"completionReview": direct_completion_classification}
++                    if direct_completion_classification is not None else {}),
+                 "continuesAfterResponse": False,
+             }
+             content = (
+--- a/minicode/anthropic_adapter.py
++++ b/minicode/anthropic_adapter.py
+@@ -1044,10 +1044,12 @@
+                     status == 400
+                     and prompt_cache_active
+                     and "cache_control" in error_message.lower()
++                    and (max_retries_override is None or attempt < max_retries)
+                 ):
+                     # The gateway rejected the prompt-cache markers, not the
+                     # request itself. Degrade once to a marker-free body
+-                    # instead of failing the model call.
++                    # instead of failing the model call, unless an explicit
++                    # caller retry ceiling has already been consumed.
+                     _strip_prompt_cache_markers(request_body)
+                     prompt_cache_active = False
+                     _close_response_safely(response)
+--- a/minicode/implementation_completion_review.py
++++ b/minicode/implementation_completion_review.py
+@@ -33,7 +33,7 @@
+     SchedulerWorkerReadPermissions, is_mandatory_scheduler_forbidden_path,
+ )
+ from minicode.task_deadline import raise_task_deadline
+-from minicode.tooling import ToolDefinition, ToolRegistry, ToolResult
++from minicode.tooling import ToolContext, ToolDefinition, ToolRegistry, ToolResult
+ from minicode.workflow_workspace import WorkflowWorkspaceTransaction
+ 
+ 
+@@ -805,6 +805,112 @@
+         decision["evidenceRef"] = self._accepted_repair_decision["ref"]
+         return decision
+ 
++    def _repair_probes_for_candidate(self, digest: str) -> list[dict]:
++        """Deliver confirmed counterexamples to the existing implementation owner.
++
++        This feedback channel is separate from ExecutionCandidate receiptRefs:
++        the 2026-10-22 exclusion of dynamic review_regression_* receipts from
++        that formal candidate protocol does not remove these probe sources.
++        """
++        # Only confirmed product counterexamples or formerly passing acceptance
++        # tests authorize repair. Unavailable/newly broken tests stay evidence.
++        return [probe.to_dict() for pid, probe in self._probes.items()
++                if pid not in self._retired and self._receipts.get((digest, pid), {}).get(
++                    "receipt", {}).get("status") != "passed" and self._purpose(pid) == "acceptance"
++                and ((self._failure_authority(pid, digest) or {}).get("verdict") == "product_gap"
++                     or any(row["probeId"] == pid and row["receipt"].get("status") == "passed"
++                            for row in self._attempts))]
++
++    def _current_repair_feedback(self, digest, host, *, preserve_pending_negative=False):
++        """Select current feedback without rewriting authenticated native bytes.
++
++        Explicit host migration can establish a newer, exactly bound product
++        counterexample. Its completed classification must survive repeated
++        delivery, restoration and bounded closure. Ordinary native negatives
++        still take precedence over unrelated, unclassified test evidence.
++        """
++        if (self._pending_resolution or {}).get("candidateDigest") == digest:
++            if not preserve_pending_negative:
++                return None
++            # Attribution may have committed immediately before a deadline,
++            # before migration can classify/retire anything. Deliver that
++            # exact counterexample without pretending migration completed.
++            return (self._confirmed_product_gap_result(digest)
++                    or self._accepted_repair_for_candidate(digest, host))
++        classified = next((row for row in reversed(self._legacy_resolutions)
++            if row.get("candidateDigest") == digest and row.get("status") == "classified"), None)
++        if classified is not None and self._confirmed_product_gaps(digest):
++            return self._legacy_product_gap_result(digest, classified)
++        return self._accepted_repair_for_candidate(digest, host)
++
++    def _legacy_product_gap_result(self, digest, document):
++        return self._result("changes_required", digest,
++            ["Independent acceptance obligations still require product repair."],
++            reason="legacy_acceptance_product_gap",
++            probeReceipts=[r for (candidate, _), r in self._receipts.items() if candidate == digest],
++            repairProbes=self._repair_probes_for_candidate(digest),
++            diagnosticObservations=self._diagnostic_observations(), legacyMigration=document,
++            legacyObservations=[{"source": probe.to_dict(), "purpose": "legacy",
++                "receipts": [r for r in self._attempts if r["probeId"] == pid]}
++                for pid, probe in self._probes.items() if self._purpose(pid) == "legacy"])
++
++    def _confirmed_product_gaps(self, digest: str) -> list[dict]:
++        return [probe for probe in self._repair_probes_for_candidate(digest)
++                if self._receipts.get((digest, probe["probeId"]), {}).get(
++                    "receipt", {}).get("status") == "failed"
++                and (self._failure_authority(probe["probeId"], digest) or {}).get("verdict") == "product_gap"]
++
++    def _diagnostic_observations(self) -> list[dict]:
++        return [{"source": probe.to_dict(), "purpose": "diagnostic",
++                 "receipts": [receipt for receipt in self._attempts if receipt["probeId"] == pid]}
++                for pid, probe in self._probes.items() if self._purpose(pid) == "diagnostic"]
++
++    def _confirmed_product_gap_result(self, digest: str) -> dict | None:
++        probes = self._confirmed_product_gaps(digest)
++        if not probes:
++            return None
++        return self._result("changes_required", digest,
++            ["Independently attributed product gaps require repair in the existing implementation session."],
++            reason="confirmed_product_gap", repairProbes=probes,
++            probeReceipts=[r for (candidate, _), r in self._receipts.items() if candidate == digest],
++            failureAdjudications=list(self._failure_adjudications),
++            diagnosticObservations=self._diagnostic_observations())
++
++    def review_budget_exhausted_result(self, digest: str, context: ToolContext, reason: str) -> dict:
++        """Close an observed review budget stop without erasing native negatives.
++
++        The caller supplies its still-valid parent context. This never reruns a
++        probe or model, and leaves the actual pending review state for resumption.
++        It must not be used to classify ordinary inconclusive/provider failures.
++        """
++        from minicode.implementation_execution import implementation_candidate_digest
++
++        with self._lock:
++            current = implementation_candidate_digest(self.spec, context)
++            if current != digest:
++                return self._result("inconclusive", current,
++                    ["Candidate changed while completion review was interrupted."],
++                    reason="completion_candidate_changed", canContinue=False)
++            result = (self._current_repair_feedback(digest, context, preserve_pending_negative=True)
++                      or self._confirmed_product_gap_result(digest))
++            # Reading accepted source anchors must not race a candidate change.
++            current = implementation_candidate_digest(self.spec, context)
++            if current != digest:
++                return self._result("inconclusive", current,
++                    ["Candidate changed while completion review was interrupted."],
++                    reason="completion_candidate_changed", canContinue=False)
++            if result is not None:
++                return json.loads(_json(result))
++            pending = self.has_pending_coverage_audit(digest)
++            return json.loads(_json(self._result("inconclusive", digest, [reason],
++                reason="completion_review_budget_exhausted", canContinue=False,
++                probeReceipts=[r for (candidate, _), r in self._receipts.items() if candidate == digest],
++                repairProbes=[], failureAdjudications=list(self._failure_adjudications),
++                diagnosticObservations=self._diagnostic_observations(),
++                evidenceDirectory=str(self._directory) if self._directory else None,
++                **({"resumable": True, "auditPending": True, "continuationTarget": "coverage_auditor"}
++                   if pending else {}))))
++
+     def assess(self, *, model, tools, context, agent_budget, event_sink,
+                cancellation_token, deadline_monotonic, checks_receipt):
+         from minicode.implementation_execution import implementation_candidate_digest
+@@ -821,13 +927,17 @@
+                 return self._result("inconclusive", digest, ["Public checks must pass the current candidate before review."])
+             # A negative decision grants no coverage. Restore it before reruns
+             # refresh receipt references or unrelated attribution can block it.
+-            repair = self._accepted_repair_for_candidate(digest, host)
++            # An explicit host migration must finish its replacement attribution
++            # even when the unchanged candidate already has a native negative.
++            # Keep that negative stored for budget closure while migration runs.
++            migrating = ((self._pending_resolution or {}).get("candidateDigest") == digest)
++            repair = self._current_repair_feedback(digest, host)
+             if repair is not None:
+                 if implementation_candidate_digest(self.spec, host) != digest:
+                     return self._result("inconclusive", digest,
+                         ["Candidate changed while restoring the accepted repair decision."])
+                 return repair
+-            if digest in self._cached and not self.needs_failure_adjudication(digest):
++            if not migrating and digest in self._cached and not self.needs_failure_adjudication(digest):
+                 cached = self._cached[digest]
+                 if (cached.get("status") != "approved"
+                         or (cached.get("coverageAudit", {}).get("behaviorEvidenceVersion") == 1
+@@ -924,6 +1034,7 @@
+     def _assess_snapshot(self, *, model, tools, host, transaction, frozen, denied,
+                          digest, target, checks_receipt, event_sink):
+         from minicode.agent_loop import run_agent_turn
++        from minicode.completion_review_limits import select_review_phase, review_steps, check_review_allowance
+         from minicode.context_manager import ContextManager
+         from minicode.permissions import PermissionManager
+         from minicode.run_events import emit_event_safely
+@@ -1026,6 +1137,9 @@
+                             for row in saved_authority["supersessionObligations"])
+             if any(wrapped is not None and audit_receipts.get(pid) != wrapped for pid, wrapped in recorded):
+                 raise ValueError("coverage snapshot no longer binds its exact original execution receipts")
++
++        if pending_audit is None:
++            select_review_phase(host, "review")
+ 
+         def checkpoint():
+             raise_task_deadline(host)
+@@ -1082,7 +1196,9 @@
+                     required = fields | correction if supplied & correction else fields
+                     return ToolResult(ok=False, output=_json({
+                         "errorCode": "completion_review_invalid", "tool": "review_test",
+-                        "message": "review_test requires purpose/criterionIds/scenario/code; correction fields must appear together",
++                        "message": ("review_test requires purpose/criterionIds/scenario/code; "
++                                    "sourceEvidence, correctsProbeId, and correctionReason must be provided together or all omitted; "
++                                    "missing fields: " + (", ".join(sorted(required - supplied)) or "none")),
+                         "missingFields": sorted(required - supplied),
+                         "unexpectedFields": sorted(supplied - fields - correction, key=str)}))
+                 purpose = value["purpose"]
+@@ -1410,28 +1526,13 @@
+                 # confirmed product counterexamples directly in feedback. An
+                 # unavailable or newly broken test is retained in receipts;
+                 # it is not itself authority to change the product.
+-                return [probe.to_dict() for pid, probe in self._probes.items()
+-                        if pid not in self._retired and self._receipts.get((digest, pid), {}).get(
+-                            "receipt", {}).get("status") != "passed" and self._purpose(pid) == "acceptance"
+-                        and ((self._failure_authority(pid, digest) or {}).get("verdict") == "product_gap"
+-                             or any(row["probeId"] == pid and row["receipt"].get("status") == "passed"
+-                                    for row in self._attempts))]
++                return self._repair_probes_for_candidate(digest)
+ 
+             def confirmed_product_gaps():
+-                return [probe for probe in repair_probes()
+-                    if self._receipts.get((digest, probe["probeId"]), {}).get(
+-                        "receipt", {}).get("status") == "failed"
+-                    and (self._failure_authority(probe["probeId"], digest) or {}).get("verdict") == "product_gap"]
++                return self._confirmed_product_gaps(digest)
+ 
+             def confirmed_product_gap_result():
+-                probes = confirmed_product_gaps()
+-                if not probes:
+-                    return None
+-                return self._result("changes_required", digest,
+-                    ["Independently attributed product gaps require repair in the existing implementation session."],
+-                    reason="confirmed_product_gap", repairProbes=probes,
+-                    probeReceipts=current_receipts(), failureAdjudications=list(self._failure_adjudications),
+-                    diagnosticObservations=diagnostic_observations())
++                return self._confirmed_product_gap_result(digest)
+ 
+             def actionable_negative(value):
+                 return (isinstance(value, dict) and value.get("status") == "changes_required"
+@@ -1440,9 +1541,7 @@
+                         if isinstance(row, dict))))
+ 
+             def diagnostic_observations():
+-                return [{"source": probe.to_dict(), "purpose": "diagnostic",
+-                    "receipts": [receipt for receipt in self._attempts if receipt["probeId"] == pid]}
+-                    for pid, probe in self._probes.items() if self._purpose(pid) == "diagnostic"]
++                return self._diagnostic_observations()
+ 
+             def diagnostic_index():
+                 # Full immutable sources and receipt history remain in the audit
+@@ -1512,16 +1611,27 @@
+                             probe=old.to_dict(), receipt=wrapped, probes=self._probes,
+                             adjudications=self._failure_adjudications,
+                             chains=[*self._supersessions, *self._corrections])
++
++                        def retain_adjudication(value):
++                            validate_adjudication_record(self.spec, old.to_dict(), wrapped, value)
++                            existing = next((row for row in self._failure_adjudications
++                                if row.get("evidenceRef") == value.get("evidenceRef")), None)
++                            if existing is not None:
++                                return existing
++                            saved = dict(value)
++                            saved["adjudicationRef"] = self._persist("probe-adjudication", saved)
++                            self._failure_adjudications.append(saved)
++                            return saved
++
+                         authority = ProbeFailureAdjudicator(self.spec).assess(
+                             probe=old.to_dict(), receipt=wrapped, model=model, tools=tools, context=host,
+                             agent_budget=host._agent_budget, event_sink=event_sink,
+                             cancellation_token=host._cancellation_token,
+                             deadline_monotonic=host._task_deadline_monotonic,
+-                            advisory_context=advisory_context)
+-                        validate_adjudication_record(self.spec, old.to_dict(), wrapped, authority)
+-                        authority = dict(authority)
+-                        authority["adjudicationRef"] = self._persist("probe-adjudication", authority)
+-                        self._failure_adjudications.append(authority)
++                            advisory_context=advisory_context,
++                            **({"product_gap_sink": retain_adjudication}
++                                if host._completion_review_limits is not None else {}))
++                        authority = retain_adjudication(authority)
+                     if authority["verdict"] == "product_gap":
+                         return
+                     if authority["verdict"] != "probe_error":
+@@ -1602,10 +1712,11 @@
+                         self._register_purpose(self._probes[row["probeId"]], row["purpose"], legacy_resolution=resolution)
+                     self._pending_resolution = None
+                 if not activated:
++                    if classified:
++                        return self._legacy_product_gap_result(digest, document)
+                     return self._result("changes_required", digest,
+-                        ["Independent acceptance obligations still require product repair." if classified else
+-                         "Independent acceptance replacements did not pass; legacy obligations remain active."],
+-                        reason="legacy_acceptance_product_gap" if classified else "legacy_replacement_failed", probeReceipts=current_receipts(),
++                        ["Independent acceptance replacements did not pass; legacy obligations remain active."],
++                        reason="legacy_replacement_failed", probeReceipts=current_receipts(),
+                         repairProbes=repair_probes(), diagnosticObservations=diagnostic_observations(),
+                         legacyMigration=document,
+                         legacyObservations=[{"source": probe.to_dict(), "purpose": "legacy",
+@@ -1618,15 +1729,21 @@
+             migration_failure = resolve_pending_migration() if pending_audit is None else None
+             if pending_audit is None:
+                 adjudicate_failures()
++                # Attribution can now classify the replacement. Commit its
++                # purpose/history before returning the confirmed gap feedback.
++                if self._pending_resolution is not None:
++                    migration_failure = resolve_pending_migration()
++            migration_audit = ((self._pending_resolution or {}).get("candidateDigest") == digest
++                               and bool(self._pending_supersessions()))
+             # An unfinished read-only audit remains stored against its exact
+             # candidate. It cannot veto a separately established product repair,
+             # nor transfer its approval or delivery credit to an edited candidate.
+             unresolved = (adjudication_pending_result() if pending_audit is None
+                           else confirmed_product_gap_result())
+-            if unresolved is not None:
++            if unresolved is not None and not migration_audit:
++                if migration_failure is not None and migration_failure.get("reason") == "legacy_acceptance_product_gap":
++                    return migration_failure
+                 return unresolved
+-            if pending_audit is None and self._pending_resolution is not None:
+-                migration_failure = resolve_pending_migration()
+             if migration_failure is not None and not self._pending_supersessions() and (migration_failure["status"] == "inconclusive"
+                                                    or not fixture_correction_ids()):
+                 return migration_failure
+@@ -1657,12 +1774,15 @@
+             anchor_schema = {"type": "array", "items": {"type": "object", "properties": {
+                 "path": {"type": "string"}, "startLine": {"type": "integer"}, "endLine": {"type": "integer"}},
+                 "required": ["path", "startLine", "endLine"], "additionalProperties": False}}
++            correction_description = "For a fixture correction, sourceEvidence, correctsProbeId, and correctionReason must be provided together or all omitted."
+             probe_tool = tool("review_test", "Declare immutable purpose before running isolated pytest: acceptance asserts requested behavior and must pass after repair; diagnostic records observations and cannot prove coverage. Fixture corrections preserve acceptance test identities and assertions.",
+                 run_probe, {"purpose": {"type": "string", "enum": ["diagnostic", "acceptance"]},
+                     "criterionIds": {"type": "array", "items": {"type": "string", "enum": sorted(self._ids)}},
+                     "scenario": {"type": "string"}, "code": {"type": "string"},
+-                    "correctsProbeId": {"type": "string"}, "correctionReason": {"type": "string"},
+-                    "sourceEvidence": anchor_schema}, ("purpose", "criterionIds", "scenario", "code"), executes=True)
++                    "correctsProbeId": {"type": "string", "description": correction_description},
++                    "correctionReason": {"type": "string", "description": correction_description},
++                    "sourceEvidence": {**anchor_schema, "description": correction_description}},
++                ("purpose", "criterionIds", "scenario", "code"), executes=True)
+             read_tool = tool("review_probe_read", "Read retained probe source and execution receipts; omit probeId to list. receiptView=current returns only this candidate's latest receipt; history (default) retains all prior receipts. Continue with the returned nextCursor alone to preserve the exact document. Legacy offset/receiptView remains supported.",
+                 read_probe, {"probeId": {"type": "string"}, "offset": {"type": "integer"}, "limit": {"type": "integer"},
+                     "receiptView": {"type": "string", "enum": ["history", "current"]}, "cursor": {"type": "string"}})
+@@ -1731,19 +1851,22 @@
+                 if pending_audit is None:
+                     run_agent_turn(model=model, tools=registry, cwd=str(root), permissions=permissions,
+                         messages=messages, context_manager=manager,
+-                        runtime=host._runtime, max_steps=None, agent_budget=host._agent_budget,
++                        runtime=host._runtime, max_steps=review_steps(host), agent_budget=host._agent_budget,
++                        max_retries_override=0 if host._completion_review_limits is not None else None,
+                         budget_exhausted_policy="raise", cancellation_token=host._cancellation_token,
+                         deadline_monotonic=host._task_deadline_monotonic, event_sink=review_observation,
+                         agent_depth=host._agent_depth + 1, implementation_task=False,
+                         implementation_spec=None, enable_implementation_phases=False,
+                         enable_work_chain=False, allow_user_interaction=False, defer_curator_maintenance=True)
++                    if decision is None:
++                        check_review_allowance(host)
+                 else:
+                     from minicode.coverage_audit_state import coverage_audit_authority
+                     # This remains an unapproved author proposal. Resume the
+                     # same independent audit before changing its receipt refs.
+                     decision = coverage_audit_authority(pending_audit)["proposal"]
+                 checkpoint()
+-                if decision is not None and (decision.get("status") == "approved"
++                if decision is not None and (decision.get("status") == "approved" or migration_audit
+                         or (self._pending_supersessions() and not actionable_negative(decision))):
+                     from minicode.completion_coverage_audit import audit_completion_coverage
+ 
+@@ -1816,6 +1939,12 @@
+                                 for row in proposal["requirements"]],
+                             probeReceipts=current_receipts(), repairProbes=[])
+                     if actionable_negative(audit):
++                        if migration_audit:
++                            # Only the independent audit can authorize retiring
++                            # an incorrect expectation. A product gap alone does
++                            # not discharge that obligation or approve delivery.
++                            accept_supersessions(audit)
++                            resolve_pending_migration()
+                         # Native negative was committed before the audit tool
+                         # returned. Unknown challenges confer no repair credit.
+                         return self._accepted_repair_for_candidate(digest, host)
+--- a/minicode/completion_coverage_inspection.py
++++ b/minicode/completion_coverage_inspection.py
+@@ -26,7 +26,9 @@
+             'path': {'type': 'string'}, 'startLine': {'type': 'integer'}, 'endLine': {'type': 'integer'}}, 'required': ['path', 'startLine', 'endLine']}},
+         'expectedBehavior': {'type': 'string'}, 'observedBehavior': {'type': 'string'}, 'probeIds': {'type': 'array', 'items': {'type': 'string'}}},
+         'required': ['requirementId', 'status', 'sourceEvidence', 'expectedBehavior', 'observedBehavior', 'probeIds']}},
+-    'findings': {'type': 'array', 'items': {'type': 'string'}}}, 'required': ['status', 'observations', 'findings']}
++    'findings': {'type': 'array', 'items': {'type': 'string'},
++        'description': 'Unresolved findings only. When status=ready_for_evidence, this must be an empty array.'}},
++    'required': ['status', 'observations', 'findings']}
+ 
+ 
+ class _InspectionInputError(ValueError):
+--- a/minicode/completion_coverage_audit.py
++++ b/minicode/completion_coverage_audit.py
+@@ -126,7 +126,13 @@
+     from minicode.context_manager import ContextManager
+     from minicode.implementation_completion_review import requirement_units
+     from minicode.run_events import emit_event_safely
+-
++    from minicode.completion_review_limits import select_review_phase, review_steps, check_review_allowance
++
++    resumed_inspection = (record_document(continuation_state["inspectionRecord"])
++        if continuation_state is not None and continuation_state.get("coverageAuditStateVersion") == 3 else None)
++    select_review_phase(host, "reconciliation" if resumed_inspection is not None
++        and (resumed_inspection["phase"] == "reconciliation" or resumed_inspection["result"] is not None)
++        else "inspection")
+     checkpoint()
+     # Legacy model context already saw the proposal. Preserve it byte-for-byte,
+     # but create an explicit new epoch with no inherited delivery/read credit.
+@@ -999,7 +1005,8 @@
+                 run_agent_turn(model=model, tools=inspection_tools, cwd=cwd, permissions=permissions,
+                     messages=manager.messages, context_manager=manager, runtime=host._runtime,
+                     context_checkpoint_sink=checkpoint_context,
+-                    max_steps=None, agent_budget=host._agent_budget, budget_exhausted_policy="raise",
++                    max_steps=review_steps(host), agent_budget=host._agent_budget, budget_exhausted_policy="raise",
++                    max_retries_override=0 if host._completion_review_limits is not None else None,
+                     cancellation_token=host._cancellation_token, deadline_monotonic=host._task_deadline_monotonic,
+                     event_sink=Observation(), agent_depth=host._agent_depth + 1,
+                     implementation_task=False, implementation_spec=None, enable_implementation_phases=False,
+@@ -1007,12 +1014,14 @@
+             if decision is not None:
+                 return decision
+             if inspection.value["result"] is None:
++                check_review_allowance(host)
+                 return suspended()
+             # The same fresh context continues after its independent observation
+             # commit. The original objective system message remains singular.
+             disclosed = deepcopy(reconciliation_messages)
+             disclosed[0]["content"] = disclosed[0]["content"].split("\n=== ORIGINAL REQUIREMENT AUTHORITY ===\n", 1)[0]
+             inspection.disclose(disclosed, messages_checkpoint)
++        select_review_phase(host, "reconciliation")
+         if legacy_audit_record is not None:
+             def history_read(value, _context):
+                 try:
+@@ -1036,7 +1045,8 @@
+         run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+             messages=manager.messages, context_manager=manager, runtime=host._runtime,
+             context_checkpoint_sink=checkpoint_context,
+-            max_steps=None, agent_budget=host._agent_budget, budget_exhausted_policy="raise",
++            max_steps=review_steps(host), agent_budget=host._agent_budget, budget_exhausted_policy="raise",
++            max_retries_override=0 if host._completion_review_limits is not None else None,
+             cancellation_token=host._cancellation_token, deadline_monotonic=host._task_deadline_monotonic,
+             event_sink=Observation(), agent_depth=host._agent_depth + 1,
+             implementation_task=False, implementation_spec=None, enable_implementation_phases=False,
+@@ -1052,6 +1062,7 @@
+                 raise
+             logging.getLogger(__name__).warning("Coverage audit messages could not be saved during interruption", exc_info=True)
+     if decision is None:
++        check_review_allowance(host)
+         return suspended()
+     return decision
+ 
+--- a/minicode/completion_probe_migration.py
++++ b/minicode/completion_probe_migration.py
+@@ -515,6 +515,7 @@
+             run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+                 messages=messages, context_manager=manager, runtime=host._runtime,
+                 max_steps=None, agent_budget=host._agent_budget, budget_exhausted_policy="raise",
++                max_retries_override=0 if host._completion_review_limits is not None else None,
+                 cancellation_token=host._cancellation_token, deadline_monotonic=host._task_deadline_monotonic,
+                 event_sink=Observation(), agent_depth=host._agent_depth + 1,
+                 implementation_task=False, implementation_spec=None, enable_implementation_phases=False,
+--- a/minicode/probe_failure_adjudication.py
++++ b/minicode/probe_failure_adjudication.py
+@@ -170,7 +170,7 @@
+             return str(path)
+ 
+     def assess(self, *, probe, receipt, context, model, tools, agent_budget,
+-               event_sink, cancellation_token, deadline_monotonic, advisory_context=None):
++               event_sink, cancellation_token, deadline_monotonic, advisory_context=None, product_gap_sink=None):
+         from minicode.implementation_completion_review import ImplementationCompletionReview
+         from minicode.implementation_execution import implementation_candidate_digest
+ 
+@@ -198,14 +198,14 @@
+                     forbidden_paths=denied, operation_checkpoint=lambda: raise_task_deadline(host))
+                 result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+                     permissions=permissions, authority=authority, authority_ref=authority_ref,
+-                    binding=binding, event_sink=event_sink)
++                    binding=binding, event_sink=event_sink, product_gap_sink=product_gap_sink)
+             raise_task_deadline(host)
+             if implementation_candidate_digest(self.spec, host) != binding["candidateDigest"]:
+                 raise ValueError("candidate changed during failure adjudication")
+         return validate_adjudication_record(self.spec, source, original_receipt, result)
+ 
+     def _review(self, *, model, tools, host, cwd, permissions, authority,
+-                authority_ref, binding, event_sink):
++                authority_ref, binding, event_sink, product_gap_sink=None):
+         from minicode.agent_loop import run_agent_turn
+         from minicode.context_manager import ContextManager
+         from minicode.run_events import emit_event_safely
+@@ -287,6 +287,12 @@
+             elif "replacement" in value:
+                 raise ValueError("only probe_error may supply a replacement")
+             decision = persist_decision(value, objective_lines, anchors, details)
++            if product_gap_sink is not None and decision["verdict"] == "product_gap":
++                # Preserve a native negative at its commit boundary even if
++                # the phase expires during subsequent context persistence.
++                # The owner still revalidates its candidate before delivery.
++                product_gap_sink(validate_adjudication_record(
++                    self.spec, authority["probe"], authority["receipt"], decision))
+             return ToolResult(ok=True, output=_json(decision), _implementation_submitted=True)
+ 
+         def validated(value, context):
+@@ -350,6 +356,7 @@
+             run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+                 messages=messages, context_manager=manager, runtime=host._runtime,
+                 max_steps=None, agent_budget=host._agent_budget, budget_exhausted_policy="raise",
++                max_retries_override=0 if host._completion_review_limits is not None else None,
+                 cancellation_token=host._cancellation_token, deadline_monotonic=host._task_deadline_monotonic,
+                 event_sink=Observation(), agent_depth=host._agent_depth + 1,
+                 implementation_task=False, implementation_spec=None, enable_implementation_phases=False,
+--- a/minicode/tooling.py
++++ b/minicode/tooling.py
+@@ -771,6 +771,9 @@
+         repr=False,
+         compare=False,
+     )
++    # In-process native review allowances, shared by its sequential phases and
++    # probe callbacks. Never serialized as evidence or sent to the model.
++    _completion_review_limits: Any | None = field(default=None, repr=False, compare=False, kw_only=True)
+     # Set by _execute_single_tool when a tool worker timed out. Long-running
+     # tools (notably the `task` sub-agent) check it cooperatively and unwind
+     # instead of continuing after the parent has already returned.
+--- /dev/null
++++ b/minicode/completion_review_limits.py
+@@ -0,0 +1,121 @@
++"""Turn-local native review allowances on the existing shared budget ledger.
++
++These limits never certify a candidate. Each phase keeps its first deadline
++and budget view; switching phases only selects those existing allowances.
++"""
++
++from __future__ import annotations
++
++import os
++import time
++from decimal import Decimal
++
++from minicode.agent_budget import AgentBudgetExceeded, AgentTurnBudget, LimitedBudgetView
++from minicode.task_deadline import TaskDeadlineExceeded, raise_task_deadline
++
++
++PHASE_LIMITS = {"review": (8, 90.0), "inspection": (8, 150.0), "reconciliation": (4, 60.0)}
++
++
++def create_review_limits(context, *, closing_tokens: int = 0):
++    mode = os.environ.get("MINI_CODE_COMPLETION_REVIEW_MODE", "bounded").strip().lower()
++    if mode not in {"bounded", "full"}:
++        raise ValueError("MINI_CODE_COMPLETION_REVIEW_MODE must be bounded or full")
++    if mode == "full":
++        return None
++    now = time.monotonic()
++    ancestor = context._task_deadline_monotonic
++    remaining = max(0.0, ancestor - now) if ancestor is not None else None
++    reserve = max(60.0, remaining * 0.15) if remaining is not None else 60.0
++    seconds = max(0.0, min(remaining * 0.5, remaining - reserve)) if remaining is not None else 300.0
++    deadline = min(ancestor, now + seconds) if ancestor is not None else now + seconds
++    parent = context._agent_budget
++    if parent is None:
++        # An otherwise unmetered caller still needs one shared ledger for the
++        # three local caps. This introduces no independent spend allowance.
++        parent = AgentTurnBudget(max_total_tokens=None, max_model_calls=None, max_cost_usd=None)
++    return {"parent": parent, "ancestorDeadline": ancestor,
++        "deadline": deadline, "closingSeconds": reserve,
++        "budget": LimitedBudgetView(parent, "completion_review", max_calls=None,
++            preserve_calls=2, preserve_tokens=closing_tokens),
++        "stages": {}, "active": None}
++
++
++def select_review_phase(host, phase: str | None) -> None:
++    """Select a sibling phase on this private review context, including tools.
++
++    The host is shared by the review's tool closures, so probes and nested
++    adjudicators inherit exactly the currently selected phase allowance.
++    """
++    limits = getattr(host, "_completion_review_limits", None)
++    if limits is None:
++        return
++    budget, deadline = limits["budget"], limits["deadline"]
++    if phase is not None:
++        calls, seconds = PHASE_LIMITS[phase]
++        if phase not in limits["stages"]:
++            limits["stages"][phase] = {
++                "budget": LimitedBudgetView(budget, "completion_" + phase,
++                    max_calls=calls, preserve_calls=0),
++                "deadline": min(deadline, time.monotonic() + seconds), "calls": calls}
++        stage = limits["stages"][phase]
++        budget, deadline = stage["budget"], stage["deadline"]
++    limits["active"] = phase
++    host._agent_budget = budget
++    host._task_deadline_monotonic = deadline
++    raise_task_deadline(host)
++
++
++def review_steps(host) -> int | None:
++    limits = getattr(host, "_completion_review_limits", None)
++    if limits is None or limits["active"] is None:
++        return None
++    stage = limits["stages"][limits["active"]]
++    remaining = stage["calls"] - stage["budget"].admitted_model_calls
++    if remaining <= 0:
++        raise AgentBudgetExceeded("completion review phase call allowance exhausted", stage["budget"].snapshot())
++    return remaining
++
++
++def check_review_allowance(host) -> None:
++    if getattr(host, "_completion_review_limits", None) is None:
++        return
++    raise_task_deadline(host)
++    review_steps(host)
++
++
++def review_exhaustion(limits, error) -> str | None:
++    """Identify local exhaustion without masking an expired ancestor deadline.
++
++    Cancellation and non-budget errors are never handled here. A spent shared
++    ledger remains the ancestor's error; a preserved closing floor or a phase
++    cap is a review-local stop.
++    """
++    if limits is None or not isinstance(error, (AgentBudgetExceeded, TaskDeadlineExceeded)):
++        return None
++    now = time.monotonic()
++    ancestor = limits["ancestorDeadline"]
++    if ancestor is not None and now >= ancestor:
++        return None
++    parent = limits["parent"]
++    shared = parent.snapshot()
++    if (shared.limit_model_calls is not None
++            and shared.used_model_calls + parent.reserved_model_calls >= shared.limit_model_calls):
++        return None
++    if (shared.limit_total_tokens is not None
++            and shared.used_total_tokens + shared.reserved_total_tokens >= shared.limit_total_tokens):
++        return None
++    if (shared.limit_cost_usd is not None
++            and Decimal(shared.used_cost_usd) >= Decimal(shared.limit_cost_usd)):
++        return None
++    if isinstance(error, AgentBudgetExceeded) and error.reason == "cost budget exhausted":
++        return None
++    phase = limits["active"]
++    stage = limits["stages"].get(phase)
++    if now >= limits["deadline"] or (stage is not None and now >= stage["deadline"]):
++        return "wall_clock"
++    if not isinstance(error, AgentBudgetExceeded):
++        return None
++    if stage is not None and stage["budget"].admitted_model_calls >= stage["calls"]:
++        return "model_calls"
++    return "closing_reserve"

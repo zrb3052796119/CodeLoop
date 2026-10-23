@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "multi-agent-trigger-v1",
+  "phase": "trigger-gen2",
+  "cases": [
+    "trigger-record-pagination",
+    "trigger-import-retry",
+    "trigger-cart-discounts",
+    "trigger-stock-allocation",
+    "trigger-report-timezones",
+    "trigger-config-overlay",
+    "trigger-limit-clamp",
+    "trigger-extension-case"
+  ],
+  "arms": [
+    "auto"
+  ],
+  "repeats": 1,
+  "scheduleSeed": 20261023,
+  "schedule": [
+    {
+      "case": "trigger-stock-allocation",
+      "arm": "auto",
+      "repeat": 1,
+      "id": "trigger-stock-allocation-r1-auto"
+    },
+    {
+      "case": "trigger-config-overlay",
+      "arm": "auto",
+      "repeat": 1,
+      "id": "trigger-config-overlay-r1-auto"
+    },
+    {
+      "case": "trigger-record-pagination",
+      "arm": "auto",
+      "repeat": 1,
+      "id": "trigger-record-pagination-r1-auto"
+    },
+    {
+      "case": "trigger-limit-clamp",
+      "arm": "auto",
+      "repeat": 1,
+      "id": "trigger-limit-clamp-r1-auto"
+    },
+    {
+      "case": "trigger-extension-case",
+      "arm": "auto",
+      "repeat": 1,
+      "id": "trigger-extension-case-r1-auto"
+    },
+    {
+      "case": "trigger-import-retry",
+      "arm": "auto",
+      "repeat": 1,
+      "id": "trigger-import-retry-r1-auto"
+    },
+    {
+      "case": "trigger-cart-discounts",
+      "arm": "auto",
+      "repeat": 1,
+      "id": "trigger-cart-discounts-r1-auto"
+    },
+    {
+      "case": "trigger-report-timezones",
+      "arm": "auto",
+      "repeat": 1,
+      "id": "trigger-report-timezones-r1-auto"
+    }
+  ],
+  "concurrency": 1,
+  "model": "glm-5.3-flash",
+  "temperature": 0,
+  "limits": {
+    "maxTokens": 500000,
+    "maxModelCalls": 40,
+    "maxCostUsd": "5",
+    "wallSeconds": 600,
+    "maxOutputTokens": 8192,
+    "requestTimeoutSeconds": 300,
+    "idleTimeoutSeconds": 120,
+    "connectTimeoutSeconds": 30
+  },
+  "price": {
+    "currency": "CNY",
+    "perMillionInput": 0.8,
+    "perMillionOutput": 2.8,
+    "perMillionCacheRead": 0.23,
+    "source": "https://open.bigmodel.cn/pricing",
+    "retrievedOn": "2026-10-13",
+    "basis": "standard API-equivalent list-price estimate for coding subscription route; not actual incremental account charges",
+    "codingRoute": true,
+    "promotionNote": "Official FAQ also mentions half-price promotion; no account-specific discount assumed."
+  },
+  "roleTurnLimits": {
+    "explore": 0,
+    "plan": 0,
+    "general": 0
+  },
+  "roleTurnPolicy": "explicit-zero-role-ceilings-shared-budget-v1",
+  "judgementPolicy": {
+    "version": "common-generated-regression-v1",
+    "totalSeconds": 120,
+    "regressionPath": "tests/test_eval_regression.py",
+    "minimumPassed": 1,
+    "requireEveryCollectedPassed": true,
+    "allowSkipOrXfail": false,
+    "separateUnfilteredRegressionRun": true,
+    "deliveredCopiesOnly": true,
+    "receiptExitAndCleanupRequired": true,
+    "agentBudgetSeconds": 600
+  },
+  "gatePolicy": {
+    "expectedTrials": 8,
+    "opportunityTrials": 6,
+    "negativeTrials": 2,
+    "triggerRateDenominator": 8,
+    "minimumDeliveredTriggerTrials": 2,
+    "maximumNegativeLaunchRequests": 0,
+    "requireAllTerminal": true,
+    "requireIndependentAudit": true,
+    "requireNegativeLaunchClassificationComplete": true
+  },
+  "harnessFiles": [
+    "__init__.py",
+    "run_three_arm_real.py",
+    "evaluation_transport.py",
+    "three_arm_protocol.py",
+    "three_arm_scope.py",
+    "three_arm_scope_metadata.py",
+    "three_arm_processes.py",
+    "run_north_star_live.py",
+    "run_multi_agent_cost_live.py",
+    "analyze_three_arm_real.py",
+    "run_implementation_progress_live.py",
+    "audit_three_arm_real.py",
+    "audit_implementation_progress.py",
+    "analyze_implementation_progress.py",
+    "implementation_judge.py",
+    "public_verification_fixtures.py",
+    "run_multi_agent_gen2.py",
+    "audit_multi_agent_gen2.py",
+    "analyze_multi_agent_gen2.py",
+    "run_multi_agent_trigger.py",
+    "audit_multi_agent_trigger.py",
+    "analyze_multi_agent_trigger.py",
+    "prepare_multi_agent_trigger_tasks.py"
+  ],
+  "runner": "scripts/run_multi_agent_trigger.py",
+  "implementationCapabilities": "shared-public-checks-source-context-and-fixtures-v2",
+  "autoRecipe": "Parent retains direct tools and task; no forced delegation",
+  "implementationPhasePolicy": "production-continuous-default",
+  "requestEvidencePolicy": "complete-parent-provider-body-before-send-ledger-call-v1",
+  "guidanceEvidencePolicy": {
+    "version": "complete-parent-provider-body-before-send-ledger-call-v1",
+    "bodyHash": "sha256-json-sort_keys-compact-utf8",
+    "static": "actual-parent-request-system-prompt-and-task-schema",
+    "dynamic": "actual-parent-request-message-containing-complete-host-delegation-sentence",
+    "choice": "same-physical-ledger-call-response-and-toolCalls",
+    "missing": "unknown-not-absent"
+  },
+  "triggerExpectations": {
+    "trigger-record-pagination": "positive",
+    "trigger-import-retry": "positive",
+    "trigger-cart-discounts": "positive",
+    "trigger-stock-allocation": "positive",
+    "trigger-report-timezones": "positive",
+    "trigger-config-overlay": "positive",
+    "trigger-limit-clamp": "negative",
+    "trigger-extension-case": "negative"
+  },
+  "comparison": "New synthetic trigger population; no historical or causal comparison",
+  "createdAt": "2026-10-23T01:45:43.655558+00:00",
+  "taskSha256": "78550c227d36e719514f55c3d540a721a11aad8535de34a6a5155d57c8553937",
+  "analysisPlanSha256": "e4cfd7d9daa24c4acb0e1ee49cf6a8cc6bcb7b35ed11a8ad594baa9a795d7766",
+  "executionHostArchiveSha256": "a118a493563821da50b8d2e15385f9cdc686ee433c36e44b8f0a3990b88d7d3d",
+  "executionHostInventorySha256": "2574ea93d0c258b8a7c93a3fb25e9a9a57366bc6ef76d8434c6cd759adab372f",
+  "executionHostTreeSha256": "043ac44758c4c7cedba1968dfc0cd9d3cd59a47ce620c168db8f008950c6b578",
+  "environmentSha256": "523ffa3e857a045bb38892d6b383dff2668fadadfe9d50e6040ea7b8e4232f1f",
+  "productionSha256": "19f6dd81ce76ca97d23fa82c57386203fa81e171873ce390d86ca5134598debd",
+  "harnessSha256": "a5036caefc29b6c19c590fe36f07fd57be687281c720b48c46c8e72d6f8d0690",
+  "routeSha256": "7444aa98a782906660118e04d250088226353e8f5f948e26a13193f2c49d3c19",
+  "resolvedTransportRouteSha256": "dfe1c0c0c520107cb4bd5bbc9ad05a6c372cbaa75b6657387e997980c904652a",
+  "publicVerificationFixturePolicy": {
+    "version": "archived-public-verification-fixtures-v1",
+    "registered": [
+      {
+        "case": "real-vision-budget",
+        "path": ".mini-code/agents/visual-judge.md",
+        "sha256": "112882e006b335964130255ed339fd28c54c847376e31d82faccf6a8205e4828",
+        "bytes": 1430
+      }
+    ],
+    "source": "frozen-task-public-files-only",
+    "scope": "disposable-verification-workspace-only",
+    "requiresBeforeAfterDigest": true,
+    "modelSelectable": false,
+    "promotable": false
+  },
+  "publicVerificationFixtures": [],
+  "publicPreflightSha256": "a22673a97a0da299825f85b57f39b14019363c2920fdaef4bae9101cd0abac7d",
+  "publicBaselineHashes": {
+    "trigger-record-pagination": {
+      "minicode/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "minicode/cursors.py": "37f3484a965bec35cb27b98a27e0bd1db2575f3e87c63656d48c9088136b4a36",
+      "minicode/feed.py": "c43c23bd424908a9c7e3a4194da62b2a606d27808dec0ed88bd0f4518d371641",
+      "minicode/records.py": "549b721546523efcea30f63746748079b56011330090470b3f90114f7dd92976",
+      "pytest.ini": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b",
+      "tests/test_public.py": "3ae560a85b6994047cda53a41dfaeb73dba0bdda2b2e5b5f1da05fe52513ad74"
+    },
+    "trigger-import-retry": {
+      "minicode/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "minicode/event_store.py": "0094ef95ecd092c7ed63dd538f95198d1ba3e3e646c72514dd7aee55d0309a86",
+      "minicode/importer.py": "e106a99eac5a1e257ecbae285a3b838b7b38d95028d07f87e4c416975fff6858",
+      "minicode/retry.py": "49b18e8303bbfe9171e205b54d722f60bf4c6e60b660697f6c54a603939c04cb",
+      "pytest.ini": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b",
+      "tests/test_public.py": "b002a1c5f882596ace846350e54a7618614ba9da623d437ad272026d43c9651c"
+    },
+    "trigger-cart-discounts": {
+      "minicode/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "minicode/checkout.py": "39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4",
+      "minicode/discount_rules.py": "ac8bd733e88956f375458335215401eb89eeea2d92e8e012321fd7f8624cdc79",
+      "minicode/pricing.py": "5ebc8ae9b94d282e188f0c72e0e759627c2938f67d047a59c9f91742433d91ee",
+      "pytest.ini": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b",
+      "tests/test_public.py": "7141b87a390230802bcaa1f63450d6f26f5596929e5f35d8489b2edf04076a88"
+    },
+    "trigger-stock-allocation": {
+      "minicode/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "minicode/allocation.py": "8274b9309d1ee4d4165130103cbd73494219fcd089d81523fa004aa7223369e3",
+      "minicode/allocation_report.py": "0853ee414df7f648c31422d29ca2f04a094b746820a27b7c8141aa7201ac87e9",
+      "minicode/stock.py": "b3cae8e9f3280789f3b499b6b1a598a9761f4a64e947decd91e9c01e1c1e5dee",
+      "pytest.ini": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b",
+      "tests/test_public.py": "323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef"
+    },
+    "trigger-report-timezones": {
+      "minicode/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "minicode/daily_report.py": "c5e9dfd877a9d85dde61861405d2c5329bb8d5e20e4c4ea13fd0605425826de6",
+      "minicode/time_window.py": "1631bbbbf104e6048212c963e03a19543de15830211543a04831d6aeda8f592a",
+      "pytest.ini": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b",
+      "tests/test_public.py": "bf258c57d85e7472046ca353291188ab4ada907c748df9bc6b14d76a75b37b19"
+    },
+    "trigger-config-overlay": {
+      "minicode/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "minicode/config_merge.py": "aabe11cf1254c5bfdf681f8970bc1804e67194d412c7b8ecd03e1ec4d803720c",
+      "minicode/settings.py": "3cfec330dfba7c4f443aa105072056ecfbf1022416a18dca2ef0664e1c4c5c3c",
+      "pytest.ini": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b",
+      "tests/test_public.py": "54ed854c15043668635c20fd1642b822ea281862e5cbb3dc508bf6c859657fd3"
+    },
+    "trigger-limit-clamp": {
+      "minicode/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "minicode/limits.py": "d14d3457ae2fea126b7363c1dd3bbe8aae53553b5dc046738bcfe3ecdd6cf845",
+      "pytest.ini": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b",
+      "tests/test_public.py": "09ea60e64e800b31ec40fbf95e499096118c68457cef86b48a89ed783ddfa829"
+    },
+    "trigger-extension-case": {
+      "minicode/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "minicode/formats.py": "18ed93e83dc746b61e844ffb12e0d4ad8cca1649dc7a4c9b5d24915583b34981",
+      "pytest.ini": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b",
+      "tests/test_public.py": "636733bb5991519b7e814a16551b05e5df0e5cc336075bb0b16843b614d65381"
+    }
+  },
+  "oracleHashes": {
+    "trigger-record-pagination": "d2eefb4ba703554ed917ad435effdff27918cc59793da7032a31c545b74ca907",
+    "trigger-import-retry": "10365a3e39ad8bfa4ed0e2de22bf4d7f77d9ed30ccf786082164e4c64c69a7f0",
+    "trigger-cart-discounts": "e71bc9c681c2f4cf1cd417cf41076205f55763ea7a9a811c7224b700796d4c28",
+    "trigger-stock-allocation": "22a7a76dd5e333434c3192f743c57a9ffa9356fe1a78649ad1058da689afe85f",
+    "trigger-report-timezones": "6e3e39b75e12135013d24650ecbdab820818cc03b59a996aaf0badeb55a04ea4",
+    "trigger-config-overlay": "5e2189d08d21dc64c832e9f954fa37caf60e4e0a3c832baefd98f05acad98d5c",
+    "trigger-limit-clamp": "ad219b86586ea28c6222a4b7453efee34b833e7af7b2a23b6690d991a16304ce",
+    "trigger-extension-case": "1644d5cf9f61a37dc57dc2fd91993433ba4bfd22e728e28d2b1a25858278d082"
+  },
+  "registrationFiles": {
+    "analysis-plan.md": "e4cfd7d9daa24c4acb0e1ee49cf6a8cc6bcb7b35ed11a8ad594baa9a795d7766",
+    "environment.json": "523ffa3e857a045bb38892d6b383dff2668fadadfe9d50e6040ea7b8e4232f1f",
+    "execution-host-inventory.json": "2574ea93d0c258b8a7c93a3fb25e9a9a57366bc6ef76d8434c6cd759adab372f",
+    "execution-host.zip": "a118a493563821da50b8d2e15385f9cdc686ee433c36e44b8f0a3990b88d7d3d",
+    "materials/offline-proof.json": "f9d72889f97194e15c91d97b3009f8142cc3bbc33a0f88ac28a6ece5e5ed757f",
+    "materials/reference-fixes.json": "bde7f50709f870088ceb9ea47577eb72f07b2b9b68f8a66c37f7fe7458d6353f",
+    "materials/source-manifest.json": "115e67fa0c530a3bb8d874943ae528cb49f8beffd304906542b8361fea4d0788",
+    "public-preflight/receipt.json": "a22673a97a0da299825f85b57f39b14019363c2920fdaef4bae9101cd0abac7d",
+    "tasks.json": "78550c227d36e719514f55c3d540a721a11aad8535de34a6a5155d57c8553937"
+  },
+  "guardian": "Shared 600-second execution deadline; 30-second setup; cleanup before common 120-second judge",
+  "tokenBudgetSemantics": "Shared estimate admission; full provider usage retained even if estimates overshoot"
+}

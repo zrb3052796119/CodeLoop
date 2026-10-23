@@ -1,0 +1,20 @@
+{
+  "generation": "trigger-v1",
+  "cases": [
+    {
+      "id": "trigger-stock-allocation",
+      "files": {
+        "minicode/stock.py": "def available_stock(bins):\n    result = {}\n    for item in bins:\n        result[item[\"sku\"]] = result.get(item[\"sku\"], 0) + item[\"quantity\"]\n    return result\n",
+        "minicode/allocation.py": "from minicode.stock import available_stock\n\ndef allocate(bins, requests):\n    stock = available_stock(bins)\n    result = []\n    for request in requests:\n        sku, quantity = request[\"sku\"], request[\"quantity\"]\n        allocated = min(quantity, stock.get(sku, 0))\n        stock[sku] = stock.get(sku, 0) - allocated\n        result.append({\"sku\": sku, \"requested\": quantity,\n                       \"allocated\": allocated, \"shortfall\": quantity - allocated})\n    return result\n",
+        "minicode/allocation_report.py": "def summarize(allocations):\n    result = {}\n    for row in allocations:\n        totals = result.setdefault(row[\"sku\"], {\"requested\": 0, \"allocated\": 0, \"shortfall\": 0})\n        for key in totals:\n            totals[key] += row[key]\n    return result\n"
+      }
+    },
+    {
+      "id": "trigger-config-overlay",
+      "files": {
+        "minicode/config_merge.py": "from copy import deepcopy\n\ndef merge_settings(base, override):\n    result = deepcopy(base)\n    for key, value in override.items():\n        if value is None:\n            continue\n        if isinstance(value, dict) and value:\n            previous = result.get(key)\n            result[key] = merge_settings(previous if isinstance(previous, dict) else {}, value)\n        else:\n            result[key] = deepcopy(value)\n    return result\n",
+        "minicode/settings.py": "from minicode.config_merge import merge_settings\n\ndef load_settings(defaults, file_values, environment):\n    overrides = {}\n    if \"APP_ENABLED\" in environment:\n        value = environment[\"APP_ENABLED\"].strip().lower()\n        if value not in {\"true\", \"false\"}:\n            raise ValueError(\"APP_ENABLED must be true or false\")\n        overrides[\"enabled\"] = value == \"true\"\n    if \"APP_LIMIT\" in environment:\n        overrides[\"limit\"] = int(environment[\"APP_LIMIT\"])\n    if \"APP_TAGS\" in environment:\n        overrides[\"tags\"] = [tag.strip() for tag in environment[\"APP_TAGS\"].split(\",\") if tag.strip()]\n    return merge_settings(merge_settings(defaults, file_values), overrides)\n"
+      }
+    }
+  ]
+}

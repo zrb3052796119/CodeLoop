@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "remoteModelCalls": 0,
+  "frozen": false,
+  "sourceHostCommit": null,
+  "registrationCommit": null,
+  "command": ".venv-acceptance/bin/python -m pytest -q -o addopts= artifacts/native-review-acceptance-2026-10-23/validation-materials/test_bounded_validation.py tests/test_multi_agent_trigger_runner.py tests/test_multi_agent_trigger_audit.py",
+  "result": "107 passed in 8.06s",
+  "newTests": 27,
+  "inheritedTests": 80,
+  "sha256": {
+    "scripts/native_review_bounded_validation.py": "cda645d2c092498611672fd766e869f958b65d43c420adf2973608e3710bd38e",
+    "scripts/audit_native_review_bounded.py": "efb104ff2b079f7c51ff01aa345f4fc10e6b4df697bdf7ba5521ececad9374d6",
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/test_bounded_validation.py": "ade134581f61eebd33146630be590009931fab12108cda453dc4e9208d356dcd"
+  },
+  "logSha256": "108fbf607a13de7a165e55b24d67560c8ac5990350f698b99a5c538d0a30b0a8",
+  "notYetVerified": [
+    "official freeze against source host commit",
+    "independent partial audit of actual frozen manifest",
+    "registration commit byte guard against final registration"
+  ]
+}

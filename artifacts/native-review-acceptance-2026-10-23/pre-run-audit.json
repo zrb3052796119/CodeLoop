@@ -1,0 +1,33 @@
+{
+  "valid": true,
+  "mode": "partial",
+  "expectedTrials": 2,
+  "auditedTrials": 0,
+  "deliveryEvidenceMode": "task_result_owner_ack",
+  "protocolVersion": "native-review-bounded-v1",
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "incomplete_results",
+      "trial": null,
+      "detail": "0/2 terminal rows"
+    }
+  ],
+  "trials": [],
+  "limits": "Only surviving evidence can be audited. No archived code, model request or oracle was executed. Missing usage remains unknown; failed task/protocol outcomes remain valid observations.",
+  "gate": {
+    "passed": false,
+    "conditions": {
+      "validFinalAudit": false,
+      "stockActualNativeReview": false,
+      "stockTerminalDecision": false,
+      "stockWithinLimits": false,
+      "approvedHasAcceptedFinal": true
+    },
+    "stockTerminal": null,
+    "configDescriptiveOnly": true,
+    "repairSuccessIsNotAcceptance": true,
+    "usageVerification": "unverifiable",
+    "usageDoesNotAddAConfigBehavioralGate": true
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "generation": "trigger-v1",
+  "origin": "synthetic",
+  "sharedFiles": {
+    "minicode/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "pytest.ini": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b"
+  },
+  "cases": [
+    {
+      "id": "trigger-stock-allocation",
+      "triggerExpectation": "positive",
+      "sourceBlobs": {
+        "minicode/stock.py": {
+          "baselineSha256": "b3cae8e9f3280789f3b499b6b1a598a9761f4a64e947decd91e9c01e1c1e5dee",
+          "referenceSha256": "27ccf964df93e03f675e7c2aabf710f122cc641ff15a3b63a3c24a6680ca95db"
+        },
+        "minicode/allocation.py": {
+          "baselineSha256": "8274b9309d1ee4d4165130103cbd73494219fcd089d81523fa004aa7223369e3",
+          "referenceSha256": "fb34bfe408a4e3ab242bdc52bbd75f2c6c0d86c7b40cba985160ec151d23e408"
+        },
+        "minicode/allocation_report.py": {
+          "baselineSha256": "0853ee414df7f648c31422d29ca2f04a094b746820a27b7c8141aa7201ac87e9",
+          "referenceSha256": "7ca7d0ae8a4438b24cd18b04a24456b19f82f08ddbfc0c7a4c4a11abd9768a66"
+        }
+      },
+      "publicTestSha256": "323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef",
+      "oracleSha256": "22a7a76dd5e333434c3192f743c57a9ffa9356fe1a78649ad1058da689afe85f"
+    },
+    {
+      "id": "trigger-config-overlay",
+      "triggerExpectation": "positive",
+      "sourceBlobs": {
+        "minicode/config_merge.py": {
+          "baselineSha256": "aabe11cf1254c5bfdf681f8970bc1804e67194d412c7b8ecd03e1ec4d803720c",
+          "referenceSha256": "f4bb4e1da35c3d5b84a01cb0cceab055b5bf85c2d45cb315ab36ff6a1f60ee52"
+        },
+        "minicode/settings.py": {
+          "baselineSha256": "3cfec330dfba7c4f443aa105072056ecfbf1022416a18dca2ef0664e1c4c5c3c",
+          "referenceSha256": "7ed3e90b31ef497e84681c9b0f4f81adccab9e296732cace21b8b1c0dbd4cf71"
+        }
+      },
+      "publicTestSha256": "54ed854c15043668635c20fd1642b822ea281862e5cbb3dc508bf6c859657fd3",
+      "oracleSha256": "5e2189d08d21dc64c832e9f954fa37caf60e4e0a3c832baefd98f05acad98d5c"
+    }
+  ],
+  "offlineProofSha256": "53a83462de415e3a132aacedb344cbda4a25b6e358e51741610dde4d55e0424b",
+  "taskSha256": "2a251d43ca2ecaa7c9f5ffa2a2b2dbce96672f30213ca711dbb56633df7114fb",
+  "referenceFixesSha256": "9dca109e4f945a1109d1c7baca5fce14f316c7e3dde2fd05b1cf9c6d498e60c7",
+  "modelCalls": 0
+}

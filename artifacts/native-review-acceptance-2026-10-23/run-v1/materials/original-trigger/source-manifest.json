@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "generation": "trigger-v1",
+  "origin": "synthetic",
+  "sharedFiles": {
+    "minicode/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "pytest.ini": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b"
+  },
+  "cases": [
+    {
+      "id": "trigger-record-pagination",
+      "triggerExpectation": "positive",
+      "sourceBlobs": {
+        "minicode/records.py": {
+          "baselineSha256": "549b721546523efcea30f63746748079b56011330090470b3f90114f7dd92976",
+          "referenceSha256": "256f35bc72dabcc28299d03adab426e886ad8ffed4b226bc019b1db71e13c234"
+        },
+        "minicode/cursors.py": {
+          "baselineSha256": "37f3484a965bec35cb27b98a27e0bd1db2575f3e87c63656d48c9088136b4a36",
+          "referenceSha256": "ba9739ee68d8e4ea7005984ac0c0eaef14adaf0dad67c9c639ed2f6d0aa13f87"
+        },
+        "minicode/feed.py": {
+          "baselineSha256": "c43c23bd424908a9c7e3a4194da62b2a606d27808dec0ed88bd0f4518d371641",
+          "referenceSha256": "c43c23bd424908a9c7e3a4194da62b2a606d27808dec0ed88bd0f4518d371641"
+        }
+      },
+      "publicTestSha256": "3ae560a85b6994047cda53a41dfaeb73dba0bdda2b2e5b5f1da05fe52513ad74",
+      "oracleSha256": "d2eefb4ba703554ed917ad435effdff27918cc59793da7032a31c545b74ca907"
+    },
+    {
+      "id": "trigger-import-retry",
+      "triggerExpectation": "positive",
+      "sourceBlobs": {
+        "minicode/event_store.py": {
+          "baselineSha256": "0094ef95ecd092c7ed63dd538f95198d1ba3e3e646c72514dd7aee55d0309a86",
+          "referenceSha256": "c2dca88ecca47986d1471f115ba347f11749f12dd8acb215f34c727bc1e207e7"
+        },
+        "minicode/importer.py": {
+          "baselineSha256": "e106a99eac5a1e257ecbae285a3b838b7b38d95028d07f87e4c416975fff6858",
+          "referenceSha256": "dc5af26bbb2e233738246396fabfe8a0c9f93ca35ea673233712a8eb7befc732"
+        },
+        "minicode/retry.py": {
+          "baselineSha256": "49b18e8303bbfe9171e205b54d722f60bf4c6e60b660697f6c54a603939c04cb",
+          "referenceSha256": "6223cc7739257ba0591d01cd883f6a1fc93ff453bfc33f01a31bc280f86de943"
+        }
+      },
+      "publicTestSha256": "b002a1c5f882596ace846350e54a7618614ba9da623d437ad272026d43c9651c",
+      "oracleSha256": "10365a3e39ad8bfa4ed0e2de22bf4d7f77d9ed30ccf786082164e4c64c69a7f0"
+    },
+    {
+      "id": "trigger-cart-discounts",
+      "triggerExpectation": "positive",
+      "sourceBlobs": {
+        "minicode/discount_rules.py": {
+          "baselineSha256": "ac8bd733e88956f375458335215401eb89eeea2d92e8e012321fd7f8624cdc79",
+          "referenceSha256": "ce8497eb79bc0673a30b0c7923c2e50199622a902acbf87d56c6350f715eeeb7"
+        },
+        "minicode/pricing.py": {
+          "baselineSha256": "5ebc8ae9b94d282e188f0c72e0e759627c2938f67d047a59c9f91742433d91ee",
+          "referenceSha256": "9082a568a2ae0627d0db19c92c0f8a2cbebe763335651175672e0c35aa7bad64"
+        },
+        "minicode/checkout.py": {
+          "baselineSha256": "39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4",
+          "referenceSha256": "39e41814b3c20f3edb57a41f205f08a5800cdf1241ff05899ccf7cfe2f9debf4"
+        }
+      },
+      "publicTestSha256": "7141b87a390230802bcaa1f63450d6f26f5596929e5f35d8489b2edf04076a88",
+      "oracleSha256": "e71bc9c681c2f4cf1cd417cf41076205f55763ea7a9a811c7224b700796d4c28"
+    },
+    {
+      "id": "trigger-stock-allocation",
+      "triggerExpectation": "positive",
+      "sourceBlobs": {
+        "minicode/stock.py": {
+          "baselineSha256": "b3cae8e9f3280789f3b499b6b1a598a9761f4a64e947decd91e9c01e1c1e5dee",
+          "referenceSha256": "27ccf964df93e03f675e7c2aabf710f122cc641ff15a3b63a3c24a6680ca95db"
+        },
+        "minicode/allocation.py": {
+          "baselineSha256": "8274b9309d1ee4d4165130103cbd73494219fcd089d81523fa004aa7223369e3",
+          "referenceSha256": "fb34bfe408a4e3ab242bdc52bbd75f2c6c0d86c7b40cba985160ec151d23e408"
+        },
+        "minicode/allocation_report.py": {
+          "baselineSha256": "0853ee414df7f648c31422d29ca2f04a094b746820a27b7c8141aa7201ac87e9",
+          "referenceSha256": "7ca7d0ae8a4438b24cd18b04a24456b19f82f08ddbfc0c7a4c4a11abd9768a66"
+        }
+      },
+      "publicTestSha256": "323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef",
+      "oracleSha256": "22a7a76dd5e333434c3192f743c57a9ffa9356fe1a78649ad1058da689afe85f"
+    },
+    {
+      "id": "trigger-report-timezones",
+      "triggerExpectation": "positive",
+      "sourceBlobs": {
+        "minicode/time_window.py": {
+          "baselineSha256": "1631bbbbf104e6048212c963e03a19543de15830211543a04831d6aeda8f592a",
+          "referenceSha256": "db5f352f53d00582cd996bcccaeb14754a6b6376acf5a49834b33d32dc088a8b"
+        },
+        "minicode/daily_report.py": {
+          "baselineSha256": "c5e9dfd877a9d85dde61861405d2c5329bb8d5e20e4c4ea13fd0605425826de6",
+          "referenceSha256": "6c08fe3d2201500ad5191261f6ca7ba3e93a4cfe8e039271e9ef1c73340ce5a2"
+        }
+      },
+      "publicTestSha256": "bf258c57d85e7472046ca353291188ab4ada907c748df9bc6b14d76a75b37b19",
+      "oracleSha256": "6e3e39b75e12135013d24650ecbdab820818cc03b59a996aaf0badeb55a04ea4"
+    },
+    {
+      "id": "trigger-config-overlay",
+      "triggerExpectation": "positive",
+      "sourceBlobs": {
+        "minicode/config_merge.py": {
+          "baselineSha256": "aabe11cf1254c5bfdf681f8970bc1804e67194d412c7b8ecd03e1ec4d803720c",
+          "referenceSha256": "f4bb4e1da35c3d5b84a01cb0cceab055b5bf85c2d45cb315ab36ff6a1f60ee52"
+        },
+        "minicode/settings.py": {
+          "baselineSha256": "3cfec330dfba7c4f443aa105072056ecfbf1022416a18dca2ef0664e1c4c5c3c",
+          "referenceSha256": "7ed3e90b31ef497e84681c9b0f4f81adccab9e296732cace21b8b1c0dbd4cf71"
+        }
+      },
+      "publicTestSha256": "54ed854c15043668635c20fd1642b822ea281862e5cbb3dc508bf6c859657fd3",
+      "oracleSha256": "5e2189d08d21dc64c832e9f954fa37caf60e4e0a3c832baefd98f05acad98d5c"
+    },
+    {
+      "id": "trigger-limit-clamp",
+      "triggerExpectation": "negative",
+      "sourceBlobs": {
+        "minicode/limits.py": {
+          "baselineSha256": "d14d3457ae2fea126b7363c1dd3bbe8aae53553b5dc046738bcfe3ecdd6cf845",
+          "referenceSha256": "3118d0b8c51eb4173620201367e30fcd460639e3fb694ea13cb3ffb0ae9f2eb8"
+        }
+      },
+      "publicTestSha256": "09ea60e64e800b31ec40fbf95e499096118c68457cef86b48a89ed783ddfa829",
+      "oracleSha256": "ad219b86586ea28c6222a4b7453efee34b833e7af7b2a23b6690d991a16304ce"
+    },
+    {
+      "id": "trigger-extension-case",
+      "triggerExpectation": "negative",
+      "sourceBlobs": {
+        "minicode/formats.py": {
+          "baselineSha256": "18ed93e83dc746b61e844ffb12e0d4ad8cca1649dc7a4c9b5d24915583b34981",
+          "referenceSha256": "ee3842531d3a2881ba1fe9399acf08cf1d588011a3c41a090bc6c9bd3f5dae24"
+        }
+      },
+      "publicTestSha256": "636733bb5991519b7e814a16551b05e5df0e5cc336075bb0b16843b614d65381",
+      "oracleSha256": "1644d5cf9f61a37dc57dc2fd91993433ba4bfd22e728e28d2b1a25858278d082"
+    }
+  ],
+  "offlineProofSha256": "f9d72889f97194e15c91d97b3009f8142cc3bbc33a0f88ac28a6ece5e5ed757f",
+  "taskSha256": "78550c227d36e719514f55c3d540a721a11aad8535de34a6a5155d57c8553937",
+  "referenceFixesSha256": "bde7f50709f870088ceb9ea47577eb72f07b2b9b68f8a66c37f7fe7458d6353f",
+  "modelCalls": 0
+}

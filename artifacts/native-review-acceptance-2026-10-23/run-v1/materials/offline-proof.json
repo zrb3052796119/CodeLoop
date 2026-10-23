@@ -1,0 +1,122 @@
+[
+  {
+    "case": "trigger-stock-allocation",
+    "origin": "synthetic",
+    "oracleSha256": "22a7a76dd5e333434c3192f743c57a9ffa9356fe1a78649ad1058da689afe85f",
+    "publicTestSha256": "323b04094c0190b4578090a128905a87b6c80cd6f9432b622f7beef2eaef0cef",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"actual\": {\"a\": 4, \"b\": 1}, \"expected\": {\"a\": 7, \"b\": 1}, \"label\": \"bin_aggregation\", \"passed\": false}, {\"actual\": [4, 1, 4, 0, 0], \"expected\": [5, 1, 2, 0, 0], \"label\": \"allocation_order_and_consumption\", \"passed\": false}, {\"actual\": [1, 1, 0, 2, 0], \"expected\": [0, 1, 2, 2, 0], \"label\": \"shortfalls\", \"passed\": false}, {\"actual\": {\"a\": {\"allocated\": 0, \"requested\": 0, \"shortfall\": 0}, \"b\": {\"allocated\": 1, \"requested\": 2, \"shortfall\": 1}, \"missing\": {\"allocated\": 0, \"requested\": 2, \"shortfall\": 2}}, \"expected\": {\"a\": {\"allocated\": 7, \"requested\": 9, \"shortfall\": 2}, \"b\": {\"allocated\": 1, \"requested\": 2, \"shortfall\": 1}, \"missing\": {\"allocated\": 0, \"requested\": 2, \"shortfall\": 2}}, \"label\": \"summary_all_rows\", \"passed\": false}, {\"actual\": {\"x\": {\"allocated\": 3, \"requested\": 4, \"shortfall\": 1}}, \"expected\": {\"x\": {\"allocated\": 4, \"requested\": 6, \"shortfall\": 2}}, \"label\": \"independent_summary\", \"passed\": false}, {\"actual\": [[{\"quantity\": 3, \"sku\": \"a\"}, {\"quantity\": 1, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}], [{\"quantity\": 5, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"missing\"}, {\"quantity\": 0, \"sku\": \"a\"}]], \"expected\": [[{\"quantity\": 3, \"sku\": \"a\"}, {\"quantity\": 1, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}], [{\"quantity\": 5, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"missing\"}, {\"quantity\": 0, \"sku\": \"a\"}]], \"label\": \"inputs_unchanged\", \"passed\": true}, {\"actual\": [], \"expected\": [], \"label\": \"empty_allocation\", \"passed\": true}], \"errors\": [\"bin_aggregation\", \"allocation_order_and_consumption\", \"shortfalls\", \"summary_all_rows\", \"independent_summary\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-99sbka2b/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"actual\": {\"a\": 7, \"b\": 1}, \"expected\": {\"a\": 7, \"b\": 1}, \"label\": \"bin_aggregation\", \"passed\": true}, {\"actual\": [5, 1, 2, 0, 0], \"expected\": [5, 1, 2, 0, 0], \"label\": \"allocation_order_and_consumption\", \"passed\": true}, {\"actual\": [0, 1, 2, 2, 0], \"expected\": [0, 1, 2, 2, 0], \"label\": \"shortfalls\", \"passed\": true}, {\"actual\": {\"a\": {\"allocated\": 7, \"requested\": 9, \"shortfall\": 2}, \"b\": {\"allocated\": 1, \"requested\": 2, \"shortfall\": 1}, \"missing\": {\"allocated\": 0, \"requested\": 2, \"shortfall\": 2}}, \"expected\": {\"a\": {\"allocated\": 7, \"requested\": 9, \"shortfall\": 2}, \"b\": {\"allocated\": 1, \"requested\": 2, \"shortfall\": 1}, \"missing\": {\"allocated\": 0, \"requested\": 2, \"shortfall\": 2}}, \"label\": \"summary_all_rows\", \"passed\": true}, {\"actual\": {\"x\": {\"allocated\": 4, \"requested\": 6, \"shortfall\": 2}}, \"expected\": {\"x\": {\"allocated\": 4, \"requested\": 6, \"shortfall\": 2}}, \"label\": \"independent_summary\", \"passed\": true}, {\"actual\": [[{\"quantity\": 3, \"sku\": \"a\"}, {\"quantity\": 1, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}], [{\"quantity\": 5, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"missing\"}, {\"quantity\": 0, \"sku\": \"a\"}]], \"expected\": [[{\"quantity\": 3, \"sku\": \"a\"}, {\"quantity\": 1, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}], [{\"quantity\": 5, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"b\"}, {\"quantity\": 4, \"sku\": \"a\"}, {\"quantity\": 2, \"sku\": \"missing\"}, {\"quantity\": 0, \"sku\": \"a\"}]], \"label\": \"inputs_unchanged\", \"passed\": true}, {\"actual\": [], \"expected\": [], \"label\": \"empty_allocation\", \"passed\": true}], \"errors\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  },
+  {
+    "case": "trigger-config-overlay",
+    "origin": "synthetic",
+    "oracleSha256": "5e2189d08d21dc64c832e9f954fa37caf60e4e0a3c832baefd98f05acad98d5c",
+    "publicTestSha256": "54ed854c15043668635c20fd1642b822ea281862e5cbb3dc508bf6c859657fd3",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"actual\": {\"clear\": {\"old\": 1}, \"db\": {\"timeout\": 0}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, \"expected\": {\"clear\": {}, \"db\": {\"host\": \"db\", \"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}, \"label\": \"falsey_recursive_values\", \"passed\": false}, {\"actual\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": null}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, \"expected\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, \"label\": \"none_keeps_value\", \"passed\": false}, {\"actual\": {\"new\": {\"unset\": null, \"zero\": 0}}, \"expected\": {\"new\": {\"zero\": 0}}, \"label\": \"new_dictionary_none_unset\", \"passed\": false}, {\"actual\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 4, \"name\": \"demo\", \"tags\": [\" \"]}, \"expected\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": false, \"limit\": 0, \"name\": \"demo\", \"tags\": []}, \"label\": \"environment_zero_false_empty\", \"passed\": false}, {\"actual\": {\"tags\": [\" red\", \" \", \" blue\", \"\", \" \"]}, \"expected\": {\"tags\": [\"red\", \"blue\"]}, \"label\": \"tag_whitespace\", \"passed\": false}, {\"actual\": false, \"expected\": true, \"label\": \"invalid_boolean\", \"passed\": false}, {\"actual\": [{\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, {\"clear\": {}, \"db\": {\"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}], \"expected\": [{\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, {\"clear\": {}, \"db\": {\"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}], \"label\": \"inputs_unchanged_and_unaliased\", \"passed\": true}, {\"actual\": {\"new\": {\"items\": [1]}}, \"expected\": {\"new\": {\"items\": [1]}}, \"label\": \"override_nested_unaliased\", \"passed\": true}], \"errors\": [\"falsey_recursive_values\", \"none_keeps_value\", \"new_dictionary_none_unset\", \"environment_zero_false_empty\", \"tag_whitespace\", \"invalid_boolean\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/trigger-proof-agjjjyvx/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"actual\": {\"clear\": {}, \"db\": {\"host\": \"db\", \"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}, \"expected\": {\"clear\": {}, \"db\": {\"host\": \"db\", \"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}, \"label\": \"falsey_recursive_values\", \"passed\": true}, {\"actual\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, \"expected\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, \"label\": \"none_keeps_value\", \"passed\": true}, {\"actual\": {\"new\": {\"zero\": 0}}, \"expected\": {\"new\": {\"zero\": 0}}, \"label\": \"new_dictionary_none_unset\", \"passed\": true}, {\"actual\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": false, \"limit\": 0, \"name\": \"demo\", \"tags\": []}, \"expected\": {\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": false, \"limit\": 0, \"name\": \"demo\", \"tags\": []}, \"label\": \"environment_zero_false_empty\", \"passed\": true}, {\"actual\": {\"tags\": [\"red\", \"blue\"]}, \"expected\": {\"tags\": [\"red\", \"blue\"]}, \"label\": \"tag_whitespace\", \"passed\": true}, {\"actual\": true, \"expected\": true, \"label\": \"invalid_boolean\", \"passed\": true}, {\"actual\": [{\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, {\"clear\": {}, \"db\": {\"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}], \"expected\": [{\"clear\": {\"old\": 1}, \"db\": {\"host\": \"db\", \"timeout\": 3}, \"enabled\": true, \"limit\": 10, \"name\": \"demo\", \"tags\": [\"default\"]}, {\"clear\": {}, \"db\": {\"timeout\": 0}, \"enabled\": false, \"limit\": 0, \"name\": \"\", \"tags\": []}], \"label\": \"inputs_unchanged_and_unaliased\", \"passed\": true}, {\"actual\": {\"new\": {\"items\": [1]}}, \"expected\": {\"new\": {\"items\": [1]}}, \"label\": \"override_nested_unaliased\", \"passed\": true}], \"errors\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  }
+]

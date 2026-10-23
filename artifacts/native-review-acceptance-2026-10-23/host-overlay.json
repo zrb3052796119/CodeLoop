@@ -1,0 +1,17 @@
+{
+  "paths": [
+    "minicode/agent_budget.py",
+    "minicode/workflow_runner.py",
+    "minicode/agent_loop.py",
+    "minicode/anthropic_adapter.py",
+    "minicode/implementation_completion_review.py",
+    "minicode/completion_coverage_inspection.py",
+    "minicode/completion_coverage_audit.py",
+    "minicode/completion_probe_migration.py",
+    "minicode/probe_failure_adjudication.py",
+    "minicode/tooling.py",
+    "minicode/completion_review_limits.py",
+    "scripts/native_review_bounded_validation.py",
+    "scripts/audit_native_review_bounded.py"
+  ]
+}

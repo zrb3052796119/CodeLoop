@@ -1,0 +1,60 @@
+{
+  "baselineArchiveSha256": "a118a493563821da50b8d2e15385f9cdc686ee433c36e44b8f0a3990b88d7d3d",
+  "files": [
+    {
+      "path": "minicode/agent_budget.py",
+      "beforeSha256": "5a12af9fcaa6ea994c6c80509abc306448e0153e7a05b0ed3870d5294ac25693",
+      "afterSha256": "785fb0f91c76262382f83f26975d602f8fc6260d2dd556b1b164ec73cdac7859"
+    },
+    {
+      "path": "minicode/workflow_runner.py",
+      "beforeSha256": "1be7f06c1a60bf60db361d1c165fffe4a432439e195fbb2496f19c3d1195531b",
+      "afterSha256": "cbdd5c7539c29187d70dd6c84ec2785f2e4b709e3e07bbd0a544b246f1143d61"
+    },
+    {
+      "path": "minicode/agent_loop.py",
+      "beforeSha256": "85a0cd49eca519adc7ce165cba6709b5031acf1b478e8e0c6b7a25e36a2d8851",
+      "afterSha256": "59fc797e85183ac53a827ce5134b53a3bc09c238b8cf7caea9b045841340fabb"
+    },
+    {
+      "path": "minicode/anthropic_adapter.py",
+      "beforeSha256": "79972d6fc26d478203d35aed7a9735f473dfbfc184f2653871911f4aa455aafe",
+      "afterSha256": "60fb4bb0f2be7b9bd4285cc8981c03236b02858fd38e7dd77ff171360a65eaef"
+    },
+    {
+      "path": "minicode/implementation_completion_review.py",
+      "beforeSha256": "b19775d19d9a958fa181927ca337bbcbd3a80ce940060334a14da5312ea78351",
+      "afterSha256": "25e97fb424ee50143caf2b21dac64e6beacab3873f1ffbd13fc8c9efe5fa267c"
+    },
+    {
+      "path": "minicode/completion_coverage_inspection.py",
+      "beforeSha256": "3c89254e780a12c351c20ab37172cbb5d71249a428044d9ee8fe2c0112470281",
+      "afterSha256": "0403e0825bc985a3fe196e07115398ce8190bcffff080acf9f03ae210ac42770"
+    },
+    {
+      "path": "minicode/completion_coverage_audit.py",
+      "beforeSha256": "74388fd72a955dd28033e0b82262f7755f38b913f533eb66e7fda142ca657774",
+      "afterSha256": "433733ad252229acb6a16d6513d52716bb2c76c961cbb63f75f3509628c7368b"
+    },
+    {
+      "path": "minicode/completion_probe_migration.py",
+      "beforeSha256": "52eb3834ecca655a67b33d3759bd9a7f4c6e225694a2fdecc6f58ff413fbdcd9",
+      "afterSha256": "486151c3b2170576aac175421e8bff4a7024343fedaedaeb162c24b662741b86"
+    },
+    {
+      "path": "minicode/probe_failure_adjudication.py",
+      "beforeSha256": "4f5cbc8dcc781c1a6db1c00cf290df1b2eb8059ae9bbe65c8df2cf7316852932",
+      "afterSha256": "7d0b966ff08f661291ab38c0d6a72cb9156555dc22346ab19475bccdd3711215"
+    },
+    {
+      "path": "minicode/tooling.py",
+      "beforeSha256": "1224e607d4a6de4e3b2df98725809a19fef6601097626dd51f7b6e145fd7dba5",
+      "afterSha256": "8680bd6bf6f03eca150d31a1a7ee2770b753fb2f562f9d4c0a8b21aa7e860591"
+    },
+    {
+      "path": "minicode/completion_review_limits.py",
+      "beforeSha256": null,
+      "afterSha256": "a3c50802c01ec10375acaba7c006cf941f2d273025d84039d13dd3434f80c176"
+    }
+  ]
+}

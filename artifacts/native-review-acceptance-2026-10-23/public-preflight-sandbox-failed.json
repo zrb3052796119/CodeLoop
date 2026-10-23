@@ -1,0 +1,161 @@
+{
+  "preflightVersion": 1,
+  "passed": false,
+  "taskDocumentSha256": "62bccced92b38289ce25a39bd1471525c562e884ef0ddb7dbe86c48b1870d650",
+  "policy": {
+    "version": "archived-public-verification-fixtures-v1",
+    "registered": [
+      {
+        "case": "real-vision-budget",
+        "path": ".mini-code/agents/visual-judge.md",
+        "sha256": "112882e006b335964130255ed339fd28c54c847376e31d82faccf6a8205e4828",
+        "bytes": 1430
+      }
+    ],
+    "source": "frozen-task-public-files-only",
+    "scope": "disposable-verification-workspace-only",
+    "requiresBeforeAfterDigest": true,
+    "modelSelectable": false,
+    "promotable": false
+  },
+  "fixtures": [],
+  "cases": [
+    {
+      "case": "trigger-stock-allocation",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "inconclusive",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_3ebaf182ebd609d0e781c5c8",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_trigger_stock_allocation",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "inconclusive",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "inconclusive",
+            "exitCode": null,
+            "durationMs": 1,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "inconclusive",
+          "exitCode": null,
+          "durationMs": 1,
+          "failureReason": "host_sandbox_unavailable",
+          "stdout": {
+            "byteCount": 0,
+            "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "preview": "",
+            "previewBase64": "",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 0,
+            "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "preview": "",
+            "previewBase64": "",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": null,
+      "reason": "host_pytest_report_unavailable"
+    },
+    {
+      "case": "trigger-config-overlay",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "status": "inconclusive",
+      "verification": {
+        "verificationVersion": 1,
+        "resultType": "VerificationResult.v1",
+        "verificationId": "verification_720e351ed25379c0e7949529",
+        "workflowId": "wf_public_preflight",
+        "taskId": "task_trigger_config_overlay",
+        "executionAssignmentId": "asg_public_preflight",
+        "patchDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "inconclusive",
+        "checks": [
+          {
+            "checkId": "public_existing",
+            "kind": "tests",
+            "status": "inconclusive",
+            "exitCode": null,
+            "durationMs": 0,
+            "artifactRef": "artifact_verification_5ef73d35cb614c1c4510c033"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidenceVersion": 1,
+          "checkId": "public_existing",
+          "kind": "tests",
+          "argv": [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_public.py"
+          ],
+          "resolvedExecutable": "/usr/bin/python3",
+          "commandDigest": "sha256:d21a942e725584809f019519ff5edcda099cbad3cdafe97a9c70eb98fb9d1583",
+          "status": "inconclusive",
+          "exitCode": null,
+          "durationMs": 0,
+          "failureReason": "host_sandbox_unavailable",
+          "stdout": {
+            "byteCount": 0,
+            "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "preview": "",
+            "previewBase64": "",
+            "truncated": false
+          },
+          "stderr": {
+            "byteCount": 0,
+            "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "preview": "",
+            "previewBase64": "",
+            "truncated": false
+          }
+        }
+      ],
+      "fixtureReceipts": [],
+      "pytestReport": null,
+      "reason": "host_pytest_report_unavailable"
+    }
+  ],
+  "pytestReportRequired": true
+}

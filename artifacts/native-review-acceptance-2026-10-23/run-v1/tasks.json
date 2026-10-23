@@ -1,0 +1,91 @@
+{
+  "generation": "trigger-v1",
+  "shared_files": {
+    "minicode/__init__.py": "",
+    "pytest.ini": "[pytest]\naddopts =\n"
+  },
+  "cases": [
+    {
+      "id": "trigger-stock-allocation",
+      "category": "stock-allocation-report",
+      "prompt": "Make warehouse allocation and its summary agree when a SKU occurs more than\nonce. Bins and requests contain string sku and nonnegative integer quantity.\navailable_stock must sum all bins for the same SKU. allocate must process\nrequest lines in input order, consuming that shared available stock, retaining\none output row per request, with requested, allocated and shortfall values.\nUnknown SKUs allocate zero; zero quantities and empty inputs are valid.\nsummarize must aggregate all allocation rows by SKU, adding each of requested,\nallocated and shortfall; it must not overwrite earlier request lines. Preserve\npublic function signatures and return shapes. Allocation must never overdraw\nstock or modify the supplied bins or requests.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/stock.py, minicode/allocation.py, minicode/allocation_report.py, tests/test_eval_regression.py.",
+      "files": {
+        "minicode/stock.py": "def available_stock(bins):\n    return {item[\"sku\"]: item[\"quantity\"] for item in bins}\n",
+        "minicode/allocation.py": "from minicode.stock import available_stock\n\ndef allocate(bins, requests):\n    stock = available_stock(bins)\n    result = []\n    for request in requests:\n        sku, quantity = request[\"sku\"], request[\"quantity\"]\n        allocated = min(quantity, stock.get(sku, 0))\n        result.append({\"sku\": sku, \"requested\": quantity,\n                       \"allocated\": allocated, \"shortfall\": quantity - allocated})\n    return result\n",
+        "minicode/allocation_report.py": "def summarize(allocations):\n    return {row[\"sku\"]: {key: row[key] for key in (\"requested\", \"allocated\", \"shortfall\")}\n            for row in allocations}\n",
+        "tests/test_public.py": "from minicode.stock import available_stock\nfrom minicode.allocation import allocate\nfrom minicode.allocation_report import summarize\n\ndef test_single_bin_request():\n    bins = [{\"sku\": \"a\", \"quantity\": 5}]\n    assert available_stock(bins) == {\"a\": 5}\n    rows = allocate(bins, [{\"sku\": \"a\", \"quantity\": 2}])\n    assert summarize(rows) == {\"a\": {\"requested\": 2, \"allocated\": 2, \"shortfall\": 0}}\n\ndef test_empty():\n    assert allocate([], []) == []\n    assert summarize([]) == {}\n"
+      },
+      "authorized_paths": [
+        "minicode/stock.py",
+        "minicode/allocation.py",
+        "minicode/allocation_report.py",
+        "tests/test_eval_regression.py"
+      ],
+      "verification_argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "sourcePaths": [
+        "minicode/stock.py",
+        "minicode/allocation.py",
+        "minicode/allocation_report.py"
+      ],
+      "oracle_source": "from copy import deepcopy\nimport json\nfrom pathlib import Path\nimport sys\n\nworkspace = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(workspace))\nimport minicode\nassert Path(minicode.__file__).resolve().is_relative_to(workspace)\nchecks = []\n\ndef check(label, actual, expected):\n    checks.append({\"label\": label, \"actual\": deepcopy(actual), \"expected\": deepcopy(expected),\n                   \"passed\": actual == expected})\n\ndef raises_value_error(function):\n    try:\n        function()\n    except ValueError:\n        return True\n    return False\n\nfrom copy import deepcopy\nfrom minicode.stock import available_stock\nfrom minicode.allocation import allocate\nfrom minicode.allocation_report import summarize\nbins = [{\"sku\": \"a\", \"quantity\": 3}, {\"sku\": \"b\", \"quantity\": 1}, {\"sku\": \"a\", \"quantity\": 4}]\nrequests = [{\"sku\": \"a\", \"quantity\": 5}, {\"sku\": \"b\", \"quantity\": 2},\n            {\"sku\": \"a\", \"quantity\": 4}, {\"sku\": \"missing\", \"quantity\": 2}, {\"sku\": \"a\", \"quantity\": 0}]\nbefore = deepcopy((bins, requests))\ncheck(\"bin_aggregation\", available_stock(bins), {\"a\": 7, \"b\": 1})\nrows = allocate(bins, requests)\ncheck(\"allocation_order_and_consumption\", [r[\"allocated\"] for r in rows], [5, 1, 2, 0, 0])\ncheck(\"shortfalls\", [r[\"shortfall\"] for r in rows], [0, 1, 2, 2, 0])\ncheck(\"summary_all_rows\", summarize(rows), {\"a\": {\"requested\": 9, \"allocated\": 7, \"shortfall\": 2}, \"b\": {\"requested\": 2, \"allocated\": 1, \"shortfall\": 1}, \"missing\": {\"requested\": 2, \"allocated\": 0, \"shortfall\": 2}})\nexplicit_rows = [{\"sku\": \"x\", \"requested\": 2, \"allocated\": 1, \"shortfall\": 1}, {\"sku\": \"x\", \"requested\": 4, \"allocated\": 3, \"shortfall\": 1}]\ncheck(\"independent_summary\", summarize(explicit_rows), {\"x\": {\"requested\": 6, \"allocated\": 4, \"shortfall\": 2}})\ncheck(\"inputs_unchanged\", (bins, requests), before)\ncheck(\"empty_allocation\", allocate([], []), [])\n\nfor name, module in tuple(sys.modules.items()):\n    if name.startswith(\"minicode.\") and getattr(module, \"__file__\", None):\n        assert Path(module.__file__).resolve().is_relative_to(workspace), name\nerrors = [item[\"label\"] for item in checks if not item[\"passed\"]]\nprint(json.dumps({\"passed\": not errors, \"errors\": errors, \"checks\": checks},\n                 ensure_ascii=False, sort_keys=True))\nraise SystemExit(1 if errors else 0)\n",
+      "triggerExpectation": "positive",
+      "provenance": {
+        "origin": "synthetic",
+        "generation": "trigger-v1",
+        "behaviorBoundaries": [
+          "bin-to-stock aggregation",
+          "sequential stock consumption",
+          "per-SKU reporting"
+        ],
+        "expectationRationale": "Distinct contracts can be investigated separately; direct execution remains valid.",
+        "notHistoricalReplay": true,
+        "distinctFromGen2": "No source-coordinate, registry-lifetime, or model-request-budget defect."
+      }
+    },
+    {
+      "id": "trigger-config-overlay",
+      "category": "settings-overlay",
+      "prompt": "Repair the configuration overlay contract shared by config_merge and settings.\nPrecedence is defaults, then file_values, then recognized environment variables.\nmerge_settings recursively merges nonempty dictionaries, retaining unspecified\nnested defaults; an explicit empty dictionary clears that value. None means\n'unset, keep the previous value'. False, 0, empty strings and empty lists are\nexplicit values and must override defaults. Return independent data without\nmodifying or sharing mutable nested objects with either input.\nRecursive rules also apply to newly introduced dictionaries: a None entry with\nno previous value is omitted, while explicit empty dictionaries still clear.\nload_settings recognizes APP_ENABLED (trimmed, case-insensitive true/false;\nother values raise ValueError), APP_LIMIT (an integer string, including zero),\nand APP_TAGS (comma-separated trimmed tags, dropping empty entries; blank means\nan empty list). Ignore unknown environment names. Preserve these public APIs.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/config_merge.py, minicode/settings.py, tests/test_eval_regression.py.",
+      "files": {
+        "minicode/config_merge.py": "from copy import deepcopy\n\ndef merge_settings(base, override):\n    result = deepcopy(base)\n    for key, value in override.items():\n        if value:\n            result[key] = deepcopy(value)\n    return result\n",
+        "minicode/settings.py": "from minicode.config_merge import merge_settings\n\ndef load_settings(defaults, file_values, environment):\n    overrides = {}\n    if \"APP_ENABLED\" in environment:\n        overrides[\"enabled\"] = bool(environment[\"APP_ENABLED\"])\n    if \"APP_LIMIT\" in environment:\n        overrides[\"limit\"] = int(environment[\"APP_LIMIT\"])\n    if \"APP_TAGS\" in environment:\n        overrides[\"tags\"] = environment[\"APP_TAGS\"].split(\",\")\n    return merge_settings(merge_settings(defaults, file_values), overrides)\n",
+        "tests/test_public.py": "from minicode.config_merge import merge_settings\nfrom minicode.settings import load_settings\n\ndef test_ordinary_values_and_precedence():\n    assert merge_settings({\"limit\": 3}, {\"limit\": 5}) == {\"limit\": 5}\n    assert load_settings({\"enabled\": False, \"limit\": 3}, {\"limit\": 5}, {\"APP_ENABLED\": \"true\", \"APP_LIMIT\": \"8\"}) == {\"enabled\": True, \"limit\": 8}\n\ndef test_missing_values_keep_defaults():\n    assert load_settings({\"limit\": 3}, {}, {\"UNRELATED\": \"9\"}) == {\"limit\": 3}\n"
+      },
+      "authorized_paths": [
+        "minicode/config_merge.py",
+        "minicode/settings.py",
+        "tests/test_eval_regression.py"
+      ],
+      "verification_argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_public.py"
+      ],
+      "sourcePaths": [
+        "minicode/config_merge.py",
+        "minicode/settings.py"
+      ],
+      "oracle_source": "from copy import deepcopy\nimport json\nfrom pathlib import Path\nimport sys\n\nworkspace = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(workspace))\nimport minicode\nassert Path(minicode.__file__).resolve().is_relative_to(workspace)\nchecks = []\n\ndef check(label, actual, expected):\n    checks.append({\"label\": label, \"actual\": deepcopy(actual), \"expected\": deepcopy(expected),\n                   \"passed\": actual == expected})\n\ndef raises_value_error(function):\n    try:\n        function()\n    except ValueError:\n        return True\n    return False\n\nfrom copy import deepcopy\nfrom minicode.config_merge import merge_settings\nfrom minicode.settings import load_settings\nbase = {\"enabled\": True, \"limit\": 10, \"tags\": [\"default\"], \"name\": \"demo\", \"db\": {\"host\": \"db\", \"timeout\": 3}, \"clear\": {\"old\": 1}}\noverride = {\"enabled\": False, \"limit\": 0, \"tags\": [], \"name\": \"\", \"db\": {\"timeout\": 0}, \"clear\": {}}\nbefore = deepcopy((base, override))\nexpected = {\"enabled\": False, \"limit\": 0, \"tags\": [], \"name\": \"\", \"db\": {\"host\": \"db\", \"timeout\": 0}, \"clear\": {}}\ncheck(\"falsey_recursive_values\", merge_settings(base, override), expected)\ncheck(\"none_keeps_value\", merge_settings(base, {\"limit\": None, \"db\": {\"host\": None}}), base)\ncheck(\"new_dictionary_none_unset\", merge_settings({}, {\"new\": {\"unset\": None, \"zero\": 0}}), {\"new\": {\"zero\": 0}})\nenv = {\"APP_ENABLED\": \" FaLsE \", \"APP_LIMIT\": \"0\", \"APP_TAGS\": \" \", \"UNKNOWN\": \"ignored\"}\ncheck(\"environment_zero_false_empty\", load_settings(base, {\"limit\": 4}, env), {**base, \"enabled\": False, \"limit\": 0, \"tags\": []})\ncheck(\"tag_whitespace\", load_settings({}, {}, {\"APP_TAGS\": \" red, , blue,, \"}), {\"tags\": [\"red\", \"blue\"]})\ncheck(\"invalid_boolean\", raises_value_error(lambda: load_settings({}, {}, {\"APP_ENABLED\": \"yes\"})), True)\nmerged = merge_settings(base, {\"db\": {\"port\": 9000}})\nmerged[\"db\"][\"host\"] = \"changed\"\nmerged[\"tags\"].append(\"changed\")\ncheck(\"inputs_unchanged_and_unaliased\", (base, override), before)\nnew_values = {\"new\": {\"items\": [1]}}\ncopied_values = deepcopy(new_values)\nfrom_override = merge_settings({}, new_values)\nfrom_override[\"new\"][\"items\"].append(2)\ncheck(\"override_nested_unaliased\", new_values, copied_values)\n\nfor name, module in tuple(sys.modules.items()):\n    if name.startswith(\"minicode.\") and getattr(module, \"__file__\", None):\n        assert Path(module.__file__).resolve().is_relative_to(workspace), name\nerrors = [item[\"label\"] for item in checks if not item[\"passed\"]]\nprint(json.dumps({\"passed\": not errors, \"errors\": errors, \"checks\": checks},\n                 ensure_ascii=False, sort_keys=True))\nraise SystemExit(1 if errors else 0)\n",
+      "triggerExpectation": "positive",
+      "provenance": {
+        "origin": "synthetic",
+        "generation": "trigger-v1",
+        "behaviorBoundaries": [
+          "recursive value-preserving merge",
+          "environment decoding and layer precedence"
+        ],
+        "expectationRationale": "Distinct contracts can be investigated separately; direct execution remains valid.",
+        "notHistoricalReplay": true,
+        "distinctFromGen2": "No source-coordinate, registry-lifetime, or model-request-budget defect."
+      }
+    }
+  ]
+}

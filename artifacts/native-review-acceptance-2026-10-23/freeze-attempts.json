@@ -1,0 +1,18 @@
+[
+  {
+    "attempt": 1,
+    "modelCalls": 0,
+    "sourceHostCommit": "c9002748014a507b1bb86d0202cfffa2e77d43e0",
+    "result": "public baseline preflight failed",
+    "cause": "outer sandbox prevents existing verifier sandbox capability; host_sandbox_unavailable",
+    "evidence": "public-preflight-sandbox-failed.json"
+  },
+  {
+    "attempt": 2,
+    "modelCalls": 0,
+    "result": "frozen",
+    "publicPreflightPassed": true,
+    "environmentUnchanged": true,
+    "sourceHostCommit": "c9002748014a507b1bb86d0202cfffa2e77d43e0"
+  }
+]
