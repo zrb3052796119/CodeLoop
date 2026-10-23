@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "passed": false,
+  "conditions": {
+    "triggerProtocolAndFrozenPolicy": true,
+    "eightTerminalCells": true,
+    "validFinalIndependentAudit": true,
+    "cleanScopeUsageAndCleanup": false,
+    "atLeastTwoDeliveredTriggers": false,
+    "negativeLaunchClassificationComplete": true,
+    "zeroNegativeLaunchRequests": true
+  },
+  "countsVerified": true,
+  "verifiedDeliveredTriggerTrials": 0,
+  "verifiedRepairCount": 6,
+  "triggerRateDenominator": 8,
+  "deliveredTriggerTrials": 0,
+  "triggerRate": 0.0,
+  "deliveredCases": [],
+  "negativeLaunchRequests": 0,
+  "knownNegativeLaunchRequests": 0,
+  "realRepairCount": 6,
+  "interpretation": "Selective adoption on this frozen synthetic population only. Invalid/missing cells remain in denominator and block passage. Repair success is separate; no causal before/after or single-agent superiority claim.",
+  "manifestSha256": "a740668dd53ca4ce15b1f07156ae498ee335b2c8873c5ff5b5b344d83b1d91ab",
+  "resultsSha256": "85d996f5b2a5b900b5b15147e608e5f6c90d454686830c6b8fa52f1a9dcfcdd0",
+  "auditSha256": "0a39ea9c9c0e626e784c4187cfaab200dd7257cf578e60a84d1711406eee010c"
+}

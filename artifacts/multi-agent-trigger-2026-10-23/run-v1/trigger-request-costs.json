@@ -1,0 +1,12 @@
+{
+  "byRoleGroup": {
+    "parentIncludingNativeReviews": {
+      "requests": 109,
+      "knownTokens": 1442172,
+      "unknownUsageRequests": 13,
+      "requestSeconds": 3201.724424493499,
+      "missingDurationRequests": 3
+    }
+  },
+  "interpretation": "Known tokens are lower bounds when usage is unknown. Request seconds may overlap and are not phase wall time. Native read-only reviews remain in main cost, never counted as task adoption."
+}

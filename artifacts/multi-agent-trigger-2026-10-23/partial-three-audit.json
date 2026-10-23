@@ -1,0 +1,1229 @@
+{
+  "schemaVersion": 1,
+  "run": "run-v1",
+  "manifestSha256": "a740668dd53ca4ce15b1f07156ae498ee335b2c8873c5ff5b5b344d83b1d91ab",
+  "audit": {
+    "valid": true,
+    "mode": "partial",
+    "expectedTrials": 8,
+    "auditedTrials": 3,
+    "deliveryEvidenceMode": "task_result_owner_ack",
+    "protocolVersion": "multi-agent-trigger-v1",
+    "issues": [
+      {
+        "severity": "warning",
+        "code": "incomplete_results",
+        "trial": null,
+        "detail": "3/8 terminal rows"
+      },
+      {
+        "severity": "warning",
+        "code": "missing_budget_snapshot",
+        "trial": "trigger-config-overlay-r1-auto",
+        "detail": "Hard-stop recovery may lack settled production budget; provider ledger remains authoritative"
+      },
+      {
+        "severity": "warning",
+        "code": "missing_budget_snapshot",
+        "trial": "trigger-record-pagination-r1-auto",
+        "detail": "Hard-stop recovery may lack settled production budget; provider ledger remains authoritative"
+      },
+      {
+        "severity": "warning",
+        "code": "missing_budget_snapshot",
+        "trial": "trigger-stock-allocation-r1-auto",
+        "detail": "Hard-stop recovery may lack settled production budget; provider ledger remains authoritative"
+      },
+      {
+        "severity": "warning",
+        "code": "unfinalized_ledger",
+        "trial": "trigger-limit-clamp-r1-auto",
+        "detail": "Retain and recover requests; do not rerun this trial"
+      }
+    ],
+    "trials": [
+      {
+        "id": "trigger-stock-allocation-r1-auto",
+        "arm": "auto",
+        "modelCalls": 19,
+        "unknownUsageCalls": 1,
+        "inputTokens": 288727,
+        "outputTokens": 30492,
+        "cacheReadTokens": 155456,
+        "tokenUsageComplete": false,
+        "cacheUsageComplete": false,
+        "usageComplete": false,
+        "failedCalls": 0,
+        "inFlightCalls": 1,
+        "knownCostLowerBoundCny": 0.22774928000000003,
+        "estimatedCostCny": null,
+        "totalTokens": 319219,
+        "success": true,
+        "protocolSatisfied": false,
+        "recomputedCollaboration": {
+          "actualLeafRuns": 0,
+          "leafModelCalls": 0,
+          "deliveredLeafResults": 0,
+          "successfulLeafRuns": 0,
+          "readAnalysisLeafRuns": 0,
+          "implementationLeafRuns": 0,
+          "collaborationExecuted": false,
+          "collaborationProtocolSatisfied": false,
+          "deliveredWorkflowResults": 0,
+          "actualAnalystLeafRuns": 0,
+          "deliveredAnalystLeafResults": 0,
+          "externalAnalysisLeafRuns": 0,
+          "externalLeafRuns": 0
+        },
+        "diagnostics": {
+          "stopEvidence": [
+            {
+              "code": "guardian_hard_stop",
+              "source": "process-cleanup.json",
+              "evidence": 1792720666.826077,
+              "authority": "host_guardian"
+            },
+            {
+              "code": "host_exception",
+              "source": "trial.errorClass",
+              "evidence": "HardTimeout",
+              "authority": "host_result"
+            }
+          ],
+          "terminalOutcomes": [],
+          "originalErrorClass": "HardTimeout"
+        },
+        "admissionRejectedCount": 0,
+        "validatedAdmissionRejections": 0,
+        "case": "trigger-stock-allocation",
+        "repeat": 1,
+        "scopePassed": true,
+        "triggerEvidence": {
+          "launchRequests": 0,
+          "launches": [],
+          "controlRequests": 0,
+          "ambiguousTaskRequests": 0,
+          "ambiguous": [],
+          "unresolvedParentCalls": [],
+          "launchClassificationComplete": true,
+          "nativeReviewCalls": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ],
+          "actualChildIds": [],
+          "deliveredChildIds": [],
+          "deliveredTrigger": false,
+          "queuedCancellationAckIds": []
+        },
+        "guidanceEvidence": {
+          "requests": [
+            {
+              "call": 1,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "list_files",
+                "read_file",
+                "read_file",
+                "read_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 2,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "edit_file",
+                "edit_file",
+                "edit_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 3,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "write_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 4,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 5,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "list_files",
+                "file_tree"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 6,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 7,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "grep_files",
+                "list_files"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 8,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "review_test"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 9,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "review_test"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 10,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "completion_review_submit"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 11,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "list_files",
+                "file_tree"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 12,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 13,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "review_test",
+                "review_test",
+                "review_test",
+                "review_test"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 14,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "grep_files"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 15,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "completion_coverage_inspection_submit"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 16,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "completion_coverage_inspection_submit"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 17,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "completion_coverage_inspection_submit"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 18,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "review_evidence_read",
+                "review_evidence_read",
+                "review_probe_read"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 19,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [],
+              "responseEvent": "started",
+              "launchRequests": 0
+            }
+          ],
+          "dynamicHintObserved": false,
+          "firstDynamicHintCall": null,
+          "firstHintResponseTools": null,
+          "launchAtOrAfterFirstHint": null,
+          "interpretation": "Observed presentation and subsequent choices only; no causal or unexpressed-intent inference."
+        }
+      },
+      {
+        "id": "trigger-config-overlay-r1-auto",
+        "arm": "auto",
+        "modelCalls": 10,
+        "unknownUsageCalls": 2,
+        "inputTokens": 90693,
+        "outputTokens": 19704,
+        "cacheReadTokens": 18496,
+        "tokenUsageComplete": false,
+        "cacheUsageComplete": false,
+        "usageComplete": false,
+        "failedCalls": 1,
+        "inFlightCalls": 1,
+        "knownCostLowerBoundCny": 0.11718287999999999,
+        "estimatedCostCny": null,
+        "totalTokens": 110397,
+        "success": true,
+        "protocolSatisfied": false,
+        "recomputedCollaboration": {
+          "actualLeafRuns": 0,
+          "leafModelCalls": 0,
+          "deliveredLeafResults": 0,
+          "successfulLeafRuns": 0,
+          "readAnalysisLeafRuns": 0,
+          "implementationLeafRuns": 0,
+          "collaborationExecuted": false,
+          "collaborationProtocolSatisfied": false,
+          "deliveredWorkflowResults": 0,
+          "actualAnalystLeafRuns": 0,
+          "deliveredAnalystLeafResults": 0,
+          "externalAnalysisLeafRuns": 0,
+          "externalLeafRuns": 0
+        },
+        "diagnostics": {
+          "stopEvidence": [
+            {
+              "code": "guardian_hard_stop",
+              "source": "process-cleanup.json",
+              "evidence": 1792721268.840844,
+              "authority": "host_guardian"
+            },
+            {
+              "code": "request_failure",
+              "source": "transport.sqlite",
+              "call": 5,
+              "evidence": "IncompleteRead",
+              "authority": "transport"
+            },
+            {
+              "code": "host_exception",
+              "source": "trial.errorClass",
+              "evidence": "HardTimeout",
+              "authority": "host_result"
+            }
+          ],
+          "terminalOutcomes": [],
+          "originalErrorClass": "HardTimeout"
+        },
+        "admissionRejectedCount": 0,
+        "validatedAdmissionRejections": 0,
+        "case": "trigger-config-overlay",
+        "repeat": 1,
+        "scopePassed": true,
+        "triggerEvidence": {
+          "launchRequests": 0,
+          "launches": [],
+          "controlRequests": 0,
+          "ambiguousTaskRequests": 0,
+          "ambiguous": [],
+          "unresolvedParentCalls": [
+            5
+          ],
+          "launchClassificationComplete": false,
+          "nativeReviewCalls": [
+            8,
+            9,
+            10
+          ],
+          "actualChildIds": [],
+          "deliveredChildIds": [],
+          "deliveredTrigger": false,
+          "queuedCancellationAckIds": []
+        },
+        "guidanceEvidence": {
+          "requests": [
+            {
+              "call": 1,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 2,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "list_files",
+                "read_file",
+                "read_file",
+                "read_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 3,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "read_file",
+                "list_files"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 4,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "write_file",
+                "write_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 5,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [],
+              "responseEvent": "failed",
+              "launchRequests": 0
+            },
+            {
+              "call": 6,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "write_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 7,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 8,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "list_files",
+                "file_tree"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 9,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 10,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [],
+              "responseEvent": "started",
+              "launchRequests": 0
+            }
+          ],
+          "dynamicHintObserved": false,
+          "firstDynamicHintCall": null,
+          "firstHintResponseTools": null,
+          "launchAtOrAfterFirstHint": null,
+          "interpretation": "Observed presentation and subsequent choices only; no causal or unexpressed-intent inference."
+        }
+      },
+      {
+        "id": "trigger-record-pagination-r1-auto",
+        "arm": "auto",
+        "modelCalls": 20,
+        "unknownUsageCalls": 1,
+        "inputTokens": 273508,
+        "outputTokens": 26628,
+        "cacheReadTokens": 168832,
+        "tokenUsageComplete": false,
+        "cacheUsageComplete": false,
+        "usageComplete": false,
+        "failedCalls": 1,
+        "inFlightCalls": 0,
+        "knownCostLowerBoundCny": 0.19713055999999995,
+        "estimatedCostCny": null,
+        "totalTokens": 300136,
+        "success": true,
+        "protocolSatisfied": false,
+        "recomputedCollaboration": {
+          "actualLeafRuns": 0,
+          "leafModelCalls": 0,
+          "deliveredLeafResults": 0,
+          "successfulLeafRuns": 0,
+          "readAnalysisLeafRuns": 0,
+          "implementationLeafRuns": 0,
+          "collaborationExecuted": false,
+          "collaborationProtocolSatisfied": false,
+          "deliveredWorkflowResults": 0,
+          "actualAnalystLeafRuns": 0,
+          "deliveredAnalystLeafResults": 0,
+          "externalAnalysisLeafRuns": 0,
+          "externalLeafRuns": 0
+        },
+        "diagnostics": {
+          "stopEvidence": [
+            {
+              "code": "guardian_hard_stop",
+              "source": "process-cleanup.json",
+              "evidence": 1792721871.011892,
+              "authority": "host_guardian"
+            },
+            {
+              "code": "request_deadline_global",
+              "timing": {
+                "requestDeadlineEpoch": 1792721871.0081615,
+                "startedEpoch": 1792721862.198624,
+                "seconds": 8.811434166040272,
+                "executionDeadlineEpoch": 1792721871.007533,
+                "requestTimeoutSeconds": 300
+              },
+              "boundaryEvidence": "request_deadline_matches_global_remaining_time",
+              "source": "transport.sqlite",
+              "call": 20,
+              "evidence": "ModelCallDeadlineExceeded",
+              "authority": "transport"
+            },
+            {
+              "code": "host_exception",
+              "source": "trial.errorClass",
+              "evidence": "HardTimeout",
+              "authority": "host_result"
+            }
+          ],
+          "terminalOutcomes": [],
+          "originalErrorClass": "HardTimeout"
+        },
+        "admissionRejectedCount": 0,
+        "validatedAdmissionRejections": 0,
+        "case": "trigger-record-pagination",
+        "repeat": 1,
+        "scopePassed": true,
+        "triggerEvidence": {
+          "launchRequests": 0,
+          "launches": [],
+          "controlRequests": 0,
+          "ambiguousTaskRequests": 0,
+          "ambiguous": [],
+          "unresolvedParentCalls": [],
+          "launchClassificationComplete": true,
+          "nativeReviewCalls": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20
+          ],
+          "actualChildIds": [],
+          "deliveredChildIds": [],
+          "deliveredTrigger": false,
+          "queuedCancellationAckIds": []
+        },
+        "guidanceEvidence": {
+          "requests": [
+            {
+              "call": 1,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "todo_write",
+                "read_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 2,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "edit_file",
+                "edit_file",
+                "write_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 3,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "edit_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 4,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "todo_write"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 5,
+              "taskAvailable": true,
+              "directWriteAvailable": true,
+              "staticSystemGuidePresent": true,
+              "staticTaskGuidePresent": true,
+              "requestKind": "parent",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 6,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "list_files",
+                "file_tree"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 7,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 8,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "read_file",
+                "find_symbols"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 9,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "review_test",
+                "review_test",
+                "review_test"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 10,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "review_test"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 11,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "review_test"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 12,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "review_test"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 13,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "completion_review_submit"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 14,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "completion_review_submit"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 15,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "list_files",
+                "file_tree"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 16,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "read_file",
+                "read_file",
+                "read_file",
+                "read_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 17,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "read_file",
+                "read_file"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 18,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "read_file",
+                "grep_files"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 19,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [
+                "grep_files",
+                "grep_files"
+              ],
+              "responseEvent": "completed",
+              "launchRequests": 0
+            },
+            {
+              "call": 20,
+              "taskAvailable": false,
+              "directWriteAvailable": false,
+              "staticSystemGuidePresent": false,
+              "staticTaskGuidePresent": false,
+              "requestKind": "nativeReview",
+              "dynamicHintPresent": false,
+              "hintCopiedToRestrictedView": false,
+              "responseTools": [],
+              "responseEvent": "failed",
+              "launchRequests": 0
+            }
+          ],
+          "dynamicHintObserved": false,
+          "firstDynamicHintCall": null,
+          "firstHintResponseTools": null,
+          "launchAtOrAfterFirstHint": null,
+          "interpretation": "Observed presentation and subsequent choices only; no causal or unexpressed-intent inference."
+        }
+      }
+    ],
+    "limits": "Only surviving evidence can be audited. No archived code, model request or oracle was executed. Missing usage remains unknown; failed task/protocol outcomes remain valid observations."
+  },
+  "trialSummary": [
+    {
+      "case": "trigger-stock-allocation",
+      "id": "trigger-stock-allocation-r1-auto",
+      "repairSuccess": true,
+      "durationSeconds": 600.0036509037018,
+      "errorClass": "HardTimeout",
+      "scopePassed": true,
+      "cleanupComplete": true,
+      "modelCalls": 19,
+      "knownTokens": 319219,
+      "usageComplete": false,
+      "unknownUsageCalls": 1,
+      "inFlightCalls": 1,
+      "knownCostLowerBoundCny": 0.22774928000000003,
+      "estimatedCostCny": null,
+      "launchRequests": 0,
+      "ambiguousTaskRequests": 0,
+      "launchClassificationComplete": true,
+      "actualChildCount": 0,
+      "deliveredChildCount": 0,
+      "deliveredTrigger": false,
+      "parentRequests": 4,
+      "nativeReviewRequests": 15,
+      "firstParentStaticSystemGuide": true,
+      "firstParentStaticTaskGuide": true,
+      "parentStaticSystemGuideRequests": 4,
+      "parentStaticTaskGuideRequests": 4,
+      "dynamicHintObserved": false,
+      "firstDynamicHintCall": null,
+      "hintCopiedToRestrictedViewRequests": 0
+    },
+    {
+      "case": "trigger-config-overlay",
+      "id": "trigger-config-overlay-r1-auto",
+      "repairSuccess": true,
+      "durationSeconds": 600.0032260417938,
+      "errorClass": "HardTimeout",
+      "scopePassed": true,
+      "cleanupComplete": true,
+      "modelCalls": 10,
+      "knownTokens": 110397,
+      "usageComplete": false,
+      "unknownUsageCalls": 2,
+      "inFlightCalls": 1,
+      "knownCostLowerBoundCny": 0.11718287999999999,
+      "estimatedCostCny": null,
+      "launchRequests": 0,
+      "ambiguousTaskRequests": 0,
+      "launchClassificationComplete": false,
+      "actualChildCount": 0,
+      "deliveredChildCount": 0,
+      "deliveredTrigger": false,
+      "parentRequests": 7,
+      "nativeReviewRequests": 3,
+      "firstParentStaticSystemGuide": true,
+      "firstParentStaticTaskGuide": true,
+      "parentStaticSystemGuideRequests": 7,
+      "parentStaticTaskGuideRequests": 7,
+      "dynamicHintObserved": false,
+      "firstDynamicHintCall": null,
+      "hintCopiedToRestrictedViewRequests": 0
+    },
+    {
+      "case": "trigger-record-pagination",
+      "id": "trigger-record-pagination-r1-auto",
+      "repairSuccess": true,
+      "durationSeconds": 600.0043590068817,
+      "errorClass": "HardTimeout",
+      "scopePassed": true,
+      "cleanupComplete": true,
+      "modelCalls": 20,
+      "knownTokens": 300136,
+      "usageComplete": false,
+      "unknownUsageCalls": 1,
+      "inFlightCalls": 0,
+      "knownCostLowerBoundCny": 0.19713055999999995,
+      "estimatedCostCny": null,
+      "launchRequests": 0,
+      "ambiguousTaskRequests": 0,
+      "launchClassificationComplete": true,
+      "actualChildCount": 0,
+      "deliveredChildCount": 0,
+      "deliveredTrigger": false,
+      "parentRequests": 5,
+      "nativeReviewRequests": 15,
+      "firstParentStaticSystemGuide": true,
+      "firstParentStaticTaskGuide": true,
+      "parentStaticSystemGuideRequests": 5,
+      "parentStaticTaskGuideRequests": 5,
+      "dynamicHintObserved": false,
+      "firstDynamicHintCall": null,
+      "hintCopiedToRestrictedViewRequests": 0
+    }
+  ],
+  "aggregate": {
+    "terminalTrials": 3,
+    "auditedTrials": 3,
+    "auditValid": true,
+    "launchRequests": 0,
+    "actualChildCount": 0,
+    "deliveredChildCount": 0,
+    "deliveredTriggerTrials": 0,
+    "dynamicHintTrials": 0,
+    "initialStaticGuidanceTrials": 3,
+    "unknownUsageTrials": 3,
+    "unknownUsageRequests": 4,
+    "frozenGateCanPassWithCurrentTerminalRows": false
+  },
+  "frozenBytesUnchanged": true,
+  "interpretation": "Partial evidence validity does not imply Phase 2 gate passage. Unknown usage remains unknown and blocks the preregistered complete-usage gate. The rate denominator remains eight; missing trials are not removed. No frozen source, oracle, runner or model request was executed."
+}

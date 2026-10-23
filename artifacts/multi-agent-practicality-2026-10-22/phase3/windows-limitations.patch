@@ -1,0 +1,16 @@
+diff --git a/README.md b/README.md
+index 4a72c851..4afb0e44 100644
+--- a/README.md
++++ b/README.md
+@@ -516,6 +566,11 @@ Useful entry points:
+   84/91 oracles with 10/10 exact Memory attribution.
+ - Asynchronous lifecycle is limited to read-only `explore` and `plan` roles.
+   Cancellation is cooperative, not process isolation.
++- On Windows, cleanup with a retained `Popen` handle attempts to terminate the
++  direct child, but does not guarantee cleanup of its descendants. The
++  compatibility path holding only a PID does not terminate it. A background
++  task marked `cancelled` is not confirmation that its entire process tree
++  exited.
+ - CodeLoop has approval and path/credential boundaries, but it is **not an OS
+   sandbox**. Run it in a disposable branch or container when evaluating
+   unfamiliar tasks.

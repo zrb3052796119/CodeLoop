@@ -1,0 +1,105 @@
+{
+  "trial": "trigger-stock-allocation-r1-auto",
+  "auditValid": true,
+  "auditIssues": [
+    {
+      "severity": "warning",
+      "code": "incomplete_results",
+      "trial": null,
+      "detail": "1/8 terminal rows"
+    },
+    {
+      "severity": "warning",
+      "code": "missing_budget_snapshot",
+      "trial": "trigger-stock-allocation-r1-auto",
+      "detail": "Hard-stop recovery may lack settled production budget; provider ledger remains authoritative"
+    },
+    {
+      "severity": "warning",
+      "code": "unfinalized_ledger",
+      "trial": "trigger-config-overlay-r1-auto",
+      "detail": "Retain and recover requests; do not rerun this trial"
+    }
+  ],
+  "manifestSha256": "a740668dd53ca4ce15b1f07156ae498ee335b2c8873c5ff5b5b344d83b1d91ab",
+  "preregisteredCommit": "e85a95803e248e157523e10dd0f1fe5bbed3f9bb",
+  "outcome": {
+    "success": true,
+    "oracleSuccess": true,
+    "regressionTestPassed": true,
+    "scopePassed": true,
+    "durationSeconds": 600.0036509037018,
+    "errorClass": "HardTimeout",
+    "modelCalls": 19,
+    "usageComplete": false,
+    "unknownUsageCalls": 1,
+    "inFlightCalls": 1,
+    "totalTokens": 319219,
+    "knownCostLowerBoundCny": 0.22774928000000003,
+    "estimatedCostCny": null
+  },
+  "costGroups": {
+    "directParent": {
+      "physicalRequests": 4,
+      "completedRequests": 4,
+      "unknownUsageRequests": 0,
+      "knownTokens": 53776,
+      "knownCostLowerBoundCny": 0.04227664,
+      "knownRequestSeconds": 90.33925074990839
+    },
+    "nativeReadOnlyReview": {
+      "physicalRequests": 15,
+      "completedRequests": 14,
+      "unknownUsageRequests": 1,
+      "knownTokens": 265443,
+      "knownCostLowerBoundCny": 0.18547264000000002,
+      "knownRequestSeconds": 503.06791858305223
+    }
+  },
+  "chargedTokens": 353178,
+  "triggerEvidence": {
+    "launchRequests": 0,
+    "launches": [],
+    "controlRequests": 0,
+    "ambiguousTaskRequests": 0,
+    "ambiguous": [],
+    "unresolvedParentCalls": [],
+    "launchClassificationComplete": true,
+    "nativeReviewCalls": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "actualChildIds": [],
+    "deliveredChildIds": [],
+    "deliveredTrigger": false,
+    "queuedCancellationAckIds": []
+  },
+  "guidanceSummary": {
+    "dynamicHintObserved": false,
+    "firstDynamicHintCall": null,
+    "firstHintResponseTools": null,
+    "launchAtOrAfterFirstHint": null,
+    "interpretation": "Observed presentation and subsequent choices only; no causal or unexpressed-intent inference."
+  },
+  "gateBlocker": "cleanScopeUsageAndCleanup: incomplete usage remains unknown, not zero; frozen criterion cannot pass with this terminal row",
+  "cleanup": {
+    "cleanupComplete": true,
+    "survivorPids": [],
+    "evidenceErrors": [],
+    "processScanErrors": [],
+    "cleanupSeconds": 0.08924102783203125
+  }
+}

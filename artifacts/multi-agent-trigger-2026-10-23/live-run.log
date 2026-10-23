@@ -1,0 +1,8 @@
+{"id": "trigger-stock-allocation-r1-auto", "success": true, "durationSeconds": 600.0036509037018, "modelCalls": 19, "totalTokens": 319219, "delegationAttempts": 0, "errorClass": "HardTimeout"}
+{"id": "trigger-config-overlay-r1-auto", "success": true, "durationSeconds": 600.0032260417938, "modelCalls": 10, "totalTokens": 110397, "delegationAttempts": 0, "errorClass": "HardTimeout"}
+{"id": "trigger-record-pagination-r1-auto", "success": true, "durationSeconds": 600.0043590068817, "modelCalls": 20, "totalTokens": 300136, "delegationAttempts": 0, "errorClass": "HardTimeout"}
+{"id": "trigger-limit-clamp-r1-auto", "success": true, "durationSeconds": 600.0022411346436, "modelCalls": 23, "totalTokens": 353829, "delegationAttempts": 0, "errorClass": "HardTimeout"}
+{"id": "trigger-extension-case-r1-auto", "success": true, "durationSeconds": 600.010036945343, "modelCalls": 20, "totalTokens": 203418, "delegationAttempts": 0, "errorClass": "HardTimeout"}
+{"id": "trigger-import-retry-r1-auto", "success": true, "durationSeconds": 355.9172791669844, "modelCalls": 15, "totalTokens": 155173, "delegationAttempts": 0, "errorClass": null}
+{"id": "trigger-cart-discounts-r1-auto", "success": false, "durationSeconds": 0.2634276250610128, "modelCalls": 1, "totalTokens": 0, "delegationAttempts": 0, "errorClass": null}
+{"id": "trigger-report-timezones-r1-auto", "success": false, "durationSeconds": 1.0797584999818355, "modelCalls": 1, "totalTokens": 0, "delegationAttempts": 0, "errorClass": null}
