@@ -1,0 +1,139 @@
+{
+  "sourceHostCommit": "c9002748014a507b1bb86d0202cfffa2e77d43e0",
+  "registrationCommit": "0b6dc79612fdb276359a121440750a4834fdb684",
+  "validAudit": true,
+  "gate": {
+    "passed": false,
+    "conditions": {
+      "validFinalAudit": true,
+      "stockActualNativeReview": true,
+      "stockTerminalDecision": false,
+      "stockWithinLimits": false,
+      "approvedHasAcceptedFinal": true
+    },
+    "stockTerminal": "budget_exhausted",
+    "configDescriptiveOnly": true,
+    "repairSuccessIsNotAcceptance": true,
+    "usageVerification": "unverifiable",
+    "usageDoesNotAddAConfigBehavioralGate": true
+  },
+  "trials": [
+    {
+      "id": "trigger-stock-allocation-r1-auto",
+      "durationSeconds": 168.80834320897702,
+      "modelCalls": 6,
+      "knownTokens": 49226,
+      "unknownUsageCalls": 1,
+      "oraclePassed": true,
+      "regressionTestPassed": true,
+      "completionReview": "budget_exhausted",
+      "requirementsAccepted": false,
+      "acceptedFinal": false,
+      "stages": {
+        "review": {
+          "entered": true,
+          "activeSeconds": 90.02624270808883,
+          "censored": false,
+          "deadline": 873844.313903708,
+          "physicalRequests": 4,
+          "unknownUsageCalls": 1,
+          "knownTokens": 22314,
+          "callIds": [
+            3,
+            4,
+            5,
+            6
+          ],
+          "requestLimit": 8,
+          "secondsLimit": 90.0
+        },
+        "inspection": {
+          "entered": false,
+          "activeSeconds": null,
+          "censored": false,
+          "deadline": null,
+          "physicalRequests": 0,
+          "unknownUsageCalls": 0,
+          "knownTokens": 0,
+          "callIds": [],
+          "requestLimit": 8,
+          "secondsLimit": 150.0
+        },
+        "reconciliation": {
+          "entered": false,
+          "activeSeconds": null,
+          "censored": false,
+          "deadline": null,
+          "physicalRequests": 0,
+          "unknownUsageCalls": 0,
+          "knownTokens": 0,
+          "callIds": [],
+          "requestLimit": 4,
+          "secondsLimit": 60.0
+        }
+      },
+      "closingSeconds": 78.20671948253293
+    },
+    {
+      "id": "trigger-config-overlay-r1-auto",
+      "durationSeconds": 486.50134666694794,
+      "modelCalls": 9,
+      "knownTokens": 113920,
+      "unknownUsageCalls": 1,
+      "oraclePassed": true,
+      "regressionTestPassed": true,
+      "completionReview": "budget_exhausted",
+      "requirementsAccepted": false,
+      "acceptedFinal": false,
+      "stages": {
+        "review": {
+          "entered": true,
+          "activeSeconds": 90.03238583309576,
+          "censored": false,
+          "deadline": 874333.047179458,
+          "physicalRequests": 3,
+          "unknownUsageCalls": 1,
+          "knownTokens": 13054,
+          "callIds": [
+            7,
+            8,
+            9
+          ],
+          "requestLimit": 8,
+          "secondsLimit": 90.0
+        },
+        "inspection": {
+          "entered": false,
+          "activeSeconds": null,
+          "censored": false,
+          "deadline": null,
+          "physicalRequests": 0,
+          "unknownUsageCalls": 0,
+          "knownTokens": 0,
+          "callIds": [],
+          "requestLimit": 8,
+          "secondsLimit": 150.0
+        },
+        "reconciliation": {
+          "entered": false,
+          "activeSeconds": null,
+          "censored": false,
+          "deadline": null,
+          "physicalRequests": 0,
+          "unknownUsageCalls": 0,
+          "knownTokens": 0,
+          "callIds": [],
+          "requestLimit": 4,
+          "secondsLimit": 60.0
+        }
+      },
+      "closingSeconds": 60.0
+    }
+  ],
+  "decision": {
+    "gen2BoundedSix": "not_started_gate_failed",
+    "R3": "not_activated_neither_condition_supported",
+    "explicitExecutorVerifier": "retain_previously_validated_engineering_capability",
+    "parameters": "unchanged_and_frozen"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "registrationUnchanged": true,
+  "manifestSha256": "d19ff66a177b7ac5169e9731d6a33c42bef838f7572c989b514a5756161a42f2",
+  "overlayProductionUnchangedAfter713Gate": true,
+  "testClosureUnchangedAfter713Gate": true,
+  "sourceHostCommit": "c9002748014a507b1bb86d0202cfffa2e77d43e0",
+  "preregisteredCommit": "0b6dc79612fdb276359a121440750a4834fdb684",
+  "trialIds": [
+    "trigger-stock-allocation-r1-auto",
+    "trigger-config-overlay-r1-auto"
+  ]
+}

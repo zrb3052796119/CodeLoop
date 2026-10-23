@@ -1,0 +1,798 @@
+{
+  "valid": true,
+  "mode": "final",
+  "expectedTrials": 2,
+  "auditedTrials": 2,
+  "deliveryEvidenceMode": "task_result_owner_ack",
+  "protocolVersion": "native-review-bounded-v1",
+  "issues": [],
+  "trials": [
+    {
+      "id": "trigger-stock-allocation-r1-auto",
+      "arm": "auto",
+      "modelCalls": 6,
+      "unknownUsageCalls": 1,
+      "inputTokens": 43272,
+      "outputTokens": 5954,
+      "cacheReadTokens": 7232,
+      "tokenUsageComplete": false,
+      "cacheUsageComplete": false,
+      "usageComplete": false,
+      "failedCalls": 1,
+      "inFlightCalls": 0,
+      "knownCostLowerBoundCny": 0.04716656,
+      "estimatedCostCny": null,
+      "totalTokens": 49226,
+      "success": true,
+      "protocolSatisfied": false,
+      "recomputedCollaboration": {
+        "actualLeafRuns": 0,
+        "leafModelCalls": 0,
+        "deliveredLeafResults": 0,
+        "successfulLeafRuns": 0,
+        "readAnalysisLeafRuns": 0,
+        "implementationLeafRuns": 0,
+        "collaborationExecuted": false,
+        "collaborationProtocolSatisfied": false,
+        "deliveredWorkflowResults": 0,
+        "actualAnalystLeafRuns": 0,
+        "deliveredAnalystLeafResults": 0,
+        "externalAnalysisLeafRuns": 0,
+        "externalLeafRuns": 0
+      },
+      "diagnostics": {
+        "stopEvidence": [
+          {
+            "code": "request_deadline",
+            "timing": {
+              "requestDeadlineEpoch": 1792743765.3702598,
+              "startedEpoch": 1792743725.62881,
+              "seconds": 39.74297724990174,
+              "executionDeadlineEpoch": 1792744196.597753,
+              "requestTimeoutSeconds": 300
+            },
+            "boundaryEvidence": "insufficient_or_inconsistent_timing",
+            "source": "transport.sqlite",
+            "call": 6,
+            "evidence": "ModelCallDeadlineExceeded",
+            "authority": "transport"
+          }
+        ],
+        "terminalOutcomes": [],
+        "originalErrorClass": null
+      },
+      "admissionRejectedCount": 0,
+      "validatedAdmissionRejections": 0,
+      "case": "trigger-stock-allocation",
+      "repeat": 1,
+      "scopePassed": true,
+      "triggerEvidence": {
+        "launchRequests": 0,
+        "launches": [],
+        "controlRequests": 0,
+        "ambiguousTaskRequests": 0,
+        "ambiguous": [],
+        "unresolvedParentCalls": [],
+        "launchClassificationComplete": true,
+        "nativeReviewCalls": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "actualChildIds": [],
+        "deliveredChildIds": [],
+        "deliveredTrigger": false,
+        "queuedCancellationAckIds": []
+      },
+      "guidanceEvidence": {
+        "requests": [
+          {
+            "call": 1,
+            "taskAvailable": true,
+            "directWriteAvailable": true,
+            "staticSystemGuidePresent": true,
+            "staticTaskGuidePresent": true,
+            "requestKind": "parent",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [
+              "write_file",
+              "write_file",
+              "write_file",
+              "write_file"
+            ],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 2,
+            "taskAvailable": true,
+            "directWriteAvailable": true,
+            "staticSystemGuidePresent": true,
+            "staticTaskGuidePresent": true,
+            "requestKind": "parent",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 3,
+            "taskAvailable": false,
+            "directWriteAvailable": false,
+            "staticSystemGuidePresent": false,
+            "staticTaskGuidePresent": false,
+            "requestKind": "nativeReview",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [
+              "list_files",
+              "file_tree"
+            ],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 4,
+            "taskAvailable": false,
+            "directWriteAvailable": false,
+            "staticSystemGuidePresent": false,
+            "staticTaskGuidePresent": false,
+            "requestKind": "nativeReview",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [
+              "read_file",
+              "read_file",
+              "read_file",
+              "read_file",
+              "read_file",
+              "read_file"
+            ],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 5,
+            "taskAvailable": false,
+            "directWriteAvailable": false,
+            "staticSystemGuidePresent": false,
+            "staticTaskGuidePresent": false,
+            "requestKind": "nativeReview",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [
+              "list_files",
+              "list_files",
+              "grep_files"
+            ],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 6,
+            "taskAvailable": false,
+            "directWriteAvailable": false,
+            "staticSystemGuidePresent": false,
+            "staticTaskGuidePresent": false,
+            "requestKind": "nativeReview",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [],
+            "responseEvent": "failed",
+            "launchRequests": 0
+          }
+        ],
+        "dynamicHintObserved": false,
+        "firstDynamicHintCall": null,
+        "firstHintResponseTools": null,
+        "launchAtOrAfterFirstHint": null,
+        "interpretation": "Observed presentation and subsequent choices only; no causal or unexpressed-intent inference."
+      },
+      "nativeReview": {
+        "terminal": "budget_exhausted",
+        "status": "inconclusive",
+        "reason": "completion_review_budget_exhausted",
+        "requirementsAccepted": false,
+        "acceptedFinal": false,
+        "terminalConsistent": true,
+        "nativeReviewActuallyExecuted": true,
+        "nativeAuthoritySequence": 18,
+        "nativeAuthorityReused": false,
+        "delayedHandoff": false,
+        "decisionWithinChain": false,
+        "chainCount": 1,
+        "stageCapsConsistent": true,
+        "nativeClassificationComplete": true,
+        "unclassifiedNativeCalls": [],
+        "chain": {
+          "agentDepth": 0,
+          "ancestorDeadline": 874275.5415367995,
+          "closingSeconds": 78.20671948253293,
+          "closingTokens": 48904,
+          "deadline": 874014.8524718578,
+          "parentBudget": {
+            "limit_cost_usd": "5",
+            "limit_model_calls": 40,
+            "limit_total_tokens": 500000,
+            "reserved_total_tokens": 0,
+            "usage_uncertain": true,
+            "used_cost_usd": "0.130056",
+            "used_input_tokens": 22802,
+            "used_model_calls": 2,
+            "used_output_tokens": 4110,
+            "used_total_tokens": 26912
+          }
+        },
+        "stages": {
+          "review": {
+            "entered": true,
+            "activeSeconds": 90.02624270808883,
+            "censored": false,
+            "deadline": 873844.313903708,
+            "physicalRequests": 4,
+            "unknownUsageCalls": 1,
+            "knownTokens": 22314,
+            "callIds": [
+              3,
+              4,
+              5,
+              6
+            ],
+            "requestLimit": 8,
+            "secondsLimit": 90.0
+          },
+          "inspection": {
+            "entered": false,
+            "activeSeconds": null,
+            "censored": false,
+            "deadline": null,
+            "physicalRequests": 0,
+            "unknownUsageCalls": 0,
+            "knownTokens": 0,
+            "callIds": [],
+            "requestLimit": 8,
+            "secondsLimit": 150.0
+          },
+          "reconciliation": {
+            "entered": false,
+            "activeSeconds": null,
+            "censored": false,
+            "deadline": null,
+            "physicalRequests": 0,
+            "unknownUsageCalls": 0,
+            "knownTokens": 0,
+            "callIds": [],
+            "requestLimit": 4,
+            "secondsLimit": 60.0
+          }
+        },
+        "nativePhysicalRequests": 4,
+        "requests": [
+          {
+            "call": 3,
+            "phase": "review",
+            "terminalTools": [
+              "completion_review_submit"
+            ],
+            "event": "completed",
+            "startedEpoch": 1792743675.418226,
+            "seconds": 8.72465624997858,
+            "usage": {
+              "input_tokens": 5922,
+              "output_tokens": 245,
+              "cache_read_tokens": 0,
+              "cache_creation_tokens": null,
+              "source": "provider"
+            }
+          },
+          {
+            "call": 4,
+            "phase": "review",
+            "terminalTools": [
+              "completion_review_submit"
+            ],
+            "event": "completed",
+            "startedEpoch": 1792743684.165096,
+            "seconds": 5.760707999928854,
+            "usage": {
+              "input_tokens": 6455,
+              "output_tokens": 108,
+              "cache_read_tokens": 832,
+              "cache_creation_tokens": null,
+              "source": "provider"
+            }
+          },
+          {
+            "call": 5,
+            "phase": "review",
+            "terminalTools": [
+              "completion_review_submit"
+            ],
+            "event": "completed",
+            "startedEpoch": 1792743689.954153,
+            "seconds": 35.6448214170523,
+            "usage": {
+              "input_tokens": 8093,
+              "output_tokens": 1491,
+              "cache_read_tokens": 6400,
+              "cache_creation_tokens": null,
+              "source": "provider"
+            }
+          },
+          {
+            "call": 6,
+            "phase": "review",
+            "terminalTools": [
+              "completion_review_submit"
+            ],
+            "event": "failed",
+            "startedEpoch": 1792743725.62881,
+            "seconds": 39.74297724990174,
+            "usage": {
+              "input_tokens": null,
+              "output_tokens": null,
+              "cache_read_tokens": null,
+              "cache_creation_tokens": null,
+              "source": "unavailable"
+            }
+          }
+        ],
+        "hostDecisions": [
+          {
+            "sequence": 18,
+            "epoch": 1792743765.396559,
+            "data": {
+              "attempt": 1,
+              "canContinue": false,
+              "completionReview": "budget_exhausted",
+              "completionReviewVersion": 1,
+              "completionVersion": 1,
+              "continuesSameExecutor": false,
+              "diagnosticObservations": [],
+              "evidenceDirectory": "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-bd7e5ob4",
+              "executorId": "implementation_5d4b9f0c79a44b38b61d5fe276124a9a",
+              "failureAdjudications": [],
+              "findings": [
+                "wall_clock"
+              ],
+              "patchDigest": "sha256:e12cdfdc97c7701cbed87e88f98978cc839ef92ccc013e98b7bf67d5ccdadebd",
+              "probeReceipts": [],
+              "reason": "completion_review_budget_exhausted",
+              "repairProbes": [],
+              "requirements": [
+                {
+                  "endLine": 11,
+                  "id": "req_921a09da808a09cfba95",
+                  "kind": "behavior",
+                  "startLine": 1,
+                  "text": "Make warehouse allocation and its summary agree when a SKU occurs more than\nonce. Bins and requests contain string sku and nonnegative integer quantity.\navailable_stock must sum all bins for the same SKU. allocate must process\nrequest lines in input order, consuming that shared available stock, retaining\none output row per request, with requested, allocated and shortfall values.\nUnknown SKUs allocate zero; zero quantities and empty inputs are valid.\nsummarize must aggregate all allocation rows by SKU, adding each of requested,\nallocated and shortfall; it must not overwrite earlier request lines. Preserve\npublic function signatures and return shapes. Allocation must never overdraw\nstock or modify the supplied bins or requests.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/stock.py, minicode/allocation.py, minicode/allocation_report.py, tests/test_eval_regression.py."
+                }
+              ],
+              "requirementsAccepted": false,
+              "status": "inconclusive",
+              "unresolvedProbes": []
+            }
+          }
+        ],
+        "interpretation": "Stage wall times include tools and local work; censored spans are not completed stages. Provider unknown usage stays unknown."
+      },
+      "nativeObservationSha256": "fd0ed52e4a00e0e50709836235c0aa366f32a0ea94881a45021f178a1da091e7"
+    },
+    {
+      "id": "trigger-config-overlay-r1-auto",
+      "arm": "auto",
+      "modelCalls": 9,
+      "unknownUsageCalls": 1,
+      "inputTokens": 96114,
+      "outputTokens": 17806,
+      "cacheReadTokens": 29952,
+      "tokenUsageComplete": false,
+      "cacheUsageComplete": false,
+      "usageComplete": false,
+      "failedCalls": 1,
+      "inFlightCalls": 0,
+      "knownCostLowerBoundCny": 0.10967536,
+      "estimatedCostCny": null,
+      "totalTokens": 113920,
+      "success": true,
+      "protocolSatisfied": false,
+      "recomputedCollaboration": {
+        "actualLeafRuns": 0,
+        "leafModelCalls": 0,
+        "deliveredLeafResults": 0,
+        "successfulLeafRuns": 0,
+        "readAnalysisLeafRuns": 0,
+        "implementationLeafRuns": 0,
+        "collaborationExecuted": false,
+        "collaborationProtocolSatisfied": false,
+        "deliveredWorkflowResults": 0,
+        "actualAnalystLeafRuns": 0,
+        "deliveredAnalystLeafResults": 0,
+        "externalAnalysisLeafRuns": 0,
+        "externalLeafRuns": 0
+      },
+      "diagnostics": {
+        "stopEvidence": [
+          {
+            "code": "request_deadline",
+            "timing": {
+              "requestDeadlineEpoch": 1792744254.104028,
+              "startedEpoch": 1792744177.8709602,
+              "seconds": 76.23597699997481,
+              "executionDeadlineEpoch": 1792744367.649034,
+              "requestTimeoutSeconds": 300
+            },
+            "boundaryEvidence": "insufficient_or_inconsistent_timing",
+            "source": "transport.sqlite",
+            "call": 9,
+            "evidence": "ModelCallDeadlineExceeded",
+            "authority": "transport"
+          }
+        ],
+        "terminalOutcomes": [],
+        "originalErrorClass": null
+      },
+      "admissionRejectedCount": 0,
+      "validatedAdmissionRejections": 0,
+      "case": "trigger-config-overlay",
+      "repeat": 1,
+      "scopePassed": true,
+      "triggerEvidence": {
+        "launchRequests": 0,
+        "launches": [],
+        "controlRequests": 0,
+        "ambiguousTaskRequests": 0,
+        "ambiguous": [],
+        "unresolvedParentCalls": [],
+        "launchClassificationComplete": true,
+        "nativeReviewCalls": [
+          7,
+          8,
+          9
+        ],
+        "actualChildIds": [],
+        "deliveredChildIds": [],
+        "deliveredTrigger": false,
+        "queuedCancellationAckIds": []
+      },
+      "guidanceEvidence": {
+        "requests": [
+          {
+            "call": 1,
+            "taskAvailable": true,
+            "directWriteAvailable": true,
+            "staticSystemGuidePresent": true,
+            "staticTaskGuidePresent": true,
+            "requestKind": "parent",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 2,
+            "taskAvailable": true,
+            "directWriteAvailable": true,
+            "staticSystemGuidePresent": true,
+            "staticTaskGuidePresent": true,
+            "requestKind": "parent",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [
+              "list_files",
+              "read_file",
+              "read_file",
+              "read_file"
+            ],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 3,
+            "taskAvailable": true,
+            "directWriteAvailable": true,
+            "staticSystemGuidePresent": true,
+            "staticTaskGuidePresent": true,
+            "requestKind": "parent",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [
+              "read_file",
+              "list_files",
+              "list_files"
+            ],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 4,
+            "taskAvailable": true,
+            "directWriteAvailable": true,
+            "staticSystemGuidePresent": true,
+            "staticTaskGuidePresent": true,
+            "requestKind": "parent",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [
+              "write_file",
+              "write_file"
+            ],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 5,
+            "taskAvailable": true,
+            "directWriteAvailable": true,
+            "staticSystemGuidePresent": true,
+            "staticTaskGuidePresent": true,
+            "requestKind": "parent",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [
+              "write_file"
+            ],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 6,
+            "taskAvailable": true,
+            "directWriteAvailable": true,
+            "staticSystemGuidePresent": true,
+            "staticTaskGuidePresent": true,
+            "requestKind": "parent",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 7,
+            "taskAvailable": false,
+            "directWriteAvailable": false,
+            "staticSystemGuidePresent": false,
+            "staticTaskGuidePresent": false,
+            "requestKind": "nativeReview",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [
+              "list_files",
+              "file_tree"
+            ],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 8,
+            "taskAvailable": false,
+            "directWriteAvailable": false,
+            "staticSystemGuidePresent": false,
+            "staticTaskGuidePresent": false,
+            "requestKind": "nativeReview",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [
+              "read_file",
+              "read_file",
+              "read_file",
+              "read_file"
+            ],
+            "responseEvent": "completed",
+            "launchRequests": 0
+          },
+          {
+            "call": 9,
+            "taskAvailable": false,
+            "directWriteAvailable": false,
+            "staticSystemGuidePresent": false,
+            "staticTaskGuidePresent": false,
+            "requestKind": "nativeReview",
+            "dynamicHintPresent": false,
+            "hintCopiedToRestrictedView": false,
+            "responseTools": [],
+            "responseEvent": "failed",
+            "launchRequests": 0
+          }
+        ],
+        "dynamicHintObserved": false,
+        "firstDynamicHintCall": null,
+        "firstHintResponseTools": null,
+        "launchAtOrAfterFirstHint": null,
+        "interpretation": "Observed presentation and subsequent choices only; no causal or unexpressed-intent inference."
+      },
+      "nativeReview": {
+        "terminal": "budget_exhausted",
+        "status": "inconclusive",
+        "reason": "completion_review_budget_exhausted",
+        "requirementsAccepted": false,
+        "acceptedFinal": false,
+        "terminalConsistent": true,
+        "nativeReviewActuallyExecuted": true,
+        "nativeAuthoritySequence": 15,
+        "nativeAuthorityReused": false,
+        "delayedHandoff": false,
+        "decisionWithinChain": false,
+        "chainCount": 1,
+        "stageCapsConsistent": true,
+        "nativeClassificationComplete": true,
+        "unclassifiedNativeCalls": [],
+        "chain": {
+          "agentDepth": 0,
+          "ancestorDeadline": 874446.5926319453,
+          "closingSeconds": 60.0,
+          "closingTokens": 62986,
+          "deadline": 874344.7516017016,
+          "parentBudget": {
+            "limit_cost_usd": "5",
+            "limit_model_calls": 40,
+            "limit_total_tokens": 500000,
+            "reserved_total_tokens": 0,
+            "usage_uncertain": true,
+            "used_cost_usd": "0.5207820",
+            "used_input_tokens": 83412,
+            "used_model_calls": 6,
+            "used_output_tokens": 17454,
+            "used_total_tokens": 100866
+          }
+        },
+        "stages": {
+          "review": {
+            "entered": true,
+            "activeSeconds": 90.03238583309576,
+            "censored": false,
+            "deadline": 874333.047179458,
+            "physicalRequests": 3,
+            "unknownUsageCalls": 1,
+            "knownTokens": 13054,
+            "callIds": [
+              7,
+              8,
+              9
+            ],
+            "requestLimit": 8,
+            "secondsLimit": 90.0
+          },
+          "inspection": {
+            "entered": false,
+            "activeSeconds": null,
+            "censored": false,
+            "deadline": null,
+            "physicalRequests": 0,
+            "unknownUsageCalls": 0,
+            "knownTokens": 0,
+            "callIds": [],
+            "requestLimit": 8,
+            "secondsLimit": 150.0
+          },
+          "reconciliation": {
+            "entered": false,
+            "activeSeconds": null,
+            "censored": false,
+            "deadline": null,
+            "physicalRequests": 0,
+            "unknownUsageCalls": 0,
+            "knownTokens": 0,
+            "callIds": [],
+            "requestLimit": 4,
+            "secondsLimit": 60.0
+          }
+        },
+        "nativePhysicalRequests": 3,
+        "requests": [
+          {
+            "call": 7,
+            "phase": "review",
+            "terminalTools": [
+              "completion_review_submit"
+            ],
+            "event": "completed",
+            "startedEpoch": 1792744164.150174,
+            "seconds": 8.837891208007932,
+            "usage": {
+              "input_tokens": 6071,
+              "output_tokens": 296,
+              "cache_read_tokens": 0,
+              "cache_creation_tokens": null,
+              "source": "provider"
+            }
+          },
+          {
+            "call": 8,
+            "phase": "review",
+            "terminalTools": [
+              "completion_review_submit"
+            ],
+            "event": "completed",
+            "startedEpoch": 1792744173.009185,
+            "seconds": 4.841555166058242,
+            "usage": {
+              "input_tokens": 6631,
+              "output_tokens": 56,
+              "cache_read_tokens": 832,
+              "cache_creation_tokens": null,
+              "source": "provider"
+            }
+          },
+          {
+            "call": 9,
+            "phase": "review",
+            "terminalTools": [
+              "completion_review_submit"
+            ],
+            "event": "failed",
+            "startedEpoch": 1792744177.8709602,
+            "seconds": 76.23597699997481,
+            "usage": {
+              "input_tokens": null,
+              "output_tokens": null,
+              "cache_read_tokens": null,
+              "cache_creation_tokens": null,
+              "source": "unavailable"
+            }
+          }
+        ],
+        "hostDecisions": [
+          {
+            "sequence": 15,
+            "epoch": 1792744254.13651,
+            "data": {
+              "attempt": 1,
+              "canContinue": false,
+              "completionReview": "budget_exhausted",
+              "completionReviewVersion": 1,
+              "completionVersion": 1,
+              "continuesSameExecutor": false,
+              "diagnosticObservations": [],
+              "evidenceDirectory": "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-rea9_q3s",
+              "executorId": "implementation_b53a23db6e574187bc759de9926728e7",
+              "failureAdjudications": [],
+              "findings": [
+                "wall_clock"
+              ],
+              "patchDigest": "sha256:04d5666939ecf84e94eec05a35812ac6066578b2777ab7b7b0297413021de059",
+              "probeReceipts": [],
+              "reason": "completion_review_budget_exhausted",
+              "repairProbes": [],
+              "requirements": [
+                {
+                  "endLine": 14,
+                  "id": "req_84a0ded651845d2ef399",
+                  "kind": "behavior",
+                  "startLine": 1,
+                  "text": "Repair the configuration overlay contract shared by config_merge and settings.\nPrecedence is defaults, then file_values, then recognized environment variables.\nmerge_settings recursively merges nonempty dictionaries, retaining unspecified\nnested defaults; an explicit empty dictionary clears that value. None means\n'unset, keep the previous value'. False, 0, empty strings and empty lists are\nexplicit values and must override defaults. Return independent data without\nmodifying or sharing mutable nested objects with either input.\nRecursive rules also apply to newly introduced dictionaries: a None entry with\nno previous value is omitted, while explicit empty dictionaries still clear.\nload_settings recognizes APP_ENABLED (trimmed, case-insensitive true/false;\nother values raise ValueError), APP_LIMIT (an integer string, including zero),\nand APP_TAGS (comma-separated trimmed tags, dropping empty entries; blank means\nan empty list). Ignore unknown environment names. Preserve these public APIs.\nPreserve the existing public APIs and avoid modifying inputs. Add regression tests for the requested behavior in tests/test_eval_regression.py. Run tests/test_public.py and your new regression tests before finishing. Only the following files may change: minicode/config_merge.py, minicode/settings.py, tests/test_eval_regression.py."
+                }
+              ],
+              "requirementsAccepted": false,
+              "status": "inconclusive",
+              "unresolvedProbes": []
+            }
+          }
+        ],
+        "interpretation": "Stage wall times include tools and local work; censored spans are not completed stages. Provider unknown usage stays unknown."
+      },
+      "nativeObservationSha256": "59c0fab29f420827abc9cbdfa271d7ee5992250d0adb86a8f74ddde90e6e51b4"
+    }
+  ],
+  "limits": "Only surviving evidence can be audited. No archived code, model request or oracle was executed. Missing usage remains unknown; failed task/protocol outcomes remain valid observations.",
+  "gate": {
+    "passed": false,
+    "conditions": {
+      "validFinalAudit": true,
+      "stockActualNativeReview": true,
+      "stockTerminalDecision": false,
+      "stockWithinLimits": false,
+      "approvedHasAcceptedFinal": true
+    },
+    "stockTerminal": "budget_exhausted",
+    "configDescriptiveOnly": true,
+    "repairSuccessIsNotAcceptance": true,
+    "usageVerification": "unverifiable",
+    "usageDoesNotAddAConfigBehavioralGate": true
+  }
+}

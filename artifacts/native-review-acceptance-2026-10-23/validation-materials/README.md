@@ -35,7 +35,7 @@ SSL_CERT_FILE=/etc/ssl/cert.pem /Library/Frameworks/Python.framework/Versions/3.
 审计器的 `-c` 启动段只显式加入本仓库固定的 `scripts` 目录，解决 `-I` 隔离模式默认不搜索脚本邻接模块的问题；不修改审计脚本，也不加载 runner。以上命令从仓库根目录执行。
 
 3. freeze 生成 source provenance、完整 host zip/inventory、环境版本与包清单、公开 pytest 预检及 manifest。独立 partial audit 应为有效 0/2，仅有未开始警告。root 将该输出的全部 registrationFiles 与 manifest 注册到当前工作分支提交；运行入口会核对实际 Git 对象逐字节，并验证注册提交是当前 HEAD 的祖先。当前输出布局预计为 16 个 registrationFiles 加 manifest，共 17 个文件；最终提交清单以实际 manifest 的 registrationFiles 全部键加 manifest.json 为准，不把审计报告或运行结果放进冻结目录。
-4. 只有前置/精确宿主回归/独立审计/注册全部完成后，使用注册提交启动唯一两格；该命令尚未执行：
+4. 只有前置/精确宿主回归/独立审计/注册全部完成后，使用注册提交启动唯一两格；下列为已执行的历史命令模板，禁止再次运行：
 
 ```sh
 SSL_CERT_FILE=/etc/ssl/cert.pem /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12 -I -B scripts/native_review_bounded_validation.py run \

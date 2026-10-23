@@ -194,3 +194,5 @@ Phase 1 过门后才做。
 - 1.0 入口准入若校准过严会拒绝本来可行的运行——所以三类资源阈值都标注"待验证起点"，六格数据回来后校准，不预设为定论。
 - 1.3 文件通道若长出新校验体系就违背了本方案初衷——约束：一次 digest + 原子写，不加回执词表。
 - Phase 1 若仍不过门，混杂因素（候选质量、上下文、父交接）仍在——止损措辞已预注册，防止把组合失败归因到单一变量。
+
+- 后续原生审查 R1/R2 验证：裁决域按 A 修复，精确宿主 713 项通过，TLS 保持校验；源码冻结 `c9002748`，两格预注册 `0b6dc796`。stock/config 各一次均在 review 90 秒耗尽，未进入 inspection；产物通过但 accepted final 均为 false。终审 2/2 有效不等于行为门通过。按门停止 gen-2 六格 bounded 扩跑，R3 不激活，保留显式 E→V 工程能力；不作模型单因归责。实测参数与结论见 `docs/2026-10-23--native-review-economics-repair.md` §4、§7 及 `artifacts/native-review-acceptance-2026-10-23/evaluation-report.md`。

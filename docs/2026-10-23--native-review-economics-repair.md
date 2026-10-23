@@ -102,6 +102,19 @@ MINI_CODE_COMPLETION_REVIEW_MODE = bounded | full    # 默认 bounded
 - config 形态（父侧延迟：length 截断空响应、网络重试）：**无改善**，如实声明。
 - 阶段上限的起点值来自单格轨迹，样本量 1——首次真实验证后按实际分布校准一次，然后冻结写回本文档，不再逐轮调参。
 
+**2026-10-23 首次 bounded 实测与冻结**（预注册 `0b6dc796`，完整审计 2/2 有效）：
+
+| 格 | 父工作至 review 入口（约） | review 活跃墙钟 / 请求 | inspection | 核对 | 全格时间 / 最终决定 |
+| --- | ---: | ---: | --- | --- | --- |
+| stock | 78.77s | 90.026s / 4 | 未进入 | 未进入 | 168.808s / budget_exhausted |
+| config | 396.455s | 90.032s / 3 | 未进入 | 未进入 | 486.501s / budget_exhausted |
+
+阶段墙钟按 observer 的首次 phase_selected 到终态，包含工具和本地工作；约 26/32ms 的截止后收尾不改变失败性质。两格均未在限额内形成 approved/rejected，虽候选 oracle 与新增回归通过，`requirementsAccepted` 仍为 false。父时间预留实际为 stock 78.207s、config 60s；都正常返回 incomplete，未触达 600s 硬截止。
+
+**参数冻结不变**：review 8/90s、inspection 8/150s、核对 4/60s，链级 ≤剩余 50%，先保留 2 请求及 max(60s,剩余15%)。本次 review 在上限处尚未完成，另两阶段无新样本，不能估算完整阶段分布；不事后延长参数来救本门，也不追加试次。预算安全退出已验证，预算内形成独立决定的目标未达到。R1 的旧 schema 拒绝分支未在本轮真实执行到，不能用“无 schema 错误”宣称其收益已实测。
+
+**R3 结论：两个激活条件均未满足，继续暂缓。** 两格均在首次 review 耗尽，尚未进入 inspection；既有 full 轨迹未见同绑定的已完成 inspection 被重复执行。详细证据见 `artifacts/native-review-acceptance-2026-10-23/evaluation-report.md` 和 `full-trace-comparison.md`。
+
 ## 5. 真实验证门（预注册后执行）
 
 1. 前置：TLS 证书问题单独修复（infra，不在本方案）。
@@ -136,7 +149,7 @@ MINI_CODE_COMPLETION_REVIEW_MODE = bounded | full    # 默认 bounded
 
 禁止：删除/跳过测试不留决策记录；悬置不决。分诊完成前不开两格验证——若验证格走到 gap 裁决，空反馈会污染解读。
 
-**分诊终态：A，修代码。** `repairProbes` 是 `ImplementationCompletionReview` 向原实现会话交付完整、独立归因反例的反馈；10-22 排除动态 `review_regression_*` 的路径是 `ExecutionCandidate.receiptRefs` 的正式候选声明，二者不同，且该修复明确保留 probe ledger、回放与失败证据。10-22 改动仍是工作区补丁，不能伪称已有独立源码提交。此次修正显式 host migration 与旧负裁决捷径、独立归因、分类落盘的顺序；有 replacement supersession 时仍须独立 audit 接受才可退休原测试。重复调用、恢复和预算中断均选取当前精确绑定的反例，旧认证负裁决记录字节不重写。原测试保留，并补真实父恢复与提交后耗尽反例。详见 `adjudication-channel-review.md`。
+**分诊终态：A，修代码。** `repairProbes` 是 `ImplementationCompletionReview` 向原实现会话交付完整、独立归因反例的反馈；10-22 排除动态 `review_regression_*` 的路径是 `ExecutionCandidate.receiptRefs` 的正式候选声明，二者不同，且该修复明确保留 probe ledger、回放与失败证据。分诊时（初始 HEAD `89288e87`）10-22 改动仍是工作区补丁，不能伪称当时已有独立源码提交；本轮随后才纳入验证宿主冻结。此次修正显式 host migration 与旧负裁决捷径、独立归因、分类落盘的顺序；有 replacement supersession 时仍须独立 audit 接受才可退休原测试。重复调用、恢复和预算中断均选取当前精确绑定的反例，旧认证负裁决记录字节不重写。原测试保留，并补真实父恢复与提交后耗尽反例。详见 `adjudication-channel-review.md`。
 
 ### 7.2 TLS 修复（独立 infra，可并行）
 
@@ -157,9 +170,13 @@ MINI_CODE_COMPLETION_REVIEW_MODE = bounded | full    # 默认 bounded
 门：stock 格审查链在预算内到达终态决定（`approved`/`rejected`）；`budget_exhausted` = 未过门。config 格只记录不设门。
 完成后必做：实测各阶段耗时写回 §4 并冻结上限起点值；对照 R3 两个激活条件出具一行结论。
 
+**已执行并终审**：预注册 `0b6dc79612fdb276359a121440750a4834fdb684` 后 stock→config 各一次；原模型、预算、题面、oracle 和审计边界未变。最终独立审计 **2/2 有效、0 错误、0 警告**，但 stock=`budget_exhausted`，行为门失败。两格共 15 次物理请求，已知 token 下界 163,146，2 次截止中断用量 unknown；无 TLS 错误。候选均通过产物验收，accepted final 均为 false。未重跑，详情见 `evaluation-report.md`。
+
 ### 7.5 分叉决策
 
 - **两格过门** → 预注册 gen-2 六格 bounded 重跑（沿用旧门：总 ≥4/6、每组 ≥2/3、每题 ≥1/2）。
 - **不过门** → 回 `full` 模式分析轨迹：若 inspection 是瓶颈且数据支持 → 按 R3 冻结设计激活缩窄实现；否则止损，维持显式协作形态（E→V 工程门已过，作为产品能力保留）。
 
 原则：一次一个变量；全部失败原样保留；不补跑、不换模型、不挑轮次。
+
+**本轮最终分叉：停止 gen-2 六格 bounded 扩跑，R3 不激活，保留此前已过工程门的显式 E→V 能力。** 已回看存活的 full 轨迹，历史 stock 的首次 inspection 较慢，但其完成后已经直接进入核对；现有代码也已有有效 inspection 的续审复用。新两格未到 inspection，不支持以复用解决当前失败。这个停止决定不构成“模型是唯一瓶颈”的因果结论，也不证明协作优于单 Agent。
