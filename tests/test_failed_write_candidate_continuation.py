@@ -42,6 +42,7 @@ def test_failed_final_write_returns_to_same_executor_before_delivery(tmp_path, m
     budget = AgentTurnBudget(max_model_calls=40, max_total_tokens=500000)
     deadline = time.monotonic() + 1800
     calls, billed, workers, adapters, commands = [], [], [], [], []
+    review_receipts = []
     first_source = GREEN_PENDING if initial_checks_pass else PARTIAL
     original_worker = task_module._run
 
@@ -53,12 +54,12 @@ def test_failed_final_write_returns_to_same_executor_before_delivery(tmp_path, m
         if context._logical_agent_role == "executor":
             number = 1 + sum(item["role"] == "executor" for item in workers)
             if number == 1:
-                # Real local exhaustion, not a fabricated worker result or a
-                # charge against unused global allowance. The next input no
-                # longer fits after the actual edits and pytest feedback.
+                # Admit one real request on the shared parent ledger, then
+                # exhaust only this first worker's local call allowance after
+                # actual edits and pytest feedback. Do not hardcode schema size.
                 context = replace(context, _agent_budget=_WorkerCallBudget(
-                    context._agent_budget, "first_test_slice", max_calls=30,
-                    preserve_calls=0, max_tokens=7800))
+                    context._agent_budget, "first_test_slice", max_calls=1,
+                    preserve_calls=0))
             else:
                 assert number == 2, "Recovery must not start a replacement workflow"
                 assert (Path(context.cwd) / "candidate.py").read_text() == first_source
@@ -135,14 +136,32 @@ def test_failed_final_write_returns_to_same_executor_before_delivery(tmp_path, m
             if self.requests == 1:
                 actions = [call("read_file", {"path": "candidate.py"}, "review-source"),
                            call("read_file", {"path": "test_none.py"}, "review-tests")]
-            else:
+            elif self.requests == 2:
                 assert self.requests == 2
                 assert any(message.get("toolUseId") == "review-source" and "if value is None:" in message.get("content", "")
                            for message in messages)
                 assert any(message.get("toolUseId") == "review-tests" and "test_none" in message.get("content", "")
                            for message in messages)
+                actions = [call("review_test", {
+                    "criterionIds": ["trim", "none"],
+                    "scenario": "Independently check None and mixed surrounding whitespace on the final candidate.",
+                    "code": "from candidate import normalize\n"
+                            "def test_independent_none():\n    assert normalize(None) == ''\n"
+                            "def test_independent_whitespace():\n    assert normalize('\\t Alice \\n') == 'Alice'\n",
+                }, "independent-final-check")]
+            else:
+                assert self.requests == 3
+                feedback = next(message for message in messages
+                                if message.get("role") == "tool_result"
+                                and message.get("toolUseId") == "independent-final-check")
+                receipt, _ = json.JSONDecoder().raw_decode(feedback["content"].lstrip())
+                assert not feedback["isError"] and receipt["status"] == "passed"
+                assert receipt["evidence"]["exitCode"] == 0 and receipt["testReport"]["passed"] == 2
+                review_receipts.append(receipt)
                 actions = [call("review_submit", {"verdict": "approved",
-                    "criteria": [{"criterionId": cid, "status": "satisfied"} for cid in ("trim", "none")],
+                    "criteria": [{"criterionId": cid, "status": "satisfied",
+                        "rationale": "The independent None and whitespace assertions passed on this candidate.",
+                        "probeIds": [receipt["probeId"]], "sourceEvidence": []} for cid in ("trim", "none")],
                     "findings": [], "warnings": [], "requestedChecks": [], "confidence": "high"}, "review-deliver")]
             return response(messages, tools, actions)
 
@@ -187,7 +206,7 @@ def test_failed_final_write_returns_to_same_executor_before_delivery(tmp_path, m
     with observe_run(workspace=tmp_path, source="headless", title="failed final edit continuation",
                      journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run({"description": "finish both public behaviors", "agent_type": "workflow",
-            "prompt": "Strip whitespace and return an empty string for None, including a public regression test.",
+            "prompt": "Strip whitespace and return an empty string for None, including a public regression test. Please review the changes.",
             "workflow_request": request}, ToolContext(cwd=str(tmp_path), _runtime={"model": "local-fixture", "modelTimeoutSeconds": 300},
                 _agent_budget=budget, _task_deadline_monotonic=deadline, _event_sink=observation,
                 _central_workflow_v2_enforced=True))
@@ -213,6 +232,7 @@ def test_failed_final_write_returns_to_same_executor_before_delivery(tmp_path, m
         trace["terminalReason"], [item["exit"] for item in commands if item["formal"]])
     assert target.read_text() == COMPLETE and (tmp_path / "test_none.py").read_text() == REPAIRED_TEST
     assert [kind for kind, _ in adapters].count("general") == 1
+    assert len(review_receipts) == 1 and sum(role == "reviewer" for role, _ in calls) == 3
     executor_workers = [item for item in workers if item["role"] == "executor"]
     assert len(executor_workers) == 2 and executor_workers[0]["session"] is not None
     assert executor_workers[0]["session"] is executor_workers[1]["session"]
