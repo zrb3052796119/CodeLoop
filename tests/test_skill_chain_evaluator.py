@@ -2,17 +2,11 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import importlib.util
 import json
 from pathlib import Path
 from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[1]
-PATH = ROOT / '.repair-work/skill-chain-completion-2026-09-08/eval/runner.py'
-SPEC = importlib.util.spec_from_file_location('skill_chain_evaluator', PATH)
-assert SPEC and SPEC.loader
-evaluator = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(evaluator)
+from scripts.skill_chain.eval import runner as evaluator
 
 
 def test_real_loop_executes_reads_and_consumes_loaded_body(tmp_path):

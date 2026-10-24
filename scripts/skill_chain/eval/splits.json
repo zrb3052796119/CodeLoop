@@ -1,0 +1,29 @@
+{
+  "schema": "skill-chain-split/v1",
+  "cases_sha256": "6ff84b2748ee8f7820f3d9084896c09068b5924b5df45ed7867d1a6d1422c10a",
+  "dev": [
+    "C01",
+    "C02",
+    "C03",
+    "C06",
+    "C09",
+    "C12",
+    "C13",
+    "C16",
+    "C17",
+    "C20"
+  ],
+  "holdout": [
+    "C04",
+    "C05",
+    "C07",
+    "C08",
+    "C10",
+    "C11",
+    "C14",
+    "C15",
+    "C18",
+    "C19"
+  ],
+  "policy": "Split fixed before any live run. Dev has 7 positives/3 negatives; holdout has 8 positives/2 negatives. Both contain natural, phase-dependent and negative tasks. Holdout labels and prompts were necessarily authored/reviewed before implementation; this is a frozen run split, not a claim of author-blind unseen tasks."
+}

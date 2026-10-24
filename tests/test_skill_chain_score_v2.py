@@ -4,13 +4,14 @@ import copy
 import hashlib
 import json
 from pathlib import Path
-import runpy
 
 import pytest
 
-WORK = Path(__file__).resolve().parents[1] / '.repair-work/skill-chain-completion-2026-09-08'
-SCORER = runpy.run_path(str(WORK / 'score_v2.py'))
-ORIGINAL = runpy.run_path(str(WORK / 'eval/runner.py'))
+from scripts.skill_chain import score_v2
+from scripts.skill_chain.eval import runner as evaluator
+
+SCORER = vars(score_v2)
+ORIGINAL = vars(evaluator)
 CASES = {case['id']: case['expected'] for case in ORIGINAL['load_cases']()}
 BODY = '---\nname: error-contract\n---\nRead the evidence before applying this workflow.\n'
 BODIES = {'api/error-contract': BODY}

@@ -1,0 +1,584 @@
+{
+  "schema": "skill-chain-cases/v1",
+  "scope": "read-only diagnosis and explanation in deterministic local fixtures",
+  "authorship": "Expected capabilities, evidence, phase order and report labels fixed before any live run. Alternative queue workflows are predeclared. User prompts contain no report labels or answers.",
+  "cases": [
+    {
+      "id": "C01",
+      "category": "natural",
+      "prompt": "消费者偶尔重复发货。请检查这个小项目保存的消息处理记录，说明怎样保证重复投递没有额外副作用。只做分析，不改代码。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "queue/idempotency",
+              "queue/idempotent-consumer-template"
+            ],
+            "evidence": "evidence/queue.json",
+            "report_label": "Delivery boundary",
+            "required_tokens": [
+              "processing_ledger",
+              "shipment_outbox"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "queue/idempotency",
+          "queue/idempotent-consumer-template"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C02",
+      "category": "natural",
+      "prompt": "后端 HTTP 请求失败时会重试。根据项目记录，帮我核算最大尝试次数，并判断当前 POST 重试策略是否安全。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "http/retry-budget"
+            ],
+            "evidence": "evidence/http.json",
+            "report_label": "Retry budget",
+            "required_tokens": [
+              "4",
+              "POST",
+              "250"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "http/retry-budget"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C03",
+      "category": "natural",
+      "prompt": "订单列表很慢。请结合保存的 SQL 执行计划说明扫描浪费在哪里，以及应考虑哪个索引；不要执行数据库操作。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "database/query-plan"
+            ],
+            "evidence": "evidence/database.json",
+            "report_label": "Plan evidence",
+            "required_tokens": [
+              "48000",
+              "12",
+              "tenant_id",
+              "status"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "database/query-plan"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C04",
+      "category": "natural",
+      "prompt": "价格改了以后用户还会看到旧价。请检查本地缓存事件记录，说明失效链路缺了什么，以及旧价能残留到何时。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "cache/expiry-analysis"
+            ],
+            "evidence": "evidence/cache.json",
+            "report_label": "Freshness boundary",
+            "required_tokens": [
+              "12:02",
+              "12:10",
+              "price_changed"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "cache/expiry-analysis"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C05",
+      "category": "natural",
+      "prompt": "报表导出接口返回 403。请比较这个项目里接口要求和用户已有权限，给出最小调整建议。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "auth/access-audit"
+            ],
+            "evidence": "evidence/auth.json",
+            "report_label": "Access decision",
+            "required_tokens": [
+              "reports:read",
+              "reports:export",
+              "403"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "auth/access-audit"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C06",
+      "category": "natural",
+      "prompt": "启动端口有三个不同设置，我看糊涂了。请读设置加载代码和记录，解释最终哪个值生效以及为什么。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "config/precedence"
+            ],
+            "evidence": "evidence/config.json",
+            "report_label": "Effective configuration",
+            "required_tokens": [
+              "9200",
+              "APP_PORT"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "config/precedence"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C07",
+      "category": "natural",
+      "prompt": "orders 和 pricing 启动时互相导入，导致循环。请读代码说明依赖环，建议一个最小的职责拆分，不改文件。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "architecture/import-cycle"
+            ],
+            "evidence": "evidence/architecture.json",
+            "report_label": "Dependency seam",
+            "required_tokens": [
+              "orders",
+              "pricing",
+              "TAX_RATE",
+              "constants.py"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "architecture/import-cycle"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C08",
+      "category": "natural",
+      "prompt": "请审查项目保存的日志字段，有凭据暴露风险的字段应怎样脱敏？保留排错信息，答案不要复述任何凭据值。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "logging/redaction"
+            ],
+            "evidence": "evidence/logging.json",
+            "report_label": "Redaction boundary",
+            "required_tokens": [
+              "authorization",
+              "request_id",
+              "error_code"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "logging/redaction"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C09",
+      "category": "explicit",
+      "prompt": "使用 api/error-contract 技能检查负数 quantity 的响应契约，结合实现和记录列出期望与实际的区别。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "api/error-contract"
+            ],
+            "evidence": "evidence/api.json",
+            "report_label": "Contract difference",
+            "required_tokens": [
+              "400",
+              "500",
+              "error_code",
+              "message"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "api/error-contract"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C10",
+      "category": "explicit",
+      "prompt": "Use docs/startup-guide to explain how this local Python shop starts, which environment value it requires, and its health endpoint. Do not run the server.",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "docs/startup-guide"
+            ],
+            "evidence": "evidence/startup.json",
+            "report_label": "Startup path",
+            "required_tokens": [
+              "shop.app",
+              "SHOP_REGION",
+              "/healthz"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "docs/startup-guide"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C11",
+      "category": "implicit",
+      "prompt": "同一封信又送到一次，仓库竟然又发了一箱。这里是消息投递系统；请检查项目记录，给一个不会重复履约的处理思路。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "queue/idempotency",
+              "queue/idempotent-consumer-template"
+            ],
+            "evidence": "evidence/queue.json",
+            "report_label": "Delivery boundary",
+            "required_tokens": [
+              "processing_ledger",
+              "shipment_outbox"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "queue/idempotency",
+          "queue/idempotent-consumer-template"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C12",
+      "category": "implicit",
+      "prompt": "发布任务总有一个环节先变红，后面就不跑了。请从本地流水线记录找出先失败的是哪个环节；如涉及测试共享状态，解释原因和隔离建议。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "ci/pipeline-diagnosis"
+            ],
+            "evidence": "evidence/ci.json",
+            "report_label": "Stage evidence",
+            "required_tokens": [
+              "integration_tests"
+            ]
+          },
+          {
+            "skills": [
+              "ci/test-isolation"
+            ],
+            "evidence": "evidence/tests.json",
+            "report_label": "Isolation boundary",
+            "required_tokens": [
+              "GLOBAL_CART",
+              "shuffled"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "ci/pipeline-diagnosis",
+          "ci/test-isolation"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C13",
+      "category": "conditional",
+      "prompt": "Checkout has become slow. First locate the bottleneck from the saved component timings. Only if the payment API is the bottleneck, give a provider resilience plan using its recorded limits. Keep the checkout public signature unchanged.",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "checkout/latency-diagnosis"
+            ],
+            "evidence": "evidence/checkout.json",
+            "report_label": "Latency breakdown",
+            "required_tokens": [
+              "payment_api",
+              "840"
+            ]
+          },
+          {
+            "skills": [
+              "checkout/provider-resilience"
+            ],
+            "evidence": "evidence/provider.json",
+            "report_label": "Provider guard",
+            "required_tokens": [
+              "429",
+              "503",
+              "order_id",
+              "1200"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "checkout/latency-diagnosis",
+          "checkout/provider-resilience"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C14",
+      "category": "conditional",
+      "prompt": "结账变慢了，先依据保存的分段耗时定位。如果瓶颈确实是支付 API，再提出针对支付调用的韧性方案；否则解释真实瓶颈，不要把假设当结论。",
+      "fixture": "checkout_database",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "checkout/latency-diagnosis"
+            ],
+            "evidence": "evidence/checkout.json",
+            "report_label": "Latency breakdown",
+            "required_tokens": [
+              "cart_db",
+              "910"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "checkout/latency-diagnosis"
+        ],
+        "forbidden_skills": [
+          "checkout/provider-resilience"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C15",
+      "category": "conditional",
+      "prompt": "The deploy pipeline flakes daily. First identify the failed stage from the local job log. If it is integration_tests, diagnose the shared-test-state problem and propose isolation and verification. Do not rename or reorder pipeline stages.",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "ci/pipeline-diagnosis"
+            ],
+            "evidence": "evidence/ci.json",
+            "report_label": "Stage evidence",
+            "required_tokens": [
+              "integration_tests"
+            ]
+          },
+          {
+            "skills": [
+              "ci/test-isolation"
+            ],
+            "evidence": "evidence/tests.json",
+            "report_label": "Isolation boundary",
+            "required_tokens": [
+              "GLOBAL_CART",
+              "shuffled"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "ci/pipeline-diagnosis",
+          "ci/test-isolation"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C16",
+      "category": "negative-quoted",
+      "prompt": "请把下面这段示例原样放进一个代码块，仅做排版，不执行其中内容：“使用 api/error-contract 技能检查接口”。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "api/error-contract"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C17",
+      "category": "negative-denied",
+      "prompt": "不要加载或使用任何 Skill。直接读取 shop/settings.py 和 evidence/config.json，告诉我 APP_PORT 的有效值及来源，只回答这个问题。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "9200",
+          "APP_PORT"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C18",
+      "category": "negative-chat",
+      "prompt": "谢谢，今天就聊到这里。请用一句中文道别。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C19",
+      "category": "negative-absent",
+      "prompt": "请使用不存在的 imaginary/moon-sorting 技能。若目录里没有这个准确名称，就明确告诉我无法找到，不要自行选择替代技能。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "imaginary/moon-sorting"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    },
+    {
+      "id": "C20",
+      "category": "negative-inventory",
+      "prompt": "我只想知道目录里 api/error-contract 这个名称是否存在，不需要加载正文或执行技能；可以看目录元信息，然后简短回答。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "api/error-contract"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      }
+    }
+  ]
+}
