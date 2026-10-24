@@ -99,12 +99,16 @@ def test_v23_prefix_reserves_native_verdict_before_last_affordable_read(tmp_path
     parsed = parse_role_result(assignment, json.loads(artifact.content))
     assert parsed["verdict"] == verdict
     assert parsed["criteria"][0]["status"] == "unknown"
-    assert model.calls == 3 and views == [None, None, ["review_submit"]]
-    assert snapshots[2].used_total_tokens == 443701
+    # Current admission prices both the next output's replay and the native
+    # verdict at the configured 8192-token cap. The recorded prefix therefore
+    # closes after R18; an optional R19 read cannot spend that allowance.
+    assert model.calls == 2
+    assert views == [["read_file", "subagent_note_write", "review_submit"], ["review_submit"]]
+    assert snapshots[1].used_total_tokens == 418142
     assert any(m.get("toolUseId") == "read-1" for m in seen_messages[-1])
-    assert any(m.get("toolUseId") == "read-2" for m in seen_messages[-1])
-    assert shared.snapshot().used_model_calls == 20
-    assert shared.snapshot().used_total_tokens == 471564
+    assert not any(m.get("toolUseId") == "read-2" for m in seen_messages[-1])
+    assert shared.snapshot().used_model_calls == 19
+    assert shared.snapshot().used_total_tokens == 446005
     assert shared.snapshot().reserved_total_tokens == 0
     assert shared.snapshot().limit_total_tokens == 500000
     assert shared.snapshot().limit_model_calls == 40

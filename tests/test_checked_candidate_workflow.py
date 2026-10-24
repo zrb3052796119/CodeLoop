@@ -53,8 +53,7 @@ def _exercise(tmp_path, monkeypatch, *, mode):
     budget = AgentTurnBudget(max_model_calls=40, max_total_tokens=500000)
     monkeypatch.delenv("MINI_CODE_SUBAGENT_GENERAL_MAX_TURNS", raising=False)
     prefix_tokens, prefix_calls = [0], [0]
-    calls, commands, adapters, workers, billed = [], [], [], [], []
-    input_estimates = []
+    calls, commands, adapters, workers, billed, probe_receipts = [], [], [], [], [], []
     deadline = time.monotonic() + 600
     original_run = task_module._run
 
@@ -74,7 +73,6 @@ def _exercise(tmp_path, monkeypatch, *, mode):
                    for t in tools.list()]
         sent = sum(estimate_message_tokens(m) for m in messages) + estimate_tokens(json.dumps(schemas))
         output = estimate_tokens(json.dumps(tool_calls))
-        input_estimates.append(sent)
         billed.append(sent + output)
         return AgentStep(type="tool_calls", calls=tool_calls,
                          usage=ModelUsage(input_tokens=sent, output_tokens=output, source="estimated"))
@@ -132,8 +130,21 @@ def _exercise(tmp_path, monkeypatch, *, mode):
             native_only = {t.name for t in tools.list()} == {"review_submit"}
             if self.count == 1 and not native_only:
                 actions = [tool("read_file", {"path": "candidate.py"}, "review-source")]
+                if not probe_receipts:
+                    actions.append(tool("review_test", {
+                        "criterionIds": ["trim", "none"],
+                        "scenario": "Whitespace is stripped and None returns the documented empty string.",
+                        "code": REPAIRED_TEST,
+                    }, "independent-normalize-probe"))
             else:
-                assert self.count == 2 or native_only
+                assert self.count == 2 or native_only, json.dumps(messages[-3:])
+                for message in messages:
+                    if (message.get("role") == "tool_result"
+                            and message.get("toolUseId") == "independent-normalize-probe"):
+                        receipt, _ = json.JSONDecoder().raw_decode(message["content"].lstrip())
+                        assert receipt["status"] in {"passed", "failed"}, receipt
+                        if receipt not in probe_receipts:
+                            probe_receipts.append(receipt)
                 if native_only:
                     # The real tail tool view permits only the conclusion.
                     # Its candidate packet is already present; no fabricated
@@ -145,6 +156,14 @@ def _exercise(tmp_path, monkeypatch, *, mode):
                                   if m.get("role") == "tool_result" and m.get("toolUseId") == "review-source")
                 complete = "if value is None:" in source
                 assert target.read_text() == INITIAL, "Reviewer cannot observe premature parent writeback."
+                criteria = [{"criterionId": "trim", "status": "satisfied"},
+                            {"criterionId": "none", "status": "satisfied" if complete else "failed"}]
+                if complete:
+                    assert probe_receipts and probe_receipts[0]["probeId"] in str(messages)
+                    for criterion in criteria:
+                        criterion.update(
+                            rationale="The independently executed tests assert whitespace normalization and the None boundary.",
+                            probeIds=[probe_receipts[0]["probeId"]], sourceEvidence=[])
                 if mode == "review-no-budget":
                     # A recorded historical call prefix leaves the original
                     # ten downstream calls, insufficient for another Executor
@@ -155,8 +174,7 @@ def _exercise(tmp_path, monkeypatch, *, mode):
                         prefix_calls[0] += 1
                 actions = [tool("review_submit", {
                     "verdict": "approved" if complete else "changes_required",
-                    "criteria": [{"criterionId": "trim", "status": "satisfied"},
-                                 {"criterionId": "none", "status": "satisfied" if complete else "failed"}],
+                    "criteria": criteria,
                     "findings": [] if complete else [{"criterionIds": ["none"], "statement": FINDING}],
                     "warnings": [], "requestedChecks": [], "confidence": "high",
                 }, "real-review-verdict")]
@@ -180,19 +198,35 @@ def _exercise(tmp_path, monkeypatch, *, mode):
                 kwargs["checks"] = tuple(replace(c, timeout_seconds=1)
                     if c.check_id == "missing" else c for c in kwargs["checks"])
             result = super().run(**kwargs)
+            probe_run = any("__minicode_review_probe__.py" in check.argv
+                            for check in kwargs["checks"])
             commands.extend({"exit": c["exitCode"], "cwd": kwargs["cwd"],
+                             "probe": probe_run,
                              "parent": target.read_text()} for c in result["checks"])
             executor_count = sum(role == "executor" for role, _ in calls)
-            if any(c["exitCode"] == 1 for c in result["checks"]) and executor_count in (1, 3):
+            if (not probe_run and any(c["exitCode"] == 1 for c in result["checks"])
+                    and executor_count in (1, 3)):
                 worker = next(w["budget"] for w in reversed(workers) if w["role"] == "executor")
-                # Reproduce the known spent-prefix decision boundary without
-                # a large artificial prompt. New calls are billed from their
-                # actual messages/schemas; this is separate historical usage.
-                allowance = input_estimates[-1] + 4096 + 512
-                prefix = worker.snapshot().limit_total_tokens - allowance - budget.snapshot().used_total_tokens
-                assert prefix >= 0
-                budget.record_model_call(input_tokens=prefix)
-                prefix_tokens[0] += prefix
+                # Price the next actual request, including its current phase
+                # output/handoff floor. A previous request's input plus a
+                # hard-coded output cap can stop before the intended edit as
+                # schemas evolve. Historical usage remains a separate charge
+                # on the same 500k ledger; subsequent requests are not granted
+                # an extra allowance.
+                reserve = worker.reserve_model_call
+
+                def price_final_edit(estimated_input_tokens=0, **reserve_kwargs):
+                    monkeypatch.setattr(worker, "reserve_model_call", reserve)
+                    allowance = (estimated_input_tokens
+                                 + reserve_kwargs.get("preserve_total_tokens", 0) + 512)
+                    prefix = (worker.snapshot().limit_total_tokens - allowance
+                              - budget.snapshot().used_total_tokens)
+                    assert prefix >= 0
+                    budget.record_model_call(input_tokens=prefix)
+                    prefix_tokens[0] += prefix
+                    return reserve(estimated_input_tokens, **reserve_kwargs)
+
+                monkeypatch.setattr(worker, "reserve_model_call", price_final_edit)
             return result
 
     verifier = ObservedVerifier(sandbox_backend=TestSandbox(),
@@ -221,7 +255,7 @@ def _exercise(tmp_path, monkeypatch, *, mode):
     with observe_run(workspace=tmp_path, source="headless", title="checked candidate local proof",
                      journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run({"description": "check candidate delivery",
-            "prompt": "Update normalize: strip surrounding whitespace and return an empty string for None.",
+            "prompt": "Update normalize: strip surrounding whitespace and return an empty string for None. Review the resulting change.",
             "agent_type": "workflow", "workflow_request": request},
             ToolContext(cwd=str(tmp_path), _runtime={"model": "local-fixture"}, _agent_budget=budget,
                         _task_deadline_monotonic=deadline, _central_workflow_v2_enforced=True,
@@ -247,6 +281,10 @@ def _exercise(tmp_path, monkeypatch, *, mode):
             candidates = [d for d in documents if d.get("resultType") == "ExecutionCandidate.v1"]
             assert candidates and all(d["status"] == "awaiting_verification" for d in candidates)
             assert all(d["unassessedStepIds"] and "stepResults" not in d for d in candidates)
+            assert all(len(d["implementationReceiptRefs"]) == len(request["verificationChecks"])
+                       for d in candidates)
+            assert any(d.get("resultType") == "ReviewProbeSource.v1" for d in documents)
+            assert any(d.get("resultType") == "ReviewCoverageEvidence.v1" for d in documents)
             assert not any(d.get("resultType") == "ExecutionResult.v1" for d in documents)
             assert reloaded.get_scheduler_commit_ready(run_id, trace["workflowId"]) is not None
     else:
@@ -272,7 +310,8 @@ def test_checked_budget_ended_candidate_reaches_formal_verification_review_and_c
         "A checked budget-ended candidate never reached independent gates:",
         trace["terminalReason"], [c["exit"] for c in commands])
     assert target.read_text() == COMPLETE
-    assert [c["exit"] for c in commands] == [1, 0, 0]
+    assert [c["exit"] for c in commands if not c["probe"]] == [1, 0, 0]
+    assert [c["exit"] for c in commands if c["probe"]] == [0]
     assert [role for role, _ in calls] == ["executor", "executor", "reviewer", "reviewer"]
     assert len(sessions) == 1 and sessions[0]["resumed"] is False
     assert any(data_dir.rglob("commit-ready.json"))
@@ -284,7 +323,10 @@ def test_review_rejection_returns_checked_candidate_to_same_executor_session(tmp
         "A host candidate did not retain the standard review/repair loop:",
         trace["terminalReason"], [c["exit"] for c in commands])
     assert target.read_text() == COMPLETE
-    assert [c["exit"] for c in commands] == [1, 0, 0, 1, 0, 0]
+    assert [c["exit"] for c in commands if not c["probe"]] == [1, 0, 0, 1, 0, 0]
+    # The unchanged probe fails in review and after adding the regression,
+    # then passes after the real repair and again at independent review.
+    assert [c["exit"] for c in commands if c["probe"]] == [1, 1, 0, 0]
     assert [role for role, _ in calls].count("executor") == 4
     assert len(sessions) == 2 and sessions[0]["sessionId"] == sessions[1]["sessionId"]
     assert sessions[1]["resumed"] and sessions[1]["modelReused"] and sessions[1]["priorMessageCount"] > 0
@@ -295,7 +337,8 @@ def test_review_rejection_without_repair_budget_preserves_candidate_without_comm
     result, trace, commands, _calls, target, _sessions, data_dir = _exercise(tmp_path, monkeypatch, mode="review-no-budget")
     assert not result.ok and not trace["committed"]
     assert target.read_text() == INITIAL
-    assert [c["exit"] for c in commands] == [1, 0, 0]
+    assert [c["exit"] for c in commands if not c["probe"]] == [1, 0, 0]
+    assert [c["exit"] for c in commands if c["probe"]] == [1]
     assert any(t["stage"] == "reviewer" for t in trace["transitions"]), "Rejection must be an actual Reviewer verdict."
     assert any(data_dir.rglob("failure-candidate.json"))
 

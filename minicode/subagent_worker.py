@@ -37,14 +37,31 @@ _RESULT_STATUSES = frozenset(
 _SUBAGENT_ID_RE = re.compile(r"^sub_[0-9a-f]{32}$")
 _RUN_ID_RE = re.compile(r"^run_[0-9a-f]{32}$")
 
-# Bound the payload the supervisor has to read; the parent applies its own
-# 8000-char presentation truncation on top of this transport cap.
-_MAX_FINAL_MESSAGE_CHARS = 64_000
+# Large prose travels as an exact file plus a bounded inline summary, so
+# neither this transport nor the parent's presentation drops its evidence.
+_MAX_FINAL_MESSAGE_CHARS = 8_000
 _MAX_ERROR_CHARS = 4_000
 
 
 def _bounded(value: object, limit: int) -> str:
     return str(value or "")[:limit]
+
+
+def _transport_final_message(message: str, *, cwd: str, permissions: object) -> str:
+    if len(message) <= _MAX_FINAL_MESSAGE_CHARS:
+        return message
+    from minicode.tooling import ToolContext
+    from minicode.workflow_brief import write_workflow_artifact
+
+    path, digest = write_workflow_artifact(
+        ToolContext(cwd=cwd, permissions=permissions), message.encode("utf-8"),
+    )
+    reference = (
+        f"Complete sub-agent output: {path}\nSHA-256: {digest}\n"
+        f"Read the file for the complete {len(message)}-character output.\n\n"
+        "Inline summary excerpt:\n"
+    )
+    return reference + message[:_MAX_FINAL_MESSAGE_CHARS - len(reference)]
 
 
 def _payload(status: str, **fields: object) -> dict[str, object]:
@@ -264,6 +281,9 @@ def _execute(request: dict[str, object], *, tool_evidence_recorder=None) -> dict
         include_mcp=True,
         include_user_interaction=False,
     )
+    event_sink = None
+    budget = None
+    budget_lease = request.get("budget_lease")
     try:
         # Same registry contract as the in-process general path: the full
         # registry minus `task`, which keeps the sub-agent tree depth-bounded.
@@ -389,6 +409,7 @@ def _execute(request: dict[str, object], *, tool_evidence_recorder=None) -> dict
                 "deadline_exceeded",
                 error=_bounded(f"{type(exc).__name__}: {exc}", _MAX_ERROR_CHARS),
                 model_turns=event_sink.model_turns,
+                tool_calls=event_sink.tool_calls,
                 duration_ms=int((time.time() - started_at) * 1000),
                 semantic_intent_events=event_sink.semantic_intent_events,
                 **_budget_token_fields(budget, budget_lease),
@@ -462,6 +483,7 @@ def _execute(request: dict[str, object], *, tool_evidence_recorder=None) -> dict
                 "deadline_exceeded",
                 error=_bounded(f"{type(exc).__name__}: {exc}", _MAX_ERROR_CHARS),
                 model_turns=event_sink.model_turns,
+                tool_calls=event_sink.tool_calls,
                 duration_ms=int((time.time() - started_at) * 1000),
                 semantic_intent_events=event_sink.semantic_intent_events,
                 **_budget_token_fields(budget, budget_lease),
@@ -471,6 +493,7 @@ def _execute(request: dict[str, object], *, tool_evidence_recorder=None) -> dict
                 "budget_exceeded",
                 error=_bounded(exc.reason, _MAX_ERROR_CHARS),
                 model_turns=event_sink.model_turns,
+                tool_calls=event_sink.tool_calls,
                 duration_ms=int((time.time() - started_at) * 1000),
                 semantic_intent_events=event_sink.semantic_intent_events,
                 **_budget_token_fields(budget, budget_lease),
@@ -490,7 +513,7 @@ def _execute(request: dict[str, object], *, tool_evidence_recorder=None) -> dict
                 break
         if not final_message:
             final_message = "(sub-agent completed without a final message)"
-        tool_calls = sum(
+        tool_calls = event_sink.tool_calls or sum(
             1 for m in result_messages if m.get("role") == "assistant_tool_call"
         )
         message_model_turns = sum(
@@ -500,6 +523,9 @@ def _execute(request: dict[str, object], *, tool_evidence_recorder=None) -> dict
         )
         model_turns = event_sink.model_turns or message_model_turns
         duration_ms = int((time.time() - started_at) * 1000)
+        transport_message = _transport_final_message(
+            final_message, cwd=cwd, permissions=permissions,
+        )
 
         typed = outcome_capture.outcome
         if typed is None or typed.status != "success":
@@ -507,10 +533,10 @@ def _execute(request: dict[str, object], *, tool_evidence_recorder=None) -> dict
             return _payload(
                 "failed",
                 typed_status=typed_status,
-                final_message=_bounded(final_message, _MAX_FINAL_MESSAGE_CHARS),
+                final_message=transport_message,
                 model_turns=model_turns,
                 tool_calls=tool_calls,
-                result_truncated=len(final_message) > 8000,
+                result_truncated=False,
                 duration_ms=duration_ms,
                 semantic_intent_events=event_sink.semantic_intent_events,
                 **_budget_token_fields(budget, budget_lease),
@@ -521,16 +547,26 @@ def _execute(request: dict[str, object], *, tool_evidence_recorder=None) -> dict
         mailbox_report = _read_subagent_report(mailbox, result_key)
         return _payload(
             "completed",
-            final_message=_bounded(final_message, _MAX_FINAL_MESSAGE_CHARS),
+            final_message=transport_message,
             report_content=(
                 mailbox_report if isinstance(mailbox_report, str) else None
             ),
             model_turns=model_turns,
             tool_calls=tool_calls,
-            result_truncated=len(final_message) > 8000,
+            result_truncated=False,
             partial=final_partial,
             duration_ms=duration_ms,
             semantic_intent_events=event_sink.semantic_intent_events,
+            **_budget_token_fields(budget, budget_lease),
+        )
+    except Exception as exc:  # Preserve observed calls on an unexpected worker failure.
+        return _payload(
+            "error",
+            error=_bounded(f"{type(exc).__name__}: {exc}", _MAX_ERROR_CHARS),
+            model_turns=event_sink.model_turns if event_sink is not None else 0,
+            tool_calls=event_sink.tool_calls if event_sink is not None else 0,
+            semantic_intent_events=(event_sink.semantic_intent_events
+                                    if event_sink is not None else []),
             **_budget_token_fields(budget, budget_lease),
         )
     finally:

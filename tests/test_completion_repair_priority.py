@@ -11,6 +11,7 @@ import test_completion_feedback_chronology as chronology
 from test_completion_feedback_chronology import OBJECTIVE, PARTIAL, _call, _result
 from test_completion_failure_adjudication_resume import packet_with
 from test_semantic_supersession_continuation import BROKEN_FIXTURE, VALID_FIXTURE
+from test_completion_coverage_audit import _inspection_step
 
 
 inventory = chronology.inventory
@@ -36,6 +37,9 @@ def test_pending_replacement_does_not_cancel_independent_product_repair(inventor
         def next(self, messages, **kwargs):
             nonlocal original_read
             names = set(kwargs["tools_override"].list_all())
+            inspection = _inspection_step(messages, kwargs["tools_override"])
+            if inspection is not None:
+                return inspection
             if "completion_probe_adjudication_submit" in names:
                 packet = packet_with(messages, "probe")
                 source = [m for m in messages if m.get("role") == "tool_result"

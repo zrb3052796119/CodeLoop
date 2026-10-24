@@ -383,12 +383,13 @@ def _run(
     central_enforced: bool = False,
     commit_audit_waived: bool = False,
     task_deadline_monotonic: float | None = None,
+    prompt: str = "Apply the structured request.",
 ):
     return task_module.task_tool.run(
         task_module.task_tool.validator(
             {
                 "description": "structured workflow route",
-                "prompt": "Apply the structured request.",
+                "prompt": prompt,
                 "agent_type": "workflow",
                 "workflow_request": request,
             }
@@ -407,7 +408,7 @@ def _run(
     )
 
 
-def test_public_low_scoped_change_takes_executor_verifier_reviewer_route(
+def test_public_low_scoped_change_defaults_to_executor_verifier_route(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -442,10 +443,10 @@ def test_public_low_scoped_change_takes_executor_verifier_reviewer_route(
         commit_audit_waived=True,
     )
 
-    # A narrow low-risk scope skips Analyst, but passing commands still need
-    # semantic review before the frozen candidate can be promoted.
+    # The complete request uses deterministic verification without paying
+    # for preliminary analysis or an unrequested independent review.
     assert result.ok is True
-    assert roles == ["executor", "verifier", "reviewer"]
+    assert roles == ["executor", "verifier"]
     assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "after"
     projected = extract_subagent_result(result.output)
     assert projected is not None
@@ -453,7 +454,7 @@ def test_public_low_scoped_change_takes_executor_verifier_reviewer_route(
     assert projected["verification"]["status"] == "passed"
     trace = extract_scheduler_trace(result.output)
     assert trace is not None
-    assert trace["ruleId"] == "route.scoped_change"
+    assert trace["ruleId"] == "route.verified_change"
     assert trace["status"] == "completed"
     assert trace["committed"] is True
     assert [
@@ -463,7 +464,7 @@ def test_public_low_scoped_change_takes_executor_verifier_reviewer_route(
     assert [
         transition["outcome"] for transition in trace["transitions"]
         if transition["stage"] == "reviewer"
-    ] == ["dispatched", "completed"]
+    ] == []
 
 
 def test_executor_order_narrowing_write_scope_passes_sealed_audit(
@@ -512,6 +513,7 @@ def test_executor_order_narrowing_write_scope_passes_sealed_audit(
         monkeypatch,
         event_sink=DurableSink(),
         commit_audit_waived=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is True
@@ -949,18 +951,22 @@ def test_critical_read_only_request_can_resume_through_human_gate(
     assert trace["committed"] is False
 
 
-def test_analyst_unknown_requires_request_revision_before_executor(
+def test_analyst_unknown_is_preserved_and_reaches_executor(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     target = tmp_path / "allowed.txt"
     target.write_text("before", encoding="utf-8")
-    roles: list[str] = []
+    roles = []
     audits = []
+    unknown = "The behavior of an undocumented caller still needs checking."
 
     class DurableSink:
         def emit(self, *_args, **_kwargs):
             return None
+
+        def record_scheduler_commit_ready(self, ready):
+            return True
 
         def record_scheduler_audit(self, audit):
             audits.append(audit)
@@ -969,67 +975,33 @@ def test_analyst_unknown_requires_request_revision_before_executor(
     def worker(input_data, context):
         role = _worker_role(input_data)
         roles.append(role)
-        assert role == "analyst"
-        _write_analyst_result(
-            input_data,
-            context,
-            prepare_change=True,
-            unknowns=["The requirement has two incompatible interpretations."],
-        )
-        return ToolResult(ok=True, output="analysis found an ambiguity")
+        if role == "analyst":
+            _write_analyst_result(input_data, context, prepare_change=True, unknowns=[unknown])
+        else:
+            assert role == "executor"
+            assignment = _prompt_json(input_data["prompt"], "EXECUTOR ASSIGNMENT")
+            handoffs = [json.loads(context._subagent_mailbox.read(ref).content)
+                        for ref in assignment["inputRefs"]]
+            assert any(item.get("report", {}).get("unknowns") == [unknown] for item in handoffs)
+            Path(context.cwd, "allowed.txt").write_text("after", encoding="utf-8")
+            _write_executor_declaration(input_data, context)
+        return ToolResult(ok=True, output=f"{role} completed")
+
+    def verifier(self, **request):
+        roles.append("verifier")
+        return _verification_result(request)
 
     monkeypatch.setattr(task_module, "_run", worker)
-
-    result = _run(
-        tmp_path,
-        _request(risk="high", complex=True),
-        monkeypatch,
-        event_sink=DurableSink(),
-        central_enforced=True,
-    )
-
-    assert result.ok is False
-    assert roles == ["analyst"]
-    assert target.read_text(encoding="utf-8") == "before"
-    assert "analyst_unknowns_require_request_revision" in result.output
-    trace = extract_scheduler_trace(result.output)
-    assert trace is not None
-    assert trace["status"] == "failed"
+    monkeypatch.setattr(DeterministicVerifier, "run", verifier)
+    result = _run(tmp_path, _request(risk="low", complex=False), monkeypatch,
+                  event_sink=DurableSink(), central_enforced=True,
+                  prompt="Please analyze first, then apply the structured request.")
+    assert result.ok is True, result.output
+    assert roles == ["analyst", "executor", "verifier"]
+    assert target.read_text(encoding="utf-8") == "after"
     assert len(audits) == 1
-    audit = audits[0]
-    analyst_artifact = next(
-        artifact
-        for artifact in audit.artifacts
-        if json.loads(artifact.content).get("resultType") == "AnalystHandoff.v1"
-    )
-    mutated_handoff = json.loads(analyst_artifact.content)
-    mutated_handoff["report"]["unknowns"] = []
-    tampered_artifacts = tuple(
-        SchedulerArtifact(
-            artifact.artifact_id,
-            json.dumps(
-                mutated_handoff,
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-                allow_nan=False,
-            ),
-        )
-        if artifact.artifact_id == analyst_artifact.artifact_id
-        else artifact
-        for artifact in audit.artifacts
-    )
-    with pytest.raises(
-        SchedulerAuditValidationError,
-        match="Analyst terminal cause",
-    ):
-        project_scheduler_audit(
-            profile=audit.profile,
-            plan=audit.plan,
-            trace=audit.trace,
-            artifacts=tampered_artifacts,
-            contract_mode="v2",
-        )
+    assert any(json.loads(artifact.content).get("report", {}).get("unknowns") == [unknown]
+               for artifact in audits[0].artifacts)
 
 
 def test_analyst_discovered_high_risk_requires_scheduler_reclassification(
@@ -1063,7 +1035,7 @@ def test_analyst_discovered_high_risk_requires_scheduler_reclassification(
 
     monkeypatch.setattr(task_module, "_run", worker)
 
-    result = _run(tmp_path, _request(risk="medium", complex=True), monkeypatch)
+    result = _run(tmp_path, _request(risk="medium", complex=True), monkeypatch, prompt="Analyze first. Apply the structured request and review the resulting change.")
 
     assert result.ok is False
     assert roles == ["analyst", "adjudicator"]
@@ -1148,6 +1120,7 @@ def test_analyst_risk_conflict_adjudicated_continuation_resumes_the_locked_route
         monkeypatch,
         event_sink=AuditSink(),
         commit_audit_waived=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is True
@@ -1202,7 +1175,7 @@ def test_analyst_risk_conflict_adjudicated_stop_terminates_before_executor(
 
     monkeypatch.setattr(task_module, "_run", worker)
 
-    result = _run(tmp_path, _request(risk="medium", complex=True), monkeypatch)
+    result = _run(tmp_path, _request(risk="medium", complex=True), monkeypatch, prompt="Analyze first. Apply the structured request and review the resulting change.")
 
     assert result.ok is False
     assert roles == ["analyst", "adjudicator"]
@@ -1233,6 +1206,7 @@ def test_analyst_phase_failure_retries_with_exact_reason_not_port_failure(
         tmp_path,
         _request(risk="medium", complex=True),
         monkeypatch,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -1284,6 +1258,7 @@ def test_empty_analyst_step_scope_fails_before_executor_and_is_audited(
         monkeypatch,
         event_sink=DurableSink(),
         central_enforced=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -1471,6 +1446,7 @@ def test_scheduler_port_failure_cannot_claim_semantic_role_authority(
         monkeypatch,
         event_sink=DurableSink(),
         central_enforced=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -1591,6 +1567,7 @@ def test_structured_stage_adapter_faults_fail_closed_with_replayable_audit(
         monkeypatch,
         event_sink=DurableSink(),
         central_enforced=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -1701,6 +1678,7 @@ def test_medium_complex_request_runs_strict_full_chain_in_role_order_and_commits
         monkeypatch,
         event_sink=AuditSink(),
         commit_audit_waived=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is True
@@ -1791,6 +1769,7 @@ def test_offline_audit_replays_completed_authority_artifacts(
         monkeypatch,
         event_sink=AuditSink(),
         commit_audit_waived=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
     assert result.ok is True
     audit = audits[0]
@@ -1885,6 +1864,7 @@ def test_reviewer_retry_commits_with_audit_bound_to_second_assignment(
         monkeypatch,
         event_sink=DurableSink(),
         central_enforced=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is True
@@ -2093,6 +2073,7 @@ def test_maximum_v2_evidence_and_retry_shape_stays_below_artifact_limit(
         event_sink=DurableSink(),
         approval_provider=ApprovalProvider(),
         central_enforced=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is True, result.output
@@ -2161,6 +2142,7 @@ def test_long_retry_narrative_preserves_both_authority_artifacts_and_finalizatio
         monkeypatch,
         event_sink=DurableSink(),
         central_enforced=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     trace = extract_scheduler_trace(result.output)
@@ -2205,7 +2187,7 @@ def test_cancellation_from_injected_worker_propagates_before_promotion(
     monkeypatch.setattr(task_module, "_run", worker)
 
     with pytest.raises(TurnCancellationRequested) as raised:
-        _run(tmp_path, _request(), monkeypatch)
+        _run(tmp_path, _request(), monkeypatch, prompt="Analyze first. Apply the structured request and review the resulting change.")
 
     assert raised.value is cancellation
     assert roles == ["analyst", "executor"]
@@ -2263,6 +2245,7 @@ def test_multiple_retries_with_maximum_task_id_keep_public_authority_bounded(
         monkeypatch,
         event_sink=DurableSink(),
         central_enforced=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is True
@@ -2311,6 +2294,7 @@ def test_reviewer_cannot_approve_without_mapped_verification_evidence(
         tmp_path,
         _request(risk="medium", complex=True),
         monkeypatch,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -2379,6 +2363,7 @@ def test_failed_verifier_artifact_remains_replayable_and_tamper_evident(
         monkeypatch,
         event_sink=DurableSink(),
         central_enforced=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -2388,7 +2373,7 @@ def test_failed_verifier_artifact_remains_replayable_and_tamper_evident(
     verifier_transition = next(
         transition
         for transition in audit.trace["transitions"]
-        if transition["stage"] == "verifier" and transition["outcome"] == "inconclusive"
+        if transition["stage"] == "verifier" and transition["outcome"] == "failed"
     )
     verification_artifact_id = str(verifier_transition["artifactId"])
     tampered_artifacts = tuple(
@@ -2884,7 +2869,7 @@ def test_deadline_after_commit_ready_seal_reports_persisted_without_promotion(
 
         def record_scheduler_commit_ready(self, ready):
             ready_records.append(ready)
-            now[0] = 10.0
+            now[0] = 1_000.0
             return True
 
         def record_scheduler_audit(self, audit):
@@ -2926,7 +2911,8 @@ def test_deadline_after_commit_ready_seal_reports_persisted_without_promotion(
         monkeypatch,
         event_sink=DeadlineSink(),
         central_enforced=True,
-        task_deadline_monotonic=5.0,
+        task_deadline_monotonic=900.0,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -3761,6 +3747,7 @@ def test_missing_or_malformed_analyst_result_blocks_executor(
         tmp_path,
         _request(risk="medium", complex=True),
         monkeypatch,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -3808,6 +3795,7 @@ def test_missing_or_patch_mismatched_reviewer_result_blocks_commit_and_rolls_bac
         tmp_path,
         _request(risk="medium", complex=True),
         monkeypatch,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -3869,6 +3857,7 @@ def test_truncated_frozen_diff_cannot_be_presented_as_approved(
         monkeypatch,
         event_sink=DurableSink(),
         central_enforced=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -3961,6 +3950,7 @@ def test_changes_required_review_is_rejected_and_durably_audited(
         monkeypatch,
         event_sink=DurableSink(),
         central_enforced=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -4663,6 +4653,7 @@ def test_analyst_retry_prompt_carries_bounded_validation_feedback(
         _request(),
         monkeypatch,
         commit_audit_waived=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is True
@@ -4708,6 +4699,7 @@ def test_analyst_unrecoverable_payload_stays_fail_closed(
         _request(),
         monkeypatch,
         commit_audit_waived=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is False
@@ -4770,6 +4762,7 @@ def test_analyst_format_repair_is_audited_with_repair_receipt(
         monkeypatch,
         event_sink=AuditSink(),
         commit_audit_waived=True,
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is True
@@ -4858,7 +4851,7 @@ def test_analyst_evidence_feedback_includes_actual_line_count(
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(DeterministicVerifier, "run", verifier)
 
-    result = _run(tmp_path, _request(), monkeypatch, commit_audit_waived=True)
+    result = _run(tmp_path, _request(), monkeypatch, commit_audit_waived=True, prompt="Analyze first. Apply the structured request and review the resulting change.")
 
     assert result.ok is True
     assert len(analyst_instructions) == 2

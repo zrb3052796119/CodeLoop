@@ -124,6 +124,9 @@ def packet_with(messages, key):
 
 @pytest.mark.parametrize('product_gap', [False, True], ids=['fix-probe-preserve-product', 'fix-real-product-gap'])
 def test_same_owner_resumes_independent_adjudication_real_tests_and_delivery(inventory, monkeypatch, product_gap):
+    # This exercises complete strict continuation, including all replacement
+    # evidence pages. Bounded phase exhaustion has separate delivery tests.
+    monkeypatch.setenv('MINI_CODE_COMPLETION_REVIEW_MODE', 'full')
     case = inventory
     document, saved, old_probe_id = seed_failed_checkpoint(case, monkeypatch, product_gap=product_gap)
     preserved_tool_result = deepcopy(_result(saved, 'old-source-read'))

@@ -126,13 +126,14 @@ def test_structured_request_conservatively_derives_risk_and_complexity() -> None
         complex=False,
         parent_has_sufficient_context=False,
         scope_clear=True,
-        acceptance_executable=False,
+        acceptance_executable=True,
         human_confirmation_required=True,
     )
     assert request.scope.write_paths == (
         "minicode/auth.py",
         "tests/test_auth.py",
     )
+    assert request.task_profile_for_policy(5).acceptance_executable is False
     assert [item.criterion_id for item in request.criteria] == [
         "ac_behavior",
         "ac_tests",
@@ -208,7 +209,7 @@ def test_narrow_fully_covered_low_risk_change_takes_the_scoped_route() -> None:
     )
 
 
-def test_wider_scope_keeps_the_reviewer_gate() -> None:
+def test_wider_complete_scope_has_executable_acceptance_without_forcing_analysis() -> None:
     raw = _workflow_request()
     raw["scope"] = {
         "readRoots": ["."],
@@ -218,11 +219,12 @@ def test_wider_scope_keeps_the_reviewer_gate() -> None:
 
     request = _parse_request(raw)
 
-    # Three write paths exceed the narrow-scope bound: the request cannot
-    # certify executable acceptance and keeps the full reviewed chain.
-    assert request.task_profile.acceptance_executable is False
+    # V6 accepts complete check associations; host review selection remains
+    # separate. Historical v5 inference retains its narrow scope restriction.
+    assert request.task_profile.acceptance_executable is True
+    assert request.task_profile_for_policy(5).acceptance_executable is False
     assert CentralScheduler().plan(request.task_profile).rule_id == (
-        "route.reviewed_change"
+        "route.scoped_change"
     )
 
 

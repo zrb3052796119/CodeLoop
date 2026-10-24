@@ -7,6 +7,7 @@ audit and promotion run through production. No provider calls are made.
 
 import json
 import sys
+import time
 from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
@@ -78,7 +79,7 @@ def _exercise(tmp_path, monkeypatch, *, max_tokens=None, failed_check=False):
         while hasattr(ledger, "_budget"):
             ledger = ledger._budget
         assert ledger is budget
-        assert context._task_deadline_monotonic is None
+        assert time.monotonic() < context._task_deadline_monotonic <= time.monotonic() + 900
         assert context._logical_agent_max_model_calls is None
         role = context._logical_agent_role
         session = data.get("_executor_session")
@@ -239,7 +240,7 @@ def _exercise(tmp_path, monkeypatch, *, max_tokens=None, failed_check=False):
     with observe_run(workspace=tmp_path, source="headless", title="continuous Executor mechanism",
                      journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run({"description": "return the required integer", "agent_type": "workflow",
-            "prompt": "Make value() return 3 and add a regression test.", "workflow_request": request},
+            "prompt": "Make value() return 3 and add a regression test. Please review the change.", "workflow_request": request},
             ToolContext(cwd=str(tmp_path), _runtime={"model": "local-fixture"}, _agent_budget=budget,
                         _event_sink=observation, _central_workflow_v2_enforced=True))
         run_id = observation.run_id
@@ -285,7 +286,10 @@ def test_unbounded_workflow_survives_two_external_reviews_in_the_same_executor(t
                if json.loads(artifact.content).get("resultType") == "ImplementationRepairRequest.v1"]
     assert len(repairs) == 2
     assert all(item["continuation"][key] is None for item in repairs
-               for key in ("limitModelCalls", "limitTotalTokens", "deadlineMonotonic"))
+               for key in ("limitModelCalls", "limitTotalTokens"))
+    deadlines = [item["continuation"]["deadlineMonotonic"] for item in repairs]
+    assert all(isinstance(value, (int, float)) for value in deadlines)
+    assert deadlines[1] <= deadlines[0]
     review_refs = {item["artifactId"] for item in audit.trace["transitions"]
                    if item["stage"] == "reviewer" and item["outcome"] in {"completed", "rejected"}}
     reviews = [json.loads(item.content)["verdict"] for item in audit.artifacts

@@ -2109,6 +2109,7 @@ def run_agent_turn(
     permissions: PermissionManager | None = None,
     store: Store[AppState] | None = None,
     max_steps: int | None = None,
+    max_retries_override: int | None = None,
     on_tool_start: Callable[[str, dict], None] | None = None,
     on_tool_result: Callable[[str, str, bool], None] | None = None,
     on_assistant_message: Callable[[str], None] | None = None,
@@ -2301,7 +2302,9 @@ def run_agent_turn(
     # This is feedback, never authorization. Read-only role registries cannot
     # be turned into executors by a quoted "fix" inside their assignment.
     progress_capable = (
-        bool({"edit_file", "write_file", "task"}.intersection(tools.list_all()))
+        any(tool.name in {"edit_file", "write_file", "task"}
+            and (tool.metadata is None or tool.metadata.is_enabled)
+            for tool in tools.list())
         and getattr(getattr(permissions, "auto_checker", None), "mode", None) != "plan"
     )
     progress_intent = parsed_intent
@@ -3245,6 +3248,9 @@ def run_agent_turn(
     )
     has_structured_handoff = any(tool.name == "executor_submit" for tool in tools.list())
     direct_completion_review = restored_completion_review
+    direct_completion_limits = None
+    direct_completion_limits_initialized = False
+    direct_completion_classification = None
     direct_migration_state = (implementation_continuation.migration_state
         if implementation_continuation is not None else None)
     direct_completion_accepted = False
@@ -3473,6 +3479,9 @@ def run_agent_turn(
                 **_phase_reasoning_options(model),
             } if implementation_phases is not None or completion_policy is not None
                else {"tools_override": tools})
+            if max_retries_override is not None:
+                closing_options["max_retries_override"] = min(
+                    closing_options.get("max_retries_override", max_retries_override), max_retries_override)
             if agent_budget is not None:
                 closing_input = (completion_input_estimate() if completion_policy is not None
                     else (repair_input_calibration.estimate(_estimated_context_tokens(closing_messages))
@@ -3683,10 +3692,13 @@ def run_agent_turn(
         nonlocal direct_completion_review, direct_completion_accepted, direct_completion_attempt
         nonlocal implementation_completion_feedback, direct_implementation_checks_failed
         nonlocal direct_implementation_batch_status, direct_migration_state
+        nonlocal direct_completion_limits, direct_completion_limits_initialized, direct_completion_classification
         if owned_implementation_feedback is None or has_structured_handoff:
             return "ok"
         from minicode.implementation_completion_review import ImplementationCompletionReview
         from minicode.implementation_execution import implementation_candidate_digest
+        from minicode.completion_review_limits import create_review_limits, select_review_phase, review_exhaustion
+        from minicode.task_deadline import TaskDeadlineExceeded
         from minicode.verifier_sandbox import (
             resolve_verifier_host_capabilities, user_registered_trusted_executables,
         )
@@ -3704,6 +3716,8 @@ def run_agent_turn(
             _verifier_sandbox_backend=backend, _verifier_trusted_executables=executables,
             _verifier_explicit_trusted_executables=user_registered_trusted_executables() or None)
         prior_completion_attempt = direct_completion_attempt
+        review_budget_stopped = False
+        review_legs = None
         direct_completion_attempt += 1
         checks = owned_implementation_feedback.ensure_completion_checks(context)
         if (direct_migration_state is not None
@@ -3726,7 +3740,7 @@ def run_agent_turn(
 
                 # A stored slot is not enough: checks, actual source anchors
                 # and the current candidate must still validate before reuse.
-                retained = direct_completion_review._accepted_repair_for_candidate(
+                retained = direct_completion_review._current_repair_feedback(
                     checks.get("patchDigest"), context)
                 if (retained is not None
                         and implementation_candidate_digest(implementation_spec, context) == checks.get("patchDigest")
@@ -3740,41 +3754,81 @@ def run_agent_turn(
                     return "retry"
             if on_progress_message:
                 on_progress_message("Checking the requested behaviors and their evidence before delivery.")
+            if not direct_completion_limits_initialized:
+                # Freeze this parent's closing estimate and the review chain
+                # once per turn. Repeated finals cannot refresh an allowance.
+                closing_tokens = 0
+                if os.environ.get("MINI_CODE_COMPLETION_REVIEW_MODE", "bounded").strip().lower() != "full":
+                    closing_input = estimate_budgeted_request_input(model, current_messages,
+                        agent_budget=agent_budget, estimated_input=completion_input_estimate(),
+                        optional_kwargs={"tools_override": tools}, default_tools=tools)
+                    closing_tokens = 2 * (closing_input + configured_output_limit() + 2048)
+                direct_completion_limits = create_review_limits(context, closing_tokens=closing_tokens)
+                direct_completion_limits_initialized = True
+            context._completion_review_limits = direct_completion_limits
             emit_event_safely(event_sink, "implementation.completion_review_started", step=step,
                 payload={"executorId": direct_completion_owner, "attempt": direct_completion_attempt,
                          "patchDigest": checks.get("patchDigest")})
             decision = None
-            pending_migration = direct_completion_review.state.get("pendingLegacyResolution")
-            if (direct_completion_review.has_legacy_probes and not (
-                    isinstance(pending_migration, dict)
-                    and pending_migration.get("candidateDigest") == checks.get("patchDigest"))):
-                from minicode.completion_probe_migration import CompletionProbeMigration
+            try:
+                select_review_phase(context, None)
+                pending_migration = direct_completion_review.state.get("pendingLegacyResolution")
+                if (direct_completion_review.has_legacy_probes and not (
+                        isinstance(pending_migration, dict)
+                        and pending_migration.get("candidateDigest") == checks.get("patchDigest"))):
+                    from minicode.completion_probe_migration import CompletionProbeMigration
 
-                def retain_migration_checkpoint(state):
-                    nonlocal direct_migration_state
-                    from copy import deepcopy
-                    direct_migration_state = deepcopy(state)
+                    def retain_migration_checkpoint(state):
+                        nonlocal direct_migration_state
+                        from copy import deepcopy
+                        direct_migration_state = deepcopy(state)
 
-                migration = CompletionProbeMigration(implementation_spec).assess(
-                    legacy_state=direct_completion_review.state,
-                    continuation_state=direct_migration_state, checkpoint_sink=retain_migration_checkpoint,
-                    model=model, tools=tools, context=context, agent_budget=agent_budget,
-                    event_sink=event_sink, cancellation_token=cancellation_token,
-                    deadline_monotonic=deadline_monotonic)
-                if migration.get("status") == "resolved":
-                    direct_completion_review.queue_legacy_resolution(migration["resolution"])
-                    direct_migration_state = None
-                else:
-                    # An unchanged ambiguous classification cannot be repaired
-                    # by another implementation rewrite or repeated final.
-                    decision = {"status": "inconclusive", "reason": "legacy_probe_purpose_unresolved",
-                        "patchDigest": checks.get("patchDigest"), "canContinue": False,
-                        "migrationEvidence": migration}
-            if decision is None:
-                decision = direct_completion_review.assess(model=model, tools=tools, context=context,
-                    agent_budget=agent_budget, event_sink=event_sink,
-                    cancellation_token=cancellation_token, deadline_monotonic=deadline_monotonic,
-                    checks_receipt=checks)
+                    select_review_phase(context, "review")
+                    migration = CompletionProbeMigration(implementation_spec).assess(
+                        legacy_state=direct_completion_review.state,
+                        continuation_state=direct_migration_state, checkpoint_sink=retain_migration_checkpoint,
+                        model=model, tools=tools, context=context, agent_budget=context._agent_budget,
+                        event_sink=event_sink, cancellation_token=cancellation_token,
+                        deadline_monotonic=context._task_deadline_monotonic)
+                    if migration.get("status") == "resolved":
+                        direct_completion_review.queue_legacy_resolution(migration["resolution"])
+                        direct_migration_state = None
+                    else:
+                        # An unchanged ambiguous classification cannot be repaired
+                        # by another implementation rewrite or repeated final.
+                        decision = {"status": "inconclusive", "reason": "legacy_probe_purpose_unresolved",
+                            "patchDigest": checks.get("patchDigest"), "canContinue": False,
+                            "migrationEvidence": migration}
+                if decision is None:
+                    select_review_phase(context, None)
+                    decision = direct_completion_review.assess(model=model, tools=tools, context=context,
+                        agent_budget=context._agent_budget, event_sink=event_sink,
+                        cancellation_token=cancellation_token, deadline_monotonic=context._task_deadline_monotonic,
+                        checks_receipt=checks)
+            except (AgentBudgetExceeded, AgentTurnDeadlineExceeded, TaskDeadlineExceeded) as error:
+                raise_if_cancelled(cancellation_token)
+                classified_error = TaskDeadlineExceeded(None) if isinstance(error, AgentTurnDeadlineExceeded) else error
+                reason = review_exhaustion(direct_completion_limits, classified_error)
+                if reason is None:
+                    raise
+                review_budget_stopped = True
+                # Negative evidence already committed under this candidate
+                # keeps its authority; exhaustion supplies no acceptance.
+                context._agent_budget = agent_budget
+                context._task_deadline_monotonic = deadline_monotonic
+                decision = direct_completion_review.review_budget_exhausted_result(
+                    checks.get("patchDigest"), context, reason)
+                review_legs = direct_completion_review.review_legs(
+                    checks.get("patchDigest"), limits=direct_completion_limits,
+                    decision=decision, budget_exhausted=True)
+                emit_event_safely(event_sink, "implementation.completion_review_budget_exhausted", step=step,
+                    payload={"executorId": direct_completion_owner, "attempt": direct_completion_attempt,
+                        "patchDigest": checks.get("patchDigest"), "reason": reason,
+                        "phase": direct_completion_limits["active"], "requirementsAccepted": False,
+                        "reviewLegs": review_legs})
+            finally:
+                context._agent_budget = agent_budget
+                context._task_deadline_monotonic = deadline_monotonic
             raise_if_cancelled(cancellation_token)
             raise_if_deadline_exceeded()
             current_digest = implementation_candidate_digest(implementation_spec, context)
@@ -3790,12 +3844,21 @@ def run_agent_turn(
             # old assertion as a repair request to this owner.
             decision = {**decision, "canContinue": False}
         direct_completion_accepted = decision.get("status") == "approved"
+        direct_completion_classification = (
+            "approved" if direct_completion_accepted else
+            "rejected" if decision.get("status") == "changes_required" else
+            "budget_exhausted" if decision.get("reason") == "completion_review_budget_exhausted" else None)
         receipt = {"completionVersion": 1, "executorId": direct_completion_owner,
                    "attempt": direct_completion_attempt,
-                   "continuesSameExecutor": not direct_completion_accepted and decision.get("canContinue") is not False,
+                   "continuesSameExecutor": not review_budget_stopped and not direct_completion_accepted and decision.get("canContinue") is not False,
                    **decision}
-        emit_event_safely(event_sink, "implementation.completion_decided", step=step, payload=receipt)
-        _append_trace_event(execution_trace, {"type": "implementation_completion", "step": step, **receipt})
+        if direct_completion_classification == "budget_exhausted":
+            receipt["reviewLegs"] = review_legs
+        decision_event = {**receipt, "requirementsAccepted": direct_completion_accepted,
+            **({"completionReview": direct_completion_classification}
+                if direct_completion_classification is not None else {})}
+        emit_event_safely(event_sink, "implementation.completion_decided", step=step, payload=decision_event)
+        _append_trace_event(execution_trace, {"type": "implementation_completion", "step": step, **decision_event})
         if direct_completion_accepted:
             # These are actual current-candidate verifier executions. Ordinary
             # model completion text never contributes verification observations.
@@ -3822,7 +3885,11 @@ def run_agent_turn(
             supersede_completion_feedback()
         implementation_completion_feedback = {
             "role": "user", "_implementation_completion_feedback": True,
-            "content": (("Host completion decision: the independent coverage audit is paused. "
+            "content": (("Host completion decision: the native review allowance is exhausted. "
+                "The candidate and actual evidence are retained, but requirements have not been accepted. "
+                "This turn ends without inferred product repairs; a later turn may resume the retained review.\n"
+                if decision.get("reason") == "completion_review_budget_exhausted" else
+                "Host completion decision: the independent coverage audit is paused. "
                 "Its original context, delivered evidence and unaccepted drafts are retained for the same owner. "
                 "Resume that audit before deciding completion; no product repair is inferred.\n" if pending_coverage_audit else
                 "Host completion decision: independent failure adjudication remains unresolved. "
@@ -3845,7 +3912,7 @@ def run_agent_turn(
         current_messages[:] = reconcile_task_ledger(current_messages)
         if context_manager is not None:
             context_manager.messages = list(current_messages)
-        return "stop" if decision.get("canContinue") is False else "retry"
+        return "stop" if review_budget_stopped or decision.get("canContinue") is False else "retry"
 
     try:
         if (implementation_continuation is not None and direct_completion_review is not None
@@ -4192,11 +4259,22 @@ def run_agent_turn(
                             "calibratedInputEstimate": repair_input_calibration.estimate(_estimated_context_tokens(projected)),
                         })
                     request_messages = implementation_request_messages()
+                progress_task = tools.find("task") if coding_progress.enabled else None
+                progress_can_delegate = (
+                    progress_task is not None and agent_depth == 0
+                    and (progress_task.metadata is None or progress_task.metadata.is_enabled)
+                    and getattr(getattr(permissions, "auto_checker", None), "mode", None) != "plan"
+                    and host_native_result_tool is None
+                    # Explicit bounded phases may make task poll-only after
+                    # pricing this notice. Keep their existing phase guidance.
+                    and (implementation_phases is None or not implementation_phases.bounded)
+                )
                 progress_notice = coding_progress.before_request(
                     agent_budget.snapshot() if agent_budget is not None and coding_progress.enabled else None,
                     _estimated_context_tokens(request_messages),
                     remaining_steps=(max(0, max_steps - step + 1) if max_steps is not None else None),
                     remaining_seconds=(max(0.0, deadline_monotonic - time.monotonic()) if deadline_monotonic is not None else None),
+                    can_delegate=progress_can_delegate,
                 )
                 if progress_notice is not None:
                     current_messages.append({
@@ -4287,6 +4365,9 @@ def run_agent_turn(
                         ),
 
                     } if phase_request else {"tools_override": tools})
+                if max_retries_override is not None:
+                    request_options["max_retries_override"] = min(
+                        request_options.get("max_retries_override", max_retries_override), max_retries_override)
                 # The provider must see this invocation's executable registry,
                 # including nested reviewers which reuse the parent's adapter.
                 # Tool visibility does not depend on phase/budget scheduling.
@@ -6608,6 +6689,8 @@ def run_agent_turn(
                 "delivery": "partial",
                 "lastPublicChecks": direct_implementation_batch_status or "unavailable",
                 "requirementsAccepted": direct_completion_accepted,
+                **({"completionReview": direct_completion_classification}
+                    if direct_completion_classification is not None else {}),
                 "continuesAfterResponse": False,
             }
             content = (

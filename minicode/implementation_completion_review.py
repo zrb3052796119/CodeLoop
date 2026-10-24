@@ -33,7 +33,7 @@ from minicode.scheduler_permissions import (
     SchedulerWorkerReadPermissions, is_mandatory_scheduler_forbidden_path,
 )
 from minicode.task_deadline import raise_task_deadline
-from minicode.tooling import ToolDefinition, ToolRegistry, ToolResult
+from minicode.tooling import ToolContext, ToolDefinition, ToolRegistry, ToolResult
 from minicode.workflow_workspace import WorkflowWorkspaceTransaction
 
 
@@ -232,6 +232,60 @@ class ImplementationCompletionReview:
     def has_pending_coverage_audit(self, candidate_digest):
         return (self._pending_coverage_audit is not None
                 and self._pending_coverage_audit["candidateDigest"] == candidate_digest)
+
+    def review_legs(self, candidate_digest: str, *, limits: dict | None = None,
+                    decision: dict | None = None, budget_exhausted: bool = False) -> list[dict[str, str]]:
+        """Project existing, current-candidate state for display; never grant authority.
+
+        No IO, validation changes or state writes. A reviewer proposal only
+        completes review; independent inspection completion requires its own
+        retained result. Turn-local stage allocations are not completion proof.
+        """
+        from minicode.coverage_audit_state import record_document
+
+        states = dict.fromkeys(("review", "inspection", "reconciliation"), "not_entered")
+        active = limits.get("active") if limits is not None else None
+        decision = decision if decision and decision.get("patchDigest") == candidate_digest else {}
+        audit = decision.get("coverageAudit", {})
+        prior = next((row for row in reversed(self._reviews)
+                      if row.get("patchDigest") == candidate_digest), None)
+        if active is None and prior is not None and "review" in (limits or {}).get("stages", {}):
+            # Reentry may stop at the chain guard before selecting a leg.
+            # Shared allowances alone cannot bind earlier work to this candidate.
+            states["review"] = "interrupted" if budget_exhausted else "completed"
+            audit = audit or prior.get("coverageAudit", {})
+        pending = self._pending_coverage_audit if self.has_pending_coverage_audit(candidate_digest) else None
+        record = audit.get("inspectionRecord") or (pending or {}).get("inspectionRecord")
+        inspection = record_document(record) if record is not None else {}
+        phase = audit.get("inspectionPhase") or inspection.get("phase")
+        if pending is not None or audit or active in {"inspection", "reconciliation"}:
+            states["review"] = "completed"
+        if inspection or phase == "inspection":
+            states["inspection"] = "running"
+        inspection_result = inspection.get("result")
+        if isinstance(inspection_result, dict) and inspection_result.get("status") == "ready_for_evidence":
+            states["inspection"] = "completed"
+        if phase == "reconciliation":
+            states["reconciliation"] = "running"
+        if active in states:
+            states[active] = "running"
+            # A resumed audit can select reconciliation before disclosing its
+            # already completed inspection again.
+            if active == "inspection" and inspection.get("result") is not None:
+                states["inspection"] = "completed"
+        terminal = decision.get("status")
+        if terminal in {"approved", "changes_required"}:
+            leg = ("inspection" if audit.get("inspectionPhase") == "inspection"
+                   else "reconciliation" if audit else "review")
+            states[leg] = "approved" if terminal == "approved" else "rejected"
+        if budget_exhausted and active in states and states[active] not in {"approved", "rejected"}:
+            states[active] = "budget_exhausted"
+        elif budget_exhausted and phase in states and states[phase] == "running":
+            # The chain can stop before selecting a retained pending leg.
+            states[phase] = "interrupted"
+        elif decision.get("reason") == "coverage_audit_interrupted" and phase in states:
+            states[phase] = "interrupted"
+        return [{"leg": leg, "state": state} for leg, state in states.items()]
 
     def _unverified_probe_failure(self, probe_id, digest):
         if probe_id in self._retired or self._purpose(probe_id) != "acceptance":
@@ -805,6 +859,112 @@ class ImplementationCompletionReview:
         decision["evidenceRef"] = self._accepted_repair_decision["ref"]
         return decision
 
+    def _repair_probes_for_candidate(self, digest: str) -> list[dict]:
+        """Deliver confirmed counterexamples to the existing implementation owner.
+
+        This feedback channel is separate from ExecutionCandidate receiptRefs:
+        the 2026-10-22 exclusion of dynamic review_regression_* receipts from
+        that formal candidate protocol does not remove these probe sources.
+        """
+        # Only confirmed product counterexamples or formerly passing acceptance
+        # tests authorize repair. Unavailable/newly broken tests stay evidence.
+        return [probe.to_dict() for pid, probe in self._probes.items()
+                if pid not in self._retired and self._receipts.get((digest, pid), {}).get(
+                    "receipt", {}).get("status") != "passed" and self._purpose(pid) == "acceptance"
+                and ((self._failure_authority(pid, digest) or {}).get("verdict") == "product_gap"
+                     or any(row["probeId"] == pid and row["receipt"].get("status") == "passed"
+                            for row in self._attempts))]
+
+    def _current_repair_feedback(self, digest, host, *, preserve_pending_negative=False):
+        """Select current feedback without rewriting authenticated native bytes.
+
+        Explicit host migration can establish a newer, exactly bound product
+        counterexample. Its completed classification must survive repeated
+        delivery, restoration and bounded closure. Ordinary native negatives
+        still take precedence over unrelated, unclassified test evidence.
+        """
+        if (self._pending_resolution or {}).get("candidateDigest") == digest:
+            if not preserve_pending_negative:
+                return None
+            # Attribution may have committed immediately before a deadline,
+            # before migration can classify/retire anything. Deliver that
+            # exact counterexample without pretending migration completed.
+            return (self._confirmed_product_gap_result(digest)
+                    or self._accepted_repair_for_candidate(digest, host))
+        classified = next((row for row in reversed(self._legacy_resolutions)
+            if row.get("candidateDigest") == digest and row.get("status") == "classified"), None)
+        if classified is not None and self._confirmed_product_gaps(digest):
+            return self._legacy_product_gap_result(digest, classified)
+        return self._accepted_repair_for_candidate(digest, host)
+
+    def _legacy_product_gap_result(self, digest, document):
+        return self._result("changes_required", digest,
+            ["Independent acceptance obligations still require product repair."],
+            reason="legacy_acceptance_product_gap",
+            probeReceipts=[r for (candidate, _), r in self._receipts.items() if candidate == digest],
+            repairProbes=self._repair_probes_for_candidate(digest),
+            diagnosticObservations=self._diagnostic_observations(), legacyMigration=document,
+            legacyObservations=[{"source": probe.to_dict(), "purpose": "legacy",
+                "receipts": [r for r in self._attempts if r["probeId"] == pid]}
+                for pid, probe in self._probes.items() if self._purpose(pid) == "legacy"])
+
+    def _confirmed_product_gaps(self, digest: str) -> list[dict]:
+        return [probe for probe in self._repair_probes_for_candidate(digest)
+                if self._receipts.get((digest, probe["probeId"]), {}).get(
+                    "receipt", {}).get("status") == "failed"
+                and (self._failure_authority(probe["probeId"], digest) or {}).get("verdict") == "product_gap"]
+
+    def _diagnostic_observations(self) -> list[dict]:
+        return [{"source": probe.to_dict(), "purpose": "diagnostic",
+                 "receipts": [receipt for receipt in self._attempts if receipt["probeId"] == pid]}
+                for pid, probe in self._probes.items() if self._purpose(pid) == "diagnostic"]
+
+    def _confirmed_product_gap_result(self, digest: str) -> dict | None:
+        probes = self._confirmed_product_gaps(digest)
+        if not probes:
+            return None
+        return self._result("changes_required", digest,
+            ["Independently attributed product gaps require repair in the existing implementation session."],
+            reason="confirmed_product_gap", repairProbes=probes,
+            probeReceipts=[r for (candidate, _), r in self._receipts.items() if candidate == digest],
+            failureAdjudications=list(self._failure_adjudications),
+            diagnosticObservations=self._diagnostic_observations())
+
+    def review_budget_exhausted_result(self, digest: str, context: ToolContext, reason: str) -> dict:
+        """Close an observed review budget stop without erasing native negatives.
+
+        The caller supplies its still-valid parent context. This never reruns a
+        probe or model, and leaves the actual pending review state for resumption.
+        It must not be used to classify ordinary inconclusive/provider failures.
+        """
+        from minicode.implementation_execution import implementation_candidate_digest
+
+        with self._lock:
+            current = implementation_candidate_digest(self.spec, context)
+            if current != digest:
+                return self._result("inconclusive", current,
+                    ["Candidate changed while completion review was interrupted."],
+                    reason="completion_candidate_changed", canContinue=False)
+            result = (self._current_repair_feedback(digest, context, preserve_pending_negative=True)
+                      or self._confirmed_product_gap_result(digest))
+            # Reading accepted source anchors must not race a candidate change.
+            current = implementation_candidate_digest(self.spec, context)
+            if current != digest:
+                return self._result("inconclusive", current,
+                    ["Candidate changed while completion review was interrupted."],
+                    reason="completion_candidate_changed", canContinue=False)
+            if result is not None:
+                return json.loads(_json(result))
+            pending = self.has_pending_coverage_audit(digest)
+            return json.loads(_json(self._result("inconclusive", digest, [reason],
+                reason="completion_review_budget_exhausted", canContinue=False,
+                probeReceipts=[r for (candidate, _), r in self._receipts.items() if candidate == digest],
+                repairProbes=[], failureAdjudications=list(self._failure_adjudications),
+                diagnosticObservations=self._diagnostic_observations(),
+                evidenceDirectory=str(self._directory) if self._directory else None,
+                **({"resumable": True, "auditPending": True, "continuationTarget": "coverage_auditor"}
+                   if pending else {}))))
+
     def assess(self, *, model, tools, context, agent_budget, event_sink,
                cancellation_token, deadline_monotonic, checks_receipt):
         from minicode.implementation_execution import implementation_candidate_digest
@@ -821,13 +981,17 @@ class ImplementationCompletionReview:
                 return self._result("inconclusive", digest, ["Public checks must pass the current candidate before review."])
             # A negative decision grants no coverage. Restore it before reruns
             # refresh receipt references or unrelated attribution can block it.
-            repair = self._accepted_repair_for_candidate(digest, host)
+            # An explicit host migration must finish its replacement attribution
+            # even when the unchanged candidate already has a native negative.
+            # Keep that negative stored for budget closure while migration runs.
+            migrating = ((self._pending_resolution or {}).get("candidateDigest") == digest)
+            repair = self._current_repair_feedback(digest, host)
             if repair is not None:
                 if implementation_candidate_digest(self.spec, host) != digest:
                     return self._result("inconclusive", digest,
                         ["Candidate changed while restoring the accepted repair decision."])
                 return repair
-            if digest in self._cached and not self.needs_failure_adjudication(digest):
+            if not migrating and digest in self._cached and not self.needs_failure_adjudication(digest):
                 cached = self._cached[digest]
                 if (cached.get("status") != "approved"
                         or (cached.get("coverageAudit", {}).get("behaviorEvidenceVersion") == 1
@@ -924,6 +1088,7 @@ class ImplementationCompletionReview:
     def _assess_snapshot(self, *, model, tools, host, transaction, frozen, denied,
                          digest, target, checks_receipt, event_sink):
         from minicode.agent_loop import run_agent_turn
+        from minicode.completion_review_limits import select_review_phase, review_steps, check_review_allowance
         from minicode.context_manager import ContextManager
         from minicode.permissions import PermissionManager
         from minicode.run_events import emit_event_safely
@@ -1027,6 +1192,9 @@ class ImplementationCompletionReview:
             if any(wrapped is not None and audit_receipts.get(pid) != wrapped for pid, wrapped in recorded):
                 raise ValueError("coverage snapshot no longer binds its exact original execution receipts")
 
+        if pending_audit is None:
+            select_review_phase(host, "review")
+
         def checkpoint():
             raise_task_deadline(host)
             if closed:
@@ -1082,7 +1250,9 @@ class ImplementationCompletionReview:
                     required = fields | correction if supplied & correction else fields
                     return ToolResult(ok=False, output=_json({
                         "errorCode": "completion_review_invalid", "tool": "review_test",
-                        "message": "review_test requires purpose/criterionIds/scenario/code; correction fields must appear together",
+                        "message": ("review_test requires purpose/criterionIds/scenario/code; "
+                                    "sourceEvidence, correctsProbeId, and correctionReason must be provided together or all omitted; "
+                                    "missing fields: " + (", ".join(sorted(required - supplied)) or "none")),
                         "missingFields": sorted(required - supplied),
                         "unexpectedFields": sorted(supplied - fields - correction, key=str)}))
                 purpose = value["purpose"]
@@ -1410,28 +1580,13 @@ class ImplementationCompletionReview:
                 # confirmed product counterexamples directly in feedback. An
                 # unavailable or newly broken test is retained in receipts;
                 # it is not itself authority to change the product.
-                return [probe.to_dict() for pid, probe in self._probes.items()
-                        if pid not in self._retired and self._receipts.get((digest, pid), {}).get(
-                            "receipt", {}).get("status") != "passed" and self._purpose(pid) == "acceptance"
-                        and ((self._failure_authority(pid, digest) or {}).get("verdict") == "product_gap"
-                             or any(row["probeId"] == pid and row["receipt"].get("status") == "passed"
-                                    for row in self._attempts))]
+                return self._repair_probes_for_candidate(digest)
 
             def confirmed_product_gaps():
-                return [probe for probe in repair_probes()
-                    if self._receipts.get((digest, probe["probeId"]), {}).get(
-                        "receipt", {}).get("status") == "failed"
-                    and (self._failure_authority(probe["probeId"], digest) or {}).get("verdict") == "product_gap"]
+                return self._confirmed_product_gaps(digest)
 
             def confirmed_product_gap_result():
-                probes = confirmed_product_gaps()
-                if not probes:
-                    return None
-                return self._result("changes_required", digest,
-                    ["Independently attributed product gaps require repair in the existing implementation session."],
-                    reason="confirmed_product_gap", repairProbes=probes,
-                    probeReceipts=current_receipts(), failureAdjudications=list(self._failure_adjudications),
-                    diagnosticObservations=diagnostic_observations())
+                return self._confirmed_product_gap_result(digest)
 
             def actionable_negative(value):
                 return (isinstance(value, dict) and value.get("status") == "changes_required"
@@ -1440,9 +1595,7 @@ class ImplementationCompletionReview:
                         if isinstance(row, dict))))
 
             def diagnostic_observations():
-                return [{"source": probe.to_dict(), "purpose": "diagnostic",
-                    "receipts": [receipt for receipt in self._attempts if receipt["probeId"] == pid]}
-                    for pid, probe in self._probes.items() if self._purpose(pid) == "diagnostic"]
+                return self._diagnostic_observations()
 
             def diagnostic_index():
                 # Full immutable sources and receipt history remain in the audit
@@ -1512,16 +1665,27 @@ class ImplementationCompletionReview:
                             probe=old.to_dict(), receipt=wrapped, probes=self._probes,
                             adjudications=self._failure_adjudications,
                             chains=[*self._supersessions, *self._corrections])
+
+                        def retain_adjudication(value):
+                            validate_adjudication_record(self.spec, old.to_dict(), wrapped, value)
+                            existing = next((row for row in self._failure_adjudications
+                                if row.get("evidenceRef") == value.get("evidenceRef")), None)
+                            if existing is not None:
+                                return existing
+                            saved = dict(value)
+                            saved["adjudicationRef"] = self._persist("probe-adjudication", saved)
+                            self._failure_adjudications.append(saved)
+                            return saved
+
                         authority = ProbeFailureAdjudicator(self.spec).assess(
                             probe=old.to_dict(), receipt=wrapped, model=model, tools=tools, context=host,
                             agent_budget=host._agent_budget, event_sink=event_sink,
                             cancellation_token=host._cancellation_token,
                             deadline_monotonic=host._task_deadline_monotonic,
-                            advisory_context=advisory_context)
-                        validate_adjudication_record(self.spec, old.to_dict(), wrapped, authority)
-                        authority = dict(authority)
-                        authority["adjudicationRef"] = self._persist("probe-adjudication", authority)
-                        self._failure_adjudications.append(authority)
+                            advisory_context=advisory_context,
+                            **({"product_gap_sink": retain_adjudication}
+                                if host._completion_review_limits is not None else {}))
+                        authority = retain_adjudication(authority)
                     if authority["verdict"] == "product_gap":
                         return
                     if authority["verdict"] != "probe_error":
@@ -1602,10 +1766,11 @@ class ImplementationCompletionReview:
                         self._register_purpose(self._probes[row["probeId"]], row["purpose"], legacy_resolution=resolution)
                     self._pending_resolution = None
                 if not activated:
+                    if classified:
+                        return self._legacy_product_gap_result(digest, document)
                     return self._result("changes_required", digest,
-                        ["Independent acceptance obligations still require product repair." if classified else
-                         "Independent acceptance replacements did not pass; legacy obligations remain active."],
-                        reason="legacy_acceptance_product_gap" if classified else "legacy_replacement_failed", probeReceipts=current_receipts(),
+                        ["Independent acceptance replacements did not pass; legacy obligations remain active."],
+                        reason="legacy_replacement_failed", probeReceipts=current_receipts(),
                         repairProbes=repair_probes(), diagnosticObservations=diagnostic_observations(),
                         legacyMigration=document,
                         legacyObservations=[{"source": probe.to_dict(), "purpose": "legacy",
@@ -1618,15 +1783,21 @@ class ImplementationCompletionReview:
             migration_failure = resolve_pending_migration() if pending_audit is None else None
             if pending_audit is None:
                 adjudicate_failures()
+                # Attribution can now classify the replacement. Commit its
+                # purpose/history before returning the confirmed gap feedback.
+                if self._pending_resolution is not None:
+                    migration_failure = resolve_pending_migration()
+            migration_audit = ((self._pending_resolution or {}).get("candidateDigest") == digest
+                               and bool(self._pending_supersessions()))
             # An unfinished read-only audit remains stored against its exact
             # candidate. It cannot veto a separately established product repair,
             # nor transfer its approval or delivery credit to an edited candidate.
             unresolved = (adjudication_pending_result() if pending_audit is None
                           else confirmed_product_gap_result())
-            if unresolved is not None:
+            if unresolved is not None and not migration_audit:
+                if migration_failure is not None and migration_failure.get("reason") == "legacy_acceptance_product_gap":
+                    return migration_failure
                 return unresolved
-            if pending_audit is None and self._pending_resolution is not None:
-                migration_failure = resolve_pending_migration()
             if migration_failure is not None and not self._pending_supersessions() and (migration_failure["status"] == "inconclusive"
                                                    or not fixture_correction_ids()):
                 return migration_failure
@@ -1657,12 +1828,15 @@ class ImplementationCompletionReview:
             anchor_schema = {"type": "array", "items": {"type": "object", "properties": {
                 "path": {"type": "string"}, "startLine": {"type": "integer"}, "endLine": {"type": "integer"}},
                 "required": ["path", "startLine", "endLine"], "additionalProperties": False}}
+            correction_description = "For a fixture correction, sourceEvidence, correctsProbeId, and correctionReason must be provided together or all omitted."
             probe_tool = tool("review_test", "Declare immutable purpose before running isolated pytest: acceptance asserts requested behavior and must pass after repair; diagnostic records observations and cannot prove coverage. Fixture corrections preserve acceptance test identities and assertions.",
                 run_probe, {"purpose": {"type": "string", "enum": ["diagnostic", "acceptance"]},
                     "criterionIds": {"type": "array", "items": {"type": "string", "enum": sorted(self._ids)}},
                     "scenario": {"type": "string"}, "code": {"type": "string"},
-                    "correctsProbeId": {"type": "string"}, "correctionReason": {"type": "string"},
-                    "sourceEvidence": anchor_schema}, ("purpose", "criterionIds", "scenario", "code"), executes=True)
+                    "correctsProbeId": {"type": "string", "description": correction_description},
+                    "correctionReason": {"type": "string", "description": correction_description},
+                    "sourceEvidence": {**anchor_schema, "description": correction_description}},
+                ("purpose", "criterionIds", "scenario", "code"), executes=True)
             read_tool = tool("review_probe_read", "Read retained probe source and execution receipts; omit probeId to list. receiptView=current returns only this candidate's latest receipt; history (default) retains all prior receipts. Continue with the returned nextCursor alone to preserve the exact document. Legacy offset/receiptView remains supported.",
                 read_probe, {"probeId": {"type": "string"}, "offset": {"type": "integer"}, "limit": {"type": "integer"},
                     "receiptView": {"type": "string", "enum": ["history", "current"]}, "cursor": {"type": "string"}})
@@ -1731,19 +1905,22 @@ class ImplementationCompletionReview:
                 if pending_audit is None:
                     run_agent_turn(model=model, tools=registry, cwd=str(root), permissions=permissions,
                         messages=messages, context_manager=manager,
-                        runtime=host._runtime, max_steps=None, agent_budget=host._agent_budget,
+                        runtime=host._runtime, max_steps=review_steps(host), agent_budget=host._agent_budget,
+                        max_retries_override=0 if host._completion_review_limits is not None else None,
                         budget_exhausted_policy="raise", cancellation_token=host._cancellation_token,
                         deadline_monotonic=host._task_deadline_monotonic, event_sink=review_observation,
                         agent_depth=host._agent_depth + 1, implementation_task=False,
                         implementation_spec=None, enable_implementation_phases=False,
                         enable_work_chain=False, allow_user_interaction=False, defer_curator_maintenance=True)
+                    if decision is None:
+                        check_review_allowance(host)
                 else:
                     from minicode.coverage_audit_state import coverage_audit_authority
                     # This remains an unapproved author proposal. Resume the
                     # same independent audit before changing its receipt refs.
                     decision = coverage_audit_authority(pending_audit)["proposal"]
                 checkpoint()
-                if decision is not None and (decision.get("status") == "approved"
+                if decision is not None and (decision.get("status") == "approved" or migration_audit
                         or (self._pending_supersessions() and not actionable_negative(decision))):
                     from minicode.completion_coverage_audit import audit_completion_coverage
 
@@ -1816,6 +1993,12 @@ class ImplementationCompletionReview:
                                 for row in proposal["requirements"]],
                             probeReceipts=current_receipts(), repairProbes=[])
                     if actionable_negative(audit):
+                        if migration_audit:
+                            # Only the independent audit can authorize retiring
+                            # an incorrect expectation. A product gap alone does
+                            # not discharge that obligation or approve delivery.
+                            accept_supersessions(audit)
+                            resolve_pending_migration()
                         # Native negative was committed before the audit tool
                         # returned. Unknown challenges confer no repair credit.
                         return self._accepted_repair_for_candidate(digest, host)

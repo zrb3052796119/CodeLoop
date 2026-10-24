@@ -77,6 +77,7 @@ _RULE_STAGE_ORDER = {
     "route.single_analyst": ("analyst",),
     "route.scoped_change": ("executor", "verifier", "commit"),
     "route.verified_change": ("executor", "verifier", "commit"),
+    "route.analyzed_change": ("analyst", "executor", "verifier", "commit"),
     "route.critical_read_only_human_gate": ("analyst", "human"),
     "route.critical_human_gate": (
         "analyst",
@@ -106,6 +107,7 @@ _COMMIT_RULES = frozenset(
     {
         "route.scoped_change",
         "route.verified_change",
+        "route.analyzed_change",
         "route.reviewed_change",
         "route.critical_human_gate",
         "route.high_risk_human_gate",
@@ -124,11 +126,57 @@ _ATTEMPT_TERMINALS = frozenset(
 )
 _PREDISPATCH_TERMINALS = frozenset({"timed_out", "waiting_human"})
 _IMPLEMENTATION_STAGES = frozenset({"executor", "verifier", "reviewer"})
-_REPAIR_RULES = frozenset({"route.scoped_change", "route.reviewed_change", "route.verified_change"})
+_REPAIR_RULES = frozenset({"route.scoped_change", "route.reviewed_change", "route.verified_change", "route.analyzed_change"})
+
+
+def _failure_analysis_sequences(
+    transitions: list[Mapping[str, object]], *, policy_version: int,
+    ordered_stages: tuple[str, ...],
+) -> set[int]:
+    """Find the one optional diagnostic block bound to real verifier failure.
+
+    It is an interleaved stage, not a change to the immutable original plan.
+    Attempt validation still runs on its complete, retained trace below.
+    """
+    if "analyst" in ordered_stages:
+        return set()
+    sequences: set[int] = set()
+    index = 0
+    while index < len(transitions):
+        item = transitions[index]
+        if item.get("stage") != "analyst":
+            index += 1
+            continue
+        if (policy_version < 6 or sequences or index < 2
+                or transitions[index - 1].get("stage") != "verifier"
+                or transitions[index - 1].get("outcome") != "repairing"
+                or transitions[index - 2].get("outcome") != "failed"
+                or transitions[index - 2].get("errorCode") != "verification_failed"):
+            raise ValueError("failure analysis lacks its first implementation failure")
+        block = []
+        while index < len(transitions) and transitions[index].get("stage") in {"analyst", "adjudicator"}:
+            row = transitions[index]
+            if row.get("stage") == "analyst":
+                sequence = row.get("sequence")
+                if type(sequence) is not int:
+                    raise ValueError("failure analysis sequence is invalid")
+                sequences.add(sequence)
+                block.append(("analyst", row.get("outcome"), tuple(row.get(key) for key in (
+                    "stage", "assignmentId", "attemptId", "agentRunId",
+                ))))
+            index += 1
+        if not _valid_global_lifecycle(block, ordered_stages=("analyst",), committed=False):
+            raise ValueError("failure analysis lifecycle is invalid")
+        if index < len(transitions) and (
+                block[-1][1] != "completed" or transitions[index].get("stage") != "executor"
+                or transitions[index].get("outcome") not in {"dispatched", "timed_out"}):
+            raise ValueError("failure analysis must return to the existing execution flow")
+    return sequences
 
 
 def _validate_repair_boundaries(
-    transitions: list[Mapping[str, object]], *, rule_id: str
+    transitions: list[Mapping[str, object]], *, rule_id: str,
+    failure_analysis: set[int] | frozenset[int] = frozenset(),
 ) -> bool:
     """Authorize only explicit, bounded failure-to-new-implementation edges."""
     historical_ids: dict[str, set[object]] = {
@@ -159,7 +207,7 @@ def _validate_repair_boundaries(
             ))
             or item.get("artifactId") is None
             or item.get("errorCode") not in {REPAIR_TRANSITION_ERROR, CONTINUATION_TRANSITION_ERROR}
-            or following.get("stage") != "executor"
+            or (following.get("stage") != "executor" and following.get("sequence") not in failure_analysis)
             or following.get("outcome") not in {"dispatched", "timed_out"}
         ):
             return False
@@ -441,6 +489,12 @@ def _validate_scheduler_state(
 ) -> None:
     planned_stages = plan.stages
     completed_stages = outcome.completed_stages
+    failure_analysis = _failure_analysis_sequences([
+        {"sequence": item.sequence, "stage": item.stage.value, "outcome": item.outcome,
+         "errorCode": item.error_code, "assignmentId": item.assignment_id,
+         "attemptId": item.attempt_id, "agentRunId": item.agent_run_id}
+        for item in transitions
+    ], policy_version=plan.policy_version, ordered_stages=tuple(stage.value for stage in planned_stages))
     if (
         type(plan.policy_version) is not int
         or not 1 <= plan.policy_version <= 10_000
@@ -469,6 +523,7 @@ def _validate_scheduler_state(
     plan_transitions, adjudicated_identities = _split_adjudication_escalations(
         transitions
     )
+    plan_transitions = [item for item in plan_transitions if item.sequence not in failure_analysis]
     if not plan_transitions:
         raise ValueError("scheduler trace scheduler state is invalid")
     if outcome.failure_stage is not None and not isinstance(
@@ -494,6 +549,7 @@ def _validate_scheduler_state(
                 or (
                     outcome.failure_stage is not None
                     and outcome.failure_stage not in planned_stages
+                    and not (failure_analysis and outcome.failure_stage is DispatchStage.ANALYST)
                 )
             )
         )
@@ -675,11 +731,19 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
         return None
     if rule_id == "route.verified_change" and policy_version < 5:
         return None
+    if rule_id == "route.analyzed_change" and policy_version < 6:
+        return None
     ordered_stages = (
         ("executor", "verifier", "reviewer", "commit")
         if rule_id == "route.scoped_change" and policy_version >= 4
         else _RULE_STAGE_ORDER[rule_id]
     )
+    try:
+        failure_analysis = _failure_analysis_sequences(
+            transitions, policy_version=policy_version, ordered_stages=ordered_stages,
+        )
+    except (AttributeError, TypeError, ValueError):
+        return None
     if (
         (status == "completed" and terminal_reason is not None)
         or (status != "completed" and terminal_reason is None)
@@ -716,6 +780,8 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
         positional_ok = stage in stage_order and not (
             stage_order[stage] < last_stage_index
         )
+        if sequence in failure_analysis:
+            positional_ok = True
         if stage == "adjudicator":
             # Escalation blocks attach positionally to the plan stage whose
             # blocked transition directly precedes them.
@@ -723,12 +789,12 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
                 str(previous_item.get("stage")) if previous_item else None
             )
             if previous_stage == "adjudicator":
-                positional_ok = last_stage_index >= 0
+                positional_ok = current_block is not None
             elif (
                 previous_item is not None
-                and previous_stage in stage_order
+                and (previous_stage in stage_order or previous_item.get("sequence") in failure_analysis)
                 and previous_item.get("outcome") == "blocked"
-                and last_stage_index >= 0
+                and (last_stage_index >= 0 or previous_item.get("sequence") in failure_analysis)
             ):
                 positional_ok = True
                 if current_block is not None:
@@ -841,7 +907,7 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
             return None
         parent_decision_id = decision_id
         decision_ids.add(decision_id)
-        if stage != "adjudicator":
+        if stage != "adjudicator" and sequence not in failure_analysis:
             last_stage_index = (
                 stage_order.get("executor", 0) - 1
                 if transition_outcome == "repairing" else stage_order[stage]
@@ -853,7 +919,7 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
 
     if current_block is not None:
         adjudication_blocks.append(current_block)
-    if not _validate_repair_boundaries(normalized_transitions, rule_id=rule_id):
+    if not _validate_repair_boundaries(normalized_transitions, rule_id=rule_id, failure_analysis=failure_analysis):
         return None
     if any(
         not _valid_adjudication_block(block) for block in adjudication_blocks
@@ -879,7 +945,7 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
             ),
         )
         for transition in normalized_transitions
-        if str(transition["stage"]) != "adjudicator"
+        if str(transition["stage"]) != "adjudicator" and transition["sequence"] not in failure_analysis
     ]
     if not _valid_global_lifecycle(
         normalized_events,

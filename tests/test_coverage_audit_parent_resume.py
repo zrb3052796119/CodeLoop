@@ -27,7 +27,9 @@ def _probe_commands(case):
 
 @pytest.mark.parametrize("rejection", ["positive-findings", "outside-source"])
 @pytest.mark.parametrize("repair_after_resume", [False, True], ids=["submit-correction", "then-implementation-repair"])
-def test_same_owner_resumes_audit_evidence_then_runs_final_checks(inventory, rejection, repair_after_resume):
+def test_same_owner_resumes_audit_evidence_then_runs_final_checks(inventory, rejection, repair_after_resume, monkeypatch):
+    # This full evidence-delivery conversation deliberately exceeds the bounded cap.
+    monkeypatch.setenv("MINI_CODE_COMPLETION_REVIEW_MODE", "full")
     case = inventory
     ids = [row["id"] for row in requirement_units(OBJECTIVE)]
     initial_source = PARTIAL if repair_after_resume else COMPLETE

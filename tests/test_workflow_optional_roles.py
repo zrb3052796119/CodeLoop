@@ -66,7 +66,7 @@ def test_complexity_change_does_not_remove_risk_or_acceptance_gates(case: str) -
     profile = parse_workflow_request(raw, legacy_task_id="task_optional").task_profile
     plan = CentralScheduler().plan(profile)
 
-    assert plan.stages[0] is DispatchStage.ANALYST
+    assert plan.stages[0] is (DispatchStage.EXECUTOR if case in {"medium", "broad"} else DispatchStage.ANALYST)
     assert DispatchStage.VERIFIER in plan.stages
     assert DispatchStage.REVIEWER in plan.stages
     if profile.risk is TaskRisk.HIGH:
@@ -133,6 +133,7 @@ def test_complex_scoped_workflow_still_earns_real_verification_and_sealed_audit(
 
     result = _run(
         tmp_path, _request(risk="low", complex=True), monkeypatch, event_sink=Sink(),
+        prompt="Apply the structured request and review the resulting change.",
     )
 
     assert result.ok is accepted, result.output
@@ -144,7 +145,7 @@ def test_complex_scoped_workflow_still_earns_real_verification_and_sealed_audit(
     assert trace is not None
     assert trace["committed"] is accepted
     assert trace["ruleId"] == "route.scoped_change"
-    assert roles and set(roles) == ({"executor", "reviewer"} if accepted else {"executor"})
+    assert roles and set(roles) == ({"executor", "reviewer"} if accepted else {"executor", "analyst"})
     assert bool(seals) is accepted
     assert len(audits) == 1
     replay = project_scheduler_audit(

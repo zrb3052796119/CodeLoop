@@ -50,7 +50,8 @@ TASK = (
     "Update normalize_name in candidate.py.\n"
     "1. Strip surrounding whitespace from a string.\n"
     "2. Return the empty string when the input is None.\n"
-    "Add regression tests for both requirements in tests/test_eval_regression.py."
+    "Add regression tests for both requirements in tests/test_eval_regression.py. "
+    "Independently review the implementation and test coverage before delivery."
 )
 FINDING = "The public None-input requirement has neither implementation nor a regression assertion."
 
@@ -92,12 +93,17 @@ def test_green_partial_candidate_is_reviewed_before_commit_and_resumes_same_exec
             if number == (4 if repair else 3):
                 return _tool("edit_file", {"path": "candidate.py", "old": PARTIAL,
                                           "new": COMPLETE if repair else PARTIAL + "# reviewed, but still incomplete\n"}, "repair-candidate")
-            assert number in ({2, 5} if repair else {2, 4}), "Unexpected additional Executor request"
+            # A live owner may offer another repair on the same budget. The
+            # negative adapter explicitly stops instead of failing by accident
+            # because an old one-repair fixture ran out of scripted responses.
+            blocked = not repair and number == 5
+            assert number in ({2, 5} if repair else {2, 4, 5}), "Unexpected additional Executor request"
             submit = next(tool for tool in tools_override.list() if tool.name == "executor_submit")
             count = submit.input_schema["properties"]["steps"]["items"]["properties"]["step"]["maximum"]
             return _tool("executor_submit", {
-                "status": "completed", "steps": [{"step": i, "status": "completed"} for i in range(1, count + 1)],
-                "deviations": [], "blockers": [],
+                "status": "blocked" if blocked else "completed",
+                "steps": [{"step": i, "status": "failed" if blocked else "completed"} for i in range(1, count + 1)],
+                "deviations": [], "blockers": [FINDING] if blocked else [],
             }, f"submit-{number}")
 
     class Reviewer(ModelAdapter):
@@ -190,7 +196,7 @@ def test_green_partial_candidate_is_reviewed_before_commit_and_resumes_same_exec
         "A green partial candidate bypassed semantic review or its rejection was not repaired/reviewed. " + result.output
     )
     assert review_observations[0]["covered"] is False
-    assert len(executor_calls) == (5 if repair else 4), result.output
+    assert len(executor_calls) == 5, result.output
     assert review_observations[1]["covered"] is repair
     assert [kind for kind, _ in adapters].count("general") == 1, "Repair must retain the same Executor adapter."
     resumed = executor_calls[2]

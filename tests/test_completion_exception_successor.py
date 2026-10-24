@@ -10,7 +10,7 @@ from minicode.implementation_completion_review import ImplementationCompletionRe
 from minicode.review_probe_correction import validate_probe_correction_execution
 from minicode.types import AgentStep
 from test_completion_exception_attribution import _approve, _seed_exception
-from test_implementation_completion_review import SOURCE, _fixture, _rows, _submit
+from test_implementation_completion_review import SOURCE, _fixture
 
 
 BROKEN_FIXTURE = (
@@ -69,12 +69,8 @@ def test_independent_correction_retains_exception_successor_and_continues_attrib
     try:
         _seed_exception(assess, first)
 
-        def review_gap(tools, child, packet):
-            assert seen == [first, second]
-            assert review.state["corrections"] == [] and review.state["retiredProbeIds"] == []
-            result = _submit(tools, child, packet, status="changes_required",
-                rows=_rows(packet, status="missing"), findings=["release must add the quantity"])
-            assert result.ok, result.output
+        def review_gap(*_args):
+            pytest.fail("An independently confirmed product gap returns before an unrelated retirement audit.")
 
         def review_replacement_chain(tools, child, packet):
             assert len(review.state["supersessions"]) == 2
@@ -87,8 +83,33 @@ def test_independent_correction_retains_exception_successor_and_continues_attrib
         assert [row["code"] for row in result["repairProbes"]] == ([second] if product_gap else [])
         assert (tmp_path / "stock.py").read_bytes() == original
         state = review.state
-        assert len(state["corrections"]) == (1 if product_gap else 2)
+        assert len(state["corrections"]) == (0 if product_gap else 2)
         assert len(state["failureAdjudications"]) == 2
+        # A genuine successor gap authorizes product repair, not retiring the
+        # broken fixture. Keep both actual exceptions until independent audit.
+        first_edge = state["supersessions"][0]
+        before = next(row["receipt"] for row in state["receipts"] if row["receiptRef"] == first_edge["originalReceipt"])
+        after = next(row["receipt"] for row in state["receipts"] if row["receiptRef"] == first_edge["replacementReceipt"])
+        assert before["status"] == after["status"] == "failed"
+        assert after["testReport"]["caseReport"]["cases"][0]["failureKind"] == "exception"
+        with pytest.raises(ValueError):
+            validate_probe_correction_execution([before], after, before["patchDigest"])
+        restored = ImplementationCompletionReview.from_state(review.spec, state)
+        assert restored.state["corrections"] == state["corrections"]
+        assert restored.state["receipts"] == state["receipts"]
+        assert restored.state["supersessions"] == state["supersessions"]
+        forged = deepcopy(state)
+        forged["supersessions"][0].pop("adjudicationRef")
+        with pytest.raises(ValueError, match="independent"):
+            ImplementationCompletionReview.from_state(review.spec, forged)
+        if product_gap:
+            assert state["retiredProbeIds"] == []
+            (tmp_path / "stock.py").write_text(SOURCE)
+            assert assess(_approve)["status"] == "approved"
+            assert seen == [first, second]
+            state = review.state
+            assert len(state["corrections"]) == 1
+            assert state["retiredProbeIds"] == [first_edge["oldProbeId"]]
         terminal = next(row["probeId"] for row in state["probes"]
                         if row["code"] == (second if product_gap else CORRECT))
         for correction in state["corrections"]:
@@ -98,14 +119,6 @@ def test_independent_correction_retains_exception_successor_and_continues_attrib
                                  if row["id"] == correction["supersessionId"])
             assert edge_decision["status"] == "accepted"
             assert {w["probeId"] for row in edge_decision["requirements"] for w in row["witnesses"]} == {terminal}
-        edge = state["corrections"][0]
-        before = next(row["receipt"] for row in state["receipts"] if row["receiptRef"] == edge["originalReceipt"])
-        after = next(row["receipt"] for row in state["receipts"] if row["receiptRef"] == edge["replacementReceipt"])
-        assert before["status"] == after["status"] == "failed"
-        assert after["testReport"]["caseReport"]["cases"][0]["failureKind"] == "exception"
-        # This route cannot be borrowed by ordinary author corrections.
-        with pytest.raises(ValueError):
-            validate_probe_correction_execution([before], after, edge["frozenPatchDigest"])
         restored = ImplementationCompletionReview.from_state(review.spec, state)
         assert restored.state["corrections"] == state["corrections"]
         assert restored.state["receipts"] == state["receipts"]
@@ -113,9 +126,5 @@ def test_independent_correction_retains_exception_successor_and_continues_attrib
         forged["corrections"][0].pop("adjudicationRef")
         with pytest.raises(ValueError, match="independent"):
             ImplementationCompletionReview.from_state(review.spec, forged)
-        if product_gap:
-            (tmp_path / "stock.py").write_text(SOURCE)
-            assert assess(_approve)["status"] == "approved"
-            assert seen == [first, second]
     finally:
         cap.close()

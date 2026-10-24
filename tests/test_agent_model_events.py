@@ -383,8 +383,8 @@ def test_model_interrupt_emits_failed_and_propagates_same_object(
 @pytest.mark.parametrize(
     ("error", "failure_kind", "fallback_fragment"),
     [
-        (ConnectionError("Bearer network-secret"), "network", "Network error"),
-        (TimeoutError("password=timeout-secret"), "timeout", "Model API timeout"),
+        (ConnectionError("Bearer network-secret"), "network", "Model transport failed"),
+        (TimeoutError("password=timeout-secret"), "timeout", "Model transport failed"),
         (RuntimeError("api_key=provider-secret"), "provider_error", "Model API error"),
     ],
 )
@@ -395,13 +395,25 @@ def test_model_failures_use_fixed_safe_classification_and_preserve_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     readings = iter((20.0, 50.001))
-    monkeypatch.setattr(agent_loop_module.time, "monotonic", lambda: next(readings))
+    # Deadline checks may also read the clock after the failed exchange.
+    monkeypatch.setattr(agent_loop_module.time, "monotonic", lambda: next(readings, 50.001))
     model = ScriptedModel([error])
     sink = RecordingSink()
 
-    messages = _run(model, sink)
+    # Isolate one failure's classification and duration from retry scheduling.
+    messages = run_agent_turn(
+        model=model,
+        tools=ToolRegistry([]),
+        messages=[{"role": "system", "content": "system"}],
+        cwd=".",
+        event_sink=sink,
+        max_steps=1,
+    )
 
     assert fallback_fragment in messages[-1]["content"]
+    assert model.calls == 1
+    if failure_kind in {"network", "timeout"}:
+        assert messages[-1]["_partial"] is True
     assert [event.event_type for event in sink.events] == [
         "model.started",
         "model.failed",

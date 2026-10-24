@@ -251,6 +251,22 @@ class BackgroundTaskResult:
     startedAt: int
 
 
+@dataclass(frozen=True, slots=True)
+class ToolUsageCounts:
+    """Host-observed invocation counts, independent of model-visible prose."""
+
+    model_turns: int = 0
+    tool_calls: int = 0
+
+    def __post_init__(self) -> None:
+        if any(type(value) is not int or value < 0
+               for value in (self.model_turns, self.tool_calls)):
+            raise ValueError("tool usage counts must be non-negative integers")
+
+    def render(self) -> str:
+        return f"Model turns: {self.model_turns} (tool calls: {self.tool_calls})"
+
+
 @dataclass(slots=True)
 class ToolResult:
     ok: bool
@@ -258,6 +274,10 @@ class ToolResult:
     backgroundTask: BackgroundTaskResult | None = None
     awaitUser: bool = False
     verification: dict[str, object] | None = None
+    # Internal metadata supplied by the host, never parsed from output.
+    _usage_counts: ToolUsageCounts = field(
+        default_factory=ToolUsageCounts, kw_only=True, repr=False, compare=False,
+    )
     # Set only by the host's atomic file writer. Prose cannot trigger checks.
     _file_changed: bool = field(default=False, kw_only=True, repr=False)
     # Actual host check feedback, never inferred from model-controlled prose.
@@ -375,7 +395,8 @@ def skill_load_binding_from_value(value: object) -> SkillLoadBinding | None:
     if isinstance(value, Mapping):
         getter = value.get
     else:
-        getter = lambda name, default=None: getattr(value, name, default)
+        def getter(name: str, default: object = None) -> object:
+            return getattr(value, name, default)
     try:
         qualified_name = getter("qualified_name")
         if not qualified_name:
@@ -751,6 +772,9 @@ class ToolContext:
         repr=False,
         compare=False,
     )
+    # In-process native review allowances, shared by its sequential phases and
+    # probe callbacks. Never serialized as evidence or sent to the model.
+    _completion_review_limits: Any | None = field(default=None, repr=False, compare=False, kw_only=True)
     # Set by _execute_single_tool when a tool worker timed out. Long-running
     # tools (notably the `task` sub-agent) check it cooperatively and unwind
     # instead of continuing after the parent has already returned.

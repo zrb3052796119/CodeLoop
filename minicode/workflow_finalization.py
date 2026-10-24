@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import math
-import re
 import time
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
@@ -34,7 +33,7 @@ from minicode.subagent_result import (
     project_subagent_result,
     render_subagent_result,
 )
-from minicode.tooling import ToolResult
+from minicode.tooling import ToolResult, ToolUsageCounts
 from minicode.turn_cancellation import TurnCancellationRequested
 from minicode.verification_observation import project_verification
 from minicode.workflow_delivery import issue_workflow_delivery, issue_workflow_failure
@@ -72,6 +71,7 @@ class _PhaseResultSnapshot:
 
     ok: bool
     output: str
+    usage_counts: ToolUsageCounts = ToolUsageCounts()
 
     @classmethod
     def from_result(cls, result: ToolResult) -> _PhaseResultSnapshot:
@@ -79,10 +79,12 @@ class _PhaseResultSnapshot:
             raise TypeError("phase result must be a ToolResult")
         if type(result.ok) is not bool or type(result.output) is not str:
             raise TypeError("phase result scalars are invalid")
-        return cls(ok=result.ok, output=result.output)
+        if type(result._usage_counts) is not ToolUsageCounts:
+            raise TypeError("phase result usage counts are invalid")
+        return cls(ok=result.ok, output=result.output, usage_counts=result._usage_counts)
 
     def to_result(self) -> ToolResult:
-        return ToolResult(ok=self.ok, output=self.output)
+        return ToolResult(ok=self.ok, output=self.output, _usage_counts=self.usage_counts)
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,6 +135,9 @@ class _WorkflowFinalizationSnapshot:
     production_audit_required: bool
     initial_finalization_status: str
     started_at: float
+    # Host aggregate includes superseded attempts; phase snapshots retain only
+    # the latest narrative for each role. None supports detached old fixtures.
+    usage_counts: ToolUsageCounts | None = None
 
     def __post_init__(self) -> None:
         """Reject mutable or open-ended values even on direct construction."""
@@ -199,6 +204,8 @@ class _WorkflowFinalizationSnapshot:
             raise TypeError("production_audit_required must be boolean")
         if type(self.started_at) is not float or not math.isfinite(self.started_at):
             raise TypeError("started_at must be a finite float timestamp")
+        if self.usage_counts is not None and type(self.usage_counts) is not ToolUsageCounts:
+            raise TypeError("workflow usage counts must be immutable host values")
 
     @classmethod
     def capture(
@@ -226,6 +233,7 @@ class _WorkflowFinalizationSnapshot:
         production_audit_required: bool,
         initial_finalization_status: str,
         started_at: float,
+        usage_counts: ToolUsageCounts | None = None,
     ) -> _WorkflowFinalizationSnapshot:
         """Seal mutable runner values behind the read-only finalization seam."""
         sealed_transitions = tuple(transitions)
@@ -287,6 +295,7 @@ class _WorkflowFinalizationSnapshot:
             production_audit_required=production_audit_required,
             initial_finalization_status=initial_finalization_status,
             started_at=float(started_at),
+            usage_counts=usage_counts,
         )
 
     @classmethod
@@ -306,6 +315,7 @@ class _WorkflowFinalizationSnapshot:
         commit_error_text: str | None,
         production_audit_required: bool,
         started_at: float,
+        usage_counts: ToolUsageCounts | None = None,
     ) -> _WorkflowFinalizationSnapshot:
         """Retain durable Scheduler facts when rich snapshotting fails.
 
@@ -349,6 +359,7 @@ class _WorkflowFinalizationSnapshot:
             production_audit_required=production_audit_required,
             initial_finalization_status="projection_failed",
             started_at=float(started_at),
+            usage_counts=usage_counts,
         )
 
 
@@ -364,6 +375,7 @@ class _ProjectionState:
     audit_status: str = "pending"
     scheduler_trace: dict[str, object] | None = None
     trace_projection_failed: bool = False
+    evidence_note: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -455,17 +467,15 @@ def _bounded_workflow_section(label: str, content: str, limit: int) -> tuple[str
 def _workflow_result_counts(
     results: tuple[_PhaseResultSnapshot, ...],
 ) -> tuple[int, int]:
-    model_turns = 0
-    tool_calls = 0
-    for result in results:
-        match = re.search(
-            r"Model turns: (\d+) \(tool calls: (\d+)\)",
-            result.output,
-        )
-        if match is not None:
-            model_turns += int(match.group(1))
-            tool_calls += int(match.group(2))
-    return model_turns, tool_calls
+    return (
+        sum(result.usage_counts.model_turns for result in results),
+        sum(result.usage_counts.tool_calls for result in results),
+    )
+
+
+def _snapshot_usage_counts(snapshot: _WorkflowFinalizationSnapshot) -> ToolUsageCounts:
+    return (snapshot.usage_counts if snapshot.usage_counts is not None else
+            ToolUsageCounts(*_workflow_result_counts(_phase_results(snapshot))))
 
 
 def _observe(
@@ -478,15 +488,15 @@ def _observe(
     phase_count: int,
     result_truncated: bool,
 ) -> None:
-    model_turns, tool_calls = _workflow_result_counts(results)
+    counts = _snapshot_usage_counts(snapshot)
     observation = _WorkflowObservation(
         result_contract_status=result_contract_status,
         outcome=outcome,
         phase_count=phase_count,
         result_truncated=result_truncated,
         duration_ms=max(0, int((time.time() - snapshot.started_at) * 1000)),
-        model_turns=model_turns,
-        tool_calls=tool_calls,
+        model_turns=counts.model_turns,
+        tool_calls=counts.tool_calls,
     )
     try:
         ports.observe(observation)
@@ -1058,9 +1068,9 @@ def _project_final_tool_result(
             "projection_or_persistence_failed",
         }
     )
-    prefix = ""
+    prefix = state.evidence_note
     if failed:
-        prefix = (
+        prefix += (
             "error[workflow_finalization_incomplete]: "
             f"changesCommitted={str(snapshot.scheduler_outcome.committed).lower()}, "
             f"finalizationStatus={state.finalization_status}, "
@@ -1167,6 +1177,7 @@ def _project_final_tool_result(
         finalized_output = authority_output
     return ToolResult(
         ok=result.ok and not failed,
+        _usage_counts=_snapshot_usage_counts(snapshot),
         output=finalized_output,
         backgroundTask=result.backgroundTask,
         awaitUser=result.awaitUser,
@@ -1197,7 +1208,7 @@ def _fallback_tool_result(
         "traceProjection": "failed",
         "resultProjection": "failed",
     }
-    output = (
+    output = state.evidence_note + (
         "error[workflow_finalization_incomplete]: "
         f"changesCommitted={str(snapshot.scheduler_outcome.committed).lower()}, "
         "finalizationStatus=projection_failed\n\n"
@@ -1207,6 +1218,7 @@ def _fallback_tool_result(
     return ToolResult(
         ok=False,
         output=output[:_WORKFLOW_OUTPUT_MAX_CHARS],
+        _usage_counts=_snapshot_usage_counts(snapshot),
         _must_deliver=snapshot.scheduler_outcome.committed,
     )
 
@@ -1573,6 +1585,10 @@ def _render_terminal_result(
 
     if DispatchStage.REVIEWER not in snapshot.dispatch_plan.stages:
         workflow_ok = outcome.status == "completed"
+        phase_label = (
+            "Analyst -> Executor -> Verifier" if plan_result is not None
+            else "Executor -> Verifier"
+        )
         structured_result = _project_terminal_result(
             snapshot,
             documents,
@@ -1607,7 +1623,7 @@ def _render_terminal_result(
         output = (
             f"[Workflow {snapshot.description} "
             f"{'completed' if workflow_ok else 'failed'}]\n"
-            "  Phases: Executor -> Verifier\n\n"
+            f"  Phases: {phase_label}\n\n"
             "=== DETERMINISTIC VERIFICATION ===\n"
             f"{verification_text}\n\n"
             "=== EXECUTE ===\n"
@@ -1622,7 +1638,8 @@ def _render_terminal_result(
             result_contract_status="derived",
             outcome="completed" if workflow_ok else "failed",
             results=phase_results,
-            phase_count=(1 if explore_results else 0) + (1 if execute_result else 0),
+            phase_count=(int(bool(explore_results)) + int(plan_result is not None)
+                         + int(execute_result is not None)),
             result_truncated=False,
         )
         return _finalize_tool_result(
@@ -1814,6 +1831,8 @@ def _render_terminal_result(
 def finalize_workflow(
     snapshot: _WorkflowFinalizationSnapshot,
     ports: _WorkflowFinalizationPorts,
+    *,
+    evidence_note: str = "",
 ) -> ToolResult:
     """Render one terminal result without retaining any execution capability."""
     if not isinstance(snapshot, _WorkflowFinalizationSnapshot):
@@ -1823,6 +1842,7 @@ def finalize_workflow(
 
     state = _ProjectionState(
         finalization_status=snapshot.initial_finalization_status,
+        evidence_note=evidence_note,
     )
     try:
         scheduler_trace_text = _project_trace_and_audit(snapshot, ports, state)

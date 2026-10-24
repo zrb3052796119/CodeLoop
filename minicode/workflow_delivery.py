@@ -77,7 +77,7 @@ def issue_workflow_failure(snapshot, state) -> WorkflowFailureReceipt | None:
     invocation = _CURRENT_INVOCATION.get()
     outcome = snapshot.scheduler_outcome
     if (invocation is None or invocation.structured_workflow != (outcome.workflow_id, outcome.task_id)
-            or snapshot.contract_mode != "v2" or snapshot.dispatch_plan.policy_version not in {4, 5}):
+            or snapshot.contract_mode != "v2" or snapshot.dispatch_plan.policy_version not in {4, 5, 6}):
         return None
     if (outcome.committed or state.finalization_status != "completed"
             or state.audit_status != "persisted" or state.trace_projection_failed):
@@ -129,7 +129,7 @@ def issue_workflow_delivery(snapshot, state) -> WorkflowDeliveryReceipt | None:
     invocation = _CURRENT_INVOCATION.get()
     outcome = snapshot.scheduler_outcome
     if (invocation is None or snapshot.contract_mode != "v2"
-            or snapshot.dispatch_plan.policy_version not in {4, 5}
+            or snapshot.dispatch_plan.policy_version not in {4, 5, 6}
             or not outcome.committed or outcome.status != "completed"
             or snapshot.commit_ready_status != "persisted"
             or state.finalization_status != "completed" or state.audit_status != "persisted"):
@@ -147,8 +147,8 @@ def issue_workflow_delivery(snapshot, state) -> WorkflowDeliveryReceipt | None:
     # host's v5 routing decision. Do not invent a Reviewer verdict for a
     # user-bound acceptance route, or weaken reviewed routes in other policies.
     host_acceptance_route = (
-        snapshot.dispatch_plan.policy_version == 5
-        and snapshot.dispatch_plan.rule_id == "route.verified_change"
+        snapshot.dispatch_plan.policy_version in {5, 6}
+        and snapshot.dispatch_plan.rule_id in {"route.verified_change", "route.analyzed_change"}
         and not snapshot.profile.independent_review_required
     )
     if (not execution_delivered

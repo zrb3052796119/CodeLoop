@@ -126,6 +126,33 @@ def test_inconclusive_attribution_never_turns_test_claim_into_product_repair(tmp
         cap.close()
 
 
+def test_classified_gap_feedback_survives_repeat_restore_and_budget_closure(tmp_path, monkeypatch):
+    product = SOURCE.replace("return n + amount", "return n")
+    review, assess, commands, cap = pending(tmp_path, monkeypatch,
+        adjudication_driver=judge("product_gap"), product=product)
+    try:
+        native_before = deepcopy(review.state["acceptedRepairDecision"])
+        first = assess(lambda *_: pytest.fail("confirmed gap needs no new reviewer"))
+        assert [p["code"] for p in first["repairProbes"]] == [WRONG]
+        count = len(commands)
+        second = assess(lambda *_: pytest.fail("repeat must use confirmed feedback"))
+        restored = ImplementationCompletionReview.from_state(review.spec, review.state)
+        context = ToolContext(cwd=str(tmp_path))
+        resumed = restored.assess(model=None, tools=None, context=context,
+            agent_budget=None, event_sink=None, cancellation_token=None,
+            deadline_monotonic=None,
+            checks_receipt={"status": "passed", "patchDigest": first["patchDigest"]})
+        bounded = restored.review_budget_exhausted_result(first["patchDigest"], context, "stage exhausted")
+        for result in (second, resumed, bounded):
+            assert result["status"] == "changes_required"
+            assert [p["code"] for p in result["repairProbes"]] == [WRONG]
+        assert len(commands) == count
+        assert review.state["acceptedRepairDecision"] == native_before
+        assert restored.state["acceptedRepairDecision"] == native_before
+    finally:
+        cap.close()
+
+
 @pytest.mark.parametrize("field", ["candidateDigest", "receiptRef", "sourceDigest", "replacement", "adjudicationRef"])
 def test_restore_rejects_semantic_correction_authority_tampering(tmp_path, monkeypatch, field):
     review, assess, _, cap = pending(tmp_path, monkeypatch, adjudication_driver=judge())

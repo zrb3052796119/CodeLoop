@@ -111,6 +111,7 @@ from minicode.tooling import (
     ToolMetadata,
     ToolResult,
     ToolTerminationReason,
+    ToolUsageCounts,
     intersect_skill_load_policies,
     serialize_skill_load_policy,
 )
@@ -375,6 +376,8 @@ def _auto_constructed_task_id(description: str) -> str:
 
 def _auto_construct_workflow_request(
     input_data: dict,
+    *,
+    criteria_prompt: str | None = None,
 ) -> tuple[dict[str, object] | None, str | None]:
     """Build WorkflowRequest.v1 from the simplified entry's convenience fields.
 
@@ -403,7 +406,9 @@ def _auto_construct_workflow_request(
             + _workflow_request_guidance()
         )
     try:
-        criteria = criteria_from_prompt(input_data.get("prompt"))
+        criteria = criteria_from_prompt(
+            criteria_prompt if criteria_prompt is not None else input_data.get("prompt")
+        )
     except ValueError as exc:
         return None, f"error[workflow_request_invalid]: {exc}"
     criterion_ids = [criterion["id"] for criterion in criteria]
@@ -546,16 +551,21 @@ def _validate(input_data: dict) -> dict:
             "prompt is required: give the sub-agent a full, self-contained task "
             "description (it cannot see this conversation)"
         )
+    if agent_type == "workflow":
+        from minicode.workflow_brief import validate_workflow_brief_prompt
+
+        validate_workflow_brief_prompt(prompt)
     if agent_type == "workflow" and len(prompt) > _WORKFLOW_PROMPT_MAX_CHARS:
         raise ValueError(
             "error[workflow_prompt_oversized]: the workflow delegation prompt "
             f"is {len(prompt)} characters; it becomes the scheduler assignment "
             f"objective, whose contract allows at most {_MAX_TEXT} characters "
             f"(entry limit {_WORKFLOW_PROMPT_MAX_CHARS}). Keep the delegation "
-            "brief: state the intent, the relevant paths, and the acceptance "
-            "expectation. Do not paste full patches or file contents — the "
-            "Executor produces the change itself from the Analyst's "
-            "investigation."
+            "brief, or save the complete task text in a workspace file and use "
+            "'@file:relative/path' on the first line followed by a summary of "
+            "at most 800 characters. Do not paste full patches inline; "
+            "the file body is preserved in full. The Executor produces the "
+            "change itself from the complete task brief."
         )
 
     parallel_explore = input_data.get("parallel_explore", False)
@@ -1757,6 +1767,13 @@ def _run_general_in_subprocess(
             "result_missing",
             "result_invalid",
         }
+        reported_tool_calls = worker_result.get("tool_calls")
+        usage_counts = ToolUsageCounts()
+        if (result_shape_valid and not hard_or_unpublished_terminal
+                and type(reported_tool_calls) is int and reported_tool_calls >= 0):
+            usage_counts = ToolUsageCounts(reported_model_turns, reported_tool_calls)
+        journal_model_turns = usage_counts.model_turns
+        journal_tool_calls = usage_counts.tool_calls
         if result_shape_valid and not hard_or_unpublished_terminal:
             memory_relay_effects = _replay_semantic_intent_events(
                 worker_result.get(_SEMANTIC_INTENT_RELAY_FIELD),
@@ -1839,14 +1856,15 @@ def _run_general_in_subprocess(
                 result_contract_status="unavailable",
                 agent_type="general",
                 outcome="budget_exceeded",
-                model_turns=0,
-                tool_calls=0,
+                model_turns=usage_counts.model_turns,
+                tool_calls=usage_counts.tool_calls,
                 duration_ms=duration_ms,
                 max_turns=max_turns,
                 result_truncated=False,
             )
             return ToolResult(
                 ok=False,
+                _usage_counts=usage_counts,
                 _termination_reason=ToolTerminationReason.BUDGET_EXCEEDED,
                 output=(
                     f"error[agent_budget_exceeded]: {outcome.error}. "
@@ -1864,14 +1882,15 @@ def _run_general_in_subprocess(
                 result_contract_status="unavailable",
                 agent_type="general",
                 outcome="failed",
-                model_turns=0,
-                tool_calls=0,
+                model_turns=usage_counts.model_turns,
+                tool_calls=usage_counts.tool_calls,
                 duration_ms=duration_ms,
                 max_turns=max_turns,
                 result_truncated=False,
             )
             return ToolResult(
                 ok=False,
+                _usage_counts=usage_counts,
                 output=f"error[sub_agent_deadline_exceeded]: {outcome.error}",
             )
         if status != "completed":
@@ -1881,7 +1900,7 @@ def _run_general_in_subprocess(
                 output = (
                     f"error[sub_agent_{typed_status}]: the nested Agent ended "
                     "without a successful typed outcome.\n\n"
-                    + str(worker_result.get("final_message") or "")[:4000]
+                    + str(worker_result.get("final_message") or "")
                 )
             else:
                 detail = outcome.error or "unknown subprocess error"
@@ -1892,21 +1911,21 @@ def _run_general_in_subprocess(
                 result_contract_status="unavailable",
                 agent_type="general",
                 outcome="failed",
-                model_turns=0,
-                tool_calls=0,
+                model_turns=usage_counts.model_turns,
+                tool_calls=usage_counts.tool_calls,
                 duration_ms=duration_ms,
                 max_turns=max_turns,
                 result_truncated=False,
             )
-            return ToolResult(ok=False, output=output)
+            return ToolResult(ok=False, output=output, _usage_counts=usage_counts)
 
         final_message = str(
             worker_result.get("final_message")
             or "(sub-agent completed without a final message)"
         )
         journal_result_truncated = bool(worker_result.get("result_truncated"))
-        model_turns = int(worker_result.get("model_turns") or 0)
-        tool_calls_count = int(worker_result.get("tool_calls") or 0)
+        model_turns = usage_counts.model_turns
+        tool_calls_count = usage_counts.tool_calls
         journal_outcome = "completed"
         journal_model_turns = model_turns
         journal_tool_calls = tool_calls_count
@@ -1959,7 +1978,7 @@ def _run_general_in_subprocess(
     header = (
         f"[Sub-agent {agent_def['name']} completed]\n"
         f"  Type: general\n"
-        f"  Model turns: {model_turns} (tool calls: {tool_calls_count})\n"
+        f"  {usage_counts.render()}\n"
         f"  Duration: {elapsed:.1f}s\n"
         f"  Max turns: {max_turns}\n"
     )
@@ -1992,6 +2011,7 @@ def _run_general_in_subprocess(
 
     return ToolResult(
         ok=True,
+        _usage_counts=usage_counts,
         output=(
             header
             + "\n"
@@ -2873,7 +2893,12 @@ def _run(input_data: dict, context) -> ToolResult:
                     break
             if not final_message:
                 final_message = "(sub-agent completed without a final message)"
-            journal_result_truncated = len(final_message) > 8000
+            # The workflow host persists full phase evidence before removing
+            # its snapshot. Only the final user-facing projection is bounded.
+            journal_result_truncated = (
+                len(final_message) > 8000
+                and not getattr(context, "_workflow_phase", False)
+            )
             tool_calls_from_messages = sum(
                 1 for m in result_messages if m.get("role") == "assistant_tool_call"
             )
@@ -2918,10 +2943,12 @@ def _run(input_data: dict, context) -> ToolResult:
                 )
                 return ToolResult(
                     ok=False,
+                    _usage_counts=ToolUsageCounts(model_turns, tool_calls_count),
                     output=(
                         f"error[sub_agent_{status}]: the nested Agent ended "
                         "without a successful typed outcome.\n\n"
-                        f"{final_message[:4000]}"
+                        + (final_message if getattr(context, "_workflow_phase", False)
+                           else final_message[:4000])
                     ),
                 )
             journal_outcome = "completed"
@@ -3098,6 +3125,7 @@ def _run(input_data: dict, context) -> ToolResult:
             return ToolResult(
                 ok=False,
                 output=f"error[tool_abandoned]: {e}",
+                _usage_counts=ToolUsageCounts(journal_model_turns, journal_tool_calls),
                 _termination_reason=ToolTerminationReason.ABANDONED,
             )
         except (_TaskDeadlineExceeded, AgentTurnDeadlineExceeded) as e:
@@ -3121,6 +3149,7 @@ def _run(input_data: dict, context) -> ToolResult:
             return ToolResult(
                 ok=False,
                 output=f"error[sub_agent_deadline_exceeded]: {e}",
+                _usage_counts=ToolUsageCounts(journal_model_turns, journal_tool_calls),
             )
         except AgentBudgetExceeded as e:
             journal_outcome = "budget_exceeded"
@@ -3143,6 +3172,7 @@ def _run(input_data: dict, context) -> ToolResult:
             return ToolResult(
                 ok=False,
                 _termination_reason=ToolTerminationReason.BUDGET_EXCEEDED,
+                _usage_counts=ToolUsageCounts(journal_model_turns, journal_tool_calls),
                 output=(
                     f"error[agent_budget_exceeded]: {e.reason}. "
                     "The shared turn budget was exhausted; simplify the task "
@@ -3167,6 +3197,7 @@ def _run(input_data: dict, context) -> ToolResult:
             )
             return ToolResult(
                 ok=False,
+                _usage_counts=ToolUsageCounts(journal_model_turns, journal_tool_calls),
                 output=(
                     f"Sub-agent ({agent_def['name']}) failed: {type(e).__name__}: {e}"
                 ),
@@ -3217,10 +3248,11 @@ def _run(input_data: dict, context) -> ToolResult:
     # reported neither turns nor tool calls. Both values were computed before
     # the cleanup/finally block so the sub-run journal sees the real outcome.
 
+    usage_counts = ToolUsageCounts(model_turns, tool_calls_count)
     header = (
         f"[Sub-agent {agent_def['name']} completed]\n"
         f"  Type: {agent_type}\n"
-        f"  Model turns: {model_turns} (tool calls: {tool_calls_count})\n"
+        f"  {usage_counts.render()}\n"
         f"  Duration: {elapsed:.1f}s\n"
         f"  Max turns: {max_turns}\n"
     )
@@ -3285,8 +3317,9 @@ def _run(input_data: dict, context) -> ToolResult:
             detail_note = mailbox.read(f"{result_key}_detail")
             detail_text = getattr(detail_note, "content", None)
             if isinstance(detail_text, str) and detail_text.strip():
-                bounded = detail_text.strip()[:6_000]
-                if len(detail_text.strip()) > 6_000:
+                bounded = (detail_text if getattr(context, "_workflow_phase", False)
+                           else detail_text.strip()[:6_000])
+                if len(detail_text.strip()) > 6_000 and not getattr(context, "_workflow_phase", False):
                     bounded += "\n…(truncated)"
                 detail_section = (
                     "\n\n=== ENUMERATION DETAIL ===\n" + bounded
@@ -3296,6 +3329,7 @@ def _run(input_data: dict, context) -> ToolResult:
 
     return ToolResult(
         ok=True,
+        _usage_counts=usage_counts,
         output=(
             header
             + "\n"
@@ -3353,6 +3387,20 @@ def _dispatch(input_data: dict, context) -> ToolResult:
     """Dispatch synchronous and asynchronous task lifecycle operations."""
     action = input_data.get("action", "run")
     if action == "run":
+        brief = None
+        if input_data.get("agent_type") == "workflow":
+            from minicode.permissions import PermissionDeniedError
+            from minicode.workflow_brief import prepare_workflow_brief
+
+            input_data = dict(input_data)
+            input_data.pop("_workflow_brief", None)
+            try:
+                brief = prepare_workflow_brief(input_data, context)
+            except (ValueError, OSError, PermissionDeniedError) as exc:
+                return ToolResult(ok=False, output=f"error[workflow_brief_invalid]: {exc}")
+            if brief is not None:
+                input_data["_workflow_brief"] = brief
+                input_data["prompt"] = brief.render_prompt()
         central_enforced = (
             getattr(
                 context,
@@ -3370,7 +3418,7 @@ def _dispatch(input_data: dict, context) -> ToolResult:
             # through the same contract channel, or keep the fail-closed
             # legacy route when no write paths are declared.
             constructed, construction_error = _auto_construct_workflow_request(
-                input_data
+                input_data, criteria_prompt=brief.body if brief is not None else None
             )
             if construction_error is not None:
                 return ToolResult(ok=False, output=construction_error)
@@ -3381,6 +3429,20 @@ def _dispatch(input_data: dict, context) -> ToolResult:
             )
             if constructed is not None:
                 input_data["workflow_request"] = constructed
+        if brief is not None and input_data.get("workflow_request") is not None:
+            # Only an authorized source's exact persisted copy receives read
+            # authority. Preserve all other scope fields and revalidate before
+            # the runner freezes the request digest.
+            request = dict(input_data["workflow_request"])
+            scope = dict(request["scope"])
+            scope["readRoots"] = list(dict.fromkeys([*scope["readRoots"], brief.path]))
+            request["scope"] = scope
+            try:
+                input_data["workflow_request"] = parse_workflow_request(
+                    request, legacy_task_id="task_workflow_brief"
+                ).to_dict()
+            except ValueError as exc:
+                return ToolResult(ok=False, output=f"error[workflow_brief_invalid]: {exc}")
         if (
             central_enforced
             and input_data.get("agent_type") == "general"
@@ -3553,24 +3615,38 @@ def _capability_for(call_input: Mapping[str, object]) -> CapabilityProfile:
 task_tool = ToolDefinition(
     name="task",
     description=(
-        "Run or manage a sub-agent for a complex task. Choose agent_type by "
-        "the work, not by habit: a task that creates or modifies files -> "
-        "'workflow' (pass write_paths and verification_commands and the "
-        "scheduler constructs WorkflowRequest.v1 for you, or provide an "
-        "explicit workflow_request); broad codebase search or understanding "
-        "-> 'explore' (read-only; several issued in one step run in "
-        "parallel); deep analysis or design before acting -> 'plan' "
-        "(read-only). When to delegate: answering means reading across "
-        "several files, or you have independent work that can run in "
-        "parallel — delegate it and keep the conclusion, not the file "
-        "dumps. When NOT to delegate: a single-fact lookup where you "
-        "already know the file, symbol, or value — use "
-        "read_file/grep_files/find_symbols directly. Once you have "
+        "Run or manage a sub-agent for work with a clear handoff result. "
+        "Delegate only when the remaining shared budget and time support "
+        "the work and its return. File count is an auxiliary signal, not a "
+        "delegation rule. Match the task shape:\n"
+        "- Independent investigation question -> 'explore' (read-only): "
+        "trace configuration precedence and return the rule with source "
+        "locations; a single-fact lookup in a known file uses direct tools.\n"
+        "- Specific design uncertainty -> 'plan' (read-only): compare "
+        "locking options for this race and recommend one with trade-offs; "
+        "a known small fix can proceed directly.\n"
+        "- Isolated implementation with authorized scope and executable "
+        "verification -> 'workflow': repair retry handling in named files "
+        "and add/run the stated regression. Pass write_paths and "
+        "verification_commands so the scheduler constructs WorkflowRequest.v1, "
+        "or provide an explicit workflow_request. Start workflow directly, "
+        "without a routine Plan first.\n"
+        "- Known-location lookup or small low-risk, non-sensitive edit -> direct "
+        "read_file/grep_files/find_symbols, or edit_file/write_file then "
+        "run_command: find a constant or fix one known guard. If a permission "
+        "decision requires workflow, use that route for the remaining work.\n"
+        "For independent investigations, keep the conclusion, not the file "
+        "dumps. Once you have "
         "delegated a search, do not also run it yourself — wait for the "
         "result. Every call starts in a fresh context: the prompt must be "
-        "self-contained. In the 'explore'/'plan' prompt you may state the "
+        "self-contained. Keep inline workflow prompts within 3800 characters; "
+        "for a longer brief, save the full text in an authorized workspace "
+        "file and use '@file:relative/path' as the first line, followed by "
+        "an inline summary of at most 800 characters. Preserve all essential "
+        "requirements in the file. In the 'explore'/'plan' prompt you may state the "
         "breadth ('medium' or 'very thorough'); the sub-agent adapts its "
-        "search accordingly. The default action "
+        "search accordingly. Several independent read-only calls issued in "
+        "one step run in parallel. The default action "
         "'run' waits for the final result. Use 'spawn' with read-only "
         "'explore'/'plan', then 'poll' or 'cancel' with the returned ID, "
         "when the parent should continue working concurrently. "
@@ -3628,9 +3704,12 @@ task_tool = ToolDefinition(
                     "The sub-agent runs in a fresh context and cannot see this "
                     "conversation, so include every file path, constraint, and "
                     "piece of background it needs. For agent_type='workflow', "
-                    f"the prompt must be at most {_WORKFLOW_PROMPT_MAX_CHARS} "
-                    "characters after trimming whitespace; summarize findings "
-                    "and acceptance criteria instead of pasting source or patches."
+                    f"inline text must be at most {_WORKFLOW_PROMPT_MAX_CHARS} "
+                    "characters after trimming whitespace. For a longer brief, "
+                    "save its full text in an authorized workspace file and use "
+                    "'@file:relative/path' as the first line, followed by an "
+                    "inline summary of at most 800 characters. The complete "
+                    "file supplies acceptance criteria and remains readable by Workers."
                 ),
             },
             "continue_subagent_id": {

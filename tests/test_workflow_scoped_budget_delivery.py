@@ -136,7 +136,9 @@ def _exercise(tmp_path, monkeypatch, *, remaining=None, replay=None, generic=Fal
             elif number == 8:
                 result = AgentStep(type="tool_calls", calls=[{"id": "workflow", "toolName": task.name,
                     "input": {} if generic else {"description": "Update the requested target", "agent_type": "workflow",
-                        "prompt": "Change allowed.txt from before to after.", "workflow_request": request}}])
+                        "prompt": ("Change allowed.txt from before to after."
+                                   + (" Review the resulting change." if candidate_handoff else "")),
+                        "workflow_request": request}}])
             elif number == 9:
                 if not generic and replay is None:
                     assert acknowledgements == [True] and checks == [0, 0]
@@ -207,7 +209,9 @@ def _exercise(tmp_path, monkeypatch, *, remaining=None, replay=None, generic=Fal
     journal = RunJournal(tmp_path, data_dir=data_dir)
     if returned:
         trace = extract_scheduler_trace(returned[0].output)
-        assert trace and trace["committed"] and roles == ["executor", "reviewer"] and checks == [0, 0]
+        assert trace and trace["committed"]
+        assert roles == (["executor", "reviewer"] if candidate_handoff else ["executor"])
+        assert checks == [0, 0]
         audit = journal.get_scheduler_audit(run_id, trace["workflowId"])
         assert audit is not None and audit.trace["committed"]
     return messages, calls, returned, capture, snapshot

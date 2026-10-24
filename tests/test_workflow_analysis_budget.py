@@ -1,7 +1,7 @@
 """A failed Analyst may retry only inside its original whole-phase allowance."""
 
 from minicode.agent_budget import AgentTurnBudget
-from minicode.tooling import ToolContext, ToolResult
+from minicode.tooling import ToolContext, ToolResult, ToolUsageCounts
 from minicode.tools import task as task_module
 from test_workflow_v2_structured_routing import _request, _worker_role
 
@@ -16,15 +16,16 @@ def test_analysis_retry_cannot_renew_six_call_phase(tmp_path, monkeypatch):
         for _ in range(6):
             reservation = context._agent_budget.reserve_model_call(1000)
             context._agent_budget.record_model_call(input_tokens=1000, output_tokens=1, reservation=reservation)
-        return ToolResult(ok=False, output="analysis did not finish")
+        return ToolResult(ok=False, output="analysis did not finish", _usage_counts=ToolUsageCounts(6, 2))
     monkeypatch.setattr(task_module, "_run", worker)
     result = task_module.task_tool.run({
-        "description": "bounded analysis", "prompt": "Update allowed.txt.", "agent_type": "workflow",
+        "description": "bounded analysis", "prompt": "Analyze first, then update allowed.txt.", "agent_type": "workflow",
         "workflow_request": _request(complex=True, risk="medium"),
     }, ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"}, _agent_budget=budget))
     assert not result.ok
     assert invoked == ["analyst"]
     assert budget.snapshot().used_model_calls == 6
+    assert result._usage_counts == ToolUsageCounts(6, 2)
     assert (tmp_path / "allowed.txt").read_text() == "before"
 
 
@@ -47,7 +48,7 @@ def test_phase_plans_handoff_against_worker_floors_and_admits_both_closing_calls
     from minicode.implementation_phases import ImplementationPhaseController, ImplementationPhase
     shared=AgentTurnBudget(max_model_calls=40,max_total_tokens=100000)
     worker=_WorkerCallBudget(shared,"executor",max_calls=37,preserve_calls=1,preserve_tokens=20000)
-    policy=ImplementationPhaseController(snapshot=worker.snapshot(),max_steps=37,now=0,deadline=600,analysis_complete=True)
+    policy=ImplementationPhaseController(snapshot=worker.snapshot(),max_steps=37,now=0,deadline=600,analysis_complete=True,bounded=True)
     first=worker.reserve_model_call(50000)
     worker.record_model_call(input_tokens=50000,output_tokens=0,reservation=first)
     policy.admitted()

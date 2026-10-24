@@ -59,7 +59,7 @@ def test_independent_expression_correction_executes_approves_and_restores(
     judgments = []
 
     def adjudicate(tools, child, packet):
-        assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+        assert set(tools.list_all()) == {"read_file", "completion_evidence_read", "completion_probe_adjudication_submit"}
         assert packet["probe"]["code"] == bad
         judgments.append(packet["receipt"]["receiptRef"])
         result = tools.execute("completion_probe_adjudication_submit", {

@@ -2,11 +2,12 @@
 
 Model decisions are scripted, never claimed as model review quality. Candidate
 edits, pytest, native submission, verification, audit and promotion are real.
-No cumulative execution quota or hidden task/answer is used by this fixture.
+The default Task timeout applies; no call quota or hidden task/answer is used.
 """
 
 import json
 import sys
+import time
 from copy import deepcopy
 from pathlib import Path
 
@@ -114,7 +115,7 @@ def test_loader_contract():
         while hasattr(ledger, "_budget"):
             ledger = ledger._budget
         assert ledger is budget
-        assert context._task_deadline_monotonic is None
+        assert time.monotonic() < context._task_deadline_monotonic <= time.monotonic() + 900
         assert context._logical_agent_max_model_calls is None
         session = data.get("_executor_session")
         entry = {"role": context._logical_agent_role, "session": session, "cwd": context.cwd,
@@ -400,7 +401,7 @@ def test_loader_contract():
     with observe_run(workspace=tmp_path, source="headless", title="public cache requirement challenge",
                      journal_factory=lambda workspace: RunJournal(workspace, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run({"description": "cache reuse and targeted invalidation", "agent_type": "workflow",
-            "prompt": "Implement the stated cache-hit, targeted invalidation and missing-key behaviors; add regression tests.",
+            "prompt": "Implement the stated cache-hit, targeted invalidation and missing-key behaviors; add regression tests. Please review the change.",
             "workflow_request": request}, ToolContext(cwd=str(tmp_path), _runtime={"model": "local-fixture"},
                 _agent_budget=budget, _event_sink=observation, _central_workflow_v2_enforced=True))
         run_id = observation.run_id

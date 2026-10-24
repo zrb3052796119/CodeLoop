@@ -88,6 +88,7 @@ class CodingProgressTracker:
     _pressure_level: int = 0
     _routine_notice_count: int = 0
     _deadline_pressure_level: int = 0
+    _delegation_suggested: bool = False
 
     def observe(self, *, successful_read: bool, changed: bool, verified: bool) -> None:
         if changed or verified:
@@ -114,6 +115,7 @@ class CodingProgressTracker:
         *,
         remaining_steps: int | None = None,
         remaining_seconds: float | None = None,
+        can_delegate: bool = False,
     ) -> CodingProgressNotice | None:
         if not self.enabled:
             return None
@@ -207,8 +209,6 @@ class CodingProgressTracker:
             "smallest authorized change now and run the relevant check. "
             "If a specific fact is still missing, state that gap briefly and "
             "read only what resolves it; avoid another broad repository survey. "
-            "A coordinator should delegate the implementation directly to one "
-            "workflow, not start another planning agent. "
             "Do not invent a change, bypass approval or verification, or claim "
             "success without evidence. If blocked, report the concrete blocker."
             + budget_text + action_text
@@ -232,6 +232,21 @@ class CodingProgressTracker:
                 "invented edits, skipped verification or unsupported success claims."
                 + budget_text
             )
+        if (can_delegate and self.read_batches >= 8 and self.mutations == 0
+                and pressure_level == 0 and deadline_level == 0
+                and not self._delegation_suggested):
+            # This sentence shares the existing notice; edits and delivery
+            # retire read streaks but never replenish its once-per-turn limit.
+            text += (
+                " Consider task delegation if the next step has an independent "
+                "question and a concrete handoff: use explore for a focused "
+                "investigation with evidence to return, or workflow for a bounded "
+                "implementation with clear scope and checks. Choose this only "
+                "when the shared budget and time cover the worker, verification "
+                "and handoff; otherwise make the supported change directly or "
+                "read only the missing fact."
+            )
+            self._delegation_suggested = True
         return CodingProgressNotice(
             "implementation_deadline_pressure"
             if deadline_urgent

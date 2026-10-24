@@ -44,7 +44,21 @@ def test_ordinary_review_cannot_retire_assertion_failure_without_independent_aut
             sources[probe_id] = json.loads("".join(pages))["source"]
         assert sources[edge["oldProbeId"]]["code"] == WRONG_INPUT
         assert sources[edge["newProbeId"]]["code"] == VALID_INPUT
-        result = tools.execute("completion_coverage_audit_submit", _coverage_approval(packet, sources), child)
+        approval = _coverage_approval(packet, sources)
+        blocked = tools.execute("completion_coverage_audit_submit", approval, child)
+        assert not blocked.ok
+        material_id = packet["supersessionIndex"][0]["obligationDocumentId"]
+        assert material_id in json.loads(blocked.output)["missingDocumentIds"]
+        # Reading probe sources alone does not deliver the independent
+        # invalidity authority required to retire the original assertion.
+        from test_completion_evidence_cursor import _read
+        material, page, _ = _read(tools, child, material_id)
+        assert page["documentType"] == "supersession_review_material"
+        assert material["oldSource"]["code"] == WRONG_INPUT
+        assert material["newSource"]["code"] == VALID_INPUT
+        assert material["authority"]
+        assert review.state["corrections"] == [] and review.state["retiredProbeIds"] == []
+        result = tools.execute("completion_coverage_audit_submit", approval, child)
         assert result.ok and result._implementation_submitted, result.output
         return AgentStep(type="assistant", kind="final", content="Independent inventory obligations preserved")
 

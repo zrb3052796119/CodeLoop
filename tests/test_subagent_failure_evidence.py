@@ -56,6 +56,8 @@ def test_real_headless_child_keeps_failed_tool_result_before_budget_exit(tmp_pat
                            ToolContext(cwd=str(workspace), _runtime={"model": "fake"}, _event_sink=Sink(),
                                        _agent_budget=AgentTurnBudget(max_model_calls=1, max_total_tokens=500000)))
     assert not result.ok
+    assert result._usage_counts.model_turns == 1
+    assert result._usage_counts.tool_calls == 1
     assert journal.list_runs()[0].outcome == "budget_exceeded", result.output
     if broken_diagnostics:
         assert journal.list_runs()[0].tool_calls == 1

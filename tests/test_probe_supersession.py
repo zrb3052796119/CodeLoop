@@ -11,7 +11,7 @@ from minicode.reviewer_verification import ReviewerProbe
 from minicode.review_probe_semantic_correction import validate_adjudicated_probe_correction
 from minicode.types import AgentStep
 from test_implementation_completion_review import (
-    _coverage_approval, _coverage_probe_ids, _fixture, _probe, _submit,
+    _coverage_approval, _coverage_probe_ids, _fixture, _native_obligation_step, _probe, _submit,
 )
 
 
@@ -93,6 +93,13 @@ def test_approval_cannot_skip_pending_replacement_authority(tmp_path, monkeypatc
         sources = {p["probeId"]: p for p in review.state["probes"]}
         if failure != "unread_evidence":
             sources = _read(tools, child, packet)
+            # Give the other counterexamples their complete real authority
+            # documents, so omitted edges/requirements are not masked by the
+            # independent unread-evidence refusal.
+            while (step := _native_obligation_step(tools.messages, packet)) is not None:
+                call = step.calls[0]
+                read = tools.execute(call["toolName"], call["input"], child)
+                assert read.ok, read.output
         value = _coverage_approval(packet, sources)
         if failure == "missing_edge":
             value.pop("supersessions")
@@ -109,13 +116,19 @@ def test_approval_cannot_skip_pending_replacement_authority(tmp_path, monkeypatc
         assess(_seed)
         result = assess(_propose)
         assert result["status"] == "inconclusive"
-        assert result["reason"] == "failure_adjudication_inconclusive"
+        # A rejected submission leaves the same independent audit resumable;
+        # it is not a completed inconclusive adjudication or approval.
+        assert result["reason"] == "coverage_audit_interrupted"
+        assert result["canContinue"] is False and result["auditPending"] and result["resumable"]
+        assert result["continuationTarget"] == "coverage_auditor"
         assert result["repairProbes"] == []
         assert len(commands) == 3
         assert review.state["retiredProbeIds"] == []
         restored = ImplementationCompletionReview.from_state(review.spec, review.state)
         assert restored.needs_failure_adjudication(result["patchDigest"])
         assert restored.state["supersessions"] == review.state["supersessions"]
+        assert restored.state["pendingCoverageAudit"] == review.state["pendingCoverageAudit"]
+        assert restored.has_pending_coverage_audit(result["patchDigest"])
     finally:
         cap.close()
 

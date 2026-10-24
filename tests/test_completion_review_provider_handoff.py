@@ -18,6 +18,7 @@ from minicode.tools.edit_file import edit_file_tool
 from minicode.tools.read_file import read_file_tool
 from minicode.tools.write_file import write_file_tool
 from test_implementation_completion_review import _coverage_approval
+from test_completion_coverage_audit import _inspection_action
 
 
 def test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and_delivers(tmp_path, monkeypatch):
@@ -52,9 +53,9 @@ def test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and
                "openaiApiKey": "test", "modelMaxRetries": 0, "maxOutputTokens": 4096}
     adapter = OpenAIModelAdapter(runtime, registry)
     original_schemas = json.loads(json.dumps(adapter.request_tool_schemas()))
-    parent_names = {"read_file", "edit_file", "write_file", "executor_check", "executor_test", "verification_output_read"}
-    reviewer_names = {"read_file", "review_test", "review_probe_read", "completion_review_submit"}
-    adjudicator_names = {"read_file", "completion_probe_adjudication_submit"}
+    parent_names = {"read_file", "edit_file", "write_file", "executor_check", "executor_test", "verification_output_read", "completion_evidence_read"}
+    reviewer_names = {"read_file", "review_test", "review_probe_read", "completion_review_submit", "completion_evidence_read"}
+    adjudicator_names = {"read_file", "completion_probe_adjudication_submit", "completion_evidence_read"}
     auditor_names = reviewer_names - {"completion_review_submit"} | {
         "completion_coverage_audit_submit", "review_evidence_read"}
     requirement_ids = [unit["id"] for unit in requirement_units(objective)]
@@ -72,8 +73,8 @@ def test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and
 
     def verdict(status):
         return {"status": status, "requirements": [
-            {"id": identity, "status": "covered" if status == "approved" else "missing",
-             "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+            {"id": identity, "status": "covered" if status == "approved" else "unknown",
+             "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}] if status == "approved" else [],
              "probeIds": [failed_probe["probeId"]] if status == "approved" else [],
              "rationale": "Both public operations passed the retained probe." if status == "approved"
                 else "The combined acceptance probe fails because release remains a no-op."}
@@ -89,10 +90,15 @@ def test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and
         # schema, never a scripted Model.next that ignores the capabilities.
         role = ("adjudicator" if "completion_probe_adjudication_submit" in names
                 else "auditor" if "completion_coverage_audit_submit" in names
+                else "inspector" if "completion_coverage_inspection_submit" in names
                 else "reviewer" if "completion_review_submit" in names else "parent")
         requests.append({"role": role, "body": body})
         tools, text = [], None
-        if role == "auditor":
+        if role == "inspector":
+            action = _inspection_action(body)
+            assert action is not None and not {"write_file", "edit_file", "executor_check"} & names
+            tools = [call("inspection-" + str(len(requests)), action[0], **action[1])]
+        elif role == "auditor":
             assert names == auditor_names
             auditor_calls += 1
             packet = next(json.loads(m["content"]) for m in body["messages"]
@@ -157,7 +163,8 @@ def test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and
                 decision = json.loads(feedback.split("\nCompletion evidence:\n", 1)[1])
                 assert decision["continuesSameExecutor"] and decision["status"] == "changes_required"
                 assert decision["repairProbes"][0]["code"] == probe_source
-                assert decision["probeReceipts"][0]["receipt"]["status"] == "failed"
+                wrapper = decision["probeReceipts"][0]
+                assert wrapper.get("receipt", wrapper)["status"] == "failed"
                 assert decision["probeReceipts"][0]["probeId"] == failed_probe["probeId"]
                 assert not presented and not streamed
                 tools = [call("complete-release", "edit_file", path="stock.py",
@@ -183,7 +190,9 @@ def test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and
                 assert receipt["receipt"]["status"] == "failed"
                 assert receipt["receipt"]["testReport"]["failed"] == 1
                 failed_probe.update(receipt)
-                tools = [call("reject-gap", "completion_review_submit", **verdict("changes_required"))]
+                # Probe attribution is this test's feedback contract. A native
+                # source-backed missing row can return without that extra work.
+                tools = [call("reject-gap", "completion_review_submit", **verdict("inconclusive"))]
             else:
                 assert reviewer_calls == 3, "retained probe should replay without a new model-authored test"
                 prompt = next(json.loads(message["content"]) for message in body["messages"]
@@ -214,7 +223,7 @@ def test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and
         on_assistant_stream_chunk=streamed.append, defer_curator_maintenance=True)
 
     assert [r["role"] for r in requests] == ["parent", "parent", "reviewer", "reviewer",
-        "adjudicator", "adjudicator", "parent", "parent", "reviewer", "auditor", "auditor"]
+        "adjudicator", "adjudicator", "parent", "parent", "reviewer", "inspector", "inspector", "auditor", "auditor"]
     assert (parent_calls, reviewer_calls, adjudicator_calls) == (4, 3, 2)
     decisions = [e["payload"] for e in events if e["type"] == "implementation.completion_decided"]
     assert [d["status"] for d in decisions] == ["changes_required", "approved"]
@@ -230,4 +239,4 @@ def test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and
     assert len(commands) == 4 and all(c["cwd"] != tmp_path and not c["cwd"].exists() for c in commands)
     assert (tmp_path / "test_requested.py").read_text() == complete_test
     assert adapter.tools is registry and adapter.request_tool_schemas() == original_schemas
-    assert budget.snapshot().used_model_calls == 11
+    assert budget.snapshot().used_model_calls == 13

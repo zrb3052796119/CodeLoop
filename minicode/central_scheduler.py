@@ -28,8 +28,8 @@ if TYPE_CHECKING:
     from minicode.conflict_port_runner import ConflictPortRunner
 
 
-SCHEDULER_POLICY_VERSION = 5
-SUPPORTED_SCHEDULER_POLICY_VERSIONS = frozenset({2, 3, 4, SCHEDULER_POLICY_VERSION})
+SCHEDULER_POLICY_VERSION = 6
+SUPPORTED_SCHEDULER_POLICY_VERSIONS = frozenset({2, 3, 4, 5, SCHEDULER_POLICY_VERSION})
 _DEFAULT_CONFLICT_AUTHORITY_RUNNER = BoundedConflictPortRunner()
 _DEFAULT_CONFLICT_OBSERVER_RUNNER = BoundedConflictPortRunner()
 
@@ -81,6 +81,8 @@ class TaskProfile:
     human_approval_id: str | None = None
     # Host-selected risk policy; public declarations cannot set this flag.
     independent_review_required: bool = True
+    # Host projection of an explicit instruction, not a Worker wire field.
+    analysis_requested: bool = False
 
     def __post_init__(self) -> None:
         if not isinstance(self.task_id, str) or not self.task_id.strip():
@@ -97,6 +99,7 @@ class TaskProfile:
             self.human_confirmation_required,
             self.human_confirmation_granted,
             self.independent_review_required,
+            self.analysis_requested,
         )
         if any(type(value) is not bool for value in flags):
             raise ValueError("task profile routing flags must be booleans")
@@ -396,6 +399,23 @@ class CentralScheduler:
                 rule_id="route.single_analyst",
                 policy_version=policy_version,
             )
+        if policy_version >= 6 and profile.kind is TaskKind.CHANGE:
+            needs_analysis = profile.analysis_requested or profile.risk in {
+                TaskRisk.HIGH, TaskRisk.CRITICAL,
+            } or not (profile.scope_clear and profile.acceptance_executable)
+            needs_review = profile.independent_review_required or profile.risk in {
+                TaskRisk.HIGH, TaskRisk.CRITICAL,
+            }
+            stages = ((DispatchStage.ANALYST,) if needs_analysis else ()) + (
+                DispatchStage.EXECUTOR, DispatchStage.VERIFIER,
+            ) + ((DispatchStage.REVIEWER,) if needs_review else ())
+            return DispatchPlan(
+                task_id=profile.task_id,
+                stages=stages,
+                rule_id=("route.reviewed_change" if needs_review else "route.analyzed_change")
+                if needs_analysis else ("route.scoped_change" if needs_review else "route.verified_change"),
+                policy_version=policy_version,
+            )
         if (
             profile.kind is TaskKind.CHANGE
             and profile.risk is TaskRisk.LOW
@@ -495,6 +515,7 @@ class CentralScheduler:
         plan = self.plan(profile)
         pending_stages = list(plan.stages)
         repair_count = 0
+        failure_analysis_scheduled = DispatchStage.ANALYST in plan.stages
         repair_source_artifact_id: str | None = None
         continuation: Mapping[str, object] | None = None
         completed: list[DispatchStage] = []
@@ -535,7 +556,7 @@ class CentralScheduler:
                 input_artifact_ids=tuple(artifacts),
                 repair_source_artifact_id=(
                     repair_source_artifact_id
-                    if stage is DispatchStage.EXECUTOR else None
+                    if stage in {DispatchStage.EXECUTOR, DispatchStage.ANALYST} else None
                 ),
                 repair_index=repair_count,
                 continuation=continuation if stage is DispatchStage.EXECUTOR else None,
@@ -624,11 +645,11 @@ class CentralScheduler:
             def schedule_implementation_repair(
                 candidate: StageResult, failed_assignment: StageAssignment
             ) -> bool:
-                nonlocal repair_count, repair_source_artifact_id, patch_digest, continuation
+                nonlocal repair_count, repair_source_artifact_id, patch_digest, continuation, failure_analysis_scheduled
                 if (
                     not candidate.repairable
                     or stage not in {DispatchStage.VERIFIER, DispatchStage.REVIEWER}
-                    or plan.rule_id not in {"route.scoped_change", "route.reviewed_change", "route.verified_change"}
+                    or plan.rule_id not in {"route.scoped_change", "route.reviewed_change", "route.verified_change", "route.analyzed_change"}
                     or candidate.requires_human
                     or candidate.escalate_conflict is not None
                     or candidate.patch_digest != patch_digest
@@ -681,7 +702,17 @@ class CentralScheduler:
                 # Mutating only the unvisited tail preserves a unique ordinal
                 # (and therefore fresh identities) for every revised stage.
                 executor_index = plan.stages.index(DispatchStage.EXECUTOR)
-                pending_stages[ordinal:] = plan.stages[executor_index:]
+                analyze_failure = (
+                    plan.policy_version >= 6 and not failure_analysis_scheduled
+                    and stage is DispatchStage.VERIFIER
+                    and candidate.status == "failed"
+                    and candidate.error_code == "verification_failed"
+                )
+                pending_stages[ordinal:] = (
+                    ((DispatchStage.ANALYST,) if analyze_failure else ())
+                    + plan.stages[executor_index:]
+                )
+                failure_analysis_scheduled = failure_analysis_scheduled or analyze_failure
                 completed[:] = [item for item in completed if item not in {
                     DispatchStage.EXECUTOR, DispatchStage.VERIFIER, DispatchStage.REVIEWER,
                 }]
@@ -1075,7 +1106,8 @@ class CentralScheduler:
                     return terminal("failed", stage, review_rejection)
 
             artifacts.append(result.artifact_id)
-            completed.append(stage)
+            if stage in plan.stages:
+                completed.append(stage)
             emit(
                 assignment,
                 outcome="completed",

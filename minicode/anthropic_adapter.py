@@ -1044,10 +1044,12 @@ class AnthropicModelAdapter:
                     status == 400
                     and prompt_cache_active
                     and "cache_control" in error_message.lower()
+                    and (max_retries_override is None or attempt < max_retries)
                 ):
                     # The gateway rejected the prompt-cache markers, not the
                     # request itself. Degrade once to a marker-free body
-                    # instead of failing the model call.
+                    # instead of failing the model call, unless an explicit
+                    # caller retry ceiling has already been consumed.
                     _strip_prompt_cache_markers(request_body)
                     prompt_cache_active = False
                     _close_response_safely(response)

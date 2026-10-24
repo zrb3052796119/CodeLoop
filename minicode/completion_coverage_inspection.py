@@ -26,7 +26,9 @@ _SUBMIT_SCHEMA = {'type': 'object', 'additionalProperties': False, 'properties':
             'path': {'type': 'string'}, 'startLine': {'type': 'integer'}, 'endLine': {'type': 'integer'}}, 'required': ['path', 'startLine', 'endLine']}},
         'expectedBehavior': {'type': 'string'}, 'observedBehavior': {'type': 'string'}, 'probeIds': {'type': 'array', 'items': {'type': 'string'}}},
         'required': ['requirementId', 'status', 'sourceEvidence', 'expectedBehavior', 'observedBehavior', 'probeIds']}},
-    'findings': {'type': 'array', 'items': {'type': 'string'}}}, 'required': ['status', 'observations', 'findings']}
+    'findings': {'type': 'array', 'items': {'type': 'string'},
+        'description': 'Unresolved findings only. When status=ready_for_evidence, this must be an empty array.'}},
+    'required': ['status', 'observations', 'findings']}
 
 
 class _InspectionInputError(ValueError):

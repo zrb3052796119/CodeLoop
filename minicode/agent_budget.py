@@ -13,7 +13,7 @@ import re
 import secrets
 import threading
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal, DecimalException
 from typing import Any
 
@@ -455,6 +455,12 @@ class AgentTurnBudget:
                 usage_uncertain=self._has_uncertain_model_usage,
             )
 
+    @property
+    def reserved_model_calls(self) -> int:
+        """Host-only live subprocess occupancy; never a new reservation."""
+        with self._lock:
+            return self._reserved_model_calls
+
     def reserve_model_call(
         self,
         estimated_input_tokens: int = 0,
@@ -845,6 +851,10 @@ class AttributedBudgetView:
     def snapshot(self) -> AgentBudgetSnapshot:
         return self._budget.snapshot()
 
+    @property
+    def reserved_model_calls(self) -> int:
+        return self._budget.reserved_model_calls
+
     def reserve_model_call(
         self,
         estimated_input_tokens: int = 0,
@@ -928,6 +938,80 @@ class AttributedBudgetView:
         """Cumulative (input, output) tokens recorded through this view."""
         with self._lock:
             return self._input_tokens, self._output_tokens
+
+
+class LimitedBudgetView(AttributedBudgetView):
+    """Bound one Assignment on the existing ledger, including retry/closing calls.
+
+    This is not a new grant: every admission still uses the shared atomic
+    reservation. The floor prevents this Worker from consuming required later
+    work; other concurrent consumers can still exhaust the shared budget, in
+    which case this Worker fails closed rather than borrowing their allowance.
+    """
+
+    def __init__(self, budget, key: str, *, max_calls: int | None, preserve_calls: int,
+                 max_tokens: int | None = None, preserve_tokens: int = 0):
+        super().__init__(budget, key)
+        self._max_calls = max_calls
+        self._preserve_calls = preserve_calls
+        self._admitted_calls = 0
+        self._max_tokens = max_tokens
+        self._preserve_tokens = preserve_tokens
+        initial = super().snapshot()
+        self._initial_used_tokens = initial.used_total_tokens
+        self._initial_used_calls = initial.used_model_calls
+        self._call_lock = threading.Lock()
+
+    def snapshot(self):
+        # The worker's planning view must exclude downstream floors that its
+        # admission path protects. Keep usage counters and the shared budget
+        # untouched; the same snapshot also crosses the existing worker RPC.
+        shared = super().snapshot()
+        tokens = shared.limit_total_tokens
+        if tokens is not None:
+            tokens = max(0, tokens - self._preserve_tokens)
+        if self._max_tokens is not None:
+            local = self._initial_used_tokens + self._max_tokens
+            tokens = local if tokens is None else min(tokens, local)
+        calls = shared.limit_model_calls
+        if calls is not None:
+            calls = max(0, calls - self._preserve_calls)
+        if self._max_calls is not None:
+            local_calls = shared.used_model_calls + max(0, self._max_calls - self._admitted_calls)
+            calls = local_calls if calls is None else min(calls, local_calls)
+        return replace(shared, limit_total_tokens=tokens, limit_model_calls=calls)
+
+    @property
+    def admitted_model_calls(self) -> int:
+        with self._call_lock:
+            return self._admitted_calls
+
+    def reserve_model_call(
+        self, estimated_input_tokens=0, *, preserve_model_calls=0,
+        preserve_total_tokens=0,
+    ):
+        if type(preserve_model_calls) is not int or preserve_model_calls < 0:
+            raise ValueError("preserve_model_calls must be a non-negative integer")
+        with self._call_lock:
+            snapshot = self.snapshot()
+            if self._max_tokens is not None and (
+                snapshot.used_total_tokens - self._initial_used_tokens
+                + snapshot.reserved_total_tokens + max(0, estimated_input_tokens)
+                + preserve_total_tokens > self._max_tokens
+            ):
+                raise AgentBudgetExceeded("worker token allowance exhausted", snapshot)
+            if (self._max_calls is not None
+                    and self._admitted_calls + 1 + preserve_model_calls > self._max_calls):
+                raise AgentBudgetExceeded(
+                    "worker model call budget exhausted", self.snapshot()
+                )
+            reservation = super().reserve_model_call(
+                estimated_input_tokens,
+                preserve_model_calls=self._preserve_calls + preserve_model_calls,
+                preserve_total_tokens=self._preserve_tokens + preserve_total_tokens,
+            )
+            self._admitted_calls += 1
+            return reservation
 
 
 def record_budgeted_model_call(
@@ -1018,6 +1102,7 @@ __all__ = [
     "AgentBudgetSnapshot",
     "AgentTurnBudget",
     "AttributedBudgetView",
+    "LimitedBudgetView",
     "SubprocessBudgetLease",
     "SubprocessBudgetUsage",
     "record_budgeted_model_call",

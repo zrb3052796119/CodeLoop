@@ -24,7 +24,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from minicode.agent_budget import (
-    AgentBudgetExceeded, AgentTurnBudget, AttributedBudgetView,
+    AgentTurnBudget, LimitedBudgetView,
 )
 from minicode.agent_loop import AgentTurnDeadlineExceeded
 from minicode.central_scheduler import (
@@ -114,6 +114,7 @@ from minicode.tooling import (
     ToolTerminationReason,
     ToolExecutionAbandoned,
     ToolResult,
+    ToolUsageCounts,
 )
 from minicode.turn_cancellation import TurnCancellationRequested
 from minicode.workflow_finalization import (
@@ -250,6 +251,8 @@ class _WorkflowExecutionState:
     implementation_check_latest: dict[str, dict] = field(default_factory=dict)
     executor_submission_errors: list[dict] = field(default_factory=list)
     review_deadlines: dict[int, float] = field(default_factory=dict)
+    review_deadline_extensions: set[int] = field(default_factory=set)
+    initial_executor_deadline: float | None = None
     executor_checked_candidate: CheckedCandidateSnapshot | None = None
     executor_completion_progress: tuple[str, str] | None = None
     reviewer_probes: ReviewerProbeLedger = field(default_factory=ReviewerProbeLedger)
@@ -601,79 +604,7 @@ def _workflow_review_not_applicable() -> dict[str, object]:
     }
 
 
-class _WorkerCallBudget(AttributedBudgetView):
-    """Bound one Assignment on the existing ledger, including retry/closing calls.
-
-    This is not a new grant: every admission still uses the shared atomic
-    reservation. The floor prevents this Worker from consuming required later
-    work; other concurrent consumers can still exhaust the shared budget, in
-    which case this Worker fails closed rather than borrowing their allowance.
-    """
-
-    def __init__(self, budget, key: str, *, max_calls: int | None, preserve_calls: int,
-                 max_tokens: int | None = None, preserve_tokens: int = 0):
-        super().__init__(budget, key)
-        self._max_calls = max_calls
-        self._preserve_calls = preserve_calls
-        self._admitted_calls = 0
-        self._max_tokens = max_tokens
-        self._preserve_tokens = preserve_tokens
-        initial = super().snapshot()
-        self._initial_used_tokens = initial.used_total_tokens
-        self._initial_used_calls = initial.used_model_calls
-        self._call_lock = threading.Lock()
-
-    def snapshot(self):
-        # The worker's planning view must exclude downstream floors that its
-        # admission path protects. Keep usage counters and the shared budget
-        # untouched; the same snapshot also crosses the existing worker RPC.
-        shared = super().snapshot()
-        tokens = shared.limit_total_tokens
-        if tokens is not None:
-            tokens = max(0, tokens - self._preserve_tokens)
-        if self._max_tokens is not None:
-            local = self._initial_used_tokens + self._max_tokens
-            tokens = local if tokens is None else min(tokens, local)
-        calls = shared.limit_model_calls
-        if calls is not None:
-            calls = max(0, calls - self._preserve_calls)
-        if self._max_calls is not None:
-            local_calls = self._initial_used_calls + self._max_calls
-            calls = local_calls if calls is None else min(calls, local_calls)
-        return replace(shared, limit_total_tokens=tokens, limit_model_calls=calls)
-
-    @property
-    def admitted_model_calls(self) -> int:
-        with self._call_lock:
-            return self._admitted_calls
-
-    def reserve_model_call(
-        self, estimated_input_tokens=0, *, preserve_model_calls=0,
-        preserve_total_tokens=0,
-    ):
-        if type(preserve_model_calls) is not int or preserve_model_calls < 0:
-            raise ValueError("preserve_model_calls must be a non-negative integer")
-        with self._call_lock:
-            snapshot = self.snapshot()
-            if self._max_tokens is not None and (
-                snapshot.used_total_tokens - self._initial_used_tokens
-                + snapshot.reserved_total_tokens + max(0, estimated_input_tokens)
-                + preserve_total_tokens > self._max_tokens
-            ):
-                raise AgentBudgetExceeded("worker token allowance exhausted", snapshot)
-            if (self._max_calls is not None
-                    and self._admitted_calls + 1 + preserve_model_calls > self._max_calls):
-                raise AgentBudgetExceeded(
-                    "worker model call budget exhausted", self.snapshot()
-                )
-            reservation = super().reserve_model_call(
-                estimated_input_tokens,
-                preserve_model_calls=self._preserve_calls + preserve_model_calls,
-                preserve_total_tokens=self._preserve_tokens + preserve_total_tokens,
-            )
-            self._admitted_calls += 1
-            return reservation
-
+_WorkerCallBudget = LimitedBudgetView
 
 def _executor_followup_calls(profile: TaskProfile) -> int:
     # Verifier/commit/receipt transport are deterministic. Leave one parent
@@ -1452,17 +1383,10 @@ class _RepairingRoleResultChannel:
 
 
 def _workflow_result_counts(results: list[ToolResult]) -> tuple[int, int]:
-    model_turns = 0
-    tool_calls = 0
-    for result in results:
-        match = re.search(
-            r"Model turns: (\d+) \(tool calls: (\d+)\)",
-            result.output,
-        )
-        if match is not None:
-            model_turns += int(match.group(1))
-            tool_calls += int(match.group(2))
-    return model_turns, tool_calls
+    return (
+        sum(result._usage_counts.model_turns for result in results),
+        sum(result._usage_counts.tool_calls for result in results),
+    )
 
 
 def _workflow_model_turn_limit(agent_budget: object) -> int | None:
@@ -1497,8 +1421,12 @@ def _emit_workflow_observation(
     started: float,
     model_turn_limit: int | None,
     result_truncated: bool,
+    usage_counts: ToolUsageCounts | None = None,
 ) -> None:
-    model_turns, tool_calls = _workflow_result_counts(results)
+    if usage_counts is None:
+        model_turns, tool_calls = _workflow_result_counts(results)
+    else:
+        model_turns, tool_calls = usage_counts.model_turns, usage_counts.tool_calls
     duration_ms = max(0, int((time.time() - started) * 1000))
     _record_workflow_observation(
         context,
@@ -1571,18 +1499,19 @@ class _WorkflowCommitStateUnknown(BaseException):
 
 def _inline_explore_notes(
     explore_results: list[ToolResult],
-    *,
-    per_facet_chars: int = 3_000,
 ) -> str:
-    """Bound parallel-explore outputs into inline Analyst prompt context."""
+    """Carry the optional survey completely into the next worker's context.
+
+    Its shared mailbox keys are unavailable to structured Assignments. Until
+    a file is part of the frozen read scope, silently clipping this handoff
+    would discard evidence; actual model admission owns context affordability.
+    """
 
     sections: list[str] = []
     for result in explore_results:
         text = str(result.output or "").strip()
         if not text:
             continue
-        if len(text) > per_facet_chars:
-            text = text[:per_facet_chars] + "\n…(truncated)"
         sections.append(text)
     if not sections:
         return ""
@@ -1737,6 +1666,15 @@ def run_workflow(
     deadline_monotonic = getattr(context, "_task_deadline_monotonic", None)
     transaction: _WorkflowWorkspaceTransaction | None = None
     workflow_result: ToolResult | None = None
+    workflow_session: _WorkflowRunSession | None = None
+
+    def known_usage_counts() -> ToolUsageCounts:
+        if workflow_session is None:
+            return ToolUsageCounts()
+        # Only completed Worker returns contribute; an interrupted invocation
+        # cannot grant usage counts which the host never received.
+        with workflow_session._usage_lock:
+            return workflow_session._usage_counts
 
     # Process-local admission: refuse before the snapshot when the declared
     # write scope overlaps an active workflow.  The claim is held through
@@ -1802,6 +1740,7 @@ def run_workflow(
             ok=False,
             output=output[:_WORKFLOW_OUTPUT_MAX_CHARS],
             _must_deliver=True,
+            _usage_counts=known_usage_counts(),
         )
 
     def unknown_commit_fallback() -> ToolResult:
@@ -1825,6 +1764,7 @@ def run_workflow(
             ok=False,
             output=output[:_WORKFLOW_OUTPUT_MAX_CHARS],
             _must_deliver=True,
+            _usage_counts=known_usage_counts(),
         )
 
     def promoted_result_or_fallback(finalization: str) -> ToolResult | None:
@@ -1854,11 +1794,27 @@ def run_workflow(
             ),
             baseline_scope_relative_to_cwd=True,
         ) as transaction:
+            brief = input_data.get("_workflow_brief")
+            if brief is not None:
+                from minicode.workflow_brief import verify_workflow_brief
+                try:
+                    verify_workflow_brief(brief, transaction.cwd)
+                except (ValueError, OSError) as exc:
+                    raise _WorkflowIsolationError(str(exc)) from exc
             isolated_input = dict(input_data)
             isolated_input["prompt"] = transaction.remap_text(input_data["prompt"])
             isolated_context = replace(context, cwd=str(transaction.cwd))
             candidate_retained = False
             try:
+                workflow_session = _WorkflowRunSession(
+                    isolated_input,
+                    isolated_context,
+                    depth,
+                    subagent_id=subagent_id,
+                    workflow_journal=workflow_journal,
+                    transaction=transaction,
+                    run_subagent=run_subagent,
+                )
                 workflow_result = _run_workflow_phases(
                     isolated_input,
                     isolated_context,
@@ -1867,6 +1823,7 @@ def run_workflow(
                     workflow_journal=workflow_journal,
                     transaction=transaction,
                     run_subagent=run_subagent,
+                    session=workflow_session,
                 )
             finally:
                 # Keep failed work inspectable before disposable candidate
@@ -1949,6 +1906,7 @@ def run_workflow(
             agent_budget = AgentTurnBudget.from_runtime(
                 runtime if isinstance(runtime, dict) else {}
             )
+        usage_counts = known_usage_counts()
         _emit_workflow_observation(
             context,
             subagent_id=subagent_id,
@@ -1960,10 +1918,12 @@ def run_workflow(
             started=isolation_started,
             model_turn_limit=_workflow_model_turn_limit(agent_budget),
             result_truncated=False,
+            usage_counts=usage_counts,
         )
         return ToolResult(
             ok=False,
             output=f"error[sub_agent_deadline_exceeded]: {exc}",
+            _usage_counts=usage_counts,
         )
     except _WorkflowIsolationError as exc:
         promoted = promoted_result_or_fallback("projection_failed")
@@ -1975,6 +1935,7 @@ def run_workflow(
             agent_budget = AgentTurnBudget.from_runtime(
                 runtime if isinstance(runtime, dict) else {}
             )
+        usage_counts = known_usage_counts()
         _emit_workflow_observation(
             context,
             subagent_id=subagent_id,
@@ -1986,6 +1947,7 @@ def run_workflow(
             started=isolation_started,
             model_turn_limit=_workflow_model_turn_limit(agent_budget),
             result_truncated=False,
+            usage_counts=usage_counts,
         )
         return ToolResult(
             ok=False,
@@ -1994,6 +1956,7 @@ def run_workflow(
                 f"did not start because a safe workspace snapshot could not "
                 f"be established ({exc})"
             ),
+            _usage_counts=usage_counts,
         )
     except TurnCancellationRequested:
         promoted = promoted_result_or_fallback("cancelled_after_commit")
@@ -2035,6 +1998,8 @@ class _WorkflowRunSession:
         "_continuation_used_calls",
         "_continuation_candidates",
         "_verification_outputs",
+        "_usage_counts",
+        "_usage_lock",
     )
 
     def __init__(
@@ -2054,7 +2019,21 @@ class _WorkflowRunSession:
         self._subagent_id = subagent_id
         self._workflow_journal = workflow_journal
         self._transaction = transaction
-        self._run_subagent = run_subagent
+        self._usage_counts = ToolUsageCounts()
+        self._usage_lock = threading.Lock()
+
+        def counted_subagent(data, child_context):
+            result = run_subagent(data, child_context)
+            # Every return is one invocation, including retries and resumed
+            # Executor calls. Final phase slots only retain the latest result.
+            with self._usage_lock:
+                self._usage_counts = ToolUsageCounts(
+                    self._usage_counts.model_turns + result._usage_counts.model_turns,
+                    self._usage_counts.tool_calls + result._usage_counts.tool_calls,
+                )
+            return result
+
+        self._run_subagent = counted_subagent
         self._ran = False
         self._state: _WorkflowExecutionState | None = None
         self._executor_session = (
@@ -2144,16 +2123,6 @@ class _WorkflowRunSession:
         )
         mailbox = getattr(context, "_subagent_mailbox", None)
         explore_results: list[ToolResult] = []
-        if input_data.get("parallel_explore"):
-            explore_results = _run_parallel_exploration(
-                input_data,
-                context,
-                child_context,
-                mailbox,
-                run_subagent=run_subagent,
-            )
-            _raise_task_deadline(context)
-
         structured = input_data.get("workflow_request") is not None
         if structured:
             # Structured Analysts read only scheduler-assigned artifacts, so
@@ -2259,10 +2228,17 @@ class _WorkflowRunSession:
         if workflow_request.structured:
             from minicode.workflow_review_policy import (
                 explicit_user_acceptance_commands, requests_independent_review, review_routing_artifact_id,
-                review_routing_decision, text_digest, observe_review_scope,
+                review_routing_decision, text_digest, observe_review_scope, requests_analysis,
             )
 
             original_user_request = getattr(context, "_workflow_user_request", None)
+            brief = input_data.get("_workflow_brief")
+            # The file body remains the complete delegation instruction. Its
+            # inline summary is only a transport aid, never a routing filter.
+            delegation_instructions = brief.body if brief is not None else task_prompt
+            profile = replace(profile, analysis_requested=(
+                requests_analysis(original_user_request) or requests_analysis(delegation_instructions)
+            ))
             review_decision = review_routing_decision(
                 request=workflow_request, profile=profile, workflow_id=workflow_id,
                 request_digest=workflow_request_digest,
@@ -2270,17 +2246,59 @@ class _WorkflowRunSession:
                 base_digest=transaction.base_digest if transaction is not None else None,
                 user_request_digest=text_digest(original_user_request),
                 user_review_requested=requests_independent_review(original_user_request),
-                delegation_review_requested=requests_independent_review(task_prompt),
+                delegation_review_requested=requests_independent_review(delegation_instructions),
+                analysis_requested=profile.analysis_requested,
                 user_acceptance_commands=explicit_user_acceptance_commands(original_user_request),
                 host_scope_reasons=observe_review_scope(
                     workflow_request, transaction.source_cwd if transaction is not None else None,
                     explicit_user_acceptance_commands(original_user_request),
                 ),
             )
-            profile = replace(profile, independent_review_required=review_decision["independentReviewRequired"])
+            profile = replace(
+                profile,
+                independent_review_required=review_decision["independentReviewRequired"],
+            )
             artifact_store.publish(
                 review_routing_artifact_id(workflow_request_digest), review_decision,
                 authority=scheduler_artifact_authority,
+            )
+        dispatch_plan = CentralScheduler().plan(profile)
+        from minicode.workflow_admission import reserved_calls_for_snapshot, reviewer_window, workflow_preflight_reason
+        owner_deadline = getattr(context, "_task_deadline_monotonic", None)
+        now = time.monotonic()
+        remaining_seconds = max(0.0, owner_deadline - now) if owner_deadline is not None else None
+        admission_snapshot = agent_budget.snapshot()
+        preflight_reason = workflow_preflight_reason(
+            request=workflow_request, objective=task_prompt, stages=dispatch_plan.stages,
+            snapshot=admission_snapshot, preserve_calls=_executor_followup_calls(profile),
+            preserve_tokens=getattr(context, "_logical_agent_preserve_total_tokens", 0),
+            remaining_seconds=remaining_seconds,
+            reserved_model_calls=reserved_calls_for_snapshot(agent_budget, admission_snapshot),
+            exploration_fanout=len(_WORKFLOW_EXPLORATION_FACETS) if input_data.get("parallel_explore") else 0,
+        )
+        if preflight_reason is not None:
+            _emit_workflow_observation(
+                context, subagent_id=subagent_id, result_contract_status="unavailable",
+                journal=workflow_journal, outcome="failed", results=[], phase_count=0,
+                started=started, model_turn_limit=model_turn_limit, result_truncated=False,
+            )
+            return ToolResult(ok=False, output=f"error[pre_flight_insufficient]: {preflight_reason}",
+                              _termination_reason=ToolTerminationReason.BUDGET_EXCEEDED)
+        initial_executor_deadline = (
+            owner_deadline - reviewer_window(remaining_seconds)
+            if remaining_seconds is not None and DispatchStage.REVIEWER in dispatch_plan.stages
+            else None
+        )
+        if input_data.get("parallel_explore"):
+            explore_results = _run_parallel_exploration(
+                input_data, context, child_context, mailbox, run_subagent=run_subagent,
+            )
+            _raise_task_deadline(context)
+            research_notes = (
+                _inline_explore_notes(explore_results) if workflow_request.structured else
+                "\n\nResearch notes are available in the shared mailbox under "
+                "workflow_explore_architecture, workflow_explore_tests and "
+                "workflow_explore_risks. Read the relevant notes with subagent_note_read."
             )
         human_approval_artifact_id: str | None = None
         analyst_report: dict[str, object] | None = None
@@ -2349,6 +2367,7 @@ class _WorkflowRunSession:
             workflow_request=workflow_request,
             workflow_request_artifact_id=workflow_request_artifact_id,
             workflow_request_digest=workflow_request_digest,
+            initial_executor_deadline=initial_executor_deadline,
         )
 
         scheduler = CentralScheduler()
@@ -2526,6 +2545,7 @@ class _WorkflowRunSession:
                 commit_error_text=commit_error_text,
                 production_audit_required=production_audit_required,
                 initial_finalization_status=initial_finalization_status,
+                usage_counts=self._usage_counts,
             )
         except BaseException:
             if not scheduler_outcome.committed:
@@ -2544,15 +2564,38 @@ class _WorkflowRunSession:
                 commit_ready_status=state.commit_ready_status,
                 commit_error_text=commit_error_text,
                 production_audit_required=production_audit_required,
+                usage_counts=self._usage_counts,
             )
         executor_observations = _executor_observation_text(state)
+        # Display projections stay bounded; retain the complete phase prose
+        # outside the disposable snapshot before shortening it for the parent.
+        text_sections = [("Explore", result) for result in explore_results]
+        text_sections.extend((label, phase) for label, phase in (
+            ("Analyst", state.plan_result), ("Executor", state.execute_result),
+            ("Reviewer", state.review_result),
+        ) if phase is not None)
+        complete_text = "\n\n".join(f"## {label}\n\n{phase.output}" for label, phase in text_sections)
+        evidence_note = ""
+        if any(len(phase.output) > 500 for _, phase in text_sections) and state.transaction is not None:
+            from minicode.workflow_brief import write_workflow_artifact
+            try:
+                source_context = replace(context, cwd=str(state.transaction.source_cwd))
+                evidence_path, evidence_digest = write_workflow_artifact(
+                    source_context, complete_text.encode("utf-8"),
+                )
+                evidence_note = (f"Complete phase output: {state.transaction.source_cwd / evidence_path}\n"
+                                 f"SHA-256: {evidence_digest}\n\n")
+            except Exception as exc:
+                # A diagnostic write cannot undo already promoted bytes.
+                # Report the missing archive rather than pretend it exists.
+                evidence_note = f"Complete phase output archive unavailable: {type(exc).__name__}.\n\n"
         budget_exceeded = any(
             phase is not None and phase._termination_reason is ToolTerminationReason.BUDGET_EXCEEDED
             for phase in (state.execute_result, state.review_result, state.plan_result)
         )
         self._seal_execution_capabilities()
         del state
-        result = finalize_workflow(snapshot, ports)
+        result = finalize_workflow(snapshot, ports, evidence_note=evidence_note)
         if not result.ok and executor_observations:
             result = replace(result, output=executor_observations + result.output)
         if not result.ok and budget_exceeded:
@@ -2650,6 +2693,10 @@ class _WorkflowRunSession:
     def _run_analyst(self, assignment) -> StageResult:
         self._execution_state().analyst_evidence_ids.clear()
         if self._execution_state().workflow_request.structured:
+            diagnosis_refs = tuple(dict.fromkeys((
+                self._execution_state().workflow_request_artifact_id,
+                *(assignment.input_artifact_ids if assignment.repair_source_artifact_id else ()),
+            )))
             analyst_assignment = _build_worker_assignment(
                 self._execution_state().workflow_request,
                 assignment,
@@ -2662,21 +2709,23 @@ class _WorkflowRunSession:
                     else "prepare_change"
                 ),
                 objective=self._execution_state().task_prompt,
-                input_refs=(self._execution_state().workflow_request_artifact_id,),
+                input_refs=diagnosis_refs,
             )
             analysis_context = self._execution_state().child_context
             state = self._execution_state()
+            global_deadline = getattr(state.context, "_task_deadline_monotonic", None)
             bounded_analysis = (state.workflow_request.kind != "read_only"
-                                and state.agent_budget.has_limits)
+                                and (state.agent_budget.has_limits or global_deadline is not None))
             if bounded_analysis:
                 snapshot = state.agent_budget.snapshot()
                 if state.analysis_call_limit is None:
-                    remaining_calls = max(0, snapshot.limit_model_calls - snapshot.used_model_calls) if snapshot.limit_model_calls is not None else 30
-                    state.analysis_call_limit = min(6, remaining_calls // 5)
+                    from minicode.workflow_admission import analysis_allocation, reserved_calls_for_snapshot
                     state.analysis_token_limit = max(0, snapshot.limit_total_tokens - snapshot.used_total_tokens - snapshot.reserved_total_tokens) // 5 if snapshot.limit_total_tokens is not None else None
                     now = time.monotonic()
-                    global_deadline = getattr(state.context, "_task_deadline_monotonic", None)
-                    time_slice = min(120.0, max(0.0, global_deadline - now) * 0.2) if global_deadline is not None else 120.0
+                    state.analysis_call_limit, time_slice = analysis_allocation(
+                        snapshot, max(0.0, global_deadline - now) if global_deadline is not None else None,
+                        reserved_model_calls=reserved_calls_for_snapshot(state.agent_budget, snapshot),
+                    )
                     state.analysis_deadline = now + time_slice
                 remaining_calls = max(0, state.analysis_call_limit - state.analysis_used_calls)
                 remaining_tokens = max(0, state.analysis_token_limit - state.analysis_used_tokens) if state.analysis_token_limit is not None else None
@@ -2741,6 +2790,11 @@ class _WorkflowRunSession:
                             "once this decision is supported; do not survey unrelated "
                             "code or draft a patch. Report missing evidence honestly. "
                             "Do not modify files.\n"
+                            + ("A real verification failure has already occurred. Inspect the current "
+                               "failed candidate and the assigned verification artifacts. Identify the "
+                               "cause and a correction within the existing write scope; the same Executor "
+                               "will resume its existing order and conversation. Do not restart the task.\n"
+                               if assignment.repair_source_artifact_id else "")
                             + (
                                 self._execution_state().research_notes
                                 if self._execution_state().research_notes
@@ -2862,12 +2916,9 @@ class _WorkflowRunSession:
                         artifact_id=self._execution_state().analyst_artifact_id,
                         error_code=f"analyst_result_{analyst_status}",
                     )
-                if self._execution_state().analyst_report["unknowns"]:
-                    return StageResult(
-                        status="inconclusive",
-                        artifact_id=self._execution_state().analyst_artifact_id,
-                        error_code=("analyst_unknowns_require_request_revision"),
-                    )
+                # Ordinary unknowns travel in the existing AnalystHandoff.
+                # Blocked status and material risk reclassification still
+                # retain their authority; uncertainty alone is not terminal.
                 if analyst_report_requires_reclassification(
                     analyst_assignment,
                     self._execution_state().analyst_report,
@@ -3711,7 +3762,11 @@ class _WorkflowRunSession:
         executor_allocation_context = self._execution_state().context
         if executor_deadline is not None:
             remaining_time = max(0.0, executor_deadline - time.monotonic())
-            executor_deadline -= min(120.0, remaining_time * (0.15 if executor_followup_calls > 1 else 0.1))
+            initial_deadline = self._execution_state().initial_executor_deadline
+            if assignment.repair_index == 0 and initial_deadline is not None:
+                executor_deadline = min(executor_deadline, initial_deadline)
+            else:
+                executor_deadline -= min(120.0, remaining_time * (0.15 if executor_followup_calls > 1 else 0.1))
             executor_allocation_context = replace(executor_allocation_context, _task_deadline_monotonic=executor_deadline)
         if self._execution_state().workflow_request.structured:
             if self._execution_state().transaction is None:
@@ -3769,7 +3824,11 @@ class _WorkflowRunSession:
             candidate_steps = (
                 candidate.get("steps", []) if isinstance(candidate, dict) else []
             )
-            if candidate_steps:
+            if assignment.repair_index > 0 and self._execution_state().implementation_order is not None:
+                # A diagnostic Analyst may advise the existing writer, but
+                # cannot replace its locked steps or broaden its write set.
+                raw_steps = [step.to_dict() for step in self._execution_state().implementation_order.steps]
+            elif candidate_steps:
                 raw_steps = [
                     {
                         "id": step["id"],
@@ -3866,7 +3925,7 @@ class _WorkflowRunSession:
             ),
         )
         plan_text = (
-            effective_plan.output[:12000]
+            effective_plan.output
             if not self._execution_state().workflow_request.structured
             else (
                 "The locked ImplementationOrder below is the sole "
@@ -4191,8 +4250,21 @@ class _WorkflowRunSession:
                     state = self._execution_state()
                     order = state.implementation_order
                     receipts = {}
+                    formal_check_ids = {check.check_id for check in state.workflow_request.verification_checks}
+                    probe_check_ids = {
+                        "review_regression_" + probe.probe_id.removeprefix("review_probe_")
+                        for probe in state.reviewer_probes.probes()
+                    }
                     for encoded in checked_candidate.receipts_json:
                         receipt = json.loads(encoded)
+                        if receipt["checkId"] not in formal_check_ids:
+                            # Dynamic review checks retain their source-bound
+                            # evidence and obligations in the probe ledger.
+                            # They are not declarations of an additional
+                            # WorkflowRequest verification check.
+                            if receipt["checkId"] not in probe_check_ids:
+                                raise ValueError("checked candidate contains an unknown implementation check")
+                            continue
                         ref = implementation_receipt_ref(executor_assignment.assignment_id, order.order_id,
                                                          checked_candidate.patch_digest, receipt["checkId"])
                         receipts[ref] = {
@@ -4301,6 +4373,13 @@ class _WorkflowRunSession:
                     deadlines[assignment.repair_index] = _reviewer_deadline(
                         review_deadline, time.monotonic(), first_review=assignment.repair_index == 0,
                     )
+                elif assignment.repair_index not in self._execution_state().review_deadline_extensions:
+                    # A single format/stream retry may use the repair portion
+                    # of this same owner deadline, never additional time.
+                    deadlines[assignment.repair_index] = _reviewer_deadline(
+                        review_deadline, time.monotonic(), first_review=False,
+                    )
+                    self._execution_state().review_deadline_extensions.add(assignment.repair_index)
                 review_deadline = min(review_deadline, deadlines[assignment.repair_index])
                 review_allocation_context = replace(
                     review_allocation_context, _task_deadline_monotonic=review_deadline,
@@ -4500,6 +4579,19 @@ class _WorkflowRunSession:
                         "requires every criterion explicitly satisfied. Successful "
                         "submission ends this review without an extra summary call. "
                         f"Result channel (legacy): `{result_key}`."
+                        + "\nMinimal valid review_submit example when evidence is missing "
+                        "(replace decisions with your findings):\n"
+                        + json.dumps({
+                            "verdict": "inconclusive",
+                            "criteria": [{"criterionId": item.criterion_id, "status": "unknown"}
+                                         for item in reviewer_assignment.acceptance_criteria],
+                            "blockingFindings": [], "warnings": ["Required evidence is not yet available."],
+                            "confidence": "low",
+                        }, ensure_ascii=False)
+                        + "\nFor a confirmed defect, use changes_required, mark its criterion failed, "
+                        'and add {"criterionIds":["<that criterion id>"],"statement":"<observed defect>"} '
+                        "to blockingFindings. Put nonblocking observations in observations or warnings; "
+                        "do not add transport IDs or arbitrary fields."
                         + (" Previous result validation error: " + str(
                             self._execution_state().role_result_parse_errors["reviewer"]
                         ) if "reviewer" in self._execution_state().role_result_parse_errors else "")
@@ -4645,7 +4737,7 @@ class _WorkflowRunSession:
                     "DETERMINISTIC VERIFICATION:\n"
                     f"{json.dumps(self._execution_state().verification_result, sort_keys=True)}\n\n"
                     "IMPLEMENTATION SUMMARY:\n"
-                    f"{self._execution_state().execute_result.output[:12000]}"
+                    f"{self._execution_state().execute_result.output}"
                 ),
             },
             self._execution_state().child_context,
@@ -5114,6 +5206,14 @@ class _WorkflowRunSession:
                 repairable=self._verification_repairable(),
                 error_code="acceptance_evidence_incomplete",
             )
+        if verification_status == "failed":
+            # A real failed check is actionable evidence, distinct from
+            # missing acceptance coverage and transport/submission failures.
+            return StageResult(
+                status="failed", artifact_id=self._execution_state().verification_artifact_id,
+                patch_digest=patch_digest, repairable=self._verification_repairable(),
+                error_code="verification_failed",
+            )
         if self._execution_state().workflow_request.structured:
             if self._execution_state().change_diff_artifact_id is None:
                 return StageResult(
@@ -5365,7 +5465,7 @@ class _WorkflowRunSession:
             review_artifact = state.artifact_store.read(review_artifact_id)
             if review_artifact is None:
                 raise ValueError("final review authority artifact is missing")
-            if request.rule_id == "route.verified_change":
+            if request.rule_id in {"route.verified_change", "route.analyzed_change"}:
                 from minicode.workflow_review_policy import (
                     review_routing_artifact_id, validate_review_routing_decision,
                     observe_review_scope, validate_unreviewed_change_set,
@@ -5388,10 +5488,12 @@ class _WorkflowRunSession:
                     state.workflow_request, state.frozen_change_set,
                     relative_cwd=state.transaction.relative_cwd,
                 )
-                if observe_review_scope(
+                final_scope_reasons = observe_review_scope(
                     state.workflow_request, state.transaction.cwd,
                     tuple(tuple(command) for command in json.loads(routing.content)["userAcceptanceCommands"]),
-                ):
+                )
+                if any(reason in {"host_scope_unconfirmed", "scope_alias_or_hardlink"}
+                       for reason in final_scope_reasons):
                     raise ValueError("final filesystem no longer satisfies the host review exemption")
                 verification = json.loads(review_artifact.content)
                 if (verification.get("resultType") != "VerificationResult.v1"
@@ -5574,8 +5676,9 @@ def _run_workflow_phases(
     workflow_journal: SubagentRunJournal | None,
     transaction: _WorkflowWorkspaceTransaction | None,
     run_subagent: _RunSubagent,
+    session: _WorkflowRunSession | None = None,
 ) -> ToolResult:
-    return _WorkflowRunSession(
+    active_session = session or _WorkflowRunSession(
         input_data,
         context,
         depth,
@@ -5583,7 +5686,8 @@ def _run_workflow_phases(
         workflow_journal=workflow_journal,
         transaction=transaction,
         run_subagent=run_subagent,
-    ).run()
+    )
+    return active_session.run()
 
 
 __all__ = ("run_workflow",)

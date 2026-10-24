@@ -124,6 +124,8 @@ def test_native_partial_retains_draft_and_actual_page_then_resumes_same_audit(tm
 
 
 def test_parent_pauses_without_rerunning_probes_then_same_owner_resumes_and_approves(inventory, monkeypatch):
+    # Exercise strict native continuation; bounded exhaustion has dedicated tests.
+    monkeypatch.setenv("MINI_CODE_COMPLETION_REVIEW_MODE", "full")
     case = inventory
     ids = [row["id"] for row in requirement_units(OBJECTIVE)]
     before_pause = {}

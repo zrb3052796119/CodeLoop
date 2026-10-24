@@ -518,6 +518,7 @@ def test_general_subprocess_partial_reaches_the_parent_result(
             result={
                 "status": "completed",
                 "final_message": "partial write-up from the child",
+                "version": 1,
                 "report_content": None,
                 "model_turns": 16,
                 "tool_calls": 14,

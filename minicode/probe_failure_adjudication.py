@@ -170,7 +170,7 @@ class ProbeFailureAdjudicator:
             return str(path)
 
     def assess(self, *, probe, receipt, context, model, tools, agent_budget,
-               event_sink, cancellation_token, deadline_monotonic, advisory_context=None):
+               event_sink, cancellation_token, deadline_monotonic, advisory_context=None, product_gap_sink=None):
         from minicode.implementation_completion_review import ImplementationCompletionReview
         from minicode.implementation_execution import implementation_candidate_digest
 
@@ -198,14 +198,14 @@ class ProbeFailureAdjudicator:
                     forbidden_paths=denied, operation_checkpoint=lambda: raise_task_deadline(host))
                 result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
                     permissions=permissions, authority=authority, authority_ref=authority_ref,
-                    binding=binding, event_sink=event_sink)
+                    binding=binding, event_sink=event_sink, product_gap_sink=product_gap_sink)
             raise_task_deadline(host)
             if implementation_candidate_digest(self.spec, host) != binding["candidateDigest"]:
                 raise ValueError("candidate changed during failure adjudication")
         return validate_adjudication_record(self.spec, source, original_receipt, result)
 
     def _review(self, *, model, tools, host, cwd, permissions, authority,
-                authority_ref, binding, event_sink):
+                authority_ref, binding, event_sink, product_gap_sink=None):
         from minicode.agent_loop import run_agent_turn
         from minicode.context_manager import ContextManager
         from minicode.run_events import emit_event_safely
@@ -287,6 +287,12 @@ class ProbeFailureAdjudicator:
             elif "replacement" in value:
                 raise ValueError("only probe_error may supply a replacement")
             decision = persist_decision(value, objective_lines, anchors, details)
+            if product_gap_sink is not None and decision["verdict"] == "product_gap":
+                # Preserve a native negative at its commit boundary even if
+                # the phase expires during subsequent context persistence.
+                # The owner still revalidates its candidate before delivery.
+                product_gap_sink(validate_adjudication_record(
+                    self.spec, authority["probe"], authority["receipt"], decision))
             return ToolResult(ok=True, output=_json(decision), _implementation_submitted=True)
 
         def validated(value, context):
@@ -350,6 +356,7 @@ class ProbeFailureAdjudicator:
             run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
                 messages=messages, context_manager=manager, runtime=host._runtime,
                 max_steps=None, agent_budget=host._agent_budget, budget_exhausted_policy="raise",
+                max_retries_override=0 if host._completion_review_limits is not None else None,
                 cancellation_token=host._cancellation_token, deadline_monotonic=host._task_deadline_monotonic,
                 event_sink=Observation(), agent_depth=host._agent_depth + 1,
                 implementation_task=False, implementation_spec=None, enable_implementation_phases=False,

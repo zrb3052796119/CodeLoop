@@ -190,6 +190,7 @@ def test_adjudicator_can_read_frozen_evidence_but_not_unassigned_artifacts(
     result = fixture._run(
         tmp_path, fixture._request(risk="medium", complex=True), monkeypatch,
         commit_audit_waived=True,
+        prompt="Analyze first. Apply the structured request.",
     )
     assert roles == ["analyst", "adjudicator"]
     assert not result.ok

@@ -29,8 +29,13 @@ def test_same_candidate_classified_obligations_do_not_restart_semantic_classifie
     assert failed["reason"] == "legacy_acceptance_product_gap"
     assert not review.has_legacy_probes and review.state["pendingLegacyResolution"] is None
     owner = "implementation_" + "4" * 32
+    # The real host envelope is required for exact delivered-feedback reuse.
+    # Bare historical prose is deliberately not authority to skip a handoff.
+    receipt = {**failed, "completionVersion": 1, "executorId": owner,
+               "attempt": 1, "continuesSameExecutor": True}
     feedback = {"role": "user", "_implementation_completion_feedback": True,
-                "content": "Original request:\n" + review.spec.objective + "\nCompletion evidence:\n" + json.dumps(failed)}
+                "content": "Original public request (unchanged):\n" + review.spec.objective
+                    + "\nCompletion evidence:\n" + json.dumps(receipt)}
     messages = [{"role": "user", "content": review.spec.objective}, feedback]
     continuation = HostImplementationContinuation.capture(spec=review.spec,
         context=ToolContext(cwd=str(tmp_path)), messages=messages,

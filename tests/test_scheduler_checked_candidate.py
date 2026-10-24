@@ -131,7 +131,8 @@ def _candidate_run(tmp_path, monkeypatch, *, approve=True, fail_first=False,
     monkeypatch.setattr(task_module, "_run", worker)
     request = _request()
     request["verificationChecks"][0]["argv"] = ["python", "-m", "pytest", "-q"]
-    result = _run(tmp_path, request, monkeypatch, event_sink=Sink())
+    result = _run(tmp_path, request, monkeypatch, event_sink=Sink(),
+                  prompt="Analyze first. Apply the structured request and review the resulting change.")
     assert not candidate_errors, json.dumps(candidate_errors, indent=2)
     assert len(audits) == 1, result.output
     return result, audits[0], target, checks, roles

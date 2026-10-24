@@ -2,6 +2,7 @@
 
 import json
 import re
+import time
 
 import pytest
 
@@ -55,11 +56,12 @@ def test_optional_custom_limit_survives_real_task_loop_and_journal(tmp_path, mon
     recorded = []
     original_loop = task_module.run_agent_turn
     budget = AgentTurnBudget()
+    started = time.monotonic()
 
     def observe_loop(**kwargs):
         recorded.append(kwargs)
         assert kwargs["max_steps"] == expected
-        assert kwargs["deadline_monotonic"] is None
+        assert started + 900 <= kwargs["deadline_monotonic"] <= time.monotonic() + 900
         names = {tool.name for tool in kwargs["tools"].list()}
         assert names == {"read_file", "subagent_note_write"}
         return original_loop(**kwargs)

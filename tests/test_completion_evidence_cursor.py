@@ -1,4 +1,4 @@
-"""Real pytest + audit gates consume stable sources and exact dependency closure."""
+"""Real pytest + audit gates consume complete, source-bound review material."""
 
 from dataclasses import replace
 import hashlib
@@ -27,7 +27,7 @@ def _read(tools, child, document_id):
         request = {"cursor": page["nextCursor"]}
 
 
-def test_supersession_needs_exact_compact_source_authority_and_receipt_closure(tmp_path, monkeypatch):
+def test_supersession_needs_complete_sources_and_independent_authority_material(tmp_path, monkeypatch):
     suffix = "# Inventory setup and nonzero quantity restoration remain separate checks.\n" * 250
     old_code, new_code = BAD + suffix, GOOD + suffix
     observations = {}
@@ -50,54 +50,37 @@ def test_supersession_needs_exact_compact_source_authority_and_receipt_closure(t
         assert missing
         edge_id = packet["supersessionIndex"][0]["obligationDocumentId"]
         assert edge_id in missing
-        manifest, manifest_page, _ = _read(tools, child, edge_id)
-        assert manifest_page["documentType"] == "supersession_obligation"
-        dependencies = set(manifest_page["requiredDocumentIds"])
-        authority_id = manifest["authority"]["$evidenceDocument"]
-        sources, read_ids, pending = {}, {edge_id}, set(dependencies) - {authority_id}
-        read_documents = {}
-        withheld = []
-        deferred_authority = True
-        while pending or deferred_authority:
-            if not pending:
-                assert set(sources) == set(originals)
-                refused = tools.execute("completion_coverage_audit_submit", approval, child)
-                assert not refused.ok
-                refusal = json.loads(refused.output)
-                assert "independent invalidity evidence" in refusal["message"]
-                assert authority_id in refusal["missingDocumentIds"]
-                assert review.state["retiredProbeIds"] == []
-                pending.add(authority_id)
-                deferred_authority = False
-            document_id = pending.pop()
-            if document_id in read_ids:
-                continue
-            # Open a one-page descriptor to find authority; its entire receipt
-            # closure still has to be delivered before accepted can succeed.
-            result = tools.execute("review_evidence_read", {"documentId": document_id}, child)
-            assert result.ok
-            first = json.loads(result.output)
-            if first["documentType"] == "invalidity_authority":
-                withheld.extend(first["requiredDocumentIds"])
-            value, page, pages = _read(tools, child, document_id)
-            read_ids.add(document_id)
-            read_documents[document_id] = value
-            pending.update(set(page["requiredDocumentIds"]) - read_ids)
-            if page["documentType"] == "probe_source":
-                sources[value["probeId"]] = value
-                assert len(pages) >= 2
-                assert all(p["documentId"] == document_id for p in pages)
-                # The cursor contract cannot be converted back into a guessed
-                # offset or different view by the caller.
-                forged = tools.execute("review_evidence_read", {
-                    "cursor": pages[0]["nextCursor"], "offset": 9000}, child)
-                assert not forged.ok
-        assert set(sources) == set(originals) and sources == originals
-        assert withheld  # Authority references exact shared source bytes.
-        assert len(json.dumps(manifest)) < len(old_code)
+        first_result = tools.execute("review_evidence_read", {"documentId": edge_id}, child)
+        assert first_result.ok
+        first = json.loads(first_result.output)
+        assert first["documentType"] == "supersession_review_material"
+        assert first["nextCursor"] is not None and not first["completeDelivered"]
+        refused = tools.execute("completion_coverage_audit_submit", approval, child)
+        assert not refused.ok
+        assert edge_id in json.loads(refused.output)["missingDocumentIds"]
+        assert review.state["retiredProbeIds"] == []
+        forged = tools.execute("review_evidence_read", {
+            "cursor": first["nextCursor"], "offset": 9000}, child)
+        assert not forged.ok
+        manifest, manifest_page, pages = _read(tools, child, edge_id)
+        assert len(pages) >= 2 and manifest_page["requiredDocumentIds"] == []
+        assert manifest["reviewMaterialVersion"] == 1
+        assert manifest["oldSource"] == originals[manifest["request"]["oldProbeId"]]
+        assert manifest["newSource"] == originals[manifest["request"]["newProbeId"]]
+        assert manifest["effectiveSource"] == originals[manifest["effectiveProbeId"]]
+        authority = json.loads(Path(packet["authorityRef"]).read_text())
+        obligation = authority["supersessionObligations"][0]
+        assert manifest["authority"] == obligation["authority"]
+        from minicode.review_evidence_documents import canonical, content_digest
+        assert manifest["originalObligationDigest"] == content_digest(canonical(obligation))
+        # Exact execution traces remain readable, but are not mandatory source
+        # and invalidity delivery. Approve before reading those optional IDs.
+        optional_ids = {value["documentId"] for value in manifest["optionalExecutionEvidence"].values()}
+        assert optional_ids and edge_id not in optional_ids
+        assert all(value["deliveryRequired"] is False for value in manifest["optionalExecutionEvidence"].values())
         approved = tools.execute("completion_coverage_audit_submit", approval, child)
         assert approved.ok, approved.output
-        observations.update(packet=packet, manifest=manifest, readIds=read_ids)
+        observations.update(packet=packet, manifest=manifest)
 
     review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
         adjudication_driver=adjudicate, coverage_driver=audit)

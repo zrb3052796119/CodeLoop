@@ -46,7 +46,7 @@ def test_independent_fixture_keyword_addition_reexecutes_then_approves_and_resto
     judgments = []
 
     def adjudicate(tools, child, packet):
-        assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+        assert set(tools.list_all()) == {"read_file", "completion_evidence_read", "completion_probe_adjudication_submit"}
         assert packet["probe"]["code"] == BAD
         judgments.append(packet["receipt"]["receiptRef"])
         request = {

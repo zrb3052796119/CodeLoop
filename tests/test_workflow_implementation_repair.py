@@ -24,6 +24,7 @@ from test_workflow_v2_structured_routing import (
     _review_patch_digest,
     _run,
     _worker_role,
+    _write_adjudication_result,
     _write_analyst_result,
     _write_executor_declaration,
     _write_reviewer_result,
@@ -33,6 +34,8 @@ from test_workflow_v2_structured_routing import (
 def _repair_run(
     tmp_path, monkeypatch, *, rejection, always_bad=False,
     escape_narrow_order=False, replay_verification=False, unchanged_repair=False,
+    prompt="Analyze first. Apply the structured request and review the resulting change.",
+    executor_observations=None, analysis_verdict=None,
 ):
     (tmp_path / "allowed.txt").write_text("before", encoding="utf-8")
     expected = "value == 'after'" if rejection == "verifier" else "value != 'before'"
@@ -62,8 +65,16 @@ def _repair_run(
         role = _worker_role(input_data)
         roles.append(role)
         if role == "analyst":
-            _write_analyst_result(input_data, context, prepare_change=True)
+            _write_analyst_result(input_data, context, prepare_change=True, risks=(
+                [{"severity": "high", "statement": "The failed candidate needs risk reclassification.",
+                  "evidenceRefs": ["claim_route"]}] if analysis_verdict is not None else None
+            ))
+        elif role == "adjudicator":
+            _write_adjudication_result(input_data, context, decision=analysis_verdict)
         elif role == "executor":
+            if executor_observations is not None:
+                executor_observations.append((input_data["_executor_session"], context.cwd,
+                                              Path(context.cwd, "allowed.txt").read_text()))
             assignment = _prompt_json(input_data["prompt"], "EXECUTOR ASSIGNMENT")
             executor_inputs.append(assignment)
             content = (
@@ -120,8 +131,42 @@ def _repair_run(
     request = _request()
     if escape_narrow_order:
         request["scope"]["writePaths"].append("extra.txt")
-    result = _run(tmp_path, request, monkeypatch, event_sink=Sink())
+    result = _run(tmp_path, request, monkeypatch, event_sink=Sink(), prompt=prompt)
     return result, roles, executor_inputs, audits
+
+
+def test_first_real_failure_is_diagnosed_without_replacing_executor_or_candidate(tmp_path, monkeypatch):
+    observations = []
+    result, roles, inputs, audits = _repair_run(
+        tmp_path, monkeypatch, rejection="verifier", prompt="Apply the structured request.",
+        executor_observations=observations,
+    )
+    assert result.ok, result.output
+    assert roles == ["executor", "analyst", "executor"]
+    assert observations[0][0] is observations[1][0]
+    assert observations[0][1] == observations[1][1]
+    assert [item[2] for item in observations] == ["before", "almost"]
+    assert inputs[0]["scope"] == inputs[1]["scope"]
+    assert (tmp_path / "allowed.txt").read_text() == "after"
+    assert len(audits) == 1
+    audit = audits[0]
+    assert project_scheduler_audit(profile=audit.profile, plan=audit.plan, trace=audit.trace,
+        artifacts=audit.artifacts, contract_mode="v2") == audit
+
+
+@pytest.mark.parametrize("decision", ["select_b", "select_a", "insufficient"])
+def test_failure_diagnostic_risk_escalation_replays_without_losing_candidate(tmp_path, monkeypatch, decision):
+    result, roles, _, audits = _repair_run(
+        tmp_path, monkeypatch, rejection="verifier", prompt="Apply the structured request.",
+        analysis_verdict=decision,
+    )
+    assert result.ok is (decision == "select_b"), result.output
+    assert roles[:3] == ["executor", "analyst", "adjudicator"]
+    assert (tmp_path / "allowed.txt").read_text() == ("after" if result.ok else "before")
+    assert len(audits) == 1
+    audit = audits[0]
+    assert project_scheduler_audit(profile=audit.profile, plan=audit.plan, trace=audit.trace,
+        artifacts=audit.artifacts, contract_mode="v2") == audit
 
 
 @pytest.mark.parametrize("rejection", ["verifier", "reviewer"])

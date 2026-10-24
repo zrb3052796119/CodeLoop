@@ -13,6 +13,36 @@ from minicode.completion_evidence_view import EvidenceViews
 from minicode.tooling import ToolResult
 
 
+def render_review_legs(receipt: dict) -> str:
+    """Explain display-only leg states without inferring acceptance or repairs."""
+    names = {"review": "review", "inspection": "coverage inspection",
+             "reconciliation": "evidence reconciliation"}
+    descriptions = {"running": "is still running", "completed": "completed",
+                    "approved": "approved", "rejected": "rejected",
+                    "budget_exhausted": "exhausted its budget", "interrupted": "was interrupted"}
+    legs = receipt.get("reviewLegs")
+    if not isinstance(legs, list):
+        return ""
+    parts, not_entered = [], []
+    for row in legs:
+        if not isinstance(row, dict) or row.get("leg") not in names:
+            continue
+        name, state = names[row["leg"]], row.get("state")
+        if state == "not_entered":
+            not_entered.append(name)
+        elif state in descriptions:
+            parts.append(f"{name} {descriptions[state]}")
+    if not_entered:
+        parts.append(", ".join(not_entered) + (" has" if len(not_entered) == 1 else " have") + " not started")
+    if not parts:
+        return ""
+    summary = "Completion review is incomplete: " + "; ".join(parts) + "."
+    directory = receipt.get("evidenceDirectory")
+    if isinstance(directory, str) and directory:
+        summary += f" The candidate is retained; evidence is archived at {directory}."
+    return summary + " Resume the review or request human review."
+
+
 class CompletionFeedbackViews:
     def __init__(self):
         self._views: dict[str, EvidenceViews] = {}
@@ -65,8 +95,13 @@ class CompletionFeedbackViews:
         # documents previously read by this same owner after process restart.
         retained = {**message, "_completion_evidence_history": [value
                     for key, value in self._contents.items() if key != content_digest]}
-        if display == receipt:
+        explanation = render_review_legs(receipt)
+        if display == receipt and not explanation:
             return retained
+        if display == receipt:
+            display = {**display, **self._views[digest].reference(receipt)}
+        if explanation:
+            prefix = explanation + "\n" + prefix
         if message.get("_implementation_completion_status"):
             # An approval record is not a repair packet. Keep its exact decision
             # addressable without replaying every historical witness mapping.

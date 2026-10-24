@@ -119,6 +119,7 @@ def test_unlimited_budget_still_releases_abandoned_reservations():
 
 
 def test_migrated_config_keeps_explicit_budget_settings(monkeypatch):
+    monkeypatch.setenv("MINI_CODE_MODEL", "test-model")
     settings = {"modelEnvMigrationVersion": 1,
                 "agentTurnBudget": {"maxTokens": 123, "maxModelCalls": 4, "maxCostUsd": "0.25"}}
     monkeypatch.setattr("minicode.config.load_effective_settings", lambda cwd=None: settings)
@@ -130,6 +131,7 @@ def test_migrated_config_keeps_explicit_budget_settings(monkeypatch):
 
 
 def test_config_preserves_zero_override_and_reports_unlimited(monkeypatch):
+    monkeypatch.setenv("MINI_CODE_MODEL", "test-model")
     settings = {"env": {key: 0 for key in _ENV}, "agentTurnBudget": {
         "maxTokens": 123, "maxModelCalls": 4, "maxCostUsd": "0.25",
     }}

@@ -10,6 +10,7 @@ from minicode.tooling import ToolContext, ToolRegistry
 from minicode.tools.edit_file import edit_file_tool
 from minicode.tools.read_file import read_file_tool
 from test_implementation_completion_review import PROBE, SOURCE, _fixture, _rows, _coverage_approval
+from test_completion_coverage_audit import _inspection_action
 
 
 @pytest.mark.parametrize("inject_parent_tools,force_parent_choice", [(False, False), (True, False), (True, True)])
@@ -32,7 +33,8 @@ def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
     # Reuse the existing adapter and prime its original tool cache, just as a
     # completed implementation would. The nested review must not mutate it.
     assert {tool["function"]["name"] for tool in adapter.request_tool_schemas()} == parent_names
-    expected = {"read_file", "review_test", "review_probe_read", "completion_review_submit"}
+    expected = {"read_file", "review_test", "review_probe_read", "completion_review_submit", "completion_evidence_read"}
+    inspection_expected = {"read_file", "review_test", "completion_coverage_inspection_submit"}
     audit_expected = expected - {"completion_review_submit"} | {
         "completion_coverage_audit_submit", "review_evidence_read"}
     requests = []
@@ -45,7 +47,7 @@ def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
         body = json.loads(request.data.decode())
         requests.append(body)
         names = {tool["function"]["name"] for tool in body.get("tools", [])}
-        if names not in (expected, audit_expected):
+        if names not in (expected, inspection_expected, audit_expected):
             # A real provider can only select its advertised capabilities.
             # End this local attempt instead of fabricating an unadvertised
             # native call, which would conceal the production wiring defect.
@@ -53,15 +55,22 @@ def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
             finish = "stop"
         else:
             packet = {"requirements": list(review.requirements)}
-            if names == audit_expected:
+            if names == inspection_expected:
+                name, args = _inspection_action(body)
+            elif names == audit_expected:
                 packet = next(json.loads(m["content"]) for m in body["messages"]
                               if m.get("role") == "user" and '"evidenceIndex"' in m.get("content", ""))
-                reads = [m for m in body["messages"] if m.get("role") == "tool"]
+                probe_read_ids = {call["id"] for m in body["messages"] for call in m.get("tool_calls", [])
+                                  if call["function"]["name"] == "review_probe_read"}
+                reads = [json.loads(m["content"]) for m in body["messages"]
+                         if m.get("role") == "tool" and m.get("tool_call_id") in probe_read_ids]
                 if not reads:
                     name, args = "review_probe_read", {"probeId": packet["evidenceIndex"][0]["probeId"],
                                                        "receiptView": "current", "limit": 16000}
+                elif reads[-1]["nextCursor"] is not None:
+                    name, args = "review_probe_read", {"cursor": reads[-1]["nextCursor"]}
                 else:
-                    source = json.loads(json.loads(reads[-1]["content"])["text"])["source"]
+                    source = json.loads("".join(page["text"] for page in reads))["source"]
                     name, args = "completion_coverage_audit_submit", _coverage_approval(packet, {source["probeId"]: source})
             elif len(requests) == 1:
                 name, args = "review_test", {"purpose": "acceptance", "criterionIds": [u["id"] for u in review.requirements],
@@ -86,7 +95,7 @@ def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
             agent_budget=None, event_sink=None, cancellation_token=None,
             deadline_monotonic=None, checks_receipt=capability.ensure_completion_checks(context))
         assert requests
-        assert all({tool["function"]["name"] for tool in body.get("tools", [])} in (expected, audit_expected)
+        assert all({tool["function"]["name"] for tool in body.get("tools", [])} in (expected, inspection_expected, audit_expected)
                    for body in requests), "Provider schema must use the actual nested registry, even without phases."
         for body in requests:
             functions = {tool["function"]["name"]: tool["function"] for tool in body["tools"]}
@@ -94,8 +103,8 @@ def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
             probe_schema = functions["review_test"]["parameters"]
             assert "purpose" in probe_schema["required"]
             assert set(probe_schema["properties"]["purpose"]["enum"]) == {"diagnostic", "acceptance"}
-            submit_name = ("completion_review_submit" if "completion_review_submit" in functions
-                           else "completion_coverage_audit_submit")
+            submit_name = next(name for name in ("completion_review_submit", "completion_coverage_inspection_submit",
+                                                  "completion_coverage_audit_submit") if name in functions)
             submit_schema = functions[submit_name]["parameters"]
             if submit_name == "completion_coverage_audit_submit":
                 assert {frozenset(branch["required"]) for branch in submit_schema["anyOf"]} == {
@@ -104,11 +113,18 @@ def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
                 }
                 assert submit_schema["properties"]["draftId"]["type"] == "string"
                 assert submit_schema["properties"]["updates"]["type"] == "array"
+            elif submit_name == "completion_coverage_inspection_submit":
+                assert set(submit_schema["required"]) == {"status", "observations", "findings"}
+                assert "completion_evidence_read" not in functions
+                assert "review_probe_read" not in functions
+                assert "review_evidence_read" not in functions
             else:
                 assert set(submit_schema["required"]) == {"status", "requirements", "findings"}
             assert "tool_choice" not in body
         assert result["status"] == "approved"
-        assert len(requests) == 4
+        assert len(requests) == 6
+        assert [{tool["function"]["name"] for tool in body["tools"]} for body in requests] == [
+            expected, expected, inspection_expected, inspection_expected, audit_expected, audit_expected]
         assert adapter.tools is parent_tools
         assert {tool["function"]["name"] for tool in adapter.request_tool_schemas()} == parent_names
         if force_parent_choice:

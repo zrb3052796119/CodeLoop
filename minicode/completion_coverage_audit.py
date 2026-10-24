@@ -126,7 +126,13 @@ def audit_completion_coverage(*, objective, requirements, proposal, candidate_di
     from minicode.context_manager import ContextManager
     from minicode.implementation_completion_review import requirement_units
     from minicode.run_events import emit_event_safely
+    from minicode.completion_review_limits import select_review_phase, review_steps, check_review_allowance
 
+    resumed_inspection = (record_document(continuation_state["inspectionRecord"])
+        if continuation_state is not None and continuation_state.get("coverageAuditStateVersion") == 3 else None)
+    select_review_phase(host, "reconciliation" if resumed_inspection is not None
+        and (resumed_inspection["phase"] == "reconciliation" or resumed_inspection["result"] is not None)
+        else "inspection")
     checkpoint()
     # Legacy model context already saw the proposal. Preserve it byte-for-byte,
     # but create an explicit new epoch with no inherited delivery/read credit.
@@ -999,7 +1005,8 @@ def audit_completion_coverage(*, objective, requirements, proposal, candidate_di
                 run_agent_turn(model=model, tools=inspection_tools, cwd=cwd, permissions=permissions,
                     messages=manager.messages, context_manager=manager, runtime=host._runtime,
                     context_checkpoint_sink=checkpoint_context,
-                    max_steps=None, agent_budget=host._agent_budget, budget_exhausted_policy="raise",
+                    max_steps=review_steps(host), agent_budget=host._agent_budget, budget_exhausted_policy="raise",
+                    max_retries_override=0 if host._completion_review_limits is not None else None,
                     cancellation_token=host._cancellation_token, deadline_monotonic=host._task_deadline_monotonic,
                     event_sink=Observation(), agent_depth=host._agent_depth + 1,
                     implementation_task=False, implementation_spec=None, enable_implementation_phases=False,
@@ -1007,12 +1014,14 @@ def audit_completion_coverage(*, objective, requirements, proposal, candidate_di
             if decision is not None:
                 return decision
             if inspection.value["result"] is None:
+                check_review_allowance(host)
                 return suspended()
             # The same fresh context continues after its independent observation
             # commit. The original objective system message remains singular.
             disclosed = deepcopy(reconciliation_messages)
             disclosed[0]["content"] = disclosed[0]["content"].split("\n=== ORIGINAL REQUIREMENT AUTHORITY ===\n", 1)[0]
             inspection.disclose(disclosed, messages_checkpoint)
+        select_review_phase(host, "reconciliation")
         if legacy_audit_record is not None:
             def history_read(value, _context):
                 try:
@@ -1036,7 +1045,8 @@ def audit_completion_coverage(*, objective, requirements, proposal, candidate_di
         run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
             messages=manager.messages, context_manager=manager, runtime=host._runtime,
             context_checkpoint_sink=checkpoint_context,
-            max_steps=None, agent_budget=host._agent_budget, budget_exhausted_policy="raise",
+            max_steps=review_steps(host), agent_budget=host._agent_budget, budget_exhausted_policy="raise",
+            max_retries_override=0 if host._completion_review_limits is not None else None,
             cancellation_token=host._cancellation_token, deadline_monotonic=host._task_deadline_monotonic,
             event_sink=Observation(), agent_depth=host._agent_depth + 1,
             implementation_task=False, implementation_spec=None, enable_implementation_phases=False,
@@ -1052,6 +1062,7 @@ def audit_completion_coverage(*, objective, requirements, proposal, candidate_di
                 raise
             logging.getLogger(__name__).warning("Coverage audit messages could not be saved during interruption", exc_info=True)
     if decision is None:
+        check_review_allowance(host)
         return suspended()
     return decision
 

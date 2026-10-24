@@ -5,6 +5,7 @@ session restoration, durable audit and promotion execute production code.
 """
 
 import json
+import re
 import sys
 import time
 from copy import deepcopy
@@ -27,7 +28,7 @@ from minicode.permissions import PermissionManager
 from minicode.run_journal import RunJournal
 from minicode.run_lifecycle import observe_run
 from minicode.scheduler_trace import extract_scheduler_trace
-from minicode.tooling import ToolRegistry
+from minicode.tooling import ToolRegistry, ToolUsageCounts
 from minicode.tools import task as task_module
 from minicode.tools.edit_file import edit_file_tool
 from minicode.tools.read_file import read_file_tool
@@ -44,6 +45,8 @@ def _exercise(tmp_path, monkeypatch, *, reject_final_review=False):
     budget = AgentTurnBudget(max_model_calls=40, max_total_tokens=500000)
     deadline = time.monotonic() + 1800
     calls, billed, workers, adapters, checks = [], [], [], [], []
+    worker_tools = []
+    worker_failures = []
     receipts, floors, correction_admissions = [], [], []
     approved_argv = ("python", "-m", "pytest", "-q", "test_candidate.py")
     original_worker = task_module._run
@@ -57,18 +60,24 @@ def _exercise(tmp_path, monkeypatch, *, reject_final_review=False):
         workers.append((role, data.get("_executor_session")))
         if role == "executor":
             assert tuple(context._logical_agent_scope.write_paths) == ("candidate.py", "test_candidate.py")
-            assert [tuple(check.argv) for check in data["_executor_check_capability"]._checks] == [approved_argv]
+            assert all(tuple(check.argv) == approved_argv
+                       for check in data["_executor_check_capability"]._checks)
             if sum(r == "executor" for r, _ in workers) == 2:
                 assert target.read_text() == INITIAL
                 assert (Path(context.cwd) / "candidate.py").read_text() == PARTIAL
                 assert (Path(context.cwd) / "test_candidate.py").read_text() == TEST
-        return original_worker(data, context)
+        result = original_worker(data, context)
+        if not result.ok:
+            worker_failures.append(result.output)
+        return result
 
     def action(name, value, identity):
         return {"id": identity, "toolName": name, "input": value}
 
     def metered(role, messages, tools, actions):
         calls.append((role, deepcopy(messages)))
+        if role != "parent":
+            worker_tools.append(len(actions or []))
         schemas = [{"type": "function", "function": {"name": tool.name,
                     "description": tool.description, "parameters": tool.input_schema}}
                    for tool in tools.list()]
@@ -137,7 +146,24 @@ def _exercise(tmp_path, monkeypatch, *, reject_final_review=False):
                 "blockingFindings": [{"criterionIds": ["none"], "statement": FINDING}] if negative else [],
                 "warnings": [], "requestedChecks": [REQUESTED] if negative else [], "confidence": "high",
             }
-            if negative and self.calls <= 6 and "read_file" in tools.list_all():
+            if not negative:
+                probe_ids = sorted(set(re.findall(r"review_probe_[0-9a-f]{24}", str(messages))))
+                assert probe_ids, "The repaired candidate's retained probe must reach its Reviewer."
+                for criterion in value["criteria"]:
+                    criterion.update(
+                        rationale="The retained public probe checks whitespace and None on this repaired candidate.",
+                        probeIds=probe_ids,
+                    )
+            if negative and self.calls == 1:
+                actions = [action("review_test", {
+                    "criterionIds": ["trim", "none"],
+                    "scenario": "Both public normalization cases, including missing None support.",
+                    "code": ("from candidate import normalize\n"
+                             "def test_public_cases():\n"
+                             "    assert normalize(' a ') == 'a'\n"
+                             "    assert normalize(None) == ''\n"),
+                }, "independent-public-probe")]
+            elif negative and self.calls <= 6 and "read_file" in tools.list_all():
                 actions = [action("read_file", {"path": "candidate.py"}, f"review-source-{self.calls}")]
             elif negative and not self.rejected:
                 value.pop("verdict")
@@ -169,10 +195,12 @@ def _exercise(tmp_path, monkeypatch, *, reject_final_review=False):
     class Verifier(DeterministicVerifier):
         def run(self, **kwargs):
             assert target.read_text() == INITIAL
-            assert [tuple(check.argv) for check in kwargs["checks"]] == [approved_argv]
-            formal = getattr(kwargs["evidence_sink"], "__name__", "") == "per_check_sink"
+            actual_argv = [tuple(check.argv) for check in kwargs["checks"]]
+            assert actual_argv in ([approved_argv], [(*approved_argv[:-1], "__minicode_review_probe__.py")])
+            formal = getattr(kwargs.get("evidence_sink"), "__name__", "") == "per_check_sink"
             result = super().run(**kwargs)
-            checks.extend({"formal": formal, "exit": check["exitCode"]} for check in result["checks"])
+            checks.extend({"formal": formal, "probe": actual_argv != [approved_argv],
+                           "exit": check["exitCode"]} for check in result["checks"])
             return result
 
     verifier = Verifier(sandbox_backend=TestSandbox(), explicit_trusted_executables={"python": sys.executable})
@@ -211,7 +239,7 @@ def _exercise(tmp_path, monkeypatch, *, reject_final_review=False):
                 text = "Preparing the public workflow."
             elif self.count == 8:
                 actions = [action("task", {"description": "complete public behavior", "agent_type": "workflow",
-                    "prompt": "Strip whitespace and handle None with a public regression test.",
+                    "prompt": "Strip whitespace and handle None with a public regression test; request independent review.",
                     "workflow_request": request}, "workflow")]
                 return metered("parent", messages, parent_tools, actions)
             else:
@@ -231,14 +259,16 @@ def _exercise(tmp_path, monkeypatch, *, reject_final_review=False):
     with observe_run(workspace=tmp_path, source="headless", title="typed parent floor",
                      journal_factory=lambda workspace: RunJournal(workspace, data_dir=data_dir)) as observation:
         messages = run_agent_turn(model=Parent(), tools=parent_tools,
-            messages=[{"role": "system", "content": "Public fixture context. " + "x" * 191200},
-                      {"role": "user", "content": "Strip whitespace and handle None with a public regression test."}],
+            messages=[{"role": "system", "content": "Public fixture context. " + "x" * 181200},
+                      {"role": "user", "content": "Strip whitespace and handle None with a public regression test; request independent review."}],
             cwd=str(tmp_path), runtime={"model": "local-fixture"}, agent_budget=budget,
             deadline_monotonic=deadline, event_sink=observation, enable_work_chain=False,
             enable_bounded_completion=True, enable_implementation_phases=False, max_steps=40)
         run_id = observation.run_id
     assert len(receipts) == 1
     result = receipts[0]
+    assert result._usage_counts == ToolUsageCounts(
+        sum(role != "parent" for role, _ in calls), sum(worker_tools))
     trace = extract_scheduler_trace(result.output)
     assert trace is not None
     journal = RunJournal(tmp_path, data_dir=data_dir)
@@ -268,12 +298,13 @@ def _exercise(tmp_path, monkeypatch, *, reject_final_review=False):
         assert [check["exit"] for check in checks if check["formal"]] == [0, 0]
         assert rejections
         return
-    assert result.ok and trace["committed"], (trace["terminalReason"], checks)
+    assert result.ok and trace["committed"], (trace["terminalReason"], checks, worker_failures)
     assert target.read_text() == COMPLETE and (tmp_path / "test_candidate.py").read_text() == REPAIRED_TEST
     assert [role for role, _ in workers] == ["executor", "reviewer", "executor", "reviewer"]
     assert workers[0][1] is workers[2][1] and workers[0][1] is not None
     assert [role for role, _ in adapters].count("general") == 1
-    assert [check["exit"] for check in checks] == [0, 0, 1, 0, 0]
+    assert [check["exit"] for check in checks if not check["probe"]] == [0, 0, 1, 0, 0]
+    assert [check["exit"] for check in checks if check["probe"]] == [1, 1, 0, 0]
     audit = journal.get_scheduler_audit(run_id, trace["workflowId"])
     assert audit is not None and audit.trace["committed"]
     assert journal.get_scheduler_commit_ready(run_id, trace["workflowId"]) is not None

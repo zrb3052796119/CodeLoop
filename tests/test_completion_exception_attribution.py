@@ -33,7 +33,7 @@ BROKEN_PRODUCT = SOURCE.replace("return n + amount", "raise ValueError('release 
 def _adjudicator(verdict, calls, *, replacement=None):
     def driver(tools, child, packet):
         calls.append(deepcopy(packet))
-        assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+        assert set(tools.list_all()) == {"read_file", "completion_evidence_read", "completion_probe_adjudication_submit"}
         request = {
             "verdict": verdict,
             "reason": (

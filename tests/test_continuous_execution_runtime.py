@@ -1,5 +1,6 @@
-"""Actual default loops do not acquire hidden turn/time/assignment caps."""
+"""Default loops keep optional turn limits and the documented Task timeout."""
 from types import SimpleNamespace
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -54,21 +55,30 @@ def test_default_loop_can_finish_after_old_fifty_step_boundary(tmp_path):
     assert not result[-1].get("_partial")
 
 
-def test_unconfigured_task_and_subagent_have_no_deadline_or_turn_cap():
-    assert task_timeout_seconds(ToolContext(cwd=".")) is None
+def test_unconfigured_task_has_timeout_but_no_subagent_turn_cap():
+    assert task_timeout_seconds(ToolContext(cwd=".")) == 900
     assert all(resolve_max_turns(role) is None for role in ("explore", "plan", "general"))
 
 
 @pytest.mark.parametrize("role", ["executor", "analyst", "reviewer"])
-def test_unlimited_assignment_keeps_null_limits_instead_of_defaulting(role):
+@pytest.mark.parametrize("runtime", [{}, {"taskTimeoutSeconds": None}, {"taskTimeoutSeconds": 0}])
+def test_assignment_defaults_timeout_but_preserves_explicit_unlimited(role, runtime):
     request = parse_workflow_request(_request(), legacy_task_id="task_continuous")
+    before = datetime.now(timezone.utc)
     assignment = _build_worker_assignment(
         request, SimpleNamespace(workflow_id="wf_continuous", assignment_id="asg_continuous"),
-        context=ToolContext(cwd="."), agent_budget=AgentTurnBudget(), role=role,
+        context=ToolContext(cwd=".", _runtime=runtime), agent_budget=AgentTurnBudget(), role=role,
         mode={"executor": "implement", "analyst": "prepare_change", "reviewer": "change_review"}[role],
         objective="Update allowed.txt.",
     )
-    assert assignment.budget.to_dict() == {
-        "deadlineAt": None, "maxModelCalls": None,
+    payload = assignment.budget.to_dict()
+    deadline = payload.pop("deadlineAt")
+    if runtime:
+        assert deadline is None
+    else:
+        actual = datetime.fromisoformat(deadline)
+        assert before + timedelta(seconds=899) <= actual <= datetime.now(timezone.utc) + timedelta(seconds=900)
+    assert payload == {
+        "maxModelCalls": None,
         "maxInputTokens": None, "maxOutputTokens": None,
     }

@@ -17,7 +17,7 @@ import minicode.tools.task as task_module
 import minicode.workflow_runner as runner_module
 
 from test_workflow_v2_structured_routing import (
-    _request, _worker_role, _write_executor_declaration, _write_reviewer_result,
+    _request, _worker_role, _write_analyst_result, _write_executor_declaration, _write_reviewer_result,
 )
 
 
@@ -59,11 +59,11 @@ def _run_request(tmp_path, request, *, event_sink, user_request=None, task_promp
 
 @pytest.mark.parametrize("user_request,needs_review", [
     ("Set the value to after.\nAcceptance command: `pytest -q test_acceptance.py`", False),
-    (None, True),
+    (None, False),
     ("Set the value to after.\n验收命令：`pytest -q test_acceptance.py`", False),
     ("Please review the changes.\nAcceptance command: `pytest -q test_acceptance.py`", True),
-    ("Acceptance command: `pytest -q test_other.py`", True),
-    ("Acceptance command: `pytest -q`", True),
+    ("Acceptance command: `pytest -q test_other.py`", False),
+    ("Acceptance command: `pytest -q`", False),
 ])
 @pytest.mark.parametrize("accepted", [True, False])
 def test_bounded_low_risk_change_earns_delivery_without_a_reviewer(tmp_path, monkeypatch, user_request, needs_review, accepted,
@@ -94,6 +94,9 @@ def test_bounded_low_risk_change_earns_delivery_without_a_reviewer(tmp_path, mon
         if role == "executor":
             Path(context.cwd, "allowed.txt").write_text("after" if accepted else "incorrect")
             _write_executor_declaration(input_data, context)
+        elif role == "analyst":
+            assert not accepted, "Diagnostic analysis needs a real failed verification"
+            _write_analyst_result(input_data, context, prepare_change=True)
         else:
             assert needs_review, "Explicit bounded user acceptance should not dispatch review by default"
             _write_reviewer_result(input_data, context)
@@ -116,12 +119,12 @@ def test_bounded_low_risk_change_earns_delivery_without_a_reviewer(tmp_path, mon
     if accepted:
         assert roles == (["executor", "reviewer"] if needs_review else ["executor"])
     else:
-        assert roles and set(roles) == {"executor"}, "Failed checks may repair, but cannot reach approval"
+        assert roles and "reviewer" not in roles, "Failed checks may diagnose and repair, but cannot reach approval"
     assert checks, "Final host verification must run an actual test"
     assert (tmp_path / "allowed.txt").read_text() == ("after" if accepted else "before")
     trace = extract_scheduler_trace(result.output)
     assert trace["ruleId"] == ("route.scoped_change" if needs_review else "route.verified_change")
-    assert trace["policyVersion"] == 5
+    assert trace["policyVersion"] == 6
     assert len(audits) == 1
     assert len(seals) == int(accepted)
     replay = project_scheduler_audit(profile=audits[0].profile, plan=audits[0].plan,
@@ -142,8 +145,9 @@ def test_bounded_low_risk_change_earns_delivery_without_a_reviewer(tmp_path, mon
                 trace=audits[0].trace, artifacts=artifacts, contract_mode="v2")
 
 
+@pytest.mark.parametrize("version", [5, 6])
 @pytest.mark.parametrize("case", ["complex", "multiple", "quality", "build", "sensitive", "broad", "declared-review", "mutable-test", "mutable-pytest"])
-def test_host_acceptance_never_removes_other_review_reasons(case):
+def test_review_reasons_replay_under_their_recorded_policy(case, version):
     from minicode.central_scheduler import CentralScheduler, DispatchStage
     from minicode.multi_agent_contracts import parse_workflow_request
     from minicode.workflow_review_policy import review_routing_decision, text_digest
@@ -168,16 +172,17 @@ def test_host_acceptance_never_removes_other_review_reasons(case):
     else:
         raw["criteria"][0]["text"] = "Please review the changes."
     request = parse_workflow_request(raw, legacy_task_id="task_policy")
-    profile = request.task_profile
+    profile = request.task_profile_for_policy(version)
     decision = review_routing_decision(request=request, profile=profile, workflow_id="wf_policy",
         request_digest="sha256:" + "a" * 64, objective_digest="sha256:" + "b" * 64,
         base_digest="sha256:" + "c" * 64, user_request_digest=text_digest("original user"),
         user_review_requested=False, delegation_review_requested=False,
         host_scope_reasons=(),
-        user_acceptance_commands=(("pytest", "-q", "test_acceptance.py"),))
-    assert decision["independentReviewRequired"] is True
-    assert DispatchStage.REVIEWER in CentralScheduler().plan(
-        replace(profile, independent_review_required=decision["independentReviewRequired"])).stages
+        user_acceptance_commands=(("pytest", "-q", "test_acceptance.py"),), policy_version=version)
+    required = version == 5 or case in {"sensitive", "declared-review"}
+    assert decision["independentReviewRequired"] is required
+    assert (DispatchStage.REVIEWER in CentralScheduler().plan(
+        replace(profile, independent_review_required=required), policy_version=version).stages) is required
 
 
 @pytest.mark.parametrize("text", [
@@ -223,8 +228,8 @@ def test_original_user_acceptance_avoids_the_old_default_reviewer(tmp_path, monk
     )
 
 
-def test_model_cannot_supply_the_users_acceptance_directive_in_its_task_prompt(tmp_path, monkeypatch):
+def test_complete_v6_request_does_not_need_an_original_user_acceptance_directive(tmp_path, monkeypatch):
     test_bounded_low_risk_change_earns_delivery_without_a_reviewer(
-        tmp_path, monkeypatch, None, True, True,
+        tmp_path, monkeypatch, None, False, True,
         task_prompt="Acceptance command: `pytest -q test_acceptance.py`",
     )

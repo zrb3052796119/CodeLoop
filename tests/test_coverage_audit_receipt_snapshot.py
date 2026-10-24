@@ -28,6 +28,8 @@ def probe_count(case):
 
 
 def interrupted_replacement_audit(case, monkeypatch, *, runtime_failure=False):
+    # Receipt replay invariants are exercised through complete strict continuation.
+    monkeypatch.setenv("MINI_CODE_COMPLETION_REVIEW_MODE", "full")
     if runtime_failure:
         # LANG is deliberately inherited by the verifier. Use a real runtime
         # change to fail the later invocation without editing candidate bytes.

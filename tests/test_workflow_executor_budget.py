@@ -300,7 +300,8 @@ def test_public_workflow_assignment_and_actual_worker_loop_share_one_cap(
     result = task_module.task_tool.run(
         {
             "description": "bounded change",
-            "prompt": "Update allowed.txt.",
+            "prompt": ("Analyze first, then update allowed.txt and request independent review."
+                       if reviewed else "Update allowed.txt."),
             "agent_type": "workflow",
             "workflow_request": _request(risk="medium" if reviewed else "low", complex=reviewed),
         },
@@ -316,7 +317,7 @@ def test_public_workflow_assignment_and_actual_worker_loop_share_one_cap(
     assert observed == (
         [("analyst", 5), ("executor", 27), ("reviewer", 8)]
         if reviewed
-        else [("executor", 28), ("reviewer", 8)]
+        else [("executor", 37)]
     )
     assert budget.max_model_calls == 40
     assert budget.max_total_tokens == 500_000
@@ -359,7 +360,7 @@ def test_task_honors_sealed_assignment_when_default_resolution_changes(
     assert observed == [6]
 
 
-@pytest.mark.parametrize("calls", [1, 2, 3, 4, 10, 11, 12])
+@pytest.mark.parametrize("calls", [1, 2, 3, 4, 5, 6, 7])
 def test_insufficient_scoped_budget_blocks_before_worker_or_verifier(
     tmp_path, monkeypatch, calls
 ):
@@ -386,7 +387,7 @@ def test_insufficient_scoped_budget_blocks_before_worker_or_verifier(
         ),
     )
     assert not result.ok
-    assert "executor_budget_insufficient" in result.output
+    assert "error[pre_flight_insufficient]" in result.output
     assert invoked == []
     assert budget.snapshot().used_model_calls == 1
     assert budget.snapshot().limit_model_calls == calls

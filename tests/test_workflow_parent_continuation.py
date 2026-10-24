@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import threading
+from itertools import chain, repeat
 from pathlib import Path
 
 import pytest
@@ -192,7 +193,7 @@ def test_interrupted_parent_after_child_commit_keeps_receipt_and_partial_status(
 
 @pytest.mark.parametrize("failure", ["network", "budget"])
 def test_failure_in_remaining_work_reports_committed_partial_progress(
-    tmp_path, committed_result, failure,
+    tmp_path, committed_result, failure, monkeypatch,
 ):
     from minicode.agent_budget import AgentBudgetExceeded, AgentTurnBudget
 
@@ -201,7 +202,10 @@ def test_failure_in_remaining_work_reports_committed_partial_progress(
             raise AgentBudgetExceeded("model_calls", AgentTurnBudget.from_runtime({}).snapshot())
         raise ConnectionError("provider unavailable")
 
-    model = ScriptedModel([_call("workflow", "first"), fail])
+    # A network outage persists through the existing transport retries; an
+    # exhausted two-item iterator would test StopIteration instead of failure.
+    monkeypatch.setattr("minicode.agent_loop.controlled_retry_sleep", lambda *_a, **_k: None)
+    model = ScriptedModel(chain([_call("workflow", "first")], repeat(fail)))
     messages = run_agent_turn(
         model=model, tools=_registry(committed_result),
         messages=[{"role": "user", "content": "Apply change and complete follow-up."}],
@@ -211,7 +215,9 @@ def test_failure_in_remaining_work_reports_committed_partial_progress(
     response = final_response_text(messages)
     assert "already committed" in response
     assert "remaining work" in response
-    assert failure in response.lower()
+    assert ("transport" if failure == "network" else "budget") in response.lower()
+    if failure == "network":
+        assert any(m.get("_model_transport_failure") for m in messages)
 
 
 def test_final_observer_failure_cannot_hide_committed_child_receipt(tmp_path, committed_result):

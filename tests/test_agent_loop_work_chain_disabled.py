@@ -346,8 +346,8 @@ def test_work_chain_disabled_without_sink_skips_observation_work(
 @pytest.mark.parametrize(
     ("error", "failure_kind", "fallback_fragment"),
     [
-        (ConnectionError("network-secret"), "network", "Network error"),
-        (TimeoutError("timeout-secret"), "timeout", "Model API timeout"),
+        (ConnectionError("network-secret"), "network", "Model transport failed"),
+        (TimeoutError("timeout-secret"), "timeout", "Model transport failed"),
         (RuntimeError("provider-secret"), "provider_error", "Model API error"),
     ],
 )
@@ -358,7 +358,8 @@ def test_work_chain_disabled_preserves_model_failure_fallback_and_duration(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     readings = iter((20.0, 20.125))
-    monkeypatch.setattr(agent_loop_module.time, "monotonic", lambda: next(readings))
+    # Deadline checks may also read the clock after the failed exchange.
+    monkeypatch.setattr(agent_loop_module.time, "monotonic", lambda: next(readings, 20.125))
     model = RaisingModel(error)
     sink = RecordingSink()
 
@@ -369,10 +370,14 @@ def test_work_chain_disabled_preserves_model_failure_fallback_and_duration(
         cwd=".",
         enable_work_chain=False,
         event_sink=sink,
+        # Keep this focused on a single failure's classification and duration.
+        max_steps=1,
     )
 
     assert fallback_fragment in result[-1]["content"]
     assert model.calls == 1
+    if failure_kind in {"network", "timeout"}:
+        assert result[-1]["_partial"] is True
     assert [event.event_type for event in sink.events] == [
         "model.started",
         "model.failed",

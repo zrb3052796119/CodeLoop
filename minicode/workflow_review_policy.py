@@ -1,10 +1,8 @@
-"""Host-owned, risk-based selection of independent completion review.
+"""Host-owned review policy, replayed under its recorded scheduler version.
 
-Passing tests are evidence of execution, not proof of natural-language
-requirements. Policy v5 accepts that residual risk only for one ordinary
-behavior criterion in a small, non-sensitive, non-complex change, and only
-when the original user explicitly supplies its concrete acceptance command. Model
-claims of coverage cannot relax these limits or a host-bound review request.
+Policy v6 defaults complete, non-sensitive requests to deterministic verification.
+Explicit review and elevated risk retain independent review. Historical v5
+decisions keep their narrower user-bound acceptance exemption.
 """
 
 from __future__ import annotations
@@ -13,6 +11,8 @@ import hashlib
 from pathlib import Path
 import re
 import shlex
+
+from minicode.central_scheduler import SCHEDULER_POLICY_VERSION
 
 
 # A false positive keeps an existing gate. Avoid interpreting word order as
@@ -28,6 +28,26 @@ _HOST_SCOPE_REASONS = ("host_scope_unconfirmed", "write_scope_not_files",
 
 def requests_independent_review(text: object) -> bool:
     return isinstance(text, str) and bool(_REVIEW_REQUEST.search(text))
+
+
+def requests_analysis(text: object) -> bool:
+    """Recognize explicit pre-analysis requests, not ordinary failure evidence."""
+    if not isinstance(text, str):
+        return False
+    directive = re.compile(
+        r"\bneeds_analysis\s*[:=]\s*true\b"
+        r"|\b(?:please\s+)?(?:analy[sz]e|investigate)\s+(?:first|before\s+(?:editing|implementing|changing))\b"
+        r"|\b(?:first|before\s+(?:editing|implementing|changing))\s*[,;:]?\s+(?:analy[sz]e|investigate)\b"
+        r"|(?:请)?先(?:进行)?(?:分析|调查)|(?:修改|实现|编辑)前(?:先)?(?:进行)?(?:分析|调查)",
+        re.IGNORECASE,
+    )
+    for clause in re.split(r"[\n。;!?]", text):
+        if re.search(r"\b(?:do\s+not|don't|no\s+need\s+to)\s+(?:analy[sz]e|investigate)"
+                     r"|(?:不要|无需|不用|不必)先?(?:进行)?(?:分析|调查)", clause, re.IGNORECASE):
+            continue
+        if directive.search(clause):
+            return True
+    return False
 
 
 def explicit_user_acceptance_commands(text: object) -> tuple[tuple[str, ...], ...]:
@@ -135,8 +155,8 @@ def _sensitive_paths(paths) -> bool:
 def observe_review_scope(request, workspace, commands) -> tuple[str, ...]:
     """Observe host files before dispatch; never accept request-JSON labels.
 
-    Existing, unaliased regular files are the intentionally narrow first
-    version. Unknown/new paths and any symlink or hardlink keep Reviewer.
+    Historical v5 uses all observations to require existing regular files.
+    V6 permits new exact file paths but retains directory and alias review.
     Inspect the source as well as its snapshot: copying may break hardlinks.
     """
     if workspace is None:
@@ -161,6 +181,10 @@ def observe_review_scope(request, workspace, commands) -> tuple[str, ...]:
             return False
 
     for path in request.scope.write_paths:
+        if (root / path).is_dir():
+            # A directory authorizes descendants rather than an exact frozen
+            # file set. Keep its review requirement while allowing new files.
+            reasons.add("host_scope_unconfirmed")
         if not ordinary_file(path):
             reasons.add("write_scope_not_files")
     requested_tests = {check.argv for check in request.verification_checks if check.kind == "tests"}
@@ -171,28 +195,34 @@ def observe_review_scope(request, workspace, commands) -> tuple[str, ...]:
     return tuple(reason for reason in _HOST_SCOPE_REASONS if reason in reasons)
 
 
-def validate_unreviewed_change_set(request, change_set, *, relative_cwd=".") -> None:
+def validate_unreviewed_change_set(request, change_set, *, relative_cwd=".",
+                                  policy_version=SCHEDULER_POLICY_VERSION) -> None:
     """Recheck the actual frozen file set, without directory-prefix authority."""
     files = change_set.get("files") if isinstance(change_set, dict) else None
     prefix = str(relative_cwd).strip("/")
     prefix = "" if prefix in {"", "."} else prefix + "/"
+    if policy_version >= 6:
+        # The runner's frozen change set is already projected relative to the
+        # invocation cwd, just like WorkflowRequest.scope.writePaths.
+        prefix = ""
     allowed = {prefix + path for path in request.scope.write_paths}
-    if (not isinstance(files, list) or not 1 <= len(files) <= 2
+    if (not isinstance(files, list) or not files
+            or policy_version <= 5 and len(files) > 2
             or any(not isinstance(item, dict) or item.get("path") not in allowed for item in files)
             or _sensitive_paths([item["path"] for item in files])):
         raise ValueError("final change exceeds the host-confirmed review exemption")
 
 
-def review_risk_reasons(request, profile) -> tuple[str, ...]:
+def review_risk_reasons(request, profile, *, policy_version=SCHEDULER_POLICY_VERSION) -> tuple[str, ...]:
     """Closed risk facts; criterion/check associations never prove semantics."""
     if request.kind != "change":
         return ()
     reasons: list[str] = []
     if not request.structured:
         reasons.append("legacy_request")
-    if profile.risk.value != "low":
+    if profile.risk.value in ({"high", "critical"} if policy_version >= 6 else {"medium", "high", "critical"}):
         reasons.append("elevated_risk")
-    if profile.complex:
+    if policy_version <= 5 and profile.complex:
         reasons.append("complex_change")
     if _sensitive_paths(request.scope.write_paths):
         reasons.append("sensitive_write_scope")
@@ -200,13 +230,13 @@ def review_risk_reasons(request, profile) -> tuple[str, ...]:
         reasons.append("unbounded_scope_or_acceptance")
     # One blanket command linked to many clauses does not establish narrow
     # acceptance. Separate requirements retain semantic completion review.
-    if len(request.criteria) != 1:
+    if policy_version <= 5 and len(request.criteria) != 1:
         reasons.append("multiple_requirements")
-    if any(item.kind != "behavior" for item in request.criteria):
+    if policy_version <= 5 and any(item.kind != "behavior" for item in request.criteria):
         reasons.append("judgment_required")
     test_criteria = {criterion_id for check in request.verification_checks
                      if check.kind == "tests" for criterion_id in check.criterion_ids}
-    if not request.criteria or test_criteria != {item.criterion_id for item in request.criteria}:
+    if policy_version <= 5 and (not request.criteria or test_criteria != {item.criterion_id for item in request.criteria}):
         reasons.append("behavior_test_evidence_missing")
     if any(requests_independent_review(item.text) for item in request.criteria):
         reasons.append("criterion_requests_review")
@@ -220,24 +250,37 @@ def review_routing_decision(
     delegation_review_requested: bool,
     user_acceptance_commands: tuple[tuple[str, ...], ...] = (),
     host_scope_reasons: tuple[str, ...] = ("host_scope_unconfirmed",),
+    policy_version: int = SCHEDULER_POLICY_VERSION,
+    analysis_requested: bool = False,
 ) -> dict[str, object]:
-    reasons = list(review_risk_reasons(request, profile))
+    if type(policy_version) is not int or policy_version not in {5, 6}:
+        raise ValueError("review routing policy version is unsupported")
+    reasons = list(review_risk_reasons(request, profile, policy_version=policy_version))
     if request.kind == "change":
-        reasons.extend(host_scope_reasons)
+        reasons.extend(host_scope_reasons if policy_version <= 5 else (
+            reason for reason in host_scope_reasons
+            if reason in {"host_scope_unconfirmed", "scope_alias_or_hardlink"}
+        ))
         requested_tests = {check.argv for check in request.verification_checks if check.kind == "tests"}
         bound_commands = tuple(command for command in user_acceptance_commands if command in requested_tests)
-        if not bound_commands:
+        if policy_version <= 5 and not bound_commands:
             reasons.append("host_acceptance_missing")
-        elif _acceptance_is_writable(request, bound_commands):
+        elif policy_version <= 5 and _acceptance_is_writable(request, bound_commands):
             reasons.append("host_acceptance_is_writable")
         if user_review_requested:
             reasons.append("user_requests_review")
         if delegation_review_requested:
             reasons.append("delegation_requests_review")
-    return {
+    independent_review_required = bool(reasons)
+    if policy_version >= 6:
+        if type(analysis_requested) is not bool:
+            raise ValueError("analysis request signal is invalid")
+        if analysis_requested:
+            reasons.append("explicit_analysis_requested")
+    result = {
         "decisionVersion": 1,
         "resultType": "ReviewRoutingDecision.v1",
-        "policyVersion": 5,
+        "policyVersion": policy_version,
         "workflowId": workflow_id,
         "taskId": request.task_id,
         "requestDigest": request_digest,
@@ -248,10 +291,12 @@ def review_routing_decision(
         "hostScopeReasons": list(host_scope_reasons),
         "userReviewRequested": user_review_requested,
         "delegationReviewRequested": delegation_review_requested,
-        "independentReviewRequired": bool(reasons),
-        "reasons": reasons or ["bounded_risk_test_acceptance" if request.kind == "change" else "read_only"],
+        "independentReviewRequired": independent_review_required,
+        "reasons": reasons or [("complete_scoped_request" if policy_version >= 6 else "bounded_risk_test_acceptance")
+                               if request.kind == "change" else "read_only"],
         "semanticCoverageProven": False,
     }
+    return result
 
 
 def text_digest(text: object) -> str | None:
@@ -302,6 +347,8 @@ def validate_review_routing_decision(
         delegation_review_requested=document["delegationReviewRequested"],
         user_acceptance_commands=commands,
         host_scope_reasons=tuple(host_reasons),
+        policy_version=document.get("policyVersion"),
+        analysis_requested="explicit_analysis_requested" in document.get("reasons", ()),
     )
     if document != expected:
         raise ValueError("review routing decision does not match host risk policy")

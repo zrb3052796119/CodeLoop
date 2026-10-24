@@ -772,9 +772,12 @@ def _validate_v2_transition_causes(
     if not isinstance(transitions, list):  # guarded by trace normalization
         raise SchedulerAuditValidationError("scheduler V2 transitions are invalid")
     repair_assignments = {
-        transitions[index + 1]["assignmentId"]
+        following["assignmentId"]
         for index, item in enumerate(transitions[:-1])
         if item.get("outcome") == "repairing"
+        for following in (next((candidate for candidate in transitions[index + 1:]
+                                if candidate.get("stage") == "executor"), None),)
+        if following is not None
     }
     previous: Mapping[str, object] | None = None
     for transition in transitions:
@@ -1117,13 +1120,14 @@ def _adjudicated_continuation_attempts(
 def _expected_analyst_transition(
     assignment: Assignment,
     report: Mapping[str, object],
+    *, policy_version: int = 5,
 ) -> tuple[str, str | None]:
     """Replay the scheduler-owned Analyst gate in its exact precedence."""
     if report.get("status") != "completed":
         status = str(report.get("status"))
         return status, f"analyst_result_{status}"
     unknowns = report.get("unknowns")
-    if isinstance(unknowns, list) and unknowns:
+    if policy_version <= 5 and isinstance(unknowns, list) and unknowns:
         return "inconclusive", "analyst_unknowns_require_request_revision"
     if analyst_report_requires_reclassification(assignment, report):
         return "blocked", "analyst_risk_requires_reclassification"
@@ -1452,7 +1456,11 @@ def _validated_repair_inputs(
         if outcome != "repairing":
             continue
         repair_index += 1
-        following = transitions[index + 1]
+        following = next((item for item in transitions[index + 1:]
+                          if item["stage"] == "executor"), None)
+        if following is None:
+            # A diagnostic Analyst may terminate before execution resumes.
+            continue
         assignment_id = str(following["assignmentId"])
         repair_id = f"artifact_repair_{assignment_id}"
         execution_document = documents.get(str(execution["artifactId"])) if execution else None
@@ -2119,6 +2127,8 @@ def project_scheduler_audit(
                                  and document.get("resultType") == "ReviewRoutingDecision.v1"]
             if len(routing_documents) != 1 or not isinstance(routing, dict):
                 raise SchedulerAuditValidationError("scheduler review routing authority is missing")
+            if routing.get("policyVersion") != plan.policy_version:
+                raise SchedulerAuditValidationError("scheduler review routing policy is inconsistent")
             try:
                 required = validate_review_routing_decision(
                     routing, request=request, profile=expected_profile,
@@ -2128,6 +2138,10 @@ def project_scheduler_audit(
             except (TypeError, ValueError) as exc:
                 raise SchedulerAuditValidationError("scheduler review routing authority is invalid") from exc
             expected_profile = replace(expected_profile, independent_review_required=required)
+            if plan.policy_version >= 6:
+                expected_profile = replace(expected_profile, analysis_requested="explicit_analysis_requested" in routing.get("reasons", ()))
+                if profile.analysis_requested != expected_profile.analysis_requested:
+                    raise SchedulerAuditValidationError("scheduler analysis request does not match effective profile")
             if profile.independent_review_required != required:
                 raise SchedulerAuditValidationError("scheduler review routing does not match effective profile")
         stable_profile_fields = (
@@ -2189,8 +2203,18 @@ def project_scheduler_audit(
                     for path in assignment.scope.write_paths
                 )
             )
+            dispatch_index = next((index for index, item in enumerate(normalized_trace["transitions"])
+                                   if item["outcome"] == "dispatched" and item["assignmentId"] == assignment.assignment_id), None)
+            prior_transitions = normalized_trace["transitions"][:dispatch_index] if dispatch_index is not None else []
+            failure_analysis = (role == "analyst" and plan.policy_version >= 6
+                                and DispatchStage.ANALYST not in plan.stages)
+            analysis_refs = (request_artifact_id,)
+            if failure_analysis:
+                analysis_refs = tuple(dict.fromkeys((request_artifact_id, *(str(item["artifactId"])
+                    for item in prior_transitions if item["artifactId"] is not None
+                    and item["outcome"] in {"completed", "repairing"}))))
             input_refs_are_valid = (
-                assignment.input_refs == (request_artifact_id,)
+                assignment.input_refs == analysis_refs
                 if role == "analyst"
                 else request_artifact_id in assignment.input_refs
             )
@@ -2266,6 +2290,10 @@ def project_scheduler_audit(
                     for artifact_id, document in artifact_documents.items()
                     if isinstance(document, dict)
                     and document.get("resultType") == "AnalystHandoff.v1"
+                    and (plan.policy_version < 6 or any(
+                        item["stage"] == "analyst" and item["outcome"] == "completed"
+                        and item["artifactId"] == artifact_id for item in prior_transitions
+                    ))
                 ]
                 if len(analyst_handoffs) > 1:
                     raise SchedulerAuditValidationError(
@@ -2389,6 +2417,7 @@ def project_scheduler_audit(
                 ) != _expected_analyst_transition(
                     assignment,
                     parsed_analyst,
+                    policy_version=plan.policy_version,
                 ):
                     raise SchedulerAuditValidationError(
                         "scheduler Analyst terminal cause is inconsistent"
@@ -2482,6 +2511,7 @@ def project_scheduler_audit(
                 expected_analyst = _expected_analyst_transition(
                     assignment,
                     parsed_analyst,
+                    policy_version=plan.policy_version,
                 )
                 if expected_analyst != ("completed", None) and not (
                     expected_analyst
@@ -2812,7 +2842,10 @@ def project_scheduler_audit(
                 for criterion in request.criteria
             )
             verification_status = str(parsed_verification["status"])
-            if frozen_diff is None:
+            if (plan.policy_version >= 6 and verification_status == "failed"
+                    and not _has_pending_executor_feedback(execution_record[2])):
+                expected_verifier_transition = ("failed", "verification_failed")
+            elif frozen_diff is None:
                 expected_verifier_transition = (
                     "inconclusive",
                     "frozen_diff_evidence_missing",
@@ -3522,8 +3555,8 @@ def _validate_commit_ready_against_audit(
     # review verdict. All other routes must retain the completed Reviewer
     # binding, and both routes still bind the request, matrix, and frozen diff.
     scoped_without_reviewer = (
-        audit.plan.rule_id in {"route.scoped_change", "route.verified_change"}
-        and audit.plan.stages == (DispatchStage.EXECUTOR, DispatchStage.VERIFIER)
+        audit.plan.rule_id in {"route.scoped_change", "route.verified_change", "route.analyzed_change"}
+        and DispatchStage.REVIEWER not in audit.plan.stages
     )
     if audit.plan.policy_version >= 5:
         routing = [document for _artifact, document in documents
@@ -4047,6 +4080,13 @@ class SchedulerAuditJournal:
                 raise SchedulerAuditValidationError(
                     "scheduler audit artifact index is incomplete"
                 )
+            if plan.policy_version >= 6:
+                routing = [document for artifact in artifacts
+                           if isinstance((document := json.loads(artifact.content)), dict)
+                           and document.get("resultType") == "ReviewRoutingDecision.v1"]
+                if len(routing) == 1:
+                    profile = replace(profile, analysis_requested=
+                                      "explicit_analysis_requested" in routing[0].get("reasons", ()))
             audit = project_scheduler_audit(
                 profile=profile,
                 plan=plan,

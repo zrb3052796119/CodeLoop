@@ -6,9 +6,9 @@ import os
 import math
 import time
 
-# No cumulative wall-clock cutoff unless explicitly configured. Existing
-# ancestor deadlines and cancellation always remain authoritative.
-DEFAULT_TASK_TIMEOUT_SECONDS = None
+# Unconfigured tasks have a cumulative wall-clock cutoff. Explicit None/zero
+# opts out; ancestor deadlines and cancellation always remain authoritative.
+DEFAULT_TASK_TIMEOUT_SECONDS = 900.0
 # Compatibility exports; explicit positive durations are no longer clamped.
 MIN_TASK_TIMEOUT_SECONDS = 0.001
 MAX_TASK_TIMEOUT_SECONDS = 86_400.0
@@ -25,17 +25,17 @@ class TaskDeadlineExceeded(RuntimeError):
 
 
 def task_timeout_seconds(context: object) -> float | None:
-    """Resolve an explicit timeout, preserving None/zero as unlimited."""
+    """Resolve the default timeout, preserving explicit None/zero as unlimited."""
     runtime = getattr(context, "_runtime", None)
-    runtime_value = None
+    runtime_value = DEFAULT_TASK_TIMEOUT_SECONDS
     if isinstance(runtime, dict):
         settings = runtime.get("task")
         if "taskTimeoutSeconds" in runtime:
             runtime_value = runtime["taskTimeoutSeconds"]
         elif "agentTaskTimeoutSeconds" in runtime:
             runtime_value = runtime["agentTaskTimeoutSeconds"]
-        elif isinstance(settings, dict):
-            runtime_value = settings.get("timeoutSeconds")
+        elif isinstance(settings, dict) and "timeoutSeconds" in settings:
+            runtime_value = settings["timeoutSeconds"]
     configured_env = os.environ.get("MINICODE_TASK_TIMEOUT_SECONDS")
     raw = configured_env if configured_env not in (None, "") else runtime_value
     if raw is None or raw == "":

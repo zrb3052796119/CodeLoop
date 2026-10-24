@@ -395,8 +395,8 @@ def test_default_turn_budget_does_not_reimpose_cumulative_limits() -> None:
     assert budget.max_cost_usd is None
 
 
-def test_default_task_does_not_invent_a_deadline() -> None:
-    assert DEFAULT_TASK_TIMEOUT_SECONDS is None
+def test_default_task_has_fifteen_minute_deadline() -> None:
+    assert DEFAULT_TASK_TIMEOUT_SECONDS == 900
 
 
 # --- P3: parallel verification checks ---------------------------------------
@@ -561,7 +561,7 @@ def test_structured_workflow_inlines_parallel_explore_into_analyst_prompt(
     assert analyst_prompts == []
     trace = routing.extract_scheduler_trace(result.output)
     assert trace is not None
-    assert trace["ruleId"] == "route.scoped_change"
+    assert trace["ruleId"] == "route.verified_change"
     assert "PRE-SURVEY" in executor_prompt_text
 
 

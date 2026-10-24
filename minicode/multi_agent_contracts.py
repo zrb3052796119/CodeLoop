@@ -664,6 +664,7 @@ class WorkflowRequest:
                 declared_coverage_complete
                 and (
                     not self.structured
+                    or (policy_version >= 6 and scope_clear)
                     or (
                         narrow_scope
                         and effective_risk == "low"

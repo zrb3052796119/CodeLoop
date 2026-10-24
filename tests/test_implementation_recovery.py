@@ -252,9 +252,10 @@ def _phase_fixture(*, used_tokens=419736, used_calls=18):
                                  reservation=reservation)
     worker = _WorkerCallBudget(shared, "executor", max_calls=36,
                                preserve_calls=1, preserve_tokens=19452)
+    # These cases exercise the explicit legacy quotas, not the continuous default.
     policy = ImplementationPhaseController(snapshot=worker.snapshot(), max_steps=36,
         now=0, deadline=600, analysis_complete=True, allow_test_completion=True,
-        require_structured_handoff=True)
+        require_structured_handoff=True, bounded=True)
     submit = ToolDefinition(name="executor_submit", description="existing result channel",
         input_schema={"type": "object"}, validator=lambda value: value,
         run=lambda _value, _context: ToolResult(ok=True, output="received"))

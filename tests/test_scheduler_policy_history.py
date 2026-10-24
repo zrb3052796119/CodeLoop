@@ -49,7 +49,7 @@ def test_original_policy2_reviewed_artifacts_remain_readable_after_optional_role
         request_document["request"], legacy_task_id=audit.task_id,
     )
     current_plan = CentralScheduler().plan(current_request.task_profile)
-    assert current_plan.policy_version == 5
+    assert current_plan.policy_version == 6
     assert current_plan.rule_id == "route.scoped_change"
     assert current_plan.stages == (
         DispatchStage.EXECUTOR, DispatchStage.VERIFIER, DispatchStage.REVIEWER,
@@ -81,7 +81,7 @@ def test_recorded_version_does_not_accept_reinterpreted_or_unknown_authority(
     if forgery == "profile":
         manifest["effectiveProfile"]["acceptanceExecutable"] = True
     else:
-        version = 5 if forgery == "current-version" else 6
+        version = 6 if forgery == "current-version" else 7
         manifest["dispatchPlan"]["policyVersion"] = version
         manifest["schedulerTrace"]["policyVersion"] = version
     manifest_path.write_text(

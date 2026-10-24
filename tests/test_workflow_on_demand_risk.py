@@ -9,6 +9,10 @@ import pytest
 
 from minicode.deterministic_verifier import DeterministicVerifier
 from minicode.permissions import PermissionManager
+from minicode.multi_agent_contracts import parse_workflow_request
+from minicode.workflow_review_policy import (
+    explicit_user_acceptance_commands, observe_review_scope, review_routing_decision,
+)
 from minicode.scheduler_trace import extract_scheduler_trace
 from minicode.tooling import ToolResult
 import minicode.tools.task as task_module
@@ -24,7 +28,7 @@ from test_workflow_v2_structured_routing import (
     "credentials", "acceptance-symlink", "acceptance-parent-symlink", "acceptance-hardlink",
     "keyword-selector",
 ])
-def test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions(tmp_path, monkeypatch, case):
+def test_host_scope_keeps_directory_and_alias_review_while_v6_allows_exact_new_files(tmp_path, monkeypatch, case):
     scope = {"directory": "src", "directory-with-suffix": "src.py", "new-file": "new.py",
              "permissions": "src/permissions.py", "payments": "payments.py",
              "credentials": "Credentials.ts", "keyword-selector": "tests/test_acceptance.py"}.get(case, "allowed.py")
@@ -49,6 +53,18 @@ def test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions(tmp_p
     else:
         (tmp_path / acceptance).write_text("def test_value():\n    assert True\n")
     roles = []
+    audits = []
+
+    class Sink:
+        def emit(self, *_args, **_kwargs):
+            pass
+
+        def record_scheduler_audit(self, audit):
+            audits.append(audit)
+            return True
+
+        def record_scheduler_commit_ready(self, _ready):
+            return True
 
     def worker(data, context):
         role = _worker_role(data)
@@ -67,17 +83,38 @@ def test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions(tmp_p
     request["scope"]["writePaths"] = [scope]
     argv = ["pytest", "-q", *(["-k"] if case == "keyword-selector" else []), acceptance]
     request["verificationChecks"][0]["argv"] = argv
+    parsed = parse_workflow_request(request, legacy_task_id="task_scope_risk")
+    user_request = "Update the file.\nAcceptance command: `" + " ".join(argv) + "`"
+    host_commands = explicit_user_acceptance_commands(user_request)
+    host_reasons = observe_review_scope(parsed, tmp_path, host_commands)
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(PermissionManager, "ensure_command", lambda *_args: None)
     verifier = DeterministicVerifier(command_runner=command_runner)
     monkeypatch.setattr(runner_module, "_deterministic_verifier_for_context", lambda *_a, **_k: verifier)
-    result = _run_request(tmp_path, request, event_sink=None,
-        user_request="Update the file.\nAcceptance command: `" + " ".join(argv) + "`")
+    result = _run_request(tmp_path, request, event_sink=Sink(),
+        user_request=user_request)
     trace = extract_scheduler_trace(result.output)
-    assert trace["ruleId"] != "route.verified_change", result.output
+    if case in {"new-file", "keyword-selector"}:
+        assert result.ok, result.output
+        assert trace["ruleId"] == "route.verified_change"
+        assert roles == ["executor"]
+        assert audits and audits[0].trace["committed"]
+    else:
+        assert trace["ruleId"] != "route.verified_change", result.output
+        if case.startswith("directory"):
+            assert "host_scope_unconfirmed" in host_reasons
+            assert roles == ["executor", "reviewer"]
+    old = review_routing_decision(
+        request=parsed, profile=parsed.task_profile_for_policy(5), workflow_id="wf_scope_risk",
+        request_digest="sha256:" + "a" * 64, objective_digest="sha256:" + "b" * 64,
+        base_digest="sha256:" + "c" * 64, user_request_digest=None,
+        user_review_requested=False, delegation_review_requested=False,
+        user_acceptance_commands=host_commands, host_scope_reasons=host_reasons, policy_version=5,
+    )
+    assert old["independentReviewRequired"] is True
     # Hardlink snapshots may break aliases and consequently fail the test;
     # they must nevertheless retain the independent review gate at admission.
-    if result.ok:
+    if result.ok and case not in {"new-file", "keyword-selector"}:
         assert "reviewer" in roles
 
 

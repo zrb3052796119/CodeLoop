@@ -62,7 +62,8 @@ _EXIT_AFTER_EXECUTOR = textwrap.dedent("""\
 
     with patch.object(task_module, '_run', worker), patch.object(DeterministicVerifier, 'run', verifier):
         _run(Path(workspace), _request(risk='low', complex=False), None,
-             event_sink=Sink(), commit_audit_waived=True)
+             event_sink=Sink(), commit_audit_waived=True,
+             prompt='Apply the structured request and review the resulting change.')
     raise AssertionError('next stage was not reached')
 """)
 

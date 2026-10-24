@@ -1,5 +1,6 @@
 """A resumed reviewer gets a current index without losing historical evidence."""
 
+import hashlib
 import json
 
 from test_implementation_completion_review import _fixture, _probe, _submit
@@ -17,8 +18,32 @@ def _read_all(tools, child, probe_id, **extra):
         page = json.loads(result.output)
         chunks.append(page["text"])
         if page["nextOffset"] is None:
-            return json.loads("".join(chunks))
+            document = json.loads("".join(chunks))
+            return (_read_display_original(tools, child, document)
+                    if document.get("displayOnly") is True else document)
         offset = page["nextOffset"]
+
+
+
+def _read_display_original(tools, child, view):
+    assert view["displayOnly"] is True
+    request = {"documentId": view["documentRef"], "candidateDigest": view["candidateDigest"]}
+    chunks = []
+    while True:
+        result = tools.execute("completion_evidence_read", request, child)
+        assert result.ok, result.output
+        page = json.loads(result.output)
+        assert page["displayOnly"] is True and "completeDelivered" not in page
+        chunks.append(page["text"])
+        if page["nextCursor"] is None:
+            raw = "".join(chunks)
+            assert "sha256:" + hashlib.sha256(raw.encode()).hexdigest() == view["originalDigest"]
+            original = json.loads(raw)
+            for key in ("probeId", "receiptRef", "historyReceiptCount"):
+                if key in view:
+                    assert original[key] == view[key]
+            return original
+        request = {"cursor": page["nextCursor"], "candidateDigest": view["candidateDigest"]}
 
 
 def test_reviewer_index_has_current_diagnostic_status_and_readable_full_history(tmp_path, monkeypatch):
@@ -28,7 +53,7 @@ def test_reviewer_index_has_current_diagnostic_status_and_readable_full_history(
     def diagnose(tools, child, packet):
         result, evidence = _probe(tools, child, packet, DIAGNOSTIC, purpose="diagnostic")
         assert not result.ok
-        saved.update(evidence)
+        saved.update(_read_display_original(tools, child, evidence))
         # An ordinary end is not approval; another attempt can read all evidence.
 
     try:
@@ -69,7 +94,7 @@ def test_current_receipt_view_does_not_mislabel_previous_candidate_evidence(tmp_
     def seed(tools, child, packet):
         result, evidence = _probe(tools, child, packet, DIAGNOSTIC, purpose="diagnostic")
         assert not result.ok
-        saved.update(evidence)
+        saved.update(_read_display_original(tools, child, evidence))
 
     try:
         assess(seed)

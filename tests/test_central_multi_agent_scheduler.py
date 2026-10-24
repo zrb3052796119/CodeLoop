@@ -89,6 +89,7 @@ def test_clear_low_risk_change_skips_unnecessary_analysis_and_review() -> None:
             complex=False,
             scope_clear=True,
             acceptance_executable=True,
+            independent_review_required=False,
         )
     )
 
@@ -96,7 +97,7 @@ def test_clear_low_risk_change_skips_unnecessary_analysis_and_review() -> None:
         DispatchStage.EXECUTOR,
         DispatchStage.VERIFIER,
     )
-    assert plan.rule_id == "route.scoped_change"
+    assert plan.rule_id == "route.verified_change"
 
 
 def test_high_risk_change_enforces_separated_analysis_execution_and_review() -> None:

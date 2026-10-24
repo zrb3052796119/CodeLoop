@@ -88,7 +88,20 @@ def test_unpassed_acceptance_is_identified_and_diagnostic_is_not_a_blocker(tmp_p
                 "import pytest\n@pytest.mark.skip(reason='execution unavailable')\ndef test_release():\n    assert True\n")
         failed, failed_receipt = _probe(tools, child, packet, code)
         assert not failed.ok and failed_receipt["receipt"]["status"] == unpassed
-        observed = blockers(_submit(tools, child, packet, ids=[pass_receipt["probeId"]]))
+        attempted_approval = _submit(tools, child, packet, ids=[pass_receipt["probeId"]])
+        if unpassed == "failed":
+            # Independent product-gap attribution commits a native negative
+            # before ordinary approval-field feedback. A successful submit
+            # transport does not mean the requested approval was accepted.
+            assert attempted_approval.ok
+            negative = json.loads(attempted_approval.output)
+            assert negative["status"] == "changes_required"
+            assert negative["reason"] == "confirmed_product_gap"
+            assert [probe["code"] for probe in negative["repairProbes"]] == [code]
+            assert diagnostic_receipt["probeId"] not in {probe["probeId"] for probe in negative["repairProbes"]}
+            assert any(row["verdict"] == "product_gap" for row in negative["failureAdjudications"])
+            return
+        observed = blockers(attempted_approval)
         assert observed["findings"] == [] and observed["uncoveredRequirements"] == []
         assert observed["unpassedRetainedProbes"] == [{"probeId": failed_receipt["probeId"], "status": unpassed}]
         assert not observed["missingRetainedAcceptance"]

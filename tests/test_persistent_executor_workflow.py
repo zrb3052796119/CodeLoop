@@ -157,7 +157,8 @@ def _exercise(tmp_path, monkeypatch, *, large_diff=False, repair=True, legacy_in
             result = _run_request(tmp_path, request, event_sink=observation,
                 user_request="Set the outcome to after.\nAcceptance command: `pytest -q test_acceptance.py`")
         else:
-            result = _run(tmp_path, request, monkeypatch, event_sink=observation, central_enforced=True)
+            result = _run(tmp_path, request, monkeypatch, event_sink=observation, central_enforced=True,
+                          prompt="Set the outcome to after, then independently review the repaired change.")
     # The gate feedback stays in one Assignment and one Session. The final
     # Reviewer still uses the workflow's existing ledger, not a fresh grant.
     executors = [entry for entry in workers if entry[0] == "executor"]

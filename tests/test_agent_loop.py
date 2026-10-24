@@ -1068,24 +1068,51 @@ def test_budget_exhaustion_falls_back_for_top_level_turn() -> None:
     assert "turn_budget_exceeded" in messages[-1]["content"]
 
 
-def test_model_timeout_records_failed_typed_outcome() -> None:
+def test_model_timeout_records_failed_typed_outcome(monkeypatch) -> None:
+    waits: list[float] = []
+    monkeypatch.setattr(
+        "minicode.agent_loop.controlled_retry_sleep",
+        lambda seconds, **_kwargs: waits.append(seconds),
+    )
+
     class TimeoutModel(ModelAdapter):
+        def __init__(self) -> None:
+            self.calls = 0
+
         def next(self, _messages, on_stream_chunk=None):
+            self.calls += 1
             raise TimeoutError("provider deadline")
 
+    events: list[tuple[str, int | None, dict]] = []
+
+    class RecordingSink:
+        def emit(self, event_type, *, step=None, payload=None) -> None:
+            events.append((event_type, step, dict(payload or {})))
+
+    model = TimeoutModel()
     capture = AgentOutcomeCapture()
 
     messages = run_agent_turn(
-        model=TimeoutModel(),
+        model=model,
         tools=ToolRegistry([]),
         messages=[{"role": "system", "content": "sys"}],
         cwd=".",
         outcome_capture=capture,
+        event_sink=RecordingSink(),
     )
 
-    assert "Model API timeout" in messages[-1]["content"]
+    # The default loop retries transient timeouts before reporting failure.
+    assert model.calls == 4
+    assert len(waits) == 3
+    failures = [payload for name, _, payload in events if name == "model.failed"]
+    assert len(failures) == 4
+    assert all(payload["failureKind"] == "timeout" for payload in failures)
+    assert messages[-1]["role"] == "assistant"
+    assert "Model transport failed" in messages[-1]["content"]
+    assert messages[-1]["_partial"] is True
     assert capture.outcome is not None
     assert capture.outcome.status == "failed"
+    assert capture.outcome.completion_succeeded is False
     assert capture.outcome.goal_achieved is False
 
 

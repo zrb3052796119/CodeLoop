@@ -73,12 +73,18 @@ def _public_workflow(
     *,
     request: dict | None = None,
     mailbox: SubagentMailbox | None = None,
+    analysis_requested: bool = False,
+    review_requested: bool = False,
 ) -> tuple[ToolResult, SchedulerAudit, SchedulerCommitReady | None]:
     payload = {
         "description": "implement the bounded change",
         "prompt": "Change allowed.txt from before to after; preserve other files.",
         "agent_type": "workflow",
     }
+    if analysis_requested:
+        payload["prompt"] += " Analyze first."
+    if review_requested:
+        payload["prompt"] += " Review the resulting change."
     if request is None:
         payload.update(
             write_paths=["allowed.txt"],
@@ -124,7 +130,8 @@ def test_parent_and_plan_guidance_do_not_make_plan_a_write_prerequisite(
     tmp_path: Path,
 ) -> None:
     guide = build_system_prompt(str(tmp_path))
-    assert "call agent_type='workflow' directly" in guide
+    assert "For delegated changes, call workflow directly with write_paths and verification_commands" in guide
+    assert "or an explicit workflow_request" in guide
     assert "Do not routinely run Plan first" in guide
     assert f"within {task_module._WORKFLOW_PROMPT_MAX_CHARS} characters" in guide
     assert "authorized paths and verification argv in their dedicated fields" in guide
@@ -193,6 +200,7 @@ def test_one_workflow_keeps_risk_routing_and_durable_commit_gates(
     )
     result, audit, ready = _public_workflow(
         workspace, tmp_path / "journal", request=request,
+        analysis_requested=route == "reviewed", review_requested=True,
     )
 
     assert (workspace / "unrelated.txt").read_text(encoding="utf-8") == "preserved"
@@ -243,6 +251,7 @@ def test_freeform_plan_cannot_replace_required_analyst_evidence(
     )
     result, audit, ready = _public_workflow(
         workspace, tmp_path / "journal", request=_request(), mailbox=mailbox,
+        analysis_requested=True,
     )
     assert result.ok is False
     assert roles and set(roles) == {"analyst"}
@@ -308,6 +317,7 @@ def completed_workflow(
     result, audit, ready = _public_workflow(
         workspace, tmp_path / "journal",
         request=_request(risk="medium") if request.param == "reviewed" else None,
+        analysis_requested=request.param == "reviewed", review_requested=True,
     )
     assert result.ok is True
     assert ready is not None

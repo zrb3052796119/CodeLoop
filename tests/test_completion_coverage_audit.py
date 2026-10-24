@@ -299,9 +299,14 @@ def test_full_authority_is_saved_without_duplicating_receipt_history_in_initial_
     assert result["status"] == "inconclusive"
     packet = _coverage_packet(requests[0])
     assert set(packet["proposal"]) == {"status", "requirements", "findings"}
-    authority = json.loads(Path(result["authorityRef"]).read_text())
+    assert result["reason"] == "coverage_audit_interrupted" and result["auditPending"]
+    # An interrupted attempt has no decision receipt. Its actual request still
+    # binds the immutable authority saved before the native audit started.
+    authority_path = Path(packet["authorityRef"])
+    assert authority_path in [path for kind, path in case["saved"] if kind == "coverage-audit-authority"]
+    authority = json.loads(authority_path.read_text())
     assert authority["proposal"] == case["proposal"]
-    assert packet["proposalDigest"] == result["proposalDigest"]
+    assert packet["proposalDigest"] == authority["proposalDigest"]
     assert "old execution" not in json.dumps(requests[0]["messages"])
 
 

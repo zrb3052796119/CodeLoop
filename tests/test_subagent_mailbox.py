@@ -177,11 +177,21 @@ def test_workflow_parallel_explore_writes_mailbox_and_feeds_plan(
     assert types.count("plan") == 2
     assert types.count("general") == 1
     assert all(item[2] == 1 for item in captured)
-    # Phases share the workflow's single attribution view, which delegates
-    # to the shared budget (see the workflow token-attribution change).
-    assert all(item[3] is captured[0][3] for item in captured)
-    captured[0][3].record_model_call(input_tokens=7, output_tokens=3)
-    assert budget.snapshot().used_total_tokens == 10
+    # The scheduler gives the Executor its own view; the legacy read-only
+    # phases reach this mocked runner before task._run creates their leaf views.
+    # Both paths still debit the same workflow and parent ledger.
+    executor_budget = next(item[3] for item in captured if item[0] == "general")
+    workflow_budget = next(item[3] for item in captured if item[0] == "explore")
+    assert executor_budget.attribution_key != workflow_budget.attribution_key
+    executor_reservation = executor_budget.reserve_model_call(7)
+    executor_budget.record_model_call(input_tokens=7, output_tokens=3, reservation=executor_reservation)
+    workflow_reservation = workflow_budget.reserve_model_call(11)
+    workflow_budget.record_model_call(input_tokens=11, output_tokens=5, reservation=workflow_reservation)
+    assert executor_budget.attributed_tokens() == (7, 3)
+    assert workflow_budget.attributed_tokens() == (18, 8)
+    assert budget.snapshot().used_total_tokens == 26
+    assert budget.snapshot().used_model_calls == 2
+    assert all(item[3].snapshot().used_total_tokens == 26 for item in captured)
     for key in (
         "workflow_explore_architecture",
         "workflow_explore_tests",

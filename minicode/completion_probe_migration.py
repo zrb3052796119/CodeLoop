@@ -515,6 +515,7 @@ class CompletionProbeMigration:
             run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
                 messages=messages, context_manager=manager, runtime=host._runtime,
                 max_steps=None, agent_budget=host._agent_budget, budget_exhausted_policy="raise",
+                max_retries_override=0 if host._completion_review_limits is not None else None,
                 cancellation_token=host._cancellation_token, deadline_monotonic=host._task_deadline_monotonic,
                 event_sink=Observation(), agent_depth=host._agent_depth + 1,
                 implementation_task=False, implementation_spec=None, enable_implementation_phases=False,

@@ -204,7 +204,7 @@ def test_same_executor_reads_complete_stderr_across_review_repair_and_delivers(t
     with observe_run(workspace=tmp_path, source="headless", title="output readback integration",
                      journal_factory=lambda root: RunJournal(root, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run({"description": "repair value", "agent_type": "workflow",
-            "prompt": "Make value() return 3 and add regression coverage.", "workflow_request": request},
+            "prompt": "Make value() return 3 and add regression coverage. Independently review the change.", "workflow_request": request},
             ToolContext(cwd=str(tmp_path), _runtime={"model": "scripted-local"}, _agent_budget=AgentTurnBudget(),
                         _event_sink=observation, _central_workflow_v2_enforced=True))
         run_id = observation.run_id

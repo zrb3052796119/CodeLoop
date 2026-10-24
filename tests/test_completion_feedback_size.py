@@ -232,10 +232,13 @@ def failed_native_handoff(tmp_path, monkeypatch, request):
                 view = _execution_view(value)
                 assert view["displayOnly"] and "cases" not in view
                 assert "assert 7 == 10" in canonical(value)
-                chosen = _call("reject-gap", "completion_review_submit", {"status": "changes_required",
-                    "requirements": [{"id": identity, "status": "missing", "probeIds": [],
-                        "sourceEvidence": [{"path": "stock.py", "startLine": 4, "endLine": 185}],
-                        "rationale": "release returns the original stock instead of adding the amount."} for identity in ids],
+                # Request attribution of the failed probe. An independently
+                # source-backed missing row instead returns immediately, and
+                # intentionally does not make this test assertion authoritative.
+                chosen = _call("reject-gap", "completion_review_submit", {"status": "inconclusive",
+                    "requirements": [{"id": identity, "status": "unknown", "probeIds": [],
+                        "sourceEvidence": [],
+                        "rationale": "The failed combined probe requires independent attribution."} for identity in ids],
                     "findings": ["release(7, 3) must add the amount; the test reports assert 7 == 10."]})
         else:
             assert not {"write_file", "executor_check", "completion_review_submit"} & names
@@ -277,7 +280,12 @@ def test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evi
     assert document["reviewState"]["receipts"][0]["receipt"] == original["probeReceipts"][0]["receipt"]
     feedback = next(message for message in saved if message.get("_implementation_completion_feedback"))
     assert feedback.get("_completion_evidence_original")
-    assert canonical(original) in feedback["_completion_evidence_original"]
+    assert original["completionReview"] == "rejected" and original["requirementsAccepted"] is False
+    # Display classification belongs to the event envelope. The authenticated
+    # feedback bytes retain the native decision used by continuation validation.
+    native = {key: value for key, value in original.items()
+              if key not in {"completionReview", "requirementsAccepted"}}
+    assert canonical(native) in feedback["_completion_evidence_original"]
     assert case["observed"]["reader"].completed[0] == original["probeReceipts"][0]["receipt"]["testReport"]["executionReport"]
     assert case["commands"] and all(command["cwd"] != case["tmp_path"]
         and not command["cwd"].exists() for command in case["commands"])

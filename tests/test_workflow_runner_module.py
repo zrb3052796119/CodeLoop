@@ -71,7 +71,9 @@ def test_workflow_finalization_uses_a_frozen_snapshot_and_narrow_ports() -> None
     from minicode import workflow_finalization
 
     parameters = inspect.signature(workflow_finalization.finalize_workflow).parameters
-    assert tuple(parameters) == ("snapshot", "ports")
+    assert tuple(parameters) == ("snapshot", "ports", "evidence_note")
+    assert parameters["evidence_note"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert parameters["evidence_note"].default == ""
 
     snapshot_type = workflow_finalization._WorkflowFinalizationSnapshot
     ports_type = workflow_finalization._WorkflowFinalizationPorts
@@ -304,6 +306,9 @@ def test_workflow_session_has_one_mutable_authority_state() -> None:
         "_executor_session",
         "_continuation_used_calls",
         "_continuation_candidates",
+        "_verification_outputs",
+        "_usage_counts",
+        "_usage_lock",
     }
     state_type = workflow_runner._WorkflowExecutionState
     assert state_type.__dataclass_params__.frozen is False
@@ -324,6 +329,7 @@ def test_workflow_session_seal_revokes_every_execution_capability(tmp_path) -> N
     session._run_subagent = object()
     continuation = ExecutorSession(owner=session, workspace_root=str(tmp_path))
     session._executor_session = continuation
+    session._verification_outputs = None
 
     session._seal_execution_capabilities()
 
