@@ -11,7 +11,7 @@
 - 冻结新 controller / cybernetic / memory_* 模块及新 gate。
 - Phase 1 先测量，按 go/no-go 决定是否抽取；Phase 2 先预注册真实任务验收条件。
 - 用户已指定 Phase 2 主模型 GLM 5.3 Flash，不设 API 费用上限；仍记录每次运行成本和停止条件。
-- 未给出私人笔记库目的地，个人 Markdown 退库后保留为本地忽略文件，不发布笔记正文。
+- 个人 Markdown 已退库并迁入本地私人笔记目录；临时恢复备份保留，不上传笔记正文或私人目录。
 
 ## 进展
 
@@ -25,7 +25,7 @@
 - [x] P0 已合入并原子推送：main 与开发分支一并推至 `ff2f18ea`，含通过的 P0 源码和验收文档；其后 Phase 2 冻结记录 `ab17ca7e` / `ea31eed2` 已另行推送开发分支。后续 P1 修复候选尚未合入 main。
 - [x] P0 源码内的 Phase 3 整理：指定杂物、个人文件、4 份可复现大报告归档；当时保留 8 份测试/回放大输入；license 来源核验与 mock 文档修正。
 - [x] Phase 1 D1/D2、生产抽取及独立审阅完成；8 份 pinned 输入已独立归档。首次合并候选 `eb17c62a5510` 全量结束：14,932 passed / 1 failed / 8 skipped / 3 warnings，2889.76 秒；唯一失败是 hot-store 累计等待测试的 `200.36325 ms < 200 ms` 墙钟断言。
-- [ ] Phase 1 go：两次本机完整尝试均已结束且失败；后续修复已提交。旧候选 `1decc813` 的 CI `40124691703` 已启动；后续两项 fixture 已修，下一候选完整 CI 待启动，不能用定向通过替代。
+- [ ] Phase 1 go：两次本机完整尝试均已结束且失败；后续修复已提交。旧候选 `1decc813` 的 CI `40124691703` 已结束：四个正式 runtime job 中3个通过，macOS 3.11新增1项 fixture 失败，该项已定点修复。历史候选 `fd485a56` 的 CI `40127563208` 仍在运行，未含本次修订；下一候选完整 CI 待启动，不能用定向通过替代。
 - [x] Phase 2 准备包与 runner 适配已提交：16 个真实历史任务、32 个配对 cell、92 项历史 oracle 检查、114 项 runner 离线回归。
 - [x] Phase 2 旧冻结已撤销实付运行用途并保留审计；transport 单独修复进入实验分支 `8b15640a`，`minicode` 仍为 P0，任务内容、顺序和验收条件不变。
 - [ ] Phase 2 实付运行：Phase 2 r2 已受控停止并保留为 5 完成 / 1 中断未判分 / 26 未运行的 pilot；补齐公开契约的 r3 注册与冻结已发布并启动，使用 `b32718a7…`，不合并新旧成绩。 详情见[r2 处置](real-task-comparison-r2-pilot-2026-10-25.md)与[r3 注册](real-task-comparison-r3-2026-10-25.md)。
@@ -38,7 +38,7 @@
 - 搜索 16 项失败由未显式 opt-in bounded phase 引起；生产连续搜索语义保持不变。新增越界哨兵和连续模式对照。
 - Memory 的 12 项失败来自未冻结 v41 候选闭包漏列两个已实际修改的来源；当时显式补齐25项，不改40份历史 manifest、不授权 v41 激活。
 - 已在冻结 R2 证明三个独立污染源并修复来源：父进程 session 全局路径未恢复；旧双臂 runner 修改共享 `task` 定义；lazy-import 测试破坏工具模块缓存身份。分别保留最小前导红例、仅变污染源的绿例及原受害测试；不据此外推原报告所有 workflow 失败。
-- 个人笔记已退库、仍在原路径本地忽略。三个指定杂物与旧 `.repair-work` 已移到本机临时恢复归档；必要测试依赖先迁出后再整理。
+- 个人笔记已退库并移出工作区，保存于本地私人笔记目录；临时恢复备份保留，原忽略规则不变。三个指定杂物与旧 `.repair-work` 已移到本机临时恢复归档；必要测试依赖先迁出后再整理。
 - Phase2 已确认配置模型名称为 `glm-5.3-flash`（custom provider）；不在文档输出凭证。
 
 - 原有 memory 依赖闭包已提交；551 项相关测试通过。原有新增模块属试行前 WIP，不作为冻结期间增加模块的先例。
@@ -64,9 +64,10 @@
 - CI `40118490617`（macOS 3.12）与 `40120281015`（Ubuntu 3.12）的 caller 失败暴露同一测试前提缺口：60ms caller 期限在 transport 初始化前开始，15ms heartbeat wait 也不保证实际间隔低于 50ms idle。本次仅用局部时钟和真实 reader/queue/SQLite 握手建立这些前提，保留 caller/idle/cancel、精确计账与关闭断言，并补已过期 caller 不计未开始请求的反例；生产与脚本仍同 `8fba3787` / `715dd122`。最终字节相关 **113 passed / 4.91 秒**，含恢复后本文件 **15 passed / 0.91 秒**，不相加；四个合成控制/计账故障均被拒绝，不称历史生产 bug。两次 CI 原迹、受控前后证明、无效尝试及最终独立只读审查见[请求时序证据包](../artifacts/governance-trial-2026-10-24/continuous-request-timing-proofs/README.md)。最新版完整 CI 仍待完成，不据此宣称 Phase 1 go；ROOT 与 Phase 2 输入未改。
 - 同一旧 CI `40121258480`（macOS 3.12，PR head `715dd122`、实际 merge `d793e1e6`）另有 **14,960 passed / 2 failed / 8 skipped**。两项均修测试前提：取消后的 parent 返回不代表已运行回调全部结束，最终 fixture 先验证取消和单次模型调用，再独立清理并等待两工具 body；观测端口的 20ms 预算不等于整个 workflow 的 500ms 墙钟承诺，最终 fixture 用局部 clock 与真实 worker 握手检查 typed timeout、容量占用、late result 和 audit replay。取消全文件 **37 passed / 1.18 秒**；观测邻接 **18 passed / 1.07 秒**，单节点重复不叠加。每项最终字节各拒绝三个合成故障，不能称六个历史产品 bug。原 CI raw/XML 共存一份，中间自动释放 fixture、被覆盖的首版 receipt 与缓存/lint 失败原迹均保留；两项独立只读审查无阻塞，见[取消与最终观测证据包](../artifacts/governance-trial-2026-10-24/ci-cancellation-observation-proofs/README.md)。
 - 本轮仅改上述两项测试，生产内容摘要仍为 `4ce824100db5350ba47aae0bdd96bc74ed3a09948cdfb08195a39abfee4a35a7`。root 只读核对既有 quality 的 **439 个输入文件全部逐字节相同**，本轮两测试不在该集合内，因此继续引用已归档 current **88/88**、a **57/57**、各 **0 API** 的原执行记录；没有重跑 quality，也不由源码相同推断新 fixture 或完整 CI 已验收。ROOT 与 Phase 2 r3 冻结输入未改。
+- 旧 `1decc813` CI `40124691703` 的 macOS 3.11完整结果为 **14,962 passed / 1 failed / 8 skipped**（seed48）：`test_failed_write_candidate_continuation.py` 把并发 formal check 完成顺序误当请求顺序，实际 `[1,0]` 触发 fake Executor 内断言。本次仅改该 fixture，按 assignmentId/patchDigest 分轮并绑定 checkId/实际请求 argv，仍拒绝重复、缺失和错配；未排序裸退出码，原 nonformal 串行检查、同会话、预算、独立 review 及持久 audit 断言保留。相同生产和受控反序下，旧 fixture **1 failed / 2.05 秒**；最终两个参数在受控/自然顺序分别 **2 passed / 10.54 秒**、**2 passed / 10.52 秒**（局部seed `20261024`），是同2用例重复执行、不可累加。7类人工观测记录错配仅证明最终 helper 与模型外断言的敏感性，不称历史产品bug；root只读复核无阻塞，详见[失败写入续跑顺序证据](../artifacts/governance-trial-2026-10-24/failed-write-order-proofs/README.md)。生产与脚本未改；root再次核对quality的439输入全同，当前测试不在该集合内，继续复用原quality记录而未重跑。原CI交错未知，不将受控反例称为精确重放；包含本修订的完整CI仍待。
 - 历史离线 quality（PTY 修复前）为 current **88/88**、a **57/57**，两次 remote calls 均为 0；执行前后核验的 `minicode/**/*.py` 内容集合 SHA-256 均为 `fff5e4db7d261650dd431587dd0bbb6c016474bc6ecada3555679b7b3d1fd3f8`，对应本次 PTY 修复前的源码；该摘要不覆盖新增的 PTY 改动。元数据的 HEAD 为当时的 `3c844a39`，实际源码摘要包含随后提交的修复；这是离线开发集重放，不能凭相同生产字节推断完整测试或新的 transport 路径已通过验收。
 - 当前离线 quality 已在 P1 HEAD `715dd1226ef6994990283994ab8db9293185b176` 加请求时序 fixture（SHA-256 `f73325d0f18305d10cee66b636f7aa118c39020fc19589c2a1610065864852ce`）上各执行一次：current **88/88 / 14.28 秒**、a **57/57 / 15.06 秒**，两次 remoteCallCount 均为 **0**。运行前后 439 个源码/脚本/fixture 文件 SHA 映射相同；其中 319 个 `minicode/**/*.py` 的生产内容集合 SHA-256 为 `4ce824100db5350ba47aae0bdd96bc74ed3a09948cdfb08195a39abfee4a35a7`，已覆盖 PTY 修复。原始 JSON stdout、空 stderr、元数据、来源映射、实际 wrapper 及摘要计算口径见[本次 quality 证据包](../artifacts/governance-trial-2026-10-24/phase1-post-policy-quality/README.md)。这是离线开发集重放，不是模型任务成绩，两个 profile 范围不累加；最新版完整 CI 仍待完成，不以这些结果替代 Phase 1 完整验收。
-- 旧 `3c844a39` 原生 Windows 包检查通过的事实保持原范围，不代表完整套件通过。旧候选 `1decc8134528aa9795f32deab58493a288153c02` 的 [CI run `40124691703`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40124691703) 已启动，本次更新时仍在运行，其结果保持原候选身份。本轮其后发现的两项 fixture 已修复，但不在该运行内；**包含两项修订的下一候选完整 CI 尚待启动，Phase 1 go 继续 pending**。正式验收按用户批准的[平台范围](platform-support.md)：Linux/macOS × Python 3.11/3.12 四个完整随机 runtime job，以及六个 OS/Python job 的安装、编译、lint、离线质量与包检查；原生 Windows 完整套件保留为独立失败可见诊断，不能写成全平台通过。
+- 旧 `3c844a39` 原生 Windows 包检查通过的事实保持原范围，不代表完整套件通过。旧候选 `1decc8134528aa9795f32deab58493a288153c02` 的 [CI run `40124691703`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40124691703) 已结束：四个正式 runtime job 中3个通过，macOS 3.11新增1项检查完成顺序 fixture 失败。该项已定点修复；历史候选 `fd485a5630a82be3f4fc9392662022b859a0e4d5` 的 [CI run `40127563208`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40127563208) 仍在运行，未含本次修订。**下一候选完整 CI 尚待启动，Phase 1 go 继续 pending**。正式验收按用户批准的[平台范围](platform-support.md)：Linux/macOS × Python 3.11/3.12 四个完整随机 runtime job，以及六个 OS/Python job 的安装、编译、lint、离线质量与包检查；原生 Windows 完整套件保留为独立失败可见诊断，不能写成全平台通过。
 - Phase 2 的首次冻结 `987f7cf3…` 在零模型试次时撤销，其后 [r2 冻结](../artifacts/governance-trial-2026-10-24/phase2-freeze-r2/README.md) `32dacc25…` 因公开契约缺口受控停止：**5 次完成、1 次中断未判分、26 次未运行**，固定分母与原始记录保留为 [r2 不完整试跑](real-task-comparison-r2-pilot-2026-10-25.md)，不倒填成功或合并成绩。用户确认补齐公开契约后重新执行完整一轮；[r3 注册](../artifacts/governance-trial-2026-10-24/phase2-preparation-r3/README.md)、[冻结](../artifacts/governance-trial-2026-10-24/phase2-freeze-r3/README.md)和旧试跑处置已在首个 API 调用前随 `f41a9006`、`48a8216487b2951ca15e442a76629ee9e824047d` 发布。**r3 已启动，当前冻结 manifest 为 `b32718a77f1680cf2d7d465d655a95bdcdcf5c6c745c3d30e1b9e430193d3b01`；本轮结果待执行结束后按预定 32 次汇总。** 两组仍为 GLM 5.3 Flash、同一顺序和限制；产品维持 P0，评测器含 r2 transport 修复，不含 P1 抽取或后来的 PTY 修复。执行树继续冻结至报告，既有 92/114 离线检查不计模型成绩；[r3 说明](real-task-comparison-r3-2026-10-25.md)保留事后修订及读范围暴露等解释限制。
 
 ## 用户批准的 v2 方案
