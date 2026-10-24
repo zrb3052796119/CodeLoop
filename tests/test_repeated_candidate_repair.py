@@ -1,6 +1,6 @@
 """A second actionable failure must keep the same candidate and Executor.
 
-Local worker token slices produce real admission stops, while the shared ledger
+Local worker call slices produce real admission stops, while the shared ledger
 retains ample allowance. Model decisions are scripted; edits, pytest, frozen
 candidates, formal verification, review and durable audit use production paths.
 This is a mechanism regression, not a replay of provider usage or model quality.
@@ -20,7 +20,7 @@ from minicode.permissions import PermissionManager
 from minicode.run_journal import RunJournal
 from minicode.run_lifecycle import observe_run
 from minicode.scheduler_trace import extract_scheduler_trace
-from minicode.tooling import ToolContext, ToolRegistry
+from minicode.tooling import ToolContext, ToolRegistry, ToolResult
 from minicode.tools import task as task_module
 from minicode.tools.edit_file import edit_file_tool
 from minicode.tools.read_file import read_file_tool
@@ -38,7 +38,7 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
     (tmp_path / "test_candidate.py").write_text(TEST)
     budget = AgentTurnBudget(max_model_calls=40, max_total_tokens=500000)
     deadline = time.monotonic() + 1800
-    calls, billed, workers, adapters, commands = [], [], [], [], []
+    calls, billed, workers, adapters, commands, review_receipts = [], [], [], [], [], []
     original_worker = task_module._run
 
     def run_worker(data, context):
@@ -52,15 +52,39 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
                 # A strict local slice must not spend the rest of the workflow
                 # grant. Its exhaustion is real, not a synthetic worker result.
                 context = replace(context, _agent_budget=_WorkerCallBudget(
-                    context._agent_budget, f"test_slice_{number}", max_calls=30, preserve_calls=0,
-                    max_tokens=7800 if number == 1 else 12500))
+                    context._agent_budget, f"test_slice_{number}", max_calls=1, preserve_calls=0))
             if number >= 2:
                 assert (Path(context.cwd) / "candidate.py").read_text() == PARTIAL
                 expected = BAD_TEST if number == 2 else REPAIRED_TEST
                 assert (Path(context.cwd) / "test_none.py").read_text() == expected
         workers.append({"role": context._logical_agent_role, "session": data.get("_executor_session"),
                         "budget": budget.snapshot(), "deadline": context._task_deadline_monotonic})
+        if context._logical_agent_role == "analyst":
+            # Script only semantic diagnosis. Actual formal failures, frozen
+            # source and the assigned ledger channel remain authoritative.
+            formal = [item for item in commands if item["formal"]]
+            assert formal and formal[-1]["exit"] in {1, 2}
+            assert target.read_text() == INITIAL
+            assert (Path(context.cwd) / "candidate.py").read_text() == PARTIAL
+            bad_fixture = formal[-1]["exit"] == 2
+            test_source = (Path(context.cwd) / "test_none.py").read_text()
+            assert test_source == (BAD_TEST if bad_fixture else REPAIRED_TEST)
+            assignment = json.loads(data["prompt"].split("ASSIGNMENT:\n", 1)[1])
+            repair_path = "test_none.py" if bad_fixture else "candidate.py"
+            diagnosis = ("The regression imports nonexistent missing_fixture; repair that test import."
+                if bad_fixture else "The public None regression now executes and exposes the missing None behavior.")
+            context._subagent_mailbox.write(data["_result_key"], json.dumps({
+                "resultVersion": 1, "assignmentId": assignment["assignmentId"],
+                "status": "completed", "findings": [{"claimId": "current_failure", "statement": diagnosis,
+                    "evidence": [{"path": repair_path, "lineStart": 1, "lineEnd": 1}], "confidence": "high"}],
+                "unknowns": [], "risks": [], "implementationOrderCandidate": {
+                    "required": True, "steps": [{"id": "repair_current_failure", "action": diagnosis,
+                        "allowedPaths": [repair_path]}], "verificationRequests": []}, "ballot": None,
+            }), author="analyst")
+            return ToolResult(ok=True, output=diagnosis)
         result = original_worker(data, context)
+        if context._logical_agent_role == "executor" and number <= 2:
+            assert context._agent_budget.admitted_model_calls == 1
         workers[-1]["result"] = {"ok": result.ok, "reason": str(result._termination_reason), "output": result.output[:1500]}
         return result
 
@@ -121,14 +145,26 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
             if self.requests == 1:
                 actions = [call("read_file", {"path": "candidate.py"}, "review-source"),
                            call("read_file", {"path": "test_none.py"}, "review-tests")]
+            elif self.requests == 2:
+                actions = [call("review_test", {"criterionIds": ["trim", "none"],
+                    "scenario": "Whitespace normalization and None handling satisfy both requested behaviors.",
+                    "code": REPAIRED_TEST}, "independent-review-probe")]
             else:
-                assert self.requests == 2
+                assert self.requests == 3
+                probe_result = next(message for message in messages
+                    if message.get("role") == "tool_result" and message.get("toolUseId") == "independent-review-probe")
+                receipt, _ = json.JSONDecoder().raw_decode(probe_result["content"].lstrip())
+                assert not probe_result.get("isError") and receipt["status"] == "passed"
+                assert receipt["evidence"]["exitCode"] == 0
+                review_receipts.append(receipt)
                 assert any(message.get("toolUseId") == "review-source" and "if value is None:" in message.get("content", "")
                            for message in messages if message.get("role") == "tool_result")
                 assert any(message.get("toolUseId") == "review-tests" and "test_none" in message.get("content", "")
                            for message in messages if message.get("role") == "tool_result")
                 actions = [call("review_submit", {"verdict": "approved",
-                    "criteria": [{"criterionId": cid, "status": "satisfied"} for cid in ("trim", "none")],
+                    "criteria": [{"criterionId": cid, "status": "satisfied",
+                        "rationale": "The independent normalization and None probe passed on this candidate.",
+                        "probeIds": [receipt["probeId"]], "sourceEvidence": []} for cid in ("trim", "none")],
                     "findings": [], "warnings": [], "requestedChecks": [], "confidence": "high"}, "review-deliver")]
             return response(messages, tools, actions)
 
@@ -175,13 +211,13 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
     with observe_run(workspace=tmp_path, source="headless", title="repeated same-Executor repair",
                      journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run({"description": "finish both public behaviors", "agent_type": "workflow",
-            "prompt": "Strip whitespace and return an empty string for None, including a public regression test.",
+            "prompt": "Strip whitespace and return an empty string for None, including a public regression test. Independently review the resulting change.",
             "workflow_request": request}, ToolContext(cwd=str(tmp_path), _runtime={"model": "local-fixture", "modelTimeoutSeconds": 300},
                 _agent_budget=budget, _task_deadline_monotonic=deadline, _event_sink=observation,
                 _central_workflow_v2_enforced=True))
         run_id = observation.run_id
     trace = extract_scheduler_trace(result.output)
-    assert trace is not None
+    assert trace is not None, result.output
     snapshot = budget.snapshot()
     print(json.dumps({"usageSource": "estimated", "usedTokens": snapshot.used_total_tokens,
         "usedCalls": snapshot.used_model_calls, "globalTokens": snapshot.limit_total_tokens,
@@ -192,13 +228,16 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
     assert snapshot.used_model_calls == len(calls)
     assert snapshot.limit_total_tokens == 500000 and snapshot.limit_model_calls == 40
     assert snapshot.reserved_total_tokens == 0
-    assert snapshot.used_total_tokens < 150000 and snapshot.used_model_calls <= 6
+    assert snapshot.used_total_tokens < 150000 and snapshot.used_model_calls == 7
     assert time.monotonic() < deadline - 120
     assert [item["exit"] for item in commands if item["formal"]][:4] == [0, 2, 0, 1]
     assert result.ok and trace["committed"], (
         "The second actionable failure stopped despite ample unchanged budget and the same candidate:",
         trace["terminalReason"], snapshot.used_total_tokens, snapshot.used_model_calls,
     )
+    assert len(review_receipts) == 1
+    assert len(result.output) <= 8000
+    assert '"traceProjection": "compacted"' in result.output
     assert target.read_text() == COMPLETE
     assert (tmp_path / "test_none.py").read_text() == REPAIRED_TEST
     assert [kind for kind, _ in adapters].count("general") == 1
@@ -211,6 +250,18 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
     reloaded = RunJournal(tmp_path, data_dir=data_dir)
     audit = reloaded.get_scheduler_audit(run_id, trace["workflowId"])
     assert audit is not None and audit.trace["committed"]
+    full_transitions = audit.trace["transitions"]
+    assert sum(item["outcome"] == "repairing" for item in full_transitions) == 2
+    assert any(item["stage"] == "analyst" and item["outcome"] == "completed"
+               for item in full_transitions)
+    assert not any(item["stage"] == "analyst" for item in trace["transitions"])
+    for stage in ("executor", "verifier", "reviewer"):
+        latest = [item for item in full_transitions
+                  if item["stage"] == stage and item["outcome"] == "completed"][-1]
+        projected = [item for item in trace["transitions"]
+                     if item["stage"] == stage and item["outcome"] == "completed"]
+        assert len(projected) == 1
+        assert projected[0]["artifactId"] == latest["artifactId"]
     assert reloaded.get_scheduler_commit_ready(run_id, trace["workflowId"]) is not None
     sessions = [event.payload for child in reloaded.list_subagent_runs(run_id)
                 for event in reloaded.list_subagent_events(run_id, child.subagent_id)

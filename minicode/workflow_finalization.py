@@ -925,10 +925,18 @@ def _project_compact_trace(
             # parent-facing projection may show the final effective chain,
             # but must never splice old approvals into the revised patch.
             last_repair = repair_indices[-1]
+            first_executor = next(
+                index for index, item in enumerate(source)
+                if item.get("stage") == "executor"
+            )
             source = [
                 item for index, item in enumerate(source)
                 if index > last_repair
-                or item.get("stage") in {"analyst", "human", "adjudicator"}
+                # Keep the original plan's prerequisites. A diagnostic Analyst
+                # after an earlier failure belongs to that omitted repair round;
+                # retaining it without its failed Verifier makes an invalid trace.
+                or (index < first_executor
+                    and item.get("stage") in {"analyst", "human", "adjudicator"})
             ]
     required_indices = {len(source) - 1}
     completed_by_stage: dict[str, int] = {}
