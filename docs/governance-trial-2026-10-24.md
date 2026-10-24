@@ -30,7 +30,7 @@
 - [x] Phase 2 旧冻结已撤销实付运行用途并保留审计；transport 单独修复进入实验分支 `8b15640a`，`minicode` 仍为 P0，任务内容、顺序和验收条件不变。
 - [ ] Phase 2 实付运行：r2 冻结已随 `2706e00e` 发布，32 个正式 cell 已启动；截至本次状态更新尚无 completed 结果。旧 `987f7cf3…` manifest 已撤销，当前使用 `32dacc25…`，详情见[任务预注册](real-task-comparison-2026-10-24.md)。
 
-旧 `3cadcb75` 的 Windows 完整 CI 另有系统性平台失败：Python 3.11 为 13,222 passed / 1,390 failed / 246 errors / 112 skipped，3.12 为 13,217 passed / 1,395 failed / 246 errors / 112 skipped。主簇涉及可信 Git 查找、POSIX 文件权限/信号和路径契约；当前仓库仍承诺 Windows 支持，正在独立分类，未批量跳过、未改支持范围。上述 Windows 打包步骤通过不能代替完整平台验收。
+旧 `3cadcb75` 的 Windows 完整 CI 另有系统性平台失败：Python 3.11 为 13,222 passed / 1,390 failed / 246 errors / 112 skipped，3.12 为 13,217 passed / 1,395 failed / 246 errors / 112 skipped。主簇涉及可信 Git 查找、POSIX 文件权限/信号和路径契约。用户已明确批准本期正式支持 Linux/macOS、原生 Windows 标为实验性，并保留完整失败诊断与移植清单；[平台范围](platform-support.md)和独立 Windows diagnostic workflow 已据此更新。未批量跳过或将失败改成成功，Windows 打包步骤通过仍不能代替完整平台验收。
 
 ## 新发现与已执行决策
 

@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "classification": "Historical failed native-Windows diagnostics only; no current-candidate acceptance, no Windows support-policy change, no GO conclusion, and no repair claimed by this bundle.",
+  "ciRunId": 40114448888,
+  "prHead": "3cadcb7584526b41af7cc928d6c58d5bb19d8ea5",
+  "actualCheckedOutMergeRef": "5d3f61f77361dc107cb8bb2cc23e582563c16fcc",
+  "jobs": {
+    "windows-311": 120932734066,
+    "windows-312": 120932734106
+  },
+  "originalOutcomes": {
+    "windows-311": {
+      "skipped": 112,
+      "error": 246,
+      "passed": 13222,
+      "failure": 1390
+    },
+    "windows-312": {
+      "skipped": 112,
+      "error": 246,
+      "passed": 13217,
+      "failure": 1395
+    }
+  },
+  "archive": "proofs.tar.gz",
+  "archiveSha256": "fba5b7867d3099799290e38c92b1c70f2f6cc937fe7e05acfa566b9607442dfc",
+  "archiveBytes": 6114696,
+  "rawBytes": 54442111,
+  "entryCount": 21,
+  "deterministicArchive": "sorted USTAR regular files, mode0644 uid/gid/mtime0 empty owner names; gzip mtime0 empty filename, compression level6; single low-priority compression pass, no repeat-compression claim",
+  "restorationVerification": {
+    "allMembersRestored": true,
+    "memberBytesEqualOriginals": true,
+    "memberSha256MatchesManifest": true,
+    "memberCount": 21
+  },
+  "policyStatus": "The A/B platform-scope decision is pending the user. No CI matrix, skip, acceptance policy, README support promise or production code was changed to create this bundle.",
+  "entries": [
+    {
+      "path": "ci/windows-311-job-120932734066.json",
+      "bytes": 4181,
+      "sha256": "077e8c77d6c8db6471bb41b9a55d2b1e094e1fa0f7dbd35e55437050f0cd15b7"
+    },
+    {
+      "path": "ci/windows-311-job-120932734066.log",
+      "bytes": 15472399,
+      "sha256": "cc0f41b816f0ac0cc08e341de0e8404291bc0df6bae5b94feac81ae608a8e0ad"
+    },
+    {
+      "path": "ci/windows-311-pytest-results.xml",
+      "bytes": 10668832,
+      "sha256": "55b70af27897b1fc32bd189863a5ef0790d4f3005dda8c86fa31bd8ea92586ef"
+    },
+    {
+      "path": "ci/windows-311-readonly-triage.json",
+      "bytes": 7949,
+      "sha256": "0ea410ad760b7f7d8bd21e3e0faa0b8732c11b21ccb461e93d2204c7acab7907"
+    },
+    {
+      "path": "ci/windows-312-job-120932734106.json",
+      "bytes": 4177,
+      "sha256": "8669a4bfb17858593272d84b2e2661baaf73eebf295bed87d04555eea816efeb"
+    },
+    {
+      "path": "ci/windows-312-job-120932734106.log",
+      "bytes": 15464620,
+      "sha256": "d4cfb1137794bb917d3f5e86deb2c0e730a40d87c5e2258368c09a93a7cc078b"
+    },
+    {
+      "path": "ci/windows-312-pytest-results.xml",
+      "bytes": 10666842,
+      "sha256": "54817fba19fb9282aab5e76312f07a3cd951088f50b69964d6d3298833df77d6"
+    },
+    {
+      "path": "ci/windows-312-readonly-triage.json",
+      "bytes": 7998,
+      "sha256": "bf9001de75915c57cfca845107daa638308afdc57fd95d2bc9d4274cce3b141e"
+    },
+    {
+      "path": "classification/classify.py",
+      "bytes": 3064,
+      "sha256": "ddeb68164192c09a4f36c53d10d7bffda59e5e62d73d0183d692d181aad7f8a0"
+    },
+    {
+      "path": "classification/residual-examples.json",
+      "bytes": 4815,
+      "sha256": "626ca8529502476983ceed995e1f4e12295be1c9b3f14edb3941559e20a5365d"
+    },
+    {
+      "path": "classification/source-comparison.json",
+      "bytes": 3484,
+      "sha256": "a70316c99aa2085d8725eee834f9aa2a7e2440b68ca461375e8869ec77ae111d"
+    },
+    {
+      "path": "classification/windows-311-classified.json",
+      "bytes": 79397,
+      "sha256": "a2c744203b13a4253b454d91132e60eab707ff2cd516231f22c105a00455fe2f"
+    },
+    {
+      "path": "classification/windows-311-events.json",
+      "bytes": 950537,
+      "sha256": "710e9233e94d78f2664c3253c31ed722ae86b62e9cd8298c971d54175ecbe83e"
+    },
+    {
+      "path": "classification/windows-312-classified.json",
+      "bytes": 79124,
+      "sha256": "71d29de054d2157453882c22c42e8c1675f4150f5373c79efd4f7b722a03426e"
+    },
+    {
+      "path": "classification/windows-312-events.json",
+      "bytes": 957604,
+      "sha256": "f9fcbc56b31cc29ccb3d48030f4d62f7cc71a36257c6b8c45c586a08a1898731"
+    },
+    {
+      "path": "contracts/README-pr-head-3cad.md",
+      "bytes": 35619,
+      "sha256": "3cedf441f041311319612072dcf4de5688faebc8a7adeacea37787817958c0dc"
+    },
+    {
+      "path": "contracts/ci-initial-3036dd76.yml",
+      "bytes": 994,
+      "sha256": "a44e07f7bae33b481468d52fe5ab897306e192887a4d18215406e3c41cc3345d"
+    },
+    {
+      "path": "contracts/ci-pr-head-3cad.yml",
+      "bytes": 2138,
+      "sha256": "4501be24ca7a4d835cd3a12687f572db4b1fdd11ccbf50d70dabc7a5f292e537"
+    },
+    {
+      "path": "contracts/contract-evidence.json",
+      "bytes": 17134,
+      "sha256": "a1b71f159ebd8ba2060b90b9dfa2f351dadd65dba58232a0e9357d3f8d1bb191"
+    },
+    {
+      "path": "contracts/pyproject-pr-head-3cad.toml",
+      "bytes": 1355,
+      "sha256": "053adbdeb1af4579474a7020c0a0e821492e515d1662c837b6fccbc3bf6ad505"
+    },
+    {
+      "path": "decision/Windows-platform-decision.md",
+      "bytes": 9848,
+      "sha256": "805afaa54ba9566c9847c0639a540e2cb22003fde9e8102e01c6bff7e5c992a4"
+    }
+  ]
+}

@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    name: ${{ matrix.os == 'windows-latest' && 'Experimental package checks' || 'Full runtime' }} / Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -51,11 +51,19 @@ jobs:
         run: python scripts/check_clean_archive_package.py
 
       - name: Run test suite
+        if: runner.os != 'Windows'
         # Changes per CI run, remains identical across its OS/Python matrix and
         # retries, and is printed by pytest-randomly for exact reproduction.
         env:
           PYTEST_RANDOMLY_SEED: ${{ github.run_number }}
         run: python -m pytest -ra --randomly-seed=${{ env.PYTEST_RANDOMLY_SEED }} --junitxml=pytest-results.xml
+
+      - name: State experimental Windows scope
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          'This job checks installation, compile/lint, offline quality, packaging, entry-point imports and the committed archive. It does not accept the full native Windows runtime.' >> $env:GITHUB_STEP_SUMMARY
+          'The separate Windows runtime diagnostics workflow runs the complete unfiltered suite and keeps failures visible. See docs/platform-support.md.' >> $env:GITHUB_STEP_SUMMARY
 
       - name: Upload test results
         if: always()

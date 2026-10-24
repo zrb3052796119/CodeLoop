@@ -123,4 +123,4 @@ Phase 2 的 [16 个历史任务准备包](../artifacts/governance-trial-2026-10-
 本轮先记录成本，不新增 gate。开发时用变更相关单测（秒级）和有明确边界的集成回归（分钟级）；PR/合并候选保留随机全量。本轮 P0 实测 pytest 53 分 51.54 秒，外层 53 分 54.411 秒；历史约 34 分钟不能代替此次成本。后续拆档应由实际测试耗时和隔离依赖决定，不能凭文件名把慢测试整体豁免。
 
 
-旧 `3cadcb75` 的 Windows 完整 CI 另有系统性平台失败：Python 3.11 为 13,222 passed / 1,390 failed / 246 errors / 112 skipped，3.12 为 13,217 passed / 1,395 failed / 246 errors / 112 skipped。主簇涉及可信 Git 查找、POSIX 文件权限/信号和路径契约；当前仓库仍承诺 Windows 支持，正在独立分类，未批量跳过、未改支持范围。上述 Windows 打包步骤通过不能代替完整平台验收。
+旧 `3cadcb75` 的 Windows 完整 CI 另有系统性平台失败：Python 3.11 为 13,222 passed / 1,390 failed / 246 errors / 112 skipped，3.12 为 13,217 passed / 1,395 failed / 246 errors / 112 skipped。主簇涉及可信 Git 查找、POSIX 文件权限/信号和路径契约。用户已明确批准本期正式支持 Linux/macOS、原生 Windows 标为实验性，并保留完整失败诊断与移植清单；[平台范围](platform-support.md)和独立 Windows diagnostic workflow 已据此更新。未批量跳过或将失败改成成功，Windows 打包步骤通过仍不能代替完整平台验收。
