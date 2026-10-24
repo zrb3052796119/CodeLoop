@@ -1,10 +1,23 @@
 """Explicit long-request policy, using real adapters and only local fake HTTP."""
 
 import json
+import threading
 import time
 from dataclasses import asdict, replace
+from types import SimpleNamespace
 
 import pytest
+from test_evaluation_transport import (
+    DONE,
+    MESSAGES,
+    RUNTIME,
+    TEXT,
+    USAGE,
+    ScriptedResponse,
+    config,
+    event,
+)
+from test_reviewer_result_submission import _bound
 
 from minicode import openai_adapter as adapter
 from minicode.agent_budget import AgentTurnBudget
@@ -18,17 +31,6 @@ from scripts.evaluation_transport import (
     EvaluationTransport,
     TransportConfig,
 )
-from test_evaluation_transport import (
-    config,
-    ScriptedResponse,
-    event,
-    TEXT,
-    USAGE,
-    DONE,
-    MESSAGES,
-    RUNTIME,
-)
-from test_reviewer_result_submission import _bound
 
 
 def _unlimited(tmp_path, **kwargs):
@@ -74,20 +76,51 @@ def test_none_request_deadline_survives_real_adapter_and_stream(tmp_path, monkey
 def test_none_total_deadline_keeps_actual_idle_owner_and_cancellation(
     tmp_path, monkeypatch, guard
 ):
-    stream = ScriptedResponse(
-        [b": heartbeat\n\n"] * 100, delay=0.015 if guard != "idle" else 0.2
-    )
+    from minicode import model_call_control
+    from scripts import evaluation_transport
+
+    # Model elapsed receive time explicitly: setup/SQLite/runner scheduling must
+    # not decide which guard wins. Keep the real adapter, reader, queue and ledger.
+    clock = SimpleNamespace(now=time.monotonic())
+    local_time = SimpleNamespace(monotonic=lambda: clock.now, time=time.time)
+    for module in (adapter, model_call_control, evaluation_transport):
+        monkeypatch.setattr(module, "time", local_time)
+    first_consumed = threading.Event()
+    received_at = []
+    intervals = iter([0.03, 0.031] if guard == "caller" else [0.051])
+
+    class TimedResponse(ScriptedResponse):
+        def read1(self, _amount):
+            if guard == "caller" and len(received_at) == 1:
+                assert first_consumed.wait(2), "first heartbeat was not consumed"
+            gap = next(intervals, None)
+            if gap is None:
+                self.closed.wait(2)
+                return b""
+            clock.now += gap
+            received_at.append(clock.now)
+            return b": heartbeat\n\n"
+
+    original_update = evaluation_transport.SharedLedger.update
+
+    def update(ledger, call, fields):
+        result = original_update(ledger, call, fields)
+        if fields.get("lastByteSeconds") is not None:
+            first_consumed.set()
+        return result
+
+    monkeypatch.setattr(evaluation_transport.SharedLedger, "update", update)
+    stream = TimedResponse([])
     token = TurnCancellationToken("turn_" + "a" * 32)
+    opened = []
 
     def http(*args, **kwargs):
+        opened.append(True)
         if guard == "cancel":
             token.request()
         return stream
 
     monkeypatch.setattr(adapter, "open_verified_url", http)
-    kwargs = {"cancellation_token": token}
-    if guard == "caller":
-        kwargs["deadline_monotonic"] = time.monotonic() + 0.06
     expected = {
         "idle": EvaluationIdleTimeout,
         "caller": ModelCallDeadlineExceeded,
@@ -96,11 +129,45 @@ def test_none_total_deadline_keeps_actual_idle_owner_and_cancellation(
     with EvaluationTransport(
         _unlimited(tmp_path, idle_timeout_seconds=0.05)
     ) as transport:
+        started = clock.now
+        kwargs = {"cancellation_token": token}
+        if guard == "caller":
+            kwargs["deadline_monotonic"] = started + 0.06
         with pytest.raises(expected):
             adapter.OpenAIModelAdapter(dict(RUNTIME), None).next(MESSAGES, **kwargs)
         snap = transport.ledger.snapshot()
-    assert snap["failed"] == snap["unknownUsageCalls"] == 1
+    assert len(opened) == snap["started"] == snap["failed"] == snap["unknownUsageCalls"] == 1
+    assert snap["requests"][0]["errorClass"] == expected.__name__
     assert stream.closed.wait(1)
+    if guard == "caller":
+        # Both actual receive gaps are below the unchanged 50ms idle bound;
+        # only the 60ms caller deadline has elapsed on the second heartbeat.
+        assert first_consumed.is_set() and len(received_at) == 2
+        assert received_at[0] - started < 0.05
+        assert received_at[1] - received_at[0] < 0.05
+        assert received_at[1] >= kwargs["deadline_monotonic"]
+    elif guard == "idle":
+        assert len(received_at) == 1 and received_at[0] - started > 0.05
+    else:
+        assert received_at == []
+
+
+def test_expired_caller_deadline_does_not_count_an_unstarted_request(tmp_path, monkeypatch):
+    opened = []
+
+    def http(*args, **kwargs):
+        opened.append(True)
+        raise AssertionError("an expired caller must not open HTTP")
+
+    monkeypatch.setattr(adapter, "open_verified_url", http)
+    with EvaluationTransport(_unlimited(tmp_path)) as transport:
+        with pytest.raises(ModelCallDeadlineExceeded):
+            adapter.OpenAIModelAdapter(dict(RUNTIME), None).next(
+                MESSAGES, deadline_monotonic=time.monotonic() - 1,
+            )
+        snap = transport.ledger.snapshot()
+    assert opened == [] and snap["requests"] == []
+    assert snap["started"] == snap["failed"] == snap["unknownUsageCalls"] == 0
 
 
 @pytest.mark.parametrize(

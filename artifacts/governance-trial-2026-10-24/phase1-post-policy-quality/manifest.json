@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "classification": "Two completed offline quality runs; no new execution, live-model outcome or full-suite acceptance",
+  "archive": "proofs.tar.gz",
+  "archiveSha256": "6bc31baf72f6ecda3a3671691166e508d97cf8a756d43aa684dc115307004d2a",
+  "archiveBytes": 49006,
+  "rawBytes": 137622,
+  "entryCount": 10,
+  "head": "715dd1226ef6994990283994ab8db9293185b176",
+  "fixtureSha256": "f73325d0f18305d10cee66b636f7aa118c39020fc19589c2a1610065864852ce",
+  "productionMinicodeContentSha256": "4ce824100db5350ba47aae0bdd96bc74ed3a09948cdfb08195a39abfee4a35a7",
+  "deterministicArchive": "sorted USTAR regular files; mode0644 uid/gid/mtime0 empty owner names; gzip mtime0 empty filename; repeat pack identical",
+  "restorationVerification": {
+    "allMembersRestored": true,
+    "memberBytesEqualOriginals": true,
+    "memberCount": 10
+  },
+  "entries": [
+    {
+      "path": "a-meta.json",
+      "bytes": 735,
+      "sha256": "f37155ad5c8b0387db8e148aec6cb3ba7ceccbd363901402afbcecdd4eeee381"
+    },
+    {
+      "path": "a.json",
+      "bytes": 16013,
+      "sha256": "79509b846f6a866391917ec8185ea068c471aaede055776c9113b1b2fb539985"
+    },
+    {
+      "path": "a.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "current-meta.json",
+      "bytes": 745,
+      "sha256": "c3eb31a9dcf36725c30fc6cc4a633f2656872599f8edaafb75a499376acc6ab4"
+    },
+    {
+      "path": "current.json",
+      "bytes": 21151,
+      "sha256": "fefd8af7a493d11c97b4b9e73caddf1bc2a9e1c5df3948164604bdb22274e1d6"
+    },
+    {
+      "path": "current.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "packaging-verification.json",
+      "bytes": 1086,
+      "sha256": "6d3892009cf64b1514504421fae44d4caf067dc5f76e870ddd80937697cfc948"
+    },
+    {
+      "path": "run_phase1_post_policy_quality.py",
+      "bytes": 2428,
+      "sha256": "547df8a0bef2e97e70fa7e96f4c20fe96dff440d3c9a72b138a9108f263076c5"
+    },
+    {
+      "path": "source-after.json",
+      "bytes": 47732,
+      "sha256": "40e75eb600c6779aafa5b79e1f5364527d7404e41ca97c03c9e69664fc1a139e"
+    },
+    {
+      "path": "source-before.json",
+      "bytes": 47732,
+      "sha256": "40e75eb600c6779aafa5b79e1f5364527d7404e41ca97c03c9e69664fc1a139e"
+    }
+  ]
+}
