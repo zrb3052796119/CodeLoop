@@ -5,18 +5,21 @@ Only the review loop boundary is driven directly; checks and probes run real
 managed pytest processes with the verifier's disposable HOME and workspaces.
 """
 
+import hashlib
 import json
 from pathlib import Path
 import sys
 
 import pytest
 
+from minicode.coverage_audit_state import record_document
 from minicode.deterministic_verifier import DeterministicVerifier, VerificationCheck
 from minicode.implementation_completion_review import ImplementationCompletionReview
 from minicode.implementation_execution import ImplementationSpec, direct_verification_capability
 from minicode.permissions import PermissionManager
 from minicode.tooling import ToolContext, ToolRegistry
 from minicode.tools.read_file import read_file_tool
+from test_completion_coverage_audit import _inspection_step
 from test_implementation_completion_review import _DeliveredRegistry, _coverage_approval, _coverage_probe_ids
 
 
@@ -60,13 +63,28 @@ def inventory(tmp_path, monkeypatch):
         def drive(**values):
             tools = values["tools"]
             child = ToolContext(cwd=values["cwd"], permissions=values["permissions"])
+            if "completion_coverage_inspection_submit" in tools.list_all():
+                calls.append("inspection_boundary")
+                tools = _DeliveredRegistry(tools, values["context_manager"].messages)
+                while True:
+                    step = _inspection_step(values["context_manager"].messages, tools)
+                    assert step is not None and len(step.calls) == 1
+                    call = step.calls[0]
+                    result = tools.execute(call["toolName"], call["input"], child)
+                    assert result.ok, result.output
+                    if call["toolName"] == "completion_coverage_inspection_submit":
+                        assert json.loads(result.output)["grantsCoverage"] is False
+                        return
             if "completion_coverage_audit_submit" in tools.list_all():
                 tools = _DeliveredRegistry(tools, values["context_manager"].messages)
                 calls.append("coverage_boundary")
                 assert set(tools.list_all()) == {
                     "read_file", "review_test", "review_probe_read", "review_evidence_read",
                     "completion_coverage_audit_submit", "completion_evidence_read"}
-                packet = json.loads(values["messages"][1]["content"])
+                packets = [json.loads(message["content"]) for message in values["messages"]
+                           if message.get("role") == "user" and '"evidenceIndex"' in message.get("content", "")]
+                assert len(packets) == 1
+                packet = packets[0]
                 sources = {}
                 for probe_id in _coverage_probe_ids(packet):
                     offset, pages = 0, []
@@ -191,7 +209,7 @@ def test_stale_candidate_check_receipt_cannot_reach_approval(inventory):
 
 
 def test_current_protocol_can_recover_by_downgrading_unproved_coverage(inventory):
-    _root, _review, _checks, _context, ids, assess, _calls = inventory
+    root, review, _checks, _context, ids, assess, calls = inventory
     failed_probe = []
 
     def driver(tools, child):
@@ -205,7 +223,21 @@ def test_current_protocol_can_recover_by_downgrading_unproved_coverage(inventory
 
     result = assess(driver)
     assert result["status"] == "changes_required"
-    assert result["reason"] == "confirmed_product_gap"
+    # Accepting the downgraded proposal preserves the independent authority;
+    # its outer decision need not copy the adjudicator's reason code.
+    assert calls == ["review_boundary", "adjudication_boundary"]
+    assert len(review.state["failureAdjudications"]) == 1
+    authority = review.state["failureAdjudications"][0]
+    assert authority["verdict"] == "product_gap"
+    assert authority["oldProbeId"] == failed_probe[0]
+    assert authority["candidateDigest"] == result["patchDigest"]
+    assert authority["objectiveEvidence"] == [{"startLine": 2, "endLine": 2,
+        "lineDigest": "sha256:" + hashlib.sha256(b"2. release adds the amount.").hexdigest()}]
+    assert authority["sourceEvidence"] == [{"path": "stock.py", "startLine": 4, "endLine": 5,
+        "sourceDigest": "sha256:" + hashlib.sha256((root / "stock.py").read_bytes()).hexdigest(),
+        "lineDigest": "sha256:" + hashlib.sha256(b"def release(n, amount):\n    return n\n").hexdigest()}]
+    persisted = json.loads(Path(authority["adjudicationRef"]).read_text())
+    assert persisted == {key: value for key, value in authority.items() if key != "adjudicationRef"}
     assert {item["id"] for item in result["requirements"]} == set(ids)
     assert all(item.get("status") != "covered" for item in result["requirements"])
     assert result["probeReceipts"][0]["probeId"] == failed_probe[0]
@@ -223,8 +255,21 @@ def test_fully_evidenced_correct_candidate_can_still_be_approved(inventory):
             "scenario": "Independent inventory behavior", "code": PROBE}, child)
         assert evidence.ok, evidence.output
         receipt = json.loads(evidence.output)
+        assert receipt["receipt"]["status"] == "passed"
         result = submit(tools, child, [row(identity, "covered", probes=[receipt["probeId"]]) for identity in ids],
                         status="approved")
         assert result.ok and result._implementation_submitted, result.output
-    assert assess(driver)["status"] == "approved"
-    assert calls == ["review_boundary", "coverage_boundary"]
+    result = assess(driver)
+    assert result["status"] == "approved"
+    audit = result["coverageAudit"]
+    assert audit["status"] == "approved" and audit["inspectionVersion"] == 1
+    inspection = record_document(audit["inspectionRecord"])
+    assert inspection["phase"] == "reconciliation"
+    assert inspection["result"]["status"] == "ready_for_evidence"
+    assert len(inspection["reads"]) == 1
+    read = inspection["reads"][0]
+    assert read["path"] == "stock.py"
+    assert read["sourceDigest"] == "sha256:" + hashlib.sha256((root / "stock.py").read_bytes()).hexdigest()
+    assert read["result"]["isError"] is False
+    assert "return n + amount" in read["result"]["content"]
+    assert calls == ["review_boundary", "inspection_boundary", "coverage_boundary"]
