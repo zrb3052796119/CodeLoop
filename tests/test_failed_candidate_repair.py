@@ -1,17 +1,19 @@
 """Definite failed checks remain evidence for independent verification and repair.
 
-The model is a deterministic local adapter. Files, pytest, task/worker loops,
-shared budgets, durable audit and promotion use production paths. No completed
+The models are deterministic local adapters; Analyst diagnosis is a semantic
+boundary fixture. Files, pytest, Executor/Reviewer loops, shared budgets,
+durable audit and promotion use production paths. No completed
 Executor declaration is invented and no provider usage is claimed.
 """
 
-from copy import deepcopy
-from dataclasses import replace
 import json
-from pathlib import Path
 import sys
 import time
+from copy import deepcopy
+from dataclasses import replace
+from pathlib import Path
 
+import pytest
 
 from minicode.agent_budget import AgentTurnBudget
 from minicode.context_manager import estimate_message_tokens, estimate_tokens
@@ -19,13 +21,16 @@ from minicode.deterministic_verifier import DeterministicVerifier
 from minicode.permissions import PermissionManager
 from minicode.run_journal import RunJournal
 from minicode.run_lifecycle import observe_run
+from minicode.scheduler_audit import (
+    SchedulerAuditValidationError,
+    project_scheduler_audit,
+)
 from minicode.scheduler_trace import extract_scheduler_trace
-from minicode.tooling import ToolContext, ToolRegistry
+from minicode.tooling import ToolContext, ToolRegistry, ToolResult
 from minicode.tools import task as task_module
 from minicode.tools.edit_file import edit_file_tool
 from minicode.tools.read_file import read_file_tool
 from minicode.types import AgentStep, ModelUsage
-
 
 INITIAL = "def normalize(value):\n    return value\n"
 PARTIAL = "def normalize(value):\n    return value.strip()\n"
@@ -53,8 +58,17 @@ def _exercise(tmp_path, monkeypatch, *, mode):
     prefix_tokens, prefix_calls = [0], [0]
     calls, commands, adapters, workers, billed = [], [], [], [], []
     input_estimates = []
+    review_receipts = []
     deadline = time.monotonic() + 600
     original_run = task_module._run
+    original_turn = task_module.run_agent_turn
+
+    def bounded_turn(**kwargs):
+        # This spent-prefix scenario exercises bounded output shrinking and
+        # checked-candidate handoff under the original finite worker allowance.
+        return original_turn(**{**kwargs, "bounded_implementation_phases": True})
+
+    monkeypatch.setattr(task_module, "run_agent_turn", bounded_turn)
 
     def observe_worker(data, context):
         ledger = context._agent_budget
@@ -64,6 +78,29 @@ def _exercise(tmp_path, monkeypatch, *, mode):
         workers.append({"role": context._logical_agent_role,
                         "session": data.get("_executor_session"),
                         "budget": context._agent_budget})
+        if context._logical_agent_role == "analyst":
+            # Isolate the newly required semantic diagnosis, after the real
+            # formal check failed and before the original Executor resumes.
+            assert any(c["formal"] and c["exit"] == 4 for c in commands)
+            assert target.read_text() == INITIAL
+            assert (Path(context.cwd) / "candidate.py").read_text() == COMPLETE
+            assert not (Path(context.cwd) / "test_required_missing.py").exists()
+            assignment = json.loads(data["prompt"].split("ASSIGNMENT:\n", 1)[1])
+            context._subagent_mailbox.write(data["_result_key"], json.dumps({
+                "resultVersion": 1, "assignmentId": assignment["assignmentId"],
+                "status": "completed", "findings": [{
+                    "claimId": "missing_regression",
+                    "statement": "The source handles None but the assigned regression file is absent.",
+                    "evidence": [{"path": "candidate.py", "lineStart": 1, "lineEnd": 4}],
+                    "confidence": "high",
+                }], "unknowns": [], "risks": [], "implementationOrderCandidate": {
+                    "required": True, "steps": [{"id": "restore_regression",
+                        "action": "Create the assigned regression test and rerun the approved checks.",
+                        "allowedPaths": ["test_required_missing.py"]}],
+                    "verificationRequests": [],
+                }, "ballot": None,
+            }), author="analyst")
+            return ToolResult(ok=True, output="Diagnosed the actual missing regression file.")
         return original_run(data, context)
 
     def metered(messages, tools, tool_calls):
@@ -122,26 +159,33 @@ def _exercise(tmp_path, monkeypatch, *, mode):
             self.count += 1
             calls.append(("reviewer", deepcopy(messages)))
             tools = tools_override or self.tools
-            native_only = {t.name for t in tools.list()} == {"review_submit"}
-            if self.count == 1 and not native_only:
+            if self.count == 1:
                 actions = [tool("read_file", {"path": "candidate.py"}, "review-source")]
+            elif self.count == 2:
+                actions = [tool("review_test", {
+                    "criterionIds": ["trim", "none"],
+                    "scenario": "Normalize surrounding whitespace and handle None with an empty string.",
+                    "code": REPAIRED_TEST,
+                }, "independent-normalize-probe")]
             else:
-                assert self.count == 2 or native_only
-                if native_only:
-                    # The real tail tool view permits only the conclusion.
-                    # Its candidate packet is already present; no fabricated
-                    # read or extra work request is needed for this toy case.
-                    source = "\n".join(str(m.get("content", "")) for m in messages)
-                    assert "candidate.py" in source
-                else:
-                    source = next(m["content"] for m in reversed(messages)
-                                  if m.get("role") == "tool_result" and m.get("toolUseId") == "review-source")
+                assert self.count == 3
+                source = next(m["content"] for m in reversed(messages)
+                              if m.get("role") == "tool_result" and m.get("toolUseId") == "review-source")
+                feedback = next(m for m in messages if m.get("role") == "tool_result"
+                                and m.get("toolUseId") == "independent-normalize-probe")
+                receipt, _ = json.JSONDecoder().raw_decode(feedback["content"].lstrip())
+                assert not feedback.get("isError") and receipt["status"] == "passed"
+                assert receipt["evidence"]["exitCode"] == 0
+                review_receipts.append(receipt)
                 complete = "if value is None:" in source
                 assert target.read_text() == INITIAL, "Reviewer cannot observe premature parent writeback."
                 actions = [tool("review_submit", {
                     "verdict": "approved" if complete else "changes_required",
-                    "criteria": [{"criterionId": "trim", "status": "satisfied"},
-                                 {"criterionId": "none", "status": "satisfied" if complete else "failed"}],
+                    "criteria": [{"criterionId": identity,
+                        "status": "satisfied" if complete else "failed",
+                        "rationale": "The independent normalization probe passed on this candidate.",
+                        "probeIds": [receipt["probeId"]], "sourceEvidence": []}
+                        for identity in ("trim", "none")],
                     "findings": [] if complete else [{"criterionIds": ["none"], "statement": FINDING}],
                     "warnings": [], "requestedChecks": [], "confidence": "high",
                 }, "real-review-verdict")]
@@ -175,7 +219,8 @@ def _exercise(tmp_path, monkeypatch, *, mode):
                 kwargs["checks"] = tuple(replace(c, timeout_seconds=1)
                     if c.check_id == "missing" else c for c in kwargs["checks"])
             result = super().run(**kwargs)
-            commands.extend({"exit": c["exitCode"], "cwd": kwargs["cwd"],
+            commands.extend({"checkId": c["checkId"], "assignmentId": kwargs["execution_assignment_id"],
+                             "exit": c["exitCode"], "cwd": kwargs["cwd"],
                              "formal": formal, "status": c["status"],
                              "failureReason": next(e.get("failureReason") for e in evidence if e["checkId"] == c["checkId"]),
                              "parent": target.read_text()} for c in result["checks"])
@@ -226,7 +271,7 @@ def _exercise(tmp_path, monkeypatch, *, mode):
     with observe_run(workspace=tmp_path, source="headless", title="checked candidate local proof",
                      journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run({"description": "check candidate delivery",
-            "prompt": "Update normalize: strip surrounding whitespace and return an empty string for None.",
+            "prompt": "Update normalize: strip surrounding whitespace and return an empty string for None. Review the resulting change.",
             "agent_type": "workflow", "workflow_request": request},
             ToolContext(cwd=str(tmp_path), _runtime={"model": "local-fixture"}, _agent_budget=budget,
                         _task_deadline_monotonic=deadline, _central_workflow_v2_enforced=True,
@@ -248,6 +293,8 @@ def _exercise(tmp_path, monkeypatch, *, mode):
         assert audit.trace["committed"] == trace["committed"]
         trace = audit.trace
         if result.ok:
+            assert [w["role"] for w in workers].count("analyst") == 1
+            assert len(review_receipts) == 1 and review_receipts[0]["status"] == "passed"
             documents = [json.loads(artifact.content) for artifact in audit.artifacts]
             candidates = [d for d in documents if d.get("resultType") == "ExecutionCandidate.v1"]
             assert candidates and all(d["status"] == "awaiting_verification" for d in candidates)
@@ -277,7 +324,13 @@ def test_definite_failed_candidate_runs_formal_verifier_and_same_executor_repair
     assert result.ok and trace["committed"], (
         "Definite failed candidate never reached formal verification and same-session repair:",
         trace["terminalReason"], [c["exit"] for c in commands])
-    assert sorted(c["exit"] for c in commands) == [0, 0, 0, 0, 0, 0, 1, 4, 4]
+    reviewer_dispatch = next(t for t in trace["transitions"]
+                             if t["stage"] == "reviewer" and t["outcome"] == "dispatched")
+    public_checks = [c for c in commands if c["assignmentId"] != reviewer_dispatch["assignmentId"]]
+    assert {c["checkId"] for c in public_checks} == {"public", "missing"}
+    assert sorted(c["exit"] for c in public_checks) == [0, 0, 0, 0, 0, 0, 1, 4, 4]
+    probes = [c for c in commands if c["assignmentId"] == reviewer_dispatch["assignmentId"]]
+    assert len(probes) == 1 and probes[0]["exit"] == 0
     assert sorted(c["exit"] for c in commands if c["formal"]) == [0, 0, 0, 4]
     assert target.read_text() == COMPLETE
     assert (tmp_path / "test_required_missing.py").read_text() == REPAIRED_TEST
@@ -294,6 +347,39 @@ def test_definite_failed_candidate_runs_formal_verifier_and_same_executor_repair
     pending = [d for d in documents if d.get("resultType") == "ExecutionCandidate.v1"]
     assert len(pending) == 1 and pending[0]["status"] == "awaiting_verification"
     assert any(d.get("resultType") == "ExecutionResult.v1" for d in documents)
+
+    def replay(**overrides):
+        return project_scheduler_audit(**{
+            "profile": audit.profile, "plan": audit.plan, "trace": audit.trace,
+            "artifacts": audit.artifacts, "contract_mode": audit.contract_mode,
+            **overrides,
+        })
+
+    assert replay() == audit
+    analyst_completed = next(t for t in trace["transitions"]
+                             if t["stage"] == "analyst" and t["outcome"] == "completed")
+    assignment_index = next(i for i, document in enumerate(documents)
+                            if document.get("resultType") == "AssignmentArtifact.v1"
+                            and document["assignment"]["assignmentId"] == reviewer_dispatch["assignmentId"])
+    tampered_assignment = deepcopy(documents[assignment_index])
+    tampered_assignment["assignment"]["inputRefs"].remove(analyst_completed["artifactId"])
+    tampered_artifacts = list(audit.artifacts)
+    tampered_artifacts[assignment_index] = replace(tampered_artifacts[assignment_index],
+        content=json.dumps(tampered_assignment, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+    with pytest.raises(SchedulerAuditValidationError, match="Reviewer input topology"):
+        replay(artifacts=tuple(tampered_artifacts))
+
+    late_diagnosis = deepcopy(trace)
+    transitions = late_diagnosis["transitions"]
+    transitions.remove(analyst_completed)
+    transitions.insert(transitions.index(reviewer_dispatch) + 1, deepcopy(analyst_completed))
+    # Preserve a well-formed sequence and decision chain so rejection concerns
+    # the diagnostic completion occurring after its dependent dispatch.
+    for item, original in zip(transitions, trace["transitions"]):
+        for key in ("sequence", "decisionId", "parentDecisionId"):
+            item[key] = original[key]
+    with pytest.raises(SchedulerAuditValidationError, match="scheduler trace is invalid"):
+        replay(trace=late_diagnosis)
 
 
 def test_failed_candidate_without_remaining_repair_calls_cannot_commit(tmp_path, monkeypatch):

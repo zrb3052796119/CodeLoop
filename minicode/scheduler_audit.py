@@ -2871,14 +2871,14 @@ def project_scheduler_audit(
             str(matrix["verificationArtifactRef"])
         )
         diff_document = artifact_documents.get(str(matrix["frozenDiffRef"]))
-        review_assignments_for_evidence = [
-            assignments_by_attempt[
+        review_dispatches_for_evidence = [
+            (index, assignments_by_attempt[
                 (
                     str(transition["assignmentId"]),
                     str(transition["attemptId"]),
                 )
-            ]
-            for transition in normalized_trace["transitions"]
+            ])
+            for index, transition in enumerate(normalized_trace["transitions"])
             if transition["stage"] == "reviewer"
             and execution_before(transition) == matrix_execution_record
             and transition["outcome"] == "dispatched"
@@ -2887,6 +2887,9 @@ def project_scheduler_audit(
                 str(transition["attemptId"]),
             )
             in assignments_by_attempt
+        ]
+        review_assignments_for_evidence = [
+            assignment for _, assignment in review_dispatches_for_evidence
         ]
         reviewer_preflight_blocked = any(
             transition["stage"] == "reviewer"
@@ -2949,27 +2952,32 @@ def project_scheduler_audit(
                 and matrix_execution_record == execution_records[-1]
             ),
         )
-        analyst_handoff_id = next(
-            (
-                str(transition["artifactId"])
-                for transition in normalized_trace["transitions"]
-                if transition["stage"] == "analyst"
-                and transition["outcome"] == "completed"
-                and transition["artifactId"] is not None
-            ),
-            None,
-        )
         execution_artifact_id = str(matrix_execution_record[0]["artifactId"])
-        if review_assignments_for_evidence:
-            # Policy v4 scoped work skips preliminary analysis, not final
-            # review. Require Analyst authority exactly when the sealed plan
-            # contains that role; never invent an optional handoff.
-            has_analyst = DispatchStage.ANALYST in plan.stages
+        for dispatch_index, assignment in review_dispatches_for_evidence:
+            analyst_handoff_id = next(
+                (
+                    str(transition["artifactId"])
+                    for transition in reversed(normalized_trace["transitions"][:dispatch_index])
+                    if transition["stage"] == "analyst"
+                    and transition["outcome"] == "completed"
+                    and transition["artifactId"] is not None
+                ),
+                None,
+            )
+            # The validated v6 trace can add diagnosis after a failed check.
+            # Bind each Reviewer to the latest completed Analyst preceding its
+            # dispatch; neither an older handoff nor a future one is authority.
+            planned_analyst = DispatchStage.ANALYST in plan.stages
+            has_analyst = analyst_handoff_id is not None
             analyst_handoff = artifact_documents.get(str(analyst_handoff_id))
-            if has_analyst and (
-                not isinstance(analyst_handoff, dict)
-                or not isinstance(analyst_handoff.get("evidenceSnapshotRefs"), list)
-            ) or not has_analyst and analyst_handoff_id is not None:
+            if (
+                (planned_analyst and not has_analyst)
+                or (has_analyst and not planned_analyst and plan.policy_version < 6)
+                or (has_analyst and (
+                    not isinstance(analyst_handoff, dict)
+                    or not isinstance(analyst_handoff.get("evidenceSnapshotRefs"), list)
+                ))
+            ):
                 raise SchedulerAuditValidationError(
                     "scheduler Reviewer Analyst handoff is invalid"
                 )
@@ -2990,10 +2998,7 @@ def project_scheduler_audit(
                 ),
                 matrix_id,
             )
-            if any(
-                assignment.input_refs != expected_reviewer_refs
-                for assignment in review_assignments_for_evidence
-            ):
+            if assignment.input_refs != expected_reviewer_refs:
                 raise SchedulerAuditValidationError(
                     "scheduler Reviewer input topology is inconsistent"
                 )

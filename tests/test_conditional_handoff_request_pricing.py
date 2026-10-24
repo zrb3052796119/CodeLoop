@@ -12,7 +12,7 @@ from copy import deepcopy
 from test_implementation_finalize_deadline import _submission_tools
 
 from minicode.agent_budget import AgentTurnBudget
-from minicode.context_manager import estimate_message_tokens
+from minicode.context_manager import estimate_message_tokens, estimate_tokens
 from minicode.deterministic_verifier import VerificationCheck
 from minicode.executor_verification import ExecutorCheckCapability
 from minicode.implementation_phases import ImplementationPhaseController
@@ -32,7 +32,7 @@ def test_added_phase_notice_reprices_and_reaches_the_actual_model(tmp_path, monk
     # The genuine phase notice then consumes that margin and selects the
     # one-response conditional path. The extra notice must also be priced.
     total = 2 * initial_input + 4096 + 2048 + 4096 + 100
-    reservations, previews, controllers, sent = [], [], [], []
+    reservations, previews, controllers, sent, sent_schema_tokens = [], [], [], [], []
 
     class RecordingBudget(AgentTurnBudget):
         def reserve_model_call(self, estimated_input_tokens=0, **kwargs):
@@ -70,17 +70,24 @@ def test_added_phase_notice_reprices_and_reaches_the_actual_model(tmp_path, monk
             sent.append(deepcopy(messages))
             assert len(sent) == 1
             assert "executor_test" in {tool.name for tool in tools_override.list()}
+            schemas = [{"type": "function", "function": {
+                "name": tool.name, "description": tool.description,
+                "parameters": tool.input_schema,
+            }} for tool in tools_override.list()]
+            sent_schema_tokens.append(estimate_tokens(json.dumps(schemas)))
             return AgentStep(type="tool_calls", calls=[{
                 "id": "honest-blocker", "toolName": "executor_submit", "input": {
                     "status": "blocked", "steps": [{"step": 1, "status": "failed"}],
                     "deviations": [], "blockers": ["Required repair evidence is unavailable."],
                 },
-            }], usage=ModelUsage(input_tokens=sum(estimate_message_tokens(m) for m in messages),
+            }], usage=ModelUsage(input_tokens=sum(estimate_message_tokens(m) for m in messages)
+                                 + sent_schema_tokens[-1],
                                  output_tokens=50, source="estimated"))
 
     try:
         canonical = loop.run_agent_turn(model=Model(), tools=tools, messages=original,
             cwd=str(tmp_path), agent_budget=budget, subagent_mailbox=channel,
+            bounded_implementation_phases=True,
             implementation_task=True, implementation_analysis_complete=True,
             max_steps=15, agent_depth=1, deadline_monotonic=time.monotonic() + 600,
             enable_work_chain=False)
@@ -91,7 +98,8 @@ def test_added_phase_notice_reprices_and_reaches_the_actual_model(tmp_path, monk
             if message.get("_implementation_phase") and "Host conditional handoff:" in message["content"]]
         assert len(mode_messages) == 1, "The final selected mode was logged but not delivered to the model."
         assert mode_messages[0] in canonical
-        actual_input = sum(estimate_message_tokens(message) for message in sent[0])
+        message_input = sum(estimate_message_tokens(message) for message in sent[0])
+        actual_input = message_input + sent_schema_tokens[0]
         assert reservations == [(actual_input, {"preserve_model_calls": 0, "preserve_total_tokens": 8192})]
         assert controllers[0]._previous_input == actual_input
         assert controllers[0].calls == 1 and controllers[0].conditional_handoff

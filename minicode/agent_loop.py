@@ -4215,8 +4215,21 @@ def run_agent_turn(
                 if implementation_phases is not None:
                     def phase_input_estimate(messages):
                         local = _estimated_context_tokens(messages)
-                        return (repair_input_calibration.estimate(local) if implementation_view_active()
-                                else max(local, phase_observed_input))
+                        calibrated = (repair_input_calibration.estimate(local) if implementation_view_active()
+                                      else max(local, phase_observed_input))
+                        # Output capacity must leave room for the schemas of
+                        # the proposed phase, just like atomic admission does.
+                        # Preview on a copy so pricing cannot consume a notice
+                        # or change the real controller's handoff state.
+                        proposed_phase = copy.copy(implementation_phases)
+                        proposed = proposed_phase.request(phase_snapshot,
+                            estimated_input=calibrated, now=time.monotonic())
+                        options = {"tools_override": proposed_phase.tool_view(tools)}
+                        if proposed.handoff_only and not has_structured_handoff:
+                            options["disable_tools"] = True
+                        return estimate_budgeted_request_input(model, messages,
+                            agent_budget=agent_budget, estimated_input=calibrated,
+                            optional_kwargs=options, default_tools=tools)
 
                     request_messages = implementation_request_messages()
                     priced_notices = []
