@@ -202,8 +202,11 @@ def _exercise(tmp_path, monkeypatch, *, remaining=None, replay=None, generic=Fal
     assert snapshot.reserved_total_tokens == 0 and snapshot.used_total_tokens < 500000
     rejections = [payload for kind, _step, payload in events if kind == "execution.request_admission_rejected"]
     assert len(rejections) == 1 and rejections[0]["reason"] == "token budget exhausted"
-    assert rejections[0]["usedModelCalls"] == 9 and rejections[0]["limitModelCalls"] == 40
-    assert rejections[0]["usedTotalTokens"] == sum(billed[:9])
+    # The reviewed candidate receipt is larger than the scoped receipt, so
+    # its first parent follow-up already exceeds this unchanged 500k ledger.
+    admitted_calls = 8 if candidate_handoff else 9
+    assert rejections[0]["usedModelCalls"] == admitted_calls and rejections[0]["limitModelCalls"] == 40
+    assert rejections[0]["usedTotalTokens"] == sum(billed[:admitted_calls])
     assert (rejections[0]["estimatedInputTokens"] + rejections[0]["preserveTotalTokens"]
             > 500000 - rejections[0]["usedTotalTokens"])
     journal = RunJournal(tmp_path, data_dir=data_dir)

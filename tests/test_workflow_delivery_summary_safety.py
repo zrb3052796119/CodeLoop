@@ -48,7 +48,7 @@ def test_real_audited_candidate_can_deliver_but_pending_feedback_cannot_mint_rec
 
     monkeypatch.setattr(finalization, "issue_workflow_delivery", inspect_real_finalization)
     messages, calls, _, capture, _ = _exercise(tmp_path, monkeypatch, candidate_handoff=True)
-    assert len(observed) == 1 and len(calls) == 9
+    assert len(observed) == 1 and len(calls) == 8
     assert messages[-1].get("_workflow_delivery_receipt_summary") is True
     assert messages[-1]["_partial"] is False
     assert messages[-1]["_workflow_delivery"]["overallGoal"] == "not_assessed"

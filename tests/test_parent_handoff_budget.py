@@ -101,7 +101,10 @@ def test_v15_recorded_spend_keeps_the_authorized_parent_handoff(tmp_path, struct
         assert "commit state is unconfirmed" in messages[-1]["content"]
         assert "Candidate retained" not in messages[-1]["content"]
         assert child_admissions == [14281, 15733]
-        assert floors == [(500000 - 445866 - 12222) * 15 // 100]
+        # This low-risk route has no mandatory Reviewer. Its single closing
+        # allowance is 4%; the 15% reserve belongs to reviewed routes. The
+        # real host receipt replaces this parent summary, not ancestor floors.
+        assert floors == [(500000 - 445866 - 12222) * 4 // 100]
         assert budget.snapshot().used_total_tokens == 488102
     else:
         assert model.calls == 2, "generic tool calls still reserve the parent model hand-back"
