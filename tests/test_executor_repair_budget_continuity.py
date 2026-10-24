@@ -5,17 +5,17 @@ choices are generic toy code, and new messages/schemas are honestly metered as
 estimated usage. This is not a replay of its unrecorded next input estimate.
 """
 
-from copy import deepcopy
-from dataclasses import replace
 import json
-from pathlib import Path
 import subprocess
 import sys
+import threading
 import time
+from copy import deepcopy
+from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
 from test_executor_session_continuity import _context, _input, _session
 from test_implementation_finalize_deadline import _submission_tools
 
@@ -25,13 +25,13 @@ from minicode.deterministic_verifier import DeterministicVerifier, VerificationC
 from minicode.implementation_phases import ImplementationPhaseController
 from minicode.implementation_recovery import InputTokenCalibration
 from minicode.permissions import PermissionManager
+from minicode.reviewer_verification import ReviewerProbeLedger
 from minicode.tooling import ToolRegistry
 from minicode.tools import task as task_module
 from minicode.tools.edit_file import edit_file_tool
 from minicode.types import AgentStep, ModelUsage
 from minicode.workflow_runner import _WorkerCallBudget, _WorkflowRunSession
 from minicode.workflow_workspace import WorkflowWorkspaceTransaction
-
 
 PREFIX_USED = 443427
 DOWNSTREAM_FLOOR = 17684
@@ -158,7 +158,8 @@ def test_same_executor_real_failed_check_then_fitting_repair_and_native_submit(t
     checks, observed, bills, models, decisions = [], [], [], [], []
 
     def command(argv, **kwargs):
-        completed = subprocess.run([sys.executable, "-m", *argv], **kwargs)
+        completed = subprocess.run([sys.executable, "-m", *argv],
+                                   check=kwargs.pop("check", False), **kwargs)
         checks.append(completed.returncode)
         if len(checks) == 1:
             assert completed.returncode == 1
@@ -224,12 +225,15 @@ def test_same_executor_real_failed_check_then_fitting_repair_and_native_submit(t
     monkeypatch.setattr("minicode.subagent_model_routing.create_subagent_model_adapter", factory)
     with WorkflowWorkspaceTransaction(str(tmp_path), deadline_monotonic=deadline) as transaction:
         runner = _WorkflowRunSession.__new__(_WorkflowRunSession)
+        runner._verification_outputs = None
+        runner._workflow_journal = None
         runner._state = SimpleNamespace(transaction=transaction, context=parent,
             requested_checks=(check,), locked_write_paths=("candidate.py", "test_candidate.py"),
             workflow_request=SimpleNamespace(scope=assignment.scope),
             workflow_id=assignment.workflow_id, task_id=assignment.task_id,
             task_prompt="Repair value and pass the approved test.", implementation_check_runs=0,
-            implementation_check_statuses={}, implementation_check_latest={})
+            implementation_check_statuses={}, implementation_check_latest={},
+            reviewer_probe_lock=threading.RLock(), reviewer_probes=ReviewerProbeLedger())
         capability = runner._executor_check_capability(assignment)
         owner = object()
         session = _session(owner, transaction.cwd)
@@ -261,5 +265,6 @@ def test_same_executor_real_failed_check_then_fitting_repair_and_native_submit(t
             assert context._task_deadline_monotonic == deadline
         finally:
             capability.close()
+            runner._verification_outputs.close()
             channel.close()
             session.close()

@@ -323,7 +323,7 @@ def test_failed_deterministic_verification_stops_review_and_parent_commit(
     assert run.target.read_text(encoding="utf-8") == "before"
 
 
-def test_public_prompt_and_task_schema_advertise_only_the_central_mutation_path(
+def test_public_prompt_and_task_schema_advertise_central_workflow_for_delegated_mutation(
     tmp_path: Path,
 ) -> None:
     prompt = build_system_prompt(str(tmp_path))
@@ -335,5 +335,8 @@ def test_public_prompt_and_task_schema_advertise_only_the_central_mutation_path(
     assert "agent_type='workflow'" in prompt
     assert "the scheduler constructs WorkflowRequest.v1 for you" in prompt
     assert "agent_type='general' is a deprecated" in prompt
-    assert "creates or modifies files" in task_description
+    assert "For delegated changes, call workflow directly with write_paths and verification_commands" in prompt
+    assert "complete non-sensitive requests default to Executor->Verifier" in prompt
+    assert "'workflow' runs a centrally scheduled Executor -> Verifier flow" in task_description
+    assert "If a permission decision requires workflow, use that route" in task_description
     assert "legacy-only 'general'" in agent_type_description

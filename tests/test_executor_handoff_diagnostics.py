@@ -79,6 +79,7 @@ def test_diagnostic_normalization_never_repairs_invalid_semantics(change):
 
 
 def test_parent_observations_are_bounded_complete_json_and_redacted():
+    from minicode.reviewer_verification import ReviewerProbeLedger
     from minicode.workflow_runner import _executor_observation_text
     _assignment, _order, _store, channel, _tool = _bound()
     channel.record_validation_error(ValueError("api_key=synthetic-private-value " + "context " * 300))
@@ -90,6 +91,8 @@ def test_parent_observations_are_bounded_complete_json_and_redacted():
                                      for i in range(40)},
         executor_submission_errors=[{"error": message} for message in channel.validation_errors],
         verification_result=None,
+        review_check_mode=None,
+        reviewer_probes=ReviewerProbeLedger(),
     )
     block = _executor_observation_text(state)
     payload = block.splitlines()[1]
@@ -100,6 +103,8 @@ def test_parent_observations_are_bounded_complete_json_and_redacted():
     assert document["implementationChecks"]["runs"] == 40
     assert document["implementationChecks"]["statuses"] == {"passed": 39, "failed": 1}
     assert document["implementationChecks"]["latestOmitted"] > 0
+    assert document["independentReview"] == {"mode": None, "retainedProbes": 0}
+    assert "synthetic-private-value" not in payload
 
 
 def test_real_failed_workflow_returns_host_checks_and_submission_error(tmp_path, monkeypatch):

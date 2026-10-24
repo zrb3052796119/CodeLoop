@@ -6,15 +6,16 @@ submission, and shared-budget admission are production paths. It does not
 claim that a live model will use a larger allowance to produce a correct fix.
 """
 
-from copy import deepcopy
 import hashlib
 import json
 import os
 import subprocess
 import sys
 import time
+from copy import deepcopy
 
 import pytest
+from test_implementation_finalize_deadline import _submission_tools
 
 from minicode.agent_budget import AgentBudgetExceeded, AgentTurnBudget
 from minicode.agent_loop import run_agent_turn
@@ -27,8 +28,6 @@ from minicode.tooling import ToolRegistry
 from minicode.tools.edit_file import edit_file_tool
 from minicode.types import AgentStep, ModelUsage
 from minicode.workflow_runner import _WorkerCallBudget
-from test_implementation_finalize_deadline import _submission_tools
-
 
 DOWNSTREAM_FLOOR = 74000
 
@@ -57,7 +56,7 @@ def test_finalize_output_fits_actual_input_and_every_retained_handoff(
 ):
     shared, worker = _budget(remaining=remaining)
     controller = ImplementationPhaseController(
-        snapshot=worker.snapshot(), max_steps=5, now=0, deadline=1800,
+        bounded=True, snapshot=worker.snapshot(), max_steps=5, now=0, deadline=1800,
         analysis_complete=True, output_limit=8192, allow_test_completion=True,
         allow_checked_source_completion=True, allow_conditional_handoff=True,
         require_structured_handoff=True,
@@ -91,7 +90,7 @@ def test_finalize_output_fits_actual_input_and_every_retained_handoff(
 def test_output_quote_preserves_observed_growth_and_configured_lower_limit():
     shared, worker = _budget(remaining=80000)
     controller = ImplementationPhaseController(
-        snapshot=worker.snapshot(), max_steps=5, now=0, deadline=1800,
+        bounded=True, snapshot=worker.snapshot(), max_steps=5, now=0, deadline=1800,
         analysis_complete=True, output_limit=6000, allow_test_completion=True,
         allow_checked_source_completion=True, allow_conditional_handoff=True,
         require_structured_handoff=True,
@@ -111,7 +110,7 @@ def test_concurrent_reservation_is_not_borrowed_to_raise_the_output_cap():
     shared, worker = _budget(remaining=75240)
     concurrent = shared.reserve_model_call(5000)
     controller = ImplementationPhaseController(
-        snapshot=worker.snapshot(), max_steps=5, now=0, deadline=1800,
+        bounded=True, snapshot=worker.snapshot(), max_steps=5, now=0, deadline=1800,
         analysis_complete=True, output_limit=8192, allow_test_completion=True,
         allow_checked_source_completion=True, allow_conditional_handoff=True,
         require_structured_handoff=True,
@@ -139,7 +138,7 @@ def test_concurrent_reservation_is_not_borrowed_to_raise_the_output_cap():
 def test_submit_only_keeps_original_cap_and_cannot_reopen_writes():
     _, worker = _budget(remaining=176000)
     controller = ImplementationPhaseController(
-        snapshot=worker.snapshot(), max_steps=5, now=0, deadline=1800,
+        bounded=True, snapshot=worker.snapshot(), max_steps=5, now=0, deadline=1800,
         analysis_complete=True, output_limit=8192, allow_test_completion=True,
         allow_checked_source_completion=True, allow_conditional_handoff=True,
         require_structured_handoff=True,
@@ -162,7 +161,7 @@ def test_submit_only_keeps_original_cap_and_cannot_reopen_writes():
 def test_input_cannot_borrow_the_output_or_downstream_floor():
     shared, worker = _budget(remaining=29999)
     controller = ImplementationPhaseController(
-        snapshot=worker.snapshot(), max_steps=5, now=0, deadline=1800,
+        bounded=True, snapshot=worker.snapshot(), max_steps=5, now=0, deadline=1800,
         analysis_complete=True, output_limit=8192, allow_test_completion=True,
         allow_checked_source_completion=True, allow_conditional_handoff=True,
         require_structured_handoff=True,
@@ -201,7 +200,7 @@ def test_real_loop_does_not_truncate_a_funded_final_source_response(
     def check(item, context):
         completed = subprocess.run(
             [sys.executable, "-m", "pytest", "-q", "test_candidate.py"],
-            cwd=context.cwd, capture_output=True, text=True, timeout=30,
+            cwd=context.cwd, capture_output=True, text=True, timeout=30, check=False,
             env={**os.environ, "PYTHONPATH": str(tmp_path),
                  "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1", "PYTEST_ADDOPTS": ""},
         )
@@ -260,7 +259,7 @@ def test_real_loop_does_not_truncate_a_funded_final_source_response(
 
     try:
         transcript = run_agent_turn(
-            model=Model(), tools=registry,
+            bounded_implementation_phases=True, model=Model(), tools=registry,
             messages=[{"role": "user", "content": "Implement the supplied lookup table and verify value returns 2."}],
             cwd=str(tmp_path), runtime={"maxOutputTokens": 8192},
             permissions=PermissionManager(str(tmp_path), prompt=lambda _: {"decision": "allow_once"}),
