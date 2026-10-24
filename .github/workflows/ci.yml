@@ -35,6 +35,9 @@ jobs:
           python -m pip install ruff
           python -m ruff check minicode/ --select=E,F --ignore=E501
 
+      - name: Restore pinned test and replay inputs
+        run: python scripts/restore_archived_artifacts.py --manifest artifacts/archives/governance-pinned-inputs-2026-10-24/manifest.json --restore
+
       - name: Run deterministic agent quality gate
         run: python scripts/evaluate_agent_quality.py --profile current
 

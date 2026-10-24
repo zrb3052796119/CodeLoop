@@ -515,12 +515,20 @@ silently skip when it is missing. Then run the focused release checks:
 
 ```bash
 python -m pip install -e '.[dev]'
+python scripts/restore_archived_artifacts.py --manifest artifacts/archives/governance-pinned-inputs-2026-10-24/manifest.json --restore
 python -m compileall -q minicode scripts
 python -m ruff check minicode/ --select=E,F --ignore=E501
 python scripts/evaluate_agent_quality.py --profile current
 python scripts/evaluate_agent_quality.py --profile a
 python -m pytest -q
 ```
+
+The restore step recovers eight pinned test/replay inputs from committed gzip
+archives to their original paths and checks their unchanged SHA-256 values. Run
+it once in every fresh checkout or source export before pytest, quality checks,
+or historical replay; CI performs the same step. Recovery is offline and refuses
+to overwrite different local contents. [Archive details and export options](./docs/artifact-archive-2026-10-24.md)
+cover the separate four-report archive and replay prerequisites.
 
 Both quality profiles make no remote model calls. `current` pins fixture,
 manifest, and recorded-result hashes. Profile `a` pins its fixture/manifest
