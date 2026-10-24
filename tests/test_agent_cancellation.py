@@ -813,13 +813,19 @@ def test_cancel_after_concurrent_batch_starts_stops_before_next_model_turn() -> 
     all_started = threading.Barrier(3)
     release = threading.Event()
     finished: list[str] = []
+    tool_finished = {name: threading.Event() for name in ("read_file", "list_files")}
 
     def definition(name: str) -> ToolDefinition:
         def run(_input, _context):
-            all_started.wait(5)
-            assert release.wait(5)
-            finished.append(name)
-            return ToolResult(ok=True, output=name)
+            try:
+                all_started.wait(5)
+                # The test owns release in finally; a timeout here would make
+                # an incorrectly blocking shutdown look like cancellation.
+                release.wait()
+                finished.append(name)
+                return ToolResult(ok=True, output=name)
+            finally:
+                tool_finished[name].set()
 
         return ToolDefinition(
             name=name,
@@ -849,14 +855,25 @@ def test_cancel_after_concurrent_batch_starts_stops_before_next_model_turn() -> 
         cancellation_token=token,
     )
 
-    all_started.wait(5)
-    token.request()
-    release.set()
-    worker.join(5)
+    try:
+        all_started.wait(5)
+        token.request()
+        worker.join(5)
+
+        # Cancellation abandons running reads; joining the turn does not join
+        # its tool threads. Keep both reads blocked while observing the turn.
+        assert not worker.is_alive()
+        assert finished == []
+        assert model.calls == 1
+        assert isinstance(outcome.get("error"), TurnCancellationRequested)
+    finally:
+        release.set()
+        worker.join(5)
+        for completed in tool_finished.values():
+            assert completed.wait(5)
 
     assert sorted(finished) == ["list_files", "read_file"]
     assert model.calls == 1
-    assert isinstance(outcome.get("error"), TurnCancellationRequested)
 
 
 def test_cancel_after_concurrent_results_finalize_post_hooks_before_raise(
