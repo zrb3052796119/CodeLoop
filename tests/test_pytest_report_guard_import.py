@@ -7,6 +7,7 @@ backend with install_verification_guards. No provider or evaluation task runs.
 from contextlib import ExitStack
 import builtins
 import json
+from pathlib import Path
 import sys
 from types import SimpleNamespace
 
@@ -30,9 +31,11 @@ def test_real_sandbox_and_scope_guard_preserve_only_host_report_plugin(tmp_path,
     _exercise_report(tmp_path, monkeypatch, body, expected, kind)
 
 
-def test_system_python3_shim_reports_real_exception_under_the_same_guard(tmp_path, monkeypatch):
+def test_registered_python3_reports_real_exception_under_the_same_guard(tmp_path, monkeypatch):
+    # Use the interpreter provisioned for this suite. The macOS system shim may
+    # dispatch to another Python that has no pytest; that is not a plugin test.
     _exercise_report(tmp_path, monkeypatch, "raise TypeError('synthetic constructor error')", "failed", "exception",
-        executable="/usr/bin/python3", argv=("python3", "-m", "pytest", "-q", "test_public.py"))
+        executable=sys.executable, argv=("python3", "-m", "pytest", "-q", "test_public.py"))
 
 
 def _exercise_report(tmp_path, monkeypatch, body, expected, kind, *, executable=None, argv=ARGV):
@@ -94,9 +97,8 @@ def _exercise_report(tmp_path, monkeypatch, body, expected, kind, *, executable=
         "outcome": expected, "failureKind": kind}]
     assert target.read_text() == source
     runtime = json.loads((workspace / "interpreter.json").read_text())
-    assert len(runtime["version"]) == 3
-    if executable == "/usr/bin/python3":
-        print("SYSTEM_SHIM_ACTUAL_RUNTIME=" + json.dumps(runtime, sort_keys=True))
+    assert runtime["version"] == list(sys.version_info[:3])
+    assert Path(runtime["executable"]).resolve() == Path(sys.executable).resolve()
 
 
 def test_ordinary_guarded_pytest_does_not_acquire_plugin_search_paths(tmp_path, monkeypatch):

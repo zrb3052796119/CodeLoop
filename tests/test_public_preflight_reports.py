@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from pathlib import Path
 import sys
 
 import pytest
@@ -76,11 +77,24 @@ def test_required_preflight_blocks_missing_report_even_if_command_reports_pass(t
 
 
 @pytest.mark.skipif(sys.platform != 'darwin', reason='real macOS verification sandbox')
-def test_real_preflight_runs_machine_report_through_scope_guard_and_sandbox(tmp_path):
+def test_real_preflight_runs_machine_report_through_scope_guard_and_sandbox(tmp_path, monkeypatch):
+    from minicode.verifier_sandbox import DarwinSeatbeltVerifierSandbox
+
+    # The host test environment provisions pytest; Apple's /usr/bin/python3
+    # shim may select a different interpreter without it inside Seatbelt.
+    executable = Path(sys.executable).resolve()
+    monkeypatch.setenv('MINI_CODE_VERIFIER_TRUSTED_EXECUTABLES', f'python3={executable}')
     document = _document()
-    receipt = preflight.run_public_preflight(document, tmp_path, require_pytest_report=True)
+    document['cases'][0]['files']['test_public.py'] += (
+        '    import sys\n    from pathlib import Path\n'
+        f'    assert Path(sys.executable).resolve() == Path({str(executable)!r})\n'
+        f'    assert sys.version_info[:3] == {tuple(sys.version_info[:3])!r}\n'
+    )
+    receipt = preflight.run_public_preflight(document, tmp_path,
+        runtime={'_verifierSandboxBackend': DarwinSeatbeltVerifierSandbox()},
+        require_pytest_report=True)
     assert receipt['passed'], receipt
-    assert receipt['cases'][0]['evidence'][0]['resolvedExecutable'] == '/usr/bin/python3'
+    assert receipt['cases'][0]['evidence'][0]['resolvedExecutable'] == str(executable)
     assert receipt['cases'][0]['pytestReport']['caseReport']['cases'] == [
         {'nodeId': 'test_public.py::test_baseline', 'outcome': 'passed', 'failureKind': None}]
     path = tmp_path / 'receipt.json'
