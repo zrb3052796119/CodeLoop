@@ -9,9 +9,19 @@ direct/embedder calls without a context keep the legacy global fallback.
 
 from __future__ import annotations
 
+from copy import deepcopy
+
+import pytest
+
 import minicode.tools.todo_write as todo_module
 from minicode.tools.todo_write import todo_write_tool
 from minicode.tooling import ToolContext
+
+
+@pytest.fixture(autouse=True)
+def isolated_legacy_state(monkeypatch):
+    monkeypatch.setattr(todo_module, "_tasks", [])
+    monkeypatch.setattr(todo_module, "_globals_holder", {"counter": 0})
 
 
 def _todos(*items):
@@ -19,12 +29,17 @@ def _todos(*items):
 
 
 def test_context_todo_state_isolates_from_global():
+    sentinel = todo_write_tool.run({"todos": _todos("parent task")}, ToolContext())
+    assert sentinel.ok
+    before = deepcopy(todo_module._tasks)
+    before_counter = todo_module._globals_holder["counter"]
     state = {"tasks": [], "counter": 0}
     context = ToolContext(_todo_state=state)
     result = todo_write_tool.run({"todos": _todos("child task")}, context)
     assert result.ok
     assert [task["content"] for task in state["tasks"]] == ["child task"]
-    assert todo_module._tasks == []  # global untouched
+    assert todo_module._tasks == before
+    assert todo_module._globals_holder["counter"] == before_counter
 
 
 def test_two_contexts_do_not_share_state():

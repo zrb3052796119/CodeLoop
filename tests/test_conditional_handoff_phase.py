@@ -11,7 +11,7 @@ def policy(*, checked=True):
     controller = ImplementationPhaseController(snapshot=snapshot, max_steps=15,
         now=300, deadline=550, analysis_complete=True,
         allow_test_completion=True, allow_checked_source_completion=True,
-        allow_conditional_handoff=checked, require_structured_handoff=True)
+        allow_conditional_handoff=checked, require_structured_handoff=True, bounded=True)
     controller.observe_verification(failed=True)
     return controller, snapshot
 
