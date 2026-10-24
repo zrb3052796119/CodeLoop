@@ -11,7 +11,7 @@ from minicode.tooling import ToolDefinition, ToolContext, ToolResult
 # ---------------------------------------------------------------------------
 
 def _validate_base64_encode(input_data: dict) -> dict:
-    text = input_data.get("text", "")
+    text = input_data.get("text")
     if not isinstance(text, str):
         raise ValueError("text is required and must be a string")
     return {"text": text, "encoding": input_data.get("encoding", "utf-8")}
@@ -87,7 +87,7 @@ base64_decode_tool = ToolDefinition(
 # ---------------------------------------------------------------------------
 
 def _validate_url_encode(input_data: dict) -> dict:
-    text = input_data.get("text", "")
+    text = input_data.get("text")
     if not isinstance(text, str):
         raise ValueError("text is required and must be a string")
     return {"text": text, "safe": input_data.get("safe", "/")}

@@ -50,7 +50,7 @@ uuid_generate_tool = ToolDefinition(
 # ---------------------------------------------------------------------------
 
 def _validate_text_sort(input_data: dict) -> dict:
-    content = input_data.get("content", "")
+    content = input_data.get("content")
     if not isinstance(content, str):
         raise ValueError("content is required")
     return {
@@ -111,7 +111,7 @@ text_sort_tool = ToolDefinition(
 # ---------------------------------------------------------------------------
 
 def _validate_text_dedupe(input_data: dict) -> dict:
-    content = input_data.get("content", "")
+    content = input_data.get("content")
     if not isinstance(content, str):
         raise ValueError("content is required")
     return {"content": content, "preserve_order": input_data.get("preserve_order", True)}
@@ -157,7 +157,7 @@ text_dedupe_tool = ToolDefinition(
 # ---------------------------------------------------------------------------
 
 def _validate_text_join(input_data: dict) -> dict:
-    items = input_data.get("items", "")
+    items = input_data.get("items")
     separator = input_data.get("separator", "\n")
     if not isinstance(items, str):
         raise ValueError("items is required")
@@ -194,6 +194,13 @@ text_join_tool = ToolDefinition(
 # Line Count
 # ---------------------------------------------------------------------------
 
+def _validate_line_count(input_data: dict) -> dict:
+    content = input_data.get("content")
+    if not isinstance(content, str):
+        raise ValueError("content is required and must be a string")
+    return {"content": content}
+
+
 def _run_line_count(input_data: dict, context: ToolContext) -> ToolResult:
     content = input_data.get("content", "")
     
@@ -221,7 +228,7 @@ line_count_tool = ToolDefinition(
         },
         "required": ["content"]
     },
-    validator=lambda x: x,
+    validator=_validate_line_count,
     run=_run_line_count,
 )
 

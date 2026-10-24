@@ -117,7 +117,7 @@ timestamp_tool = ToolDefinition(
 # ---------------------------------------------------------------------------
 
 def _validate_hash(input_data: dict) -> dict:
-    text = input_data.get("text", "")
+    text = input_data.get("text")
     algorithm = input_data.get("algorithm", "sha256").lower()
     if not isinstance(text, str):
         raise ValueError("text is required and must be a string")

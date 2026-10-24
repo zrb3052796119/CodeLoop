@@ -1037,7 +1037,7 @@ class ToolDefinition:
 # registered tools belong here — a stale name would silently grant its future
 # namesake concurrent, abandon-on-timeout treatment.
 _READ_ONLY_TOOL_NAMES: frozenset[str] = frozenset({
-    "read_file", "list_files", "grep_files", "file_tree",
+    "read_file", "list_files", "grep_files", "file_tree", "file_line_count",
     "find_symbols", "find_references", "get_ast_info",
     "code_review", "diff_viewer",
     "web_fetch", "web_search",
