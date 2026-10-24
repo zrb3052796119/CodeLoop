@@ -50,6 +50,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.bak
+*.orig
 
 # MiniCode specific. Runtime indexes/version state stay local, while project
 # Skill source and project agent profiles are configuration and must survive
@@ -92,6 +93,8 @@ out.txt
 /analysis-output/
 /probe.txt
 /你好.py
+/interview-prep.md
+/study_qa.md
 
 # Raw acceptance runs contain journals, temporary workspaces and local state.
 # Commit only curated manifests, summaries, tables and figures.
