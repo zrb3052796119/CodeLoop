@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -210,6 +211,10 @@ def test_fallback_uses_process_group_and_windows_safe_flags(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     observed: dict[str, object] = {}
+    host_os_name = os.name
+    host_platform = sys.platform
+    host_subprocess = run_command_module.subprocess
+    host_popen = host_subprocess.Popen
 
     class _Stream:
         closed = False
@@ -242,10 +247,23 @@ def test_fallback_uses_process_group_and_windows_safe_flags(
         observed.update(kwargs)
         return _Process()
 
-    monkeypatch.setattr(run_command_module.sys, "platform", "win32")
-    monkeypatch.setattr(run_command_module.os, "name", "nt")
-    monkeypatch.setattr(run_command_module.subprocess, "CREATE_NEW_PROCESS_GROUP", 512, raising=False)
-    monkeypatch.setattr(run_command_module.subprocess, "Popen", fake_popen)
+    # Keep the simulated platform local: changing shared os.name also changes
+    # pathlib's concrete path selection and breaks pytest reporting on 3.11.
+    monkeypatch.setattr(run_command_module, "sys", SimpleNamespace(platform="win32"))
+    monkeypatch.setattr(
+        run_command_module, "os", SimpleNamespace(name="nt", environ=os.environ)
+    )
+    monkeypatch.setattr(
+        run_command_module,
+        "subprocess",
+        SimpleNamespace(
+            **{
+                **vars(host_subprocess),
+                "CREATE_NEW_PROCESS_GROUP": 512,
+                "Popen": fake_popen,
+            }
+        ),
+    )
 
     result = _run(
         {"command": "echo", "args": []},
@@ -255,6 +273,9 @@ def test_fallback_uses_process_group_and_windows_safe_flags(
     assert result.ok
     assert observed["creationflags"] == 512
     assert "start_new_session" not in observed
+    assert os.name == host_os_name
+    assert sys.platform == host_platform
+    assert host_subprocess.Popen is host_popen
 
 
 def test_pty_popen_failure_closes_both_file_descriptors(

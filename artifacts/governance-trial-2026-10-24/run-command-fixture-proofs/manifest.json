@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "classification": "Historical Python 3.11 fixture-isolation repair; actual CI failures and local pytest reproduction. No production command change, no complete-suite or fixed-CI acceptance claim. Synthetic flag faults are explicitly nonhistorical sensitivity checks.",
+  "ciRunId": 40111546762,
+  "ciBaseline": "ff2f18eadeea3fb71de431fc002aee21a3f6481a",
+  "p0Baseline": "9f9369421486f018c837f84d21bd727aed6ab326",
+  "archive": "proofs.tar.gz",
+  "archiveSha256": "ab747314910cf6b89c360b2e5f2efc2f913f875b443819c109a76825cc0ddf6c",
+  "archiveBytes": 56897,
+  "rawBytes": 317926,
+  "entryCount": 23,
+  "deterministicArchive": "sorted USTAR regular files; mode0644 uid/gid/mtime0 empty owner names; gzip mtime0 empty filename; repeat pack identical",
+  "restorationVerification": {
+    "allMembersRestored": true,
+    "memberBytesEqualOriginals": true,
+    "memberCount": 23
+  },
+  "entries": [
+    {
+      "path": "ci/macos-py311-job-120924144918.log",
+      "bytes": 131160,
+      "sha256": "bee023f8f9365018450b3246d74a9dc2944e60f7c1cc189f1eaca6318718fdbf"
+    },
+    {
+      "path": "ci/ubuntu-py311-job-120924144933.log",
+      "bytes": 127218,
+      "sha256": "3d162542784aa1d437cf4723deb434bd78c64ac9f4be84ff6cbc6b4b2004565f"
+    },
+    {
+      "path": "fixture/final.patch",
+      "bytes": 2262,
+      "sha256": "14aee218f19dd863953a07f64c79e9a9ce5c13a3634d33fce3b8849fc69733f6"
+    },
+    {
+      "path": "fixture/report.json",
+      "bytes": 4865,
+      "sha256": "eae53b10a1ec622b8bd54bc99f31c8e3fc245fe4540e3596657b1e0143cff6d6"
+    },
+    {
+      "path": "fixture/test_run_command_lifecycle.final.py",
+      "bytes": 9170,
+      "sha256": "b2fe2586528512c95a980be573992183b36a6feb347e24daf768d7817fadb5e1"
+    },
+    {
+      "path": "harness/probe.py",
+      "bytes": 1616,
+      "sha256": "9c7f58e8fa26659a5c0e2836a56aa9b8c13fc9b1d8ece0d1b91b1ea7cc5148ed"
+    },
+    {
+      "path": "harness/run_related.py",
+      "bytes": 1471,
+      "sha256": "690fa99b1d2f9f70e2622a00cc7d2ba9934e2d36c42d63a2d1c37df7b465f78d"
+    },
+    {
+      "path": "harness/run_tests.py",
+      "bytes": 859,
+      "sha256": "747cc3c0825ddc01ae72076a2f426fd0e353ed82c435d4a8dc8578e35a898d60"
+    },
+    {
+      "path": "independent-review/summary.md",
+      "bytes": 1327,
+      "sha256": "2db3400b4efdf05b6c973aa4289718435c65b31790fec0b908df8a9af062a6d5"
+    },
+    {
+      "path": "proofs/after-direct.log",
+      "bytes": 380,
+      "sha256": "3822b480a7141c6db7fd95a956175c3e2a162c4b14a8fda13261829b0c178139"
+    },
+    {
+      "path": "proofs/after-pytest.log",
+      "bytes": 428,
+      "sha256": "4cd8b7df5847575a38cb900a9c818345047c39e6fa5045111dd464701b0d02a4"
+    },
+    {
+      "path": "proofs/before-direct.log",
+      "bytes": 1942,
+      "sha256": "bb044d40920cc450e2cf5d5f8e849d2ff480aa63a178c03bd25db9f124d7f0f2"
+    },
+    {
+      "path": "proofs/before-pytest.log",
+      "bytes": 18567,
+      "sha256": "c27273e94b8ad3f5b8898eed2e0fbb956e64c4f43ce124687d36c3b9215734a4"
+    },
+    {
+      "path": "proofs/exact-ci-source-final-fixture.log",
+      "bytes": 652,
+      "sha256": "4c64b479e583440f72f486a2e288dba948593bf2c32fde0108e60abcc03ebba2"
+    },
+    {
+      "path": "proofs/p0-final-fixture.log",
+      "bytes": 648,
+      "sha256": "e24aa9aa287f6c4b6050481e18a23fe78c3f18346b493737930425ad771af170"
+    },
+    {
+      "path": "proofs/p0-runmeta.json",
+      "bytes": 969,
+      "sha256": "e92093a47defd2593f4032ef7138bc4bf4ccabcc55abee8230539f729012795c"
+    },
+    {
+      "path": "proofs/py311-related.log",
+      "bytes": 799,
+      "sha256": "329cba86ecc26dc4d6414b847040b9e152ffc0397abba72067449b46241f8501"
+    },
+    {
+      "path": "proofs/py312-related.log",
+      "bytes": 833,
+      "sha256": "401bdf9c7f38085bdc2dd231570d54ea8b656b2a30a025aacad8eb19748d71e2"
+    },
+    {
+      "path": "proofs/related-runmeta.json",
+      "bytes": 1330,
+      "sha256": "bd0baef7b0cfc454d1095f7cbd5dfa39139f83dfeebb257fa89cb09aa386bb64"
+    },
+    {
+      "path": "proofs/same-production-and-fault-runmeta.json",
+      "bytes": 2353,
+      "sha256": "b2fe1d4bb9ceafbe8a84aca5a8c66b37a033a186362ff4839c4ca56beed09ef2"
+    },
+    {
+      "path": "proofs/synthetic-unwanted-session.log",
+      "bytes": 3692,
+      "sha256": "27f3f9e1103ab0d09d664ceac9caddd129049eec6eea621153c7d97c3f04b0a8"
+    },
+    {
+      "path": "proofs/synthetic-wrong-flags.log",
+      "bytes": 3356,
+      "sha256": "5fbbbe5f3f3015c9204acc6bdb3e84b2975e41f35bbf7587b4108de549236f10"
+    },
+    {
+      "path": "proofs/target-runmeta.json",
+      "bytes": 2029,
+      "sha256": "691e9143fbf53678192918f7a4e811af36f34b61321b165ba0f973829a1d8cfc"
+    }
+  ]
+}
