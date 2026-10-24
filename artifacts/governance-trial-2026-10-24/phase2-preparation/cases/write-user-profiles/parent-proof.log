@@ -1,0 +1,68 @@
+FFFF.                                                                    [100%]
+=================================== FAILURES ===================================
+________________________ test_user_level_profile_loads _________________________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-523/test_user_level_profile_loads0')
+
+    def test_user_level_profile_loads(tmp_path):
+        user_root = tmp_path / "home"
+        _write_user(user_root, "audit-explorer.md", _VALID_FRONTMATTER.replace(
+            "name: test-locator", "name: audit-explorer"
+        ))
+>       loaded, errors = load_agent_profiles(tmp_path, user_root=user_root)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: load_agent_profiles() got an unexpected keyword argument 'user_root'
+
+tests/test_subagent_profiles.py:216: TypeError
+___________________ test_project_wins_over_user_on_same_name ___________________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-523/test_project_wins_over_user_on0')
+
+    def test_project_wins_over_user_on_same_name(tmp_path):
+        user_root = tmp_path / "home"
+        _write_user(user_root, "shared-type.md", _VALID_FRONTMATTER.replace(
+            "name: test-locator", "name: shared-type"
+        ).replace("max_turns: 8", "max_turns: 5"))
+        _write(tmp_path, "shared-type.md", _VALID_FRONTMATTER.replace(
+            "name: test-locator", "name: shared-type"
+        ))
+>       loaded, errors = load_agent_profiles(tmp_path, user_root=user_root)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: load_agent_profiles() got an unexpected keyword argument 'user_root'
+
+tests/test_subagent_profiles.py:231: TypeError
+_______________________ test_errors_carry_origin_prefix ________________________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-523/test_errors_carry_origin_prefi0')
+
+    def test_errors_carry_origin_prefix(tmp_path):
+        user_root = tmp_path / "home"
+        _write_user(user_root, "broken.md", "no frontmatter")
+>       loaded, errors = load_agent_profiles(tmp_path, user_root=user_root)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: load_agent_profiles() got an unexpected keyword argument 'user_root'
+
+tests/test_subagent_profiles.py:239: TypeError
+____________________________ test_both_roots_merge _____________________________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-523/test_both_roots_merge0')
+
+    def test_both_roots_merge(tmp_path):
+        user_root = tmp_path / "home"
+        _write_user(user_root, "user-type.md", _VALID_FRONTMATTER.replace(
+            "name: test-locator", "name: user-type"
+        ))
+        _write(tmp_path, "project-type.md", _VALID_FRONTMATTER.replace(
+            "name: test-locator", "name: project-type"
+        ))
+>       loaded, errors = load_agent_profiles(tmp_path, user_root=user_root)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: load_agent_profiles() got an unexpected keyword argument 'user_root'
+
+tests/test_subagent_profiles.py:253: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_subagent_profiles.py::test_user_level_profile_loads - TypeE...
+FAILED tests/test_subagent_profiles.py::test_project_wins_over_user_on_same_name
+FAILED tests/test_subagent_profiles.py::test_errors_carry_origin_prefix - Typ...
+FAILED tests/test_subagent_profiles.py::test_both_roots_merge - TypeError: lo...
+4 failed, 1 passed in 0.60s

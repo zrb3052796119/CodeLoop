@@ -1,0 +1,96 @@
+F.FF                                                                     [100%]
+=================================== FAILURES ===================================
+________________ test_result_contract_accepts_custom_agent_type ________________
+
+    def test_result_contract_accepts_custom_agent_type():
+        from minicode.subagent_result import project_subagent_result
+    
+>       result = project_subagent_result(
+            None,
+            subagent_id="sub_" + "1" * 32,
+            agent_type="test-locator",
+            outcome="completed",
+            fallback_summary="found it",
+            partial=False,
+        )
+
+tests/test_subagent_profiles.py:205: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+report_content = None, subagent_id = 'sub_11111111111111111111111111111111'
+agent_type = 'test-locator', outcome = 'completed'
+fallback_summary = 'found it', partial = False
+
+    def project_subagent_result(
+        report_content: object,
+        *,
+        subagent_id: str,
+        agent_type: str,
+        outcome: str,
+        fallback_summary: str,
+        partial: bool = False,
+    ) -> dict[str, object]:
+        """Validate a model report and bind parent-owned correlation fields.
+    
+        Missing or malformed reports degrade to an explicit, evidence-free
+        fallback. They never invent files, risks or verification claims.
+        ``partial`` marks a soft-landed run whose summary was produced after the
+        model-turn limit fired; the key is emitted only when True.
+        """
+        if _SUBAGENT_ID_RE.fullmatch(subagent_id) is None:
+            raise ValueError("sub-agent id is invalid")
+        if agent_type not in _AGENT_TYPES:
+>           raise ValueError("agent type is invalid")
+E           ValueError: agent type is invalid
+
+minicode/subagent_result.py:161: ValueError
+_________________ test_model_routing_inherits_for_custom_type __________________
+
+    def test_model_routing_inherits_for_custom_type():
+        from minicode.subagent_model_routing import resolve_subagent_model_route
+    
+>       route = resolve_subagent_model_route(
+            {"model": "parent-model"}, "test-locator"
+        )
+
+tests/test_subagent_profiles.py:233: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+runtime = {'model': 'parent-model'}, agent_type = 'test-locator'
+
+    def resolve_subagent_model_route(
+        runtime: dict[str, Any],
+        agent_type: str,
+    ) -> SubagentModelRoute:
+        """Resolve one child route without inheriting a credential implicitly."""
+        normalized_type = str(agent_type).strip().lower()
+        if normalized_type not in _AGENT_TYPES:
+>           raise SubagentModelRoutingError("subagent_type_unsupported")
+E           minicode.subagent_model_routing.SubagentModelRoutingError: subagent_type_unsupported
+
+minicode/subagent_model_routing.py:39: SubagentModelRoutingError
+______________ test_observation_payload_accepts_custom_agent_type ______________
+
+    def test_observation_payload_accepts_custom_agent_type():
+        from minicode.subagent_observation import project_subagent_event
+    
+        payload = project_subagent_event(
+            subagent_id="sub_" + "1" * 32,
+            agent_type="test-locator",
+            outcome="completed",
+            model_turns=3,
+            tool_calls=5,
+            duration_ms=1200,
+            max_turns=8,
+            result_contract_status="reported",
+            result_truncated=False,
+        )
+>       assert payload is not None
+E       assert None is not None
+
+tests/test_subagent_profiles.py:254: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_subagent_profiles.py::test_result_contract_accepts_custom_agent_type
+FAILED tests/test_subagent_profiles.py::test_model_routing_inherits_for_custom_type
+FAILED tests/test_subagent_profiles.py::test_observation_payload_accepts_custom_agent_type
+3 failed, 1 passed in 0.49s

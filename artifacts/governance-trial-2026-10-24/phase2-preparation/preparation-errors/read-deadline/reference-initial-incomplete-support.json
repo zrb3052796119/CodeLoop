@@ -1,0 +1,22 @@
+{
+  "case": "read-deadline",
+  "side": "reference",
+  "ref": "594e7dba829082b39bbf5cc2f9758dda891cd9ec",
+  "status": "rejected",
+  "returncode": 4,
+  "seconds": 2.393,
+  "testSha256": "f16bac502dd8ab455279a14af6d0c6967509a4ec23612dd98a967b1c24d0e29b",
+  "argv": [
+    "@REPOSITORY@/.venv-acceptance/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_production_reliability_hardening.py::test_request_timeout_is_bounded_by_remaining_agent_deadline",
+    "tests/test_production_reliability_hardening.py::test_request_timeout_never_exceeds_a_sub_millisecond_deadline"
+  ],
+  "log": "@STUDY_ROOT@/offline-proof/read-deadline/reference.log",
+  "summary": "importing test module '@STUDY_ROOT@/offline-proof/read-deadline/reference/tests/test_production_reliability_hardening.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_production_reliability_hardening.py:30: in <module>\n    from scripts.check_release_reproducibility import classify_porcelain\n@REPOSITORY@/scripts/check_release_reproducibility.py:11: in <module>\n    from scripts.agent_quality_evaluator import evaluate_gate, evaluate_quality_suite\n@REPOSITORY@/scripts/agent_quality_evaluator.py:20: in <module>\n    from minicode.intent_parser import IntentContext, IntentType, parse_intent\nE   ImportError: cannot import name 'IntentContext' from 'minicode.intent_parser' (@STUDY_ROOT@/offline-proof/read-deadline/reference/minicode/intent_parser.py)\n=========================== short test summary info ============================\nERROR tests/test_production_reliability_hardening.py\n1 error in 1.45s\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-deadline/reference/tests/test_production_reliability_hardening.py::test_request_timeout_is_bounded_by_remaining_agent_deadline\n\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-deadline/reference/tests/test_production_reliability_hardening.py::test_request_timeout_never_exceeds_a_sub_millisecond_deadline\n\n"
+}

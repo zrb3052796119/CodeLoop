@@ -1,0 +1,28 @@
+current: ..                                                                       [100%]
+2 passed in 1.15s
+
+historical-parent: .F                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_request_timeout_never_exceeds_a_sub_millisecond_deadline _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106bca7e0>
+
+    def test_request_timeout_never_exceeds_a_sub_millisecond_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+        import minicode.model_call_control as control_module
+        clock = SimpleNamespace(monotonic=lambda: 1000.0)
+        remaining = 2 ** (-11)
+        monkeypatch.setattr(control_module, 'time', clock)
+        timeout = bounded_request_timeout(120.0, deadline_monotonic=clock.monotonic() + remaining, cancellation_token=None)
+>       assert timeout == remaining
+E       assert 0.001 == 0.00048828125
+
+tests/test_submitted_diagnostic.py:19: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_submitted_diagnostic.py::test_request_timeout_never_exceeds_a_sub_millisecond_deadline
+1 failed, 1 passed in 0.68s
+
+read behavioral diagnostic accepted
+@STUDY_ROOT@/cases/read-deadline/private/oracle.py:67: SyntaxWarning: "is not" with 'str' literal. Did you mean "!="?
+  if '@STUDY_ROOT@/sources/0aa4e4625e9366ab62e884111bf92e7e12dad814' is not None:
+
+

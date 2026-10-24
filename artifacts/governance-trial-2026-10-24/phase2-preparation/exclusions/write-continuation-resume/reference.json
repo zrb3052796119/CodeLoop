@@ -1,0 +1,28 @@
+{
+  "case": "write-continuation-resume",
+  "side": "reference",
+  "ref": "b90a3ded8e5a5f4e8e1bf011650126b03f4e549a",
+  "status": "rejected",
+  "returncode": 4,
+  "seconds": 1.283,
+  "testSha256": "2fcaf14c21030d9e65e170316bbb12118cd46b332a3ae7147abb4283e7062c85",
+  "argv": [
+    "@REPOSITORY@/.venv-acceptance/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_subagent_continuation.py::test_validate_rejects_continue_with_spawn_action",
+    "tests/test_subagent_continuation.py::test_validate_rejects_continue_with_workflow_type",
+    "tests/test_subagent_continuation.py::test_validate_rejects_malformed_continue_id",
+    "tests/test_subagent_continuation.py::test_run_continuation_error_lists_retained_sessions",
+    "tests/test_subagent_continuation.py::test_run_type_mismatch_fails_closed",
+    "tests/test_subagent_continuation.py::test_run_seeds_history_from_stored_session",
+    "tests/test_subagent_continuation.py::test_successful_run_saves_new_session_and_advertises_it",
+    "tests/test_subagent_continuation.py::test_continuation_without_store_fails_closed"
+  ],
+  "log": "@STUDY_ROOT@/offline-proof/write-continuation-resume/reference.log",
+  "summary": "=====================\nERROR tests/test_subagent_continuation.py\n1 error in 0.61s\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/reference/tests/test_subagent_continuation.py::test_validate_rejects_continue_with_spawn_action\n\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/reference/tests/test_subagent_continuation.py::test_validate_rejects_continue_with_workflow_type\n\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/reference/tests/test_subagent_continuation.py::test_validate_rejects_malformed_continue_id\n\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/reference/tests/test_subagent_continuation.py::test_run_continuation_error_lists_retained_sessions\n\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/reference/tests/test_subagent_continuation.py::test_run_type_mismatch_fails_closed\n\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/reference/tests/test_subagent_continuation.py::test_run_seeds_history_from_stored_session\n\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/reference/tests/test_subagent_continuation.py::test_successful_run_saves_new_session_and_advertises_it\n\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/reference/tests/test_subagent_continuation.py::test_continuation_without_store_fails_closed\n\n"
+}

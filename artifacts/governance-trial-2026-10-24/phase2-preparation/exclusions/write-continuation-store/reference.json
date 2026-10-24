@@ -1,0 +1,23 @@
+{
+  "case": "write-continuation-store",
+  "side": "reference",
+  "ref": "e625ae981e7b7c4058e031a23f9450ace5fa17ee",
+  "status": "passed",
+  "returncode": 0,
+  "seconds": 0.977,
+  "testSha256": "9fcd8eb0703c513a56b688f7f54c0e63499479c7a0c9d5c5594809c10b15f664",
+  "argv": [
+    "@REPOSITORY@/.venv-acceptance/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_subagent_continuation.py::test_store_roundtrip",
+    "tests/test_subagent_continuation.py::test_store_evicts_oldest_beyond_cap",
+    "tests/test_subagent_continuation.py::test_store_rejects_non_positive_cap"
+  ],
+  "log": "@STUDY_ROOT@/offline-proof/write-continuation-store/reference.log",
+  "summary": "...                                                                      [100%]\n3 passed in 0.27s\n"
+}

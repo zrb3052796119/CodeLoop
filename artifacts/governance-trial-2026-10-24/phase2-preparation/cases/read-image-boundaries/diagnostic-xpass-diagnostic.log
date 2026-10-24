@@ -1,0 +1,12 @@
+current: XXXXXXX                                                                  [100%]
+7 xpassed in 3.32s
+
+
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-image-boundaries/private/oracle.py", line 49, in <module>
+    code,cases,observed=run_probe(workspace,"current",temp);calls=observed["calls"]
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "@STUDY_ROOT@/cases/read-image-boundaries/private/oracle.py", line 46, in run_probe
+    assert not observed["xfailReports"], "xfail/xpass diagnostic is not admissible"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: xfail/xpass diagnostic is not admissible

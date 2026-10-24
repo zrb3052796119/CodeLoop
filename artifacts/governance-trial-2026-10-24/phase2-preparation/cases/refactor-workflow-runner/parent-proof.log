@@ -1,0 +1,83 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+______________ test_workflow_runner_exposes_one_complete_run_seam ______________
+
+    def test_workflow_runner_exposes_one_complete_run_seam() -> None:
+>       from minicode import workflow_runner
+E       ImportError: cannot import name 'workflow_runner' from 'minicode' (@STUDY_ROOT@/offline-proof/refactor-workflow-runner/parent/minicode/__init__.py)
+
+tests/test_workflow_runner_module.py:27: ImportError
+____________ test_workflow_runner_does_not_reverse_import_task_tool ____________
+
+    def test_workflow_runner_does_not_reverse_import_task_tool() -> None:
+>       from minicode import workflow_runner
+E       ImportError: cannot import name 'workflow_runner' from 'minicode' (@STUDY_ROOT@/offline-proof/refactor-workflow-runner/parent/minicode/__init__.py)
+
+tests/test_workflow_runner_module.py:44: ImportError
+____________ test_task_tool_does_not_own_workflow_runtime_internals ____________
+
+    def test_task_tool_does_not_own_workflow_runtime_internals() -> None:
+        import minicode.tools.task as task_module
+    
+        forbidden = {
+            "minicode.central_scheduler",
+            "minicode.deterministic_verifier",
+            "minicode.scheduler_artifacts",
+            "minicode.scheduler_audit",
+            "minicode.scheduler_trace",
+            "minicode.workflow_workspace",
+        }
+>       assert _imported_modules(Path(task_module.__file__)).isdisjoint(forbidden)
+E       AssertionError: assert False
+E        +  where False = <built-in method isdisjoint of set object at 0x106818c80>({'minicode.central_scheduler', 'minicode.deterministic_verifier', 'minicode.scheduler_artifacts', 'minicode.scheduler_audit', 'minicode.scheduler_trace', 'minicode.workflow_workspace'})
+E        +    where <built-in method isdisjoint of set object at 0x106818c80> = {'__future__', 'concurrent.futures', 'dataclasses', 'datetime', 'hashlib', 'inspect', ...}.isdisjoint
+E        +      where {'__future__', 'concurrent.futures', 'dataclasses', 'datetime', 'hashlib', 'inspect', ...} = _imported_modules(PosixPath('@STUDY_ROOT@/offline-proof/refactor-workflow-runner/parent/minicode/tools/task.py'))
+E        +        where PosixPath('@STUDY_ROOT@/offline-proof/refactor-workflow-runner/parent/minicode/tools/task.py') = Path('@STUDY_ROOT@/offline-proof/refactor-workflow-runner/parent/minicode/tools/task.py')
+E        +          where '@STUDY_ROOT@/offline-proof/refactor-workflow-runner/parent/minicode/tools/task.py' = <module 'minicode.tools.task' from '@STUDY_ROOT@/offline-proof/refactor-workflow-runner/parent/minicode/tools/task.py'>.__file__
+
+tests/test_workflow_runner_module.py:61: AssertionError
+________ test_task_binds_the_current_child_runner_at_workflow_dispatch _________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-528/test_task_binds_the_current_ch0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x104c1c1d0>
+
+    def test_task_binds_the_current_child_runner_at_workflow_dispatch(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        import minicode.tools.task as task_module
+        from minicode.tooling import ToolContext, ToolResult
+    
+        captured: dict[str, object] = {}
+    
+        def child_runner(_input_data: dict, _context: object) -> ToolResult:
+            raise AssertionError("the capture runner must not dispatch a child")
+    
+        def capture_workflow(
+            input_data: dict,
+            context: object,
+            *,
+            depth: int,
+            subagent_id: str,
+            run_subagent: object,
+        ) -> ToolResult:
+            captured.update(
+                input_data=input_data,
+                context=context,
+                depth=depth,
+                subagent_id=subagent_id,
+                run_subagent=run_subagent,
+            )
+            return ToolResult(ok=True, output="captured")
+    
+        monkeypatch.setattr(task_module, "_run", child_runner)
+>       monkeypatch.setattr(task_module, "run_workflow", capture_workflow)
+E       AttributeError: <module 'minicode.tools.task' from '@STUDY_ROOT@/offline-proof/refactor-workflow-runner/parent/minicode/tools/task.py'> has no attribute 'run_workflow'
+
+tests/test_workflow_runner_module.py:94: AttributeError
+=========================== short test summary info ============================
+FAILED tests/test_workflow_runner_module.py::test_workflow_runner_exposes_one_complete_run_seam
+FAILED tests/test_workflow_runner_module.py::test_workflow_runner_does_not_reverse_import_task_tool
+FAILED tests/test_workflow_runner_module.py::test_task_tool_does_not_own_workflow_runtime_internals
+FAILED tests/test_workflow_runner_module.py::test_task_binds_the_current_child_runner_at_workflow_dispatch
+4 failed in 1.52s

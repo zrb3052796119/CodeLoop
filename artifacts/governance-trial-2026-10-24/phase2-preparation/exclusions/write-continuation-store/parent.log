@@ -1,0 +1,21 @@
+
+==================================== ERRORS ====================================
+_____________ ERROR collecting tests/test_subagent_continuation.py _____________
+ImportError while importing test module '@STUDY_ROOT@/offline-proof/write-continuation-store/parent/tests/test_subagent_continuation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_subagent_continuation.py:5: in <module>
+    from minicode.subagent_sessions import (
+E   ModuleNotFoundError: No module named 'minicode.subagent_sessions'
+=========================== short test summary info ============================
+ERROR tests/test_subagent_continuation.py
+1 error in 0.32s
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-store/parent/tests/test_subagent_continuation.py::test_store_roundtrip
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-store/parent/tests/test_subagent_continuation.py::test_store_evicts_oldest_beyond_cap
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-store/parent/tests/test_subagent_continuation.py::test_store_rejects_non_positive_cap
+

@@ -1,0 +1,182 @@
+FF.F                                                                     [100%]
+=================================== FAILURES ===================================
+___________________ test_run_dispatches_custom_profile_type ____________________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-526/test_run_dispatches_custom_pro0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1048e74a0>
+
+    def test_run_dispatches_custom_profile_type(tmp_path, monkeypatch):
+        _dispatch_imports()
+        _write(tmp_path, "test-locator.md", _VALID_FRONTMATTER)
+        captured: dict = {}
+    
+        def fake_run_agent_turn(**kwargs):
+            captured["messages"] = kwargs["messages"]
+            captured["max_steps"] = kwargs["max_steps"]
+            kwargs["outcome_capture"].record(
+                canonicalize_task_outcome("success", 0)
+            )
+            return [{"role": "assistant", "content": "located tests"}]
+    
+        monkeypatch.setattr(task_module, "run_agent_turn", fake_run_agent_turn)
+>       result = task_tool.run(
+            {
+                "description": "locate tests",
+                "prompt": "find the tests covering billing",
+                "agent_type": "test-locator",
+            },
+            ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"}),
+        )
+
+tests/test_subagent_profiles.py:294: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+minicode/tools/task.py:2987: in _dispatch
+    return _run_with_delegation_circuit(input_data, context, _SYNC_RUN)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+minicode/tools/task.py:216: in _run_with_delegation_circuit
+    result = runner(input_data, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input_data = {'description': 'locate tests', 'prompt': 'find the tests covering billing', 'agent_type': 'test-locator'}
+context = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-526/test_run_dispatches_custom_pro0', permissions=None, _runtime={'model': 'fake'}, _event_sink=None, _step=None, _agent_depth=0)
+
+    def _run(input_data: dict, context) -> ToolResult:
+        """Execute a sub-agent task.
+    
+        This creates an isolated agent loop with:
+        - Its own message history (system + task prompt)
+        - Filtered tools based on agent type
+        - A turn limit
+        - Result summarized for the parent context
+        """
+        from minicode.permissions import PermissionManager
+        from minicode.subagent_model_routing import (
+            SubagentModelRoutingError,
+            create_subagent_model_adapter,
+            resolve_subagent_model_route,
+        )
+        from minicode.tools import create_default_tool_registry
+    
+        agent_type = input_data["agent_type"]
+        logical_role = getattr(context, "_logical_agent_role", None)
+        # Legacy model routes are transport choices, never permission fallbacks.
+        # A scheduler role must be recognized and paired with its declared route
+        # before tool, prompt, Skill or filesystem capabilities are constructed.
+        scheduler_role_routes = {
+            WorkerRole.ANALYST: "plan",
+            WorkerRole.EXECUTOR: "general",
+            WorkerRole.REVIEWER: "plan",
+            WorkerRole.ADJUDICATOR: "plan",
+        }
+        scheduler_role = None
+        if logical_role is not None:
+            try:
+                scheduler_role = WorkerRole(logical_role)
+            except (TypeError, ValueError):
+                return ToolResult(
+                    ok=False,
+                    output="error[scheduler_role_invalid]: unknown scheduler role",
+                )
+            if scheduler_role_routes.get(scheduler_role) != agent_type:
+                return ToolResult(
+                    ok=False,
+                    output=(
+                        "error[scheduler_role_invalid]: scheduler role does not "
+                        "match its model route"
+                    ),
+                )
+        scheduler_executor = scheduler_role is WorkerRole.EXECUTOR
+        scheduler_read_worker = scheduler_role is not None and not scheduler_executor
+>       agent_def = dict(AGENT_TYPES[agent_type])
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'test-locator'
+
+minicode/tools/task.py:1974: KeyError
+______________ test_unknown_type_lists_available_and_load_errors _______________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-526/test_unknown_type_lists_availa0')
+
+    def test_unknown_type_lists_available_and_load_errors(tmp_path):
+        _dispatch_imports()
+        _write(tmp_path, "broken.md", "no frontmatter")
+>       result = task_module._run(
+            {"description": "x", "prompt": "y", "agent_type": "ghost"},
+            ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"}),
+        )
+
+tests/test_subagent_profiles.py:311: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input_data = {'description': 'x', 'prompt': 'y', 'agent_type': 'ghost'}
+context = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-526/test_unknown_type_lists_availa0', permissions=None, _runtime={'model': 'fake'}, _event_sink=None, _step=None, _agent_depth=0)
+
+    def _run(input_data: dict, context) -> ToolResult:
+        """Execute a sub-agent task.
+    
+        This creates an isolated agent loop with:
+        - Its own message history (system + task prompt)
+        - Filtered tools based on agent type
+        - A turn limit
+        - Result summarized for the parent context
+        """
+        from minicode.permissions import PermissionManager
+        from minicode.subagent_model_routing import (
+            SubagentModelRoutingError,
+            create_subagent_model_adapter,
+            resolve_subagent_model_route,
+        )
+        from minicode.tools import create_default_tool_registry
+    
+        agent_type = input_data["agent_type"]
+        logical_role = getattr(context, "_logical_agent_role", None)
+        # Legacy model routes are transport choices, never permission fallbacks.
+        # A scheduler role must be recognized and paired with its declared route
+        # before tool, prompt, Skill or filesystem capabilities are constructed.
+        scheduler_role_routes = {
+            WorkerRole.ANALYST: "plan",
+            WorkerRole.EXECUTOR: "general",
+            WorkerRole.REVIEWER: "plan",
+            WorkerRole.ADJUDICATOR: "plan",
+        }
+        scheduler_role = None
+        if logical_role is not None:
+            try:
+                scheduler_role = WorkerRole(logical_role)
+            except (TypeError, ValueError):
+                return ToolResult(
+                    ok=False,
+                    output="error[scheduler_role_invalid]: unknown scheduler role",
+                )
+            if scheduler_role_routes.get(scheduler_role) != agent_type:
+                return ToolResult(
+                    ok=False,
+                    output=(
+                        "error[scheduler_role_invalid]: scheduler role does not "
+                        "match its model route"
+                    ),
+                )
+        scheduler_executor = scheduler_role is WorkerRole.EXECUTOR
+        scheduler_read_worker = scheduler_role is not None and not scheduler_executor
+>       agent_def = dict(AGENT_TYPES[agent_type])
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'ghost'
+
+minicode/tools/task.py:1974: KeyError
+______________ test_custom_type_is_concurrency_safe_and_read_only ______________
+
+    def test_custom_type_is_concurrency_safe_and_read_only():
+        _dispatch_imports()
+>       assert task_module._call_is_concurrency_safe(
+            {"agent_type": "test-locator"}
+        )
+E       AssertionError: assert False
+E        +  where False = <function _call_is_concurrency_safe at 0x105ba9a80>({'agent_type': 'test-locator'})
+E        +    where <function _call_is_concurrency_safe at 0x105ba9a80> = task_module._call_is_concurrency_safe
+
+tests/test_subagent_profiles.py:330: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_subagent_profiles.py::test_run_dispatches_custom_profile_type
+FAILED tests/test_subagent_profiles.py::test_unknown_type_lists_available_and_load_errors
+FAILED tests/test_subagent_profiles.py::test_custom_type_is_concurrency_safe_and_read_only
+3 failed, 1 passed in 2.57s

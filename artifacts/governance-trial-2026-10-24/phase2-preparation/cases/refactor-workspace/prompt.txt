@@ -1,0 +1,4 @@
+Extract workflow workspace transactions and the shared task deadline exception from the task orchestrator into dedicated modules. Preserve task compatibility aliases as the same types, retain the deadline timeout field/message contract, and ensure the workspace module does not import the task orchestrator. Preserve the existing transaction behavior and add boundary regressions.
+
+This is a retrospective task reconstructed from a real CodeLoop change, not a quoted historical user message. Work only in the provided checkout. Do not access Git history, reference solutions, external networks, personal profiles, or other task workspaces.
+You may change only minicode/task_deadline.py, minicode/tools/task.py, minicode/workflow_workspace.py, and tests/test_eval_regression.py. Existing tests are read-only. Add at least one meaningful regression in tests/test_eval_regression.py and report verification honestly.

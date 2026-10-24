@@ -1,0 +1,7 @@
+@STUDY_ROOT@/cases/read-deadline/private/oracle.py:67: SyntaxWarning: "is not" with 'str' literal. Did you mean "!="?
+  if '@STUDY_ROOT@/sources/0aa4e4625e9366ab62e884111bf92e7e12dad814' is not None:
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-deadline/private/oracle.py", line 6, in <module>
+    assert isinstance(answer,dict) and answer.get("facts")=={'timeout_seconds': 0.00048828125, 'expired_exception': 'ModelCallDeadlineExceeded', 'minimum_floor_may_extend_deadline': False}, "incorrect scenario facts"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: incorrect scenario facts

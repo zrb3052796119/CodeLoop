@@ -1,0 +1,49 @@
+
+==================================== ERRORS ====================================
+_______________ ERROR collecting tests/test_subagent_profiles.py _______________
+ImportError while importing test module '@STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_subagent_profiles.py:7: in <module>
+    from minicode.subagent_profiles import (
+E   ModuleNotFoundError: No module named 'minicode.subagent_profiles'
+=========================== short test summary info ============================
+ERROR tests/test_subagent_profiles.py
+1 error in 0.47s
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_valid_profile_parses
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_body_without_frontmatter_is_rejected
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_unclosed_frontmatter_is_rejected
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_malformed_frontmatter_line_is_rejected
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_reserved_names_are_rejected
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_bad_slug_is_rejected
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_write_tool_is_rejected
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_unknown_tool_is_rejected
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_out_of_range_turns_fail_closed
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_unknown_frontmatter_key_rejected
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_empty_body_rejected
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_missing_directory_is_empty
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_non_markdown_files_ignored
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_mtime_cache_invalidates
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_builtin_names_win_in_resolution
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_resolution_merges_custom_types
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-profile-parser/parent/tests/test_subagent_profiles.py::test_agent_name_re_shape
+

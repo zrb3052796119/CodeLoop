@@ -1,0 +1,277 @@
+F...F.                                                                   [100%]
+=================================== FAILURES ===================================
+_________________ test_prompt_cache_marks_system_and_last_tool _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1029b7680>
+
+    def test_prompt_cache_marks_system_and_last_tool(monkeypatch) -> None:
+        captured: list[dict] = []
+        monkeypatch.setattr(
+            "urllib.request.urlopen",
+            _capturing_urlopen(_END_TURN_PAYLOAD, captured),
+        )
+        adapter = AnthropicModelAdapter(
+            {"model": "claude", "baseUrl": "https://api.anthropic.com", "authToken": "x"},
+            _two_tool_registry(),
+        )
+    
+        adapter.next(
+            [
+                {"role": "system", "content": "sys"},
+                {"role": "user", "content": "hi"},
+            ]
+        )
+    
+        body = captured[0]
+>       assert body["system"] == [
+            {
+                "type": "text",
+                "text": "sys",
+                "cache_control": {"type": "ephemeral"},
+            }
+        ]
+E       AssertionError: assert 'sys' == [{'type': 'text', 'text': 'sys', 'cache_control': {'type': 'ephemeral'}}]
+
+tests/test_anthropic_adapter.py:91: AssertionError
+__________________ test_cache_control_400_falls_back_to_plain __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10254e7b0>
+
+    def test_cache_control_400_falls_back_to_plain(monkeypatch) -> None:
+        captured: list[dict] = []
+    
+        def fake(request, timeout=60):
+            captured.append(json.loads(request.data.decode("utf-8")))
+            if len(captured) == 1:
+                error = urllib.error.HTTPError(
+                    url=request.full_url,
+                    code=400,
+                    msg="Bad Request",
+                    hdrs=None,
+                    fp=io.BytesIO(
+                        json.dumps(
+                            {"error": {"message": "cache_control is not supported"}}
+                        ).encode("utf-8")
+                    ),
+                )
+                raise error
+            return DummyResponse(_END_TURN_PAYLOAD)
+    
+        monkeypatch.setattr("urllib.request.urlopen", fake)
+        adapter = AnthropicModelAdapter(
+            {"model": "claude", "baseUrl": "https://api.anthropic.com", "authToken": "x"},
+            _two_tool_registry(),
+        )
+    
+>       step = adapter.next(
+            [
+                {"role": "system", "content": "sys"},
+                {"role": "user", "content": "hi"},
+            ]
+        )
+
+tests/test_anthropic_adapter.py:197: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <minicode.anthropic_adapter.AnthropicModelAdapter object at 0x10254dfa0>
+messages = [{'role': 'system', 'content': 'sys'}, {'role': 'user', 'content': 'hi'}]
+on_stream_chunk = None, on_thinking_delta = None, store = None
+cancellation_token = None, deadline_monotonic = None, disable_tools = False
+max_output_tokens_override = None, max_response_bytes_override = None
+temperature_override = None, max_retries_override = None
+isolated_reasoning_state = False
+
+    def next(
+        self,
+        messages: list[dict[str, Any]],
+        on_stream_chunk: Callable[[str], None] | None = None,
+        on_thinking_delta: Callable[[str], None] | None = None,
+        store: Store[AppState] | None = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+        disable_tools: bool = False,
+        max_output_tokens_override: int | None = None,
+        max_response_bytes_override: int | None = None,
+        temperature_override: float | None = None,
+        max_retries_override: int | None = None,
+        isolated_reasoning_state: bool = False,
+    ) -> AgentStep:
+        if max_output_tokens_override is not None and (
+            isinstance(max_output_tokens_override, bool)
+            or not isinstance(max_output_tokens_override, int)
+            or max_output_tokens_override <= 0
+        ):
+            raise ValueError("max_output_tokens_override must be a positive integer")
+        if max_response_bytes_override is not None and (
+            isinstance(max_response_bytes_override, bool)
+            or not isinstance(max_response_bytes_override, int)
+            or max_response_bytes_override <= 0
+            or max_response_bytes_override > DEFAULT_MAX_RESPONSE_BYTES
+        ):
+            raise ValueError(
+                "max_response_bytes_override must be between 1 and the global limit"
+            )
+        if temperature_override is not None and (
+            isinstance(temperature_override, bool)
+            or not isinstance(temperature_override, (int, float))
+            or not math.isfinite(float(temperature_override))
+        ):
+            raise ValueError("temperature_override must be finite")
+        if max_retries_override is not None and (
+            isinstance(max_retries_override, bool)
+            or not isinstance(max_retries_override, int)
+            or max_retries_override < 0
+        ):
+            raise ValueError("max_retries_override must be a non-negative integer")
+    
+        system_message, converted_messages = _to_anthropic_messages(messages)
+    
+        # Replay stored thinking blocks into the first assistant message
+        # with text content (DeepSeek extended thinking round-trip)
+        if self._thinking_blocks and not isolated_reasoning_state:
+            for i in range(len(converted_messages)):
+                msg = converted_messages[i]
+                if msg.get("role") == "assistant":
+                    content = msg.get("content", [])
+                    if isinstance(content, list):
+                        converted_messages[i] = dict(msg)
+                        converted_messages[i]["content"] = list(self._thinking_blocks) + content
+                        break
+            self._thinking_blocks = []
+    
+        request_body = {
+            "model": self.runtime["model"],
+            "system": system_message,
+            "messages": converted_messages,
+        }
+        if not disable_tools:
+            serialized_tools = self._get_serialized_tools()
+            if serialized_tools:
+                request_body["tools"] = serialized_tools
+        # Disable extended thinking for non-Anthropic models that support it
+        # but require round-trip preservation our message format can't provide
+        if self.runtime.get("disableThinking"):
+            request_body["thinking"] = {"type": "disabled"}
+        if self.runtime.get("maxOutputTokens") is not None:
+            request_body["max_tokens"] = self.runtime["maxOutputTokens"]
+        if self.runtime.get("temperature") is not None:
+            request_body["temperature"] = self.runtime["temperature"]
+        if max_output_tokens_override is not None:
+            request_body["max_tokens"] = max_output_tokens_override
+        if temperature_override is not None:
+            request_body["temperature"] = float(temperature_override)
+        if on_stream_chunk:
+            request_body["stream"] = True
+    
+        request = urllib.request.Request(
+            url=self.runtime["baseUrl"].rstrip("/") + "/v1/messages",
+            data=json.dumps(request_body).encode("utf-8"),
+            headers={
+                "content-type": "application/json",
+                "anthropic-version": "2023-06-01",
+                **(
+                    {"x-api-key": self.runtime["apiKey"]}
+                    if self.runtime.get("apiKey")
+                    else {"Authorization": f"Bearer {self.runtime['authToken']}"}
+                ),
+            },
+            method="POST",
+        )
+    
+        max_retries = (
+            max_retries_override
+            if max_retries_override is not None
+            else int(self.runtime.get("modelMaxRetries", _get_retry_limit()))
+        )
+        response = None
+        response_read_timeout = 0.0
+        for attempt in range(max_retries + 1):
+            try:
+                timeout = bounded_request_timeout(
+                    float(
+                        self.runtime.get("modelTimeoutSeconds")
+                        or os.environ.get("MINICODE_MODEL_TIMEOUT", "60")
+                    ),
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
+                response_read_timeout = timeout
+                response = _open_verified_url_controlled(
+                    request,
+                    timeout=timeout,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
+                try:
+                    checkpoint_model_call(
+                        cancellation_token=cancellation_token,
+                        deadline_monotonic=deadline_monotonic,
+                    )
+                except BaseException:
+                    _close_response_safely(response)
+                    response = None
+                    raise
+                break
+            except urllib.error.HTTPError as error:
+                response = error
+                if error.code not in RETRYABLE_STATUS or attempt >= max_retries:
+                    break
+                # Use semantic error classification for adaptive backoff
+                from minicode.api_retry import classify_error
+                try:
+                    retry_after_value = None
+                    headers = getattr(error, "headers", None)
+                    get_header = getattr(headers, "get", None)
+                    if callable(get_header):
+                        try:
+                            retry_after_value = get_header("retry-after")
+                        except Exception:  # noqa: BLE001 - malformed header shim
+                            retry_after_value = None
+                finally:
+                    _close_response_safely(error)
+                    response = None
+                category = classify_error(error)
+                retry_after = _parse_retry_after_seconds(retry_after_value)
+                wait = calculate_backoff(attempt, retry_after=retry_after,
+                                        category=category)
+                controlled_retry_sleep(
+                    wait,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
+            except urllib.error.URLError:
+                if attempt >= max_retries:
+                    raise
+                wait = calculate_backoff(attempt)
+                controlled_retry_sleep(
+                    wait,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
+        if response is None:
+            raise RuntimeError("Model request failed before receiving a response")
+    
+        if not on_stream_chunk:
+            data = _read_json_body(
+                response,
+                maximum_bytes=(
+                    max_response_bytes_override
+                    if max_response_bytes_override is not None
+                    else DEFAULT_MAX_RESPONSE_BYTES
+                ),
+                read_timeout_seconds=response_read_timeout,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
+            status = getattr(response, "status", getattr(response, "code", 200))
+            if status >= 400:
+                if store:
+                    store.set_state(record_api_error())
+>               raise RuntimeError(_extract_error_message(data, status))
+E               RuntimeError: cache_control is not supported
+
+minicode/anthropic_adapter.py:917: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/test_anthropic_adapter.py::test_prompt_cache_marks_system_and_last_tool
+FAILED tests/test_anthropic_adapter.py::test_cache_control_400_falls_back_to_plain
+2 failed, 4 passed in 0.64s

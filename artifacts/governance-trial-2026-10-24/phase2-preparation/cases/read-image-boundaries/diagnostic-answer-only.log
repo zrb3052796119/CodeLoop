@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-image-boundaries/private/oracle.py", line 8, in <module>
+    assert isinstance(probe,str) and probe.strip(), "missing executable diagnostic"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: missing executable diagnostic

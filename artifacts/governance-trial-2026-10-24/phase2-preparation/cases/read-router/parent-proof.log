@@ -1,0 +1,81 @@
+F.FFFF                                                                   [100%]
+=================================== FAILURES ===================================
+_________ test_explicit_empty_catalog_does_not_inherit_builtin_models __________
+
+    def test_explicit_empty_catalog_does_not_inherit_builtin_models() -> None:
+        router = AgentRouter(available_models={})
+    
+>       with pytest.raises(RuntimeError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RuntimeError
+
+tests/test_agent_router_fail_closed.py:29: Failed
+_________ test_missing_tier_candidates_never_select_an_unrelated_model _________
+
+    def test_missing_tier_candidates_never_select_an_unrelated_model() -> None:
+        router = AgentRouter(tiers=[tier()], available_models=catalog("unrelated"))
+    
+>       with pytest.raises(RuntimeError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RuntimeError
+
+tests/test_agent_router_fail_closed.py:66: Failed
+______________ test_unregistered_explicit_model_is_rejected[True] ______________
+
+configure_at_construction = True
+
+    @pytest.mark.parametrize("configure_at_construction", [True, False])
+    def test_unregistered_explicit_model_is_rejected(
+        configure_at_construction: bool,
+    ) -> None:
+        router = AgentRouter(
+            tiers=[tier()], available_models=catalog("project-primary"),
+            force_model="unregistered" if configure_at_construction else None,
+        )
+        if not configure_at_construction:
+            router.force_model_selection("unregistered")
+    
+>       with pytest.raises(RuntimeError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RuntimeError
+
+tests/test_agent_router_fail_closed.py:100: Failed
+_____________ test_unregistered_explicit_model_is_rejected[False] ______________
+
+configure_at_construction = False
+
+    @pytest.mark.parametrize("configure_at_construction", [True, False])
+    def test_unregistered_explicit_model_is_rejected(
+        configure_at_construction: bool,
+    ) -> None:
+        router = AgentRouter(
+            tiers=[tier()], available_models=catalog("project-primary"),
+            force_model="unregistered" if configure_at_construction else None,
+        )
+        if not configure_at_construction:
+            router.force_model_selection("unregistered")
+    
+>       with pytest.raises(RuntimeError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RuntimeError
+
+tests/test_agent_router_fail_closed.py:100: Failed
+_________ test_smart_router_does_not_switch_after_candidate_exhaustion _________
+
+    def test_smart_router_does_not_switch_after_candidate_exhaustion() -> None:
+        router = AgentRouter(tiers=[tier()], available_models=catalog("unrelated"))
+        switcher = Mock(spec=ModelSwitcher)
+        smart = SmartRouter(router=router, switcher=switcher)
+    
+>       with pytest.raises(RuntimeError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RuntimeError
+
+tests/test_agent_router_fail_closed.py:111: Failed
+=========================== short test summary info ============================
+FAILED tests/test_agent_router_fail_closed.py::test_explicit_empty_catalog_does_not_inherit_builtin_models
+FAILED tests/test_agent_router_fail_closed.py::test_missing_tier_candidates_never_select_an_unrelated_model
+FAILED tests/test_agent_router_fail_closed.py::test_unregistered_explicit_model_is_rejected[True]
+FAILED tests/test_agent_router_fail_closed.py::test_unregistered_explicit_model_is_rejected[False]
+FAILED tests/test_agent_router_fail_closed.py::test_smart_router_does_not_switch_after_candidate_exhaustion
+5 failed, 1 passed in 0.50s

@@ -1,0 +1,9 @@
+current: .......                                                                  [100%]
+7 passed in 0.60s
+
+
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-image-boundaries/private/oracle.py", line 52, in <module>
+    assert calls.get(name,0)>=count, "diagnostic did not execute required behavior: "+name
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: diagnostic did not execute required behavior: minicode/tools/inspect_image.py:_run

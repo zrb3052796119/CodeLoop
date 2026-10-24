@@ -18,7 +18,9 @@ import json
 import os
 from pathlib import Path
 import random
+import re
 import signal
+import shutil
 import stat
 import subprocess
 import sys
@@ -80,6 +82,124 @@ PRICE = {
     "codingRoute": True,
     "promotionNote": "Official FAQ also mentions half-price promotion; no account-specific discount assumed.",
 }
+STUDY = None
+
+
+def configure_study(output):
+    """Load an optional registered task design in this runner process only."""
+    global STUDY, LIMITS, PRICE, DEFAULT, HARNESS_FILES
+    path = output / "study-design.json"
+    if not path.exists():
+        return
+    STUDY = read_json(path)
+    if STUDY["arms"] != ["single", "auto"]:
+        raise ValueError("registered study requires single/auto arms")
+    DEFAULT = output
+    LIMITS = {key: STUDY["limits"][key] for key in (
+        "maxTokens", "maxModelCalls", "maxCostUsd", "wallSeconds",
+        "requestTimeoutSeconds", "idleTimeoutSeconds", "connectTimeoutSeconds",
+    )}
+    LIMITS["maxOutputTokens"] = STUDY["runtime"]["maxOutputTokens"]
+    PRICE = {"known": False, "currency": None, "reason": "configured route price unknown"}
+    HARNESS_FILES = tuple(dict.fromkeys((*HARNESS_FILES, "implementation_judge.py")))
+
+
+def prepare_study(output, design_path, analysis_plan):
+    """Materialize verified public baselines and private oracles; never call a model."""
+    if output.exists():
+        raise ValueError("study output must be new; never replace existing evidence")
+    design = read_json(design_path)
+    if design["arms"] != ["single", "auto"] or design["runtime"]["model"] != "glm-5.3-flash":
+        raise ValueError("unexpected registered arms or model")
+    ids = [case["id"] for case in design["cases"]]
+    schedule = design["schedule"]
+    if any(not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,100}", value) for value in [*ids, *(t["id"] for t in schedule)]):
+        raise ValueError("unsafe case or trial identity")
+    if len(set(ids)) != len(ids) or len({t["id"] for t in schedule}) != len(schedule):
+        raise ValueError("duplicate case or trial")
+    expected = {(case, arm, repeat) for case in ids for arm in design["arms"]
+                for repeat in range(1, design["repeats"] + 1)}
+    if {(t["case"], t["arm"], t["repeat"]) for t in schedule} != expected or len(schedule) != len(expected):
+        raise ValueError("schedule does not cover the registered cells exactly once")
+    tasks, support = [], {}
+    output.mkdir(parents=True, mode=0o700)
+    for case in design["cases"]:
+        files = {}
+        for name, expected_sha in case["sourceInventories"]["baseline"].items():
+            relative = Path(name)
+            if relative.is_absolute() or ".." in relative.parts or not name.startswith("minicode/") or relative.suffix != ".py":
+                raise ValueError("public baseline must contain only relative minicode Python sources")
+            content = (Path(case["baselineSourceDirectory"]) / relative).read_bytes()
+            if sha(content) != expected_sha:
+                raise ValueError("baseline source hash mismatch")
+            files[name] = content.decode()
+        oracle = Path(case["acceptance"]["oraclePath"]).read_bytes()
+        if sha(oracle) != case["acceptance"]["oracleSha256"]:
+            raise ValueError("private oracle hash mismatch")
+        oracle_source = oracle.decode()
+        for index, (directory, inventory) in enumerate(case.get("oracleDependencyDirectories", {}).items()):
+            target_root = output / "oracle-support" / case["id"] / str(index)
+            for name, expected_sha in inventory.items():
+                relative = Path(name)
+                if relative.is_absolute() or ".." in relative.parts or relative.suffix != ".py":
+                    raise ValueError("unsafe oracle dependency path")
+                content = (Path(directory) / relative).read_bytes()
+                if sha(content) != expected_sha:
+                    raise ValueError("oracle dependency hash mismatch")
+                target = target_root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(content)
+                support[target.relative_to(output).as_posix()] = expected_sha
+            oracle_source = oracle_source.replace(repr(directory), repr(str(target_root)))
+        readonly = case["category"] == "read"
+        tasks.append({"id": case["id"], "category": case["category"], "prompt": case["prompt"],
+                      "files": files, "authorized_paths": case["authorized_paths"],
+                      "oracle_source": oracle_source, "generatedRegressionRequired": not readonly,
+                      "verification_argv": [] if readonly else ["python3", "-m", "pytest", "-q", "tests/test_eval_regression.py"]})
+    write_json(output / "tasks.json", {"shared_files": {}, "cases": tasks})
+    write_json(output / "study-design.json", design)
+    write_json(output / "oracle-support-hashes.json", support)
+    shutil.copyfile(analysis_plan, output / "analysis-plan.md")
+    print(json.dumps({"prepared": True, "tasks": len(tasks), "trials": len(schedule), "providerCalls": 0}))
+
+
+def validate_study_files(output, manifest):
+    if STUDY is None:
+        return
+    for field, name in (("studyDesignSha256", "study-design.json"),
+                        ("oracleSupportSha256", "oracle-support-hashes.json")):
+        if manifest[field] != sha((output / name).read_bytes()):
+            raise RuntimeError("frozen study material changed")
+    expected_support = {}
+    tasks = read_json(output / "tasks.json")
+    registered = {case["id"]: case for case in STUDY["cases"]}
+    if tasks.get("shared_files") or {c["id"] for c in tasks["cases"]} != set(registered) or len(tasks["cases"]) != len(registered):
+        raise RuntimeError("prepared task membership differs from registration")
+    for task in tasks["cases"]:
+        case = registered[task["id"]]
+        if any(task[field] != case[field] for field in ("prompt", "category", "authorized_paths")):
+            raise RuntimeError("prepared task contract differs from registration")
+        inventory = {name: sha(content.encode()) for name, content in task["files"].items()}
+        if inventory != case["sourceInventories"]["baseline"]:
+            raise RuntimeError("prepared baseline differs from registration")
+        readonly = case["category"] == "read"
+        argv = [] if readonly else ["python3", "-m", "pytest", "-q", "tests/test_eval_regression.py"]
+        if task["generatedRegressionRequired"] != (not readonly) or task["verification_argv"] != argv:
+            raise RuntimeError("prepared verification policy differs from registration")
+        oracle = task["oracle_source"]
+        for index, (directory, inventory) in enumerate(case.get("oracleDependencyDirectories", {}).items()):
+            target_root = output / "oracle-support" / case["id"] / str(index)
+            oracle = oracle.replace(repr(str(target_root)), repr(directory))
+            expected_support.update({(target_root / name).relative_to(output).as_posix(): digest
+                                     for name, digest in inventory.items()})
+        if sha(oracle.encode()) != case["acceptance"]["oracleSha256"]:
+            raise RuntimeError("prepared oracle differs from registration")
+    support = read_json(output / "oracle-support-hashes.json")
+    if support != expected_support:
+        raise RuntimeError("prepared oracle support differs from registration")
+    for name, expected_sha in support.items():
+        if sha((output / name).read_bytes()) != expected_sha:
+            raise RuntimeError("frozen private oracle source changed")
 
 
 def read_json(path):
@@ -149,6 +269,11 @@ def frozen_runtime():
         "agentTurnBudgetCostUsd",
     ):
         runtime.pop(key, None)
+    if STUDY is not None:
+        registered = STUDY["runtime"]
+        if runtime["model"] != registered["model"]:
+            raise ValueError("configured model differs from registered model")
+        runtime.update(subagentModels={}, subagentRoutingEnabled=False)
     return runtime
 
 
@@ -174,7 +299,7 @@ def transport_metrics(snapshot):
     receipts = snapshot["requests"]
     known = [r for r in receipts if r.get("usage", {}).get("source") == "provider"]
     lower = 0.0
-    for row in known:
+    for row in known if PRICE.get("known", True) else []:
         usage = row["usage"]
         inputs, outputs = usage["input_tokens"], usage["output_tokens"]
         cached = usage.get("cache_read_tokens")
@@ -191,8 +316,10 @@ def transport_metrics(snapshot):
         "inputTokens": snapshot["inputTokensKnown"], "outputTokens": snapshot["outputTokensKnown"],
         "totalTokens": snapshot["inputTokensKnown"] + snapshot["outputTokensKnown"],
         "cacheReadTokens": snapshot["cacheReadTokensKnown"],
-        "estimatedCostCny": lower if complete else None,
-        "knownCostLowerBoundCny": lower if known else None,
+        "estimatedCostCny": lower if complete and PRICE.get("known", True) else None,
+        "knownCostLowerBoundCny": lower if known and PRICE.get("known", True) else None,
+        "estimatedCostUsd": None,
+        "currencyPriceKnown": PRICE.get("known", True),
         "delegationAttempts": len(task_calls),
         "delegationTypes": [c["arguments"].get("agent_type") if isinstance(c.get("arguments"), dict) else None for c in task_calls],
         "failedCalls": snapshot["failed"], "inFlightCalls": snapshot["inFlight"],
@@ -240,6 +367,14 @@ def freeze(output, repeats):
                         "id": f"{case['id']}-r{repeat}-{arm}",
                     }
                 )
+    if STUDY is not None:
+        from minicode.subagent_types import MAX_AGENT_DEPTH
+        if {role: resolve_max_turns(role) for role in ("explore", "plan", "general")} != STUDY["runtime"]["roleMaxTurns"]:
+            raise ValueError("registered role limits differ from current production defaults")
+        if MAX_AGENT_DEPTH != STUDY["runtime"]["maxAgentDepth"]:
+            raise ValueError("registered depth differs from production default")
+        schedule = deepcopy(STUDY["schedule"])
+        repeats = STUDY["repeats"]
     archive = output / "frozen-code.zip"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
         for path in sorted((ROOT / "minicode").rglob("*.py")):
@@ -274,6 +409,16 @@ def freeze(output, repeats):
         "isolation": "Fresh disposable workspace, empty skills/profiles/memory, no MCP/network tools, same scope approval and independent oracle.",
         "singlePromptAdaptation": "Remove unavailable subagent usage section; preserve other production instructions.",
     }
+    if STUDY is not None:
+        manifest.update(
+            studyDesignSha256=sha((output / "study-design.json").read_bytes()),
+            oracleSupportSha256=sha((output / "oracle-support-hashes.json").read_bytes()),
+            arms=STUDY["arms"], comparison="single vs bounded automatic delegation on registered historical tasks",
+            externalJudgeSeconds=STUDY["limits"]["externalJudgeSeconds"],
+            tokenBudgetSemantics="No economic token/call/currency cap; shared wall deadline and role/depth bounds retained.",
+            isolation="Private host oracles and logical tool scope; authorized Python is not an OS sandbox.",
+        )
+        validate_study_files(output, manifest)
     destination = output / "manifest.json"
     if destination.exists():
         raise ValueError(
@@ -342,13 +487,14 @@ def workflow_scope(call_input, authorized_paths):
 
 
 
-def independent_registry(owner, arm):
+def independent_registry(owner, arm, *, readonly=False):
     # Production core definitions are shared singletons. Evaluator wrappers
     # must belong only to this registry or a parent's policy leaks into leaves.
     from minicode.tooling import ToolRegistry
     return ToolRegistry([
         replace(owner.find(name)) for name in owner.list_all()
         if name in LOCAL_TOOLS and (arm != "single" or name != "task")
+        and (not readonly or name not in {"edit_file", "write_file", "run_command", "test_runner"})
     ], skills=[])
 
 
@@ -444,6 +590,7 @@ def execute_trial(output, trial_id):
     from run_multi_agent_cost_live import _BoundedWorkflowApprovalProvider
 
     manifest = read_json(output / "manifest.json")
+    validate_study_files(output, manifest)
     trial = next(x for x in manifest["schedule"] if x["id"] == trial_id)
     case = next(
         x for x in read_json(output / "tasks.json")["cases"] if x["id"] == trial["case"]
@@ -498,7 +645,9 @@ def execute_trial(output, trial_id):
     subagents = []
     approval = _BoundedWorkflowApprovalProvider(tuple(case["authorized_paths"]))
     owned_registries = []
-    verification_scope = VerificationScope(case["verification_argv"])
+    readonly = STUDY is not None and case["category"] == "read"
+    verification_scope = VerificationScope(case["verification_argv"] or
+                                           ("python3", "-m", "pytest", "-q", "tests/test_eval_regression.py"))
 
     def registry(*args, **kwargs):
         kwargs["include_mcp"] = False
@@ -506,7 +655,7 @@ def execute_trial(output, trial_id):
         registry_ = original_factory(*args, **kwargs)
         is_parent = not owned_registries
         owned_registries.append(registry_)
-        selected = independent_registry(registry_, trial["arm"])
+        selected = independent_registry(registry_, trial["arm"], readonly=readonly)
         if is_parent:
             selected = coordinator_registry(selected, trial["arm"])
         return guard_registry(selected, verification_scope)
@@ -523,6 +672,8 @@ def execute_trial(output, trial_id):
     )
     if case.get("verification_argv"):
         prompt += "\n项目可见验证命令：" + shlex.join(case["verification_argv"])
+    if readonly:
+        prompt = case["prompt"] + "\nThis checkout is read-only. Submit the diagnostic as final-response code; the host runs it in private copies."
     prompt = prompt_for_arm(prompt, trial["arm"])
     messages = []
     with ExitStack() as stack:
@@ -610,6 +761,12 @@ def execute_trial(output, trial_id):
                     event_sink=observation,
                     deadline_monotonic=transport.deadline,
                 )
+                if STUDY is not None:
+                    actual_budget = runtime.agent_budget.snapshot()
+                    if any(value is not None for value in (actual_budget.limit_total_tokens,
+                                                          actual_budget.limit_model_calls,
+                                                          actual_budget.limit_cost_usd)):
+                        raise RuntimeError("registered unlimited economic budget was not propagated")
                 if north._runtime_profile_from_adapter(
                     runtime.model, runtime_config
                 ) != north._runtime_profile_from_runtime(runtime_config):
@@ -728,6 +885,28 @@ def empty_transport_snapshot():
     }
 
 
+def intervention_metrics(root):
+    """Count retained host events without calling policy approval human input."""
+    counts, errors = {}, 0
+    files = list((root / "journal").rglob("events.ndjson"))
+    for path in files:
+        try:
+            for line in path.read_text().splitlines():
+                event = json.loads(line)
+                kind = event["type"]
+                counts[kind] = counts.get(kind, 0) + 1
+        except (OSError, ValueError, KeyError, TypeError):
+            errors += 1
+    return {
+        "journalAvailable": bool(files), "journalParseErrors": errors,
+        "journalEventCounts": counts,
+        "permissionRequestEvents": counts.get("permission.requested", 0) if files and not errors else None,
+        "permissionDecisionEvents": counts.get("permission.decided", 0) if files and not errors else None,
+        "humanApprovalCount": None, "humanCorrectionCount": None,
+        "humanEventCapture": "unavailable_unattended_host_policy_is_not_human_input",
+    }
+
+
 def finalize_trial(output, trial, *, process_code=0, process_seconds=0.0, stopped_epoch=None):
     """Judge delivered files outside the agent deadline, including killed trials."""
     root = output / "private" / trial["id"]
@@ -767,6 +946,7 @@ def finalize_trial(output, trial, *, process_code=0, process_seconds=0.0, stoppe
     changed = []
     forbidden = []
     judgement_start = time.monotonic()
+    judgement = None
     if workspace is not None and workspace.is_dir() and before and cleanup["cleanupComplete"]:
         before_oracle = workspace_files(workspace)
         oracle_path = root / "oracle.py"
@@ -775,13 +955,24 @@ def finalize_trial(output, trial, *, process_code=0, process_seconds=0.0, stoppe
         if not response_path.exists():
             response_path.write_text("")
         try:
-            result = subprocess.run(
-                [sys.executable, "-B", str(oracle_path), str(workspace), str(response_path)],
-                capture_output=True, text=True, cwd=root, timeout=120,
-                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPYCACHEPREFIX": str(root / "judge-pycache")},
-            )
-            oracle_passed = result.returncode == 0
-            (root / "oracle.log").write_text(result.stdout + result.stderr)
+            if STUDY is not None:
+                from scripts.implementation_judge import run_judgement
+                judgement = run_judgement(
+                    workspace, root / "judgement", oracle_path, response_path,
+                    total_seconds=STUDY["limits"]["externalJudgeSeconds"],
+                    started_at=judgement_start,
+                    require_regression=case["generatedRegressionRequired"],
+                    env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+                )
+                oracle_passed = judgement["oracle"]["passed"] and judgement["cleanupComplete"]
+            else:
+                result = subprocess.run(
+                    [sys.executable, "-B", str(oracle_path), str(workspace), str(response_path)],
+                    capture_output=True, text=True, cwd=root, timeout=120,
+                    env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPYCACHEPREFIX": str(root / "judge-pycache")},
+                )
+                oracle_passed = result.returncode == 0
+                (root / "oracle.log").write_text(result.stdout + result.stderr)
         except subprocess.TimeoutExpired:
             oracle_error = "OracleTimeout"
         after = workspace_files(workspace)
@@ -806,6 +997,21 @@ def finalize_trial(output, trial, *, process_code=0, process_seconds=0.0, stoppe
         "taskErrorCodes": execution.get("taskErrorCodes", []),
         "approvalDecisions": execution.get("approvalDecisions", []),
     }
+    if STUDY is not None:
+        requires_regression = case["generatedRegressionRequired"]
+        regression_passed = judgement["regressionTest"]["passed"] if judgement else False
+        source_changed = any(p.startswith("minicode/") and p in case["authorized_paths"] for p in changed)
+        row.update(
+            generatedRegressionRequired=requires_regression,
+            regressionTest=judgement["regressionTest"] if judgement else None,
+            regressionTestPassed=regression_passed, authorizedSourceChanged=source_changed,
+            interventions=intervention_metrics(root),
+            hostPolicyApprovalRecords=execution.get("approvalDecisions", []),
+            knownTotalTokens=row["totalTokens"],
+        )
+        if not row["tokenUsageComplete"]:
+            row["totalTokens"] = None
+        row["success"] = bool(row["success"] and (not requires_regression or (regression_passed and source_changed)))
     write_json(output / "trials" / (trial["id"] + ".json"), row)
     return row
 
@@ -842,6 +1048,7 @@ def wait_trial_process(proc, root, *, setup_seconds=30):
 
 def run_suite(output, selected=None):
     manifest = read_json(output / "manifest.json")
+    validate_study_files(output, manifest)
     if (
         manifest["harnessSha256"] != harness_sha()
         or manifest["productionSha256"] != production_sha()
@@ -927,12 +1134,20 @@ def checkpoint_results(output, manifest):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["freeze", "run", "child"])
+    parser.add_argument("mode", choices=["prepare", "freeze", "run", "child"])
     parser.add_argument("--output", type=Path, default=DEFAULT)
     parser.add_argument("--repeats", type=int, default=2)
     parser.add_argument("--trial", action="append")
+    parser.add_argument("--design", type=Path)
+    parser.add_argument("--analysis-plan", type=Path)
     args = parser.parse_args()
     output = args.output.resolve()
+    if args.mode == "prepare":
+        if args.design is None or args.analysis_plan is None:
+            parser.error("prepare requires --design and --analysis-plan")
+        prepare_study(output, args.design.resolve(), args.analysis_plan.resolve())
+        return
+    configure_study(output)
     if args.mode == "freeze":
         freeze(output, args.repeats)
     elif args.mode == "child":

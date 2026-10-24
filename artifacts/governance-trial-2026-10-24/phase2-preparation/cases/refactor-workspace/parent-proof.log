@@ -1,0 +1,21 @@
+
+==================================== ERRORS ====================================
+___________ ERROR collecting tests/test_workflow_workspace_module.py ___________
+ImportError while importing test module '@STUDY_ROOT@/offline-proof/refactor-workspace/parent/tests/test_workflow_workspace_module.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_workflow_workspace_module.py:8: in <module>
+    from minicode import workflow_workspace
+E   ImportError: cannot import name 'workflow_workspace' from 'minicode' (@STUDY_ROOT@/offline-proof/refactor-workspace/parent/minicode/__init__.py)
+=========================== short test summary info ============================
+ERROR tests/test_workflow_workspace_module.py
+1 error in 0.40s
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-workspace/parent/tests/test_workflow_workspace_module.py::test_task_compatibility_names_share_the_extracted_types
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-workspace/parent/tests/test_workflow_workspace_module.py::test_shared_task_deadline_preserves_the_existing_contract
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-workspace/parent/tests/test_workflow_workspace_module.py::test_workspace_module_does_not_depend_on_the_task_orchestrator
+

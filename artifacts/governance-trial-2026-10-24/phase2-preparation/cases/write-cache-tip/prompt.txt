@@ -1,0 +1,4 @@
+Extend Anthropic prompt caching to the final content block of the last conversation message, including tool-result messages, so growing conversations retain stable prefix bytes. Preserve system/tool markers, do not mutate cached tool schemas or earlier message blocks, and strip all cache markers on the existing fallback path. Add a focused offline regression test and preserve existing adapter behavior.
+
+This is a retrospective task reconstructed from a real CodeLoop change, not a quoted historical user message. Work only in the provided checkout. Do not access Git history, reference solutions, external networks, personal profiles, or other task workspaces.
+You may change only minicode/anthropic_adapter.py, and tests/test_eval_regression.py. Existing tests are read-only. Add at least one meaningful regression in tests/test_eval_regression.py and report verification honestly.

@@ -1,0 +1,11 @@
+current: .....                                                                    [100%]
+5 passed in 1.06s
+
+@STUDY_ROOT@/cases/read-router/private/oracle.py:67: SyntaxWarning: "is not" with 'str' literal. Did you mean "!="?
+  if '@STUDY_ROOT@/sources/e85a95803e248e157523e10dd0f1fe5bbed3f9bb' is not None:
+
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-router/private/oracle.py", line 52, in <module>
+    assert calls.get(name,0)>=count, "diagnostic did not execute required behavior: "+name
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: diagnostic did not execute required behavior: minicode/agent_router.py:route_task

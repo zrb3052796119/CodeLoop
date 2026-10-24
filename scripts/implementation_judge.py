@@ -413,6 +413,7 @@ def run_judgement(
     env=None,
     total_seconds=120,
     started_at=None,
+    require_regression=True,
 ) -> dict:
     """Called once after agent cleanup; copying and cleanup share this deadline."""
     started = time.monotonic() if started_at is None else started_at
@@ -428,7 +429,15 @@ def run_judgement(
         total_seconds=total_seconds,
     )
     oracle = _run_stage("oracle", **common)
-    if oracle["cleanup"] is not None and not oracle["cleanup"].get("cleanupComplete"):
+    if not require_regression:
+        regression = {
+            "status": "not_required_read_only",
+            "passed": None,
+            "durationSeconds": 0.0,
+            "counts": empty_counts(),
+            "cleanup": None,
+        }
+    elif oracle["cleanup"] is not None and not oracle["cleanup"].get("cleanupComplete"):
         regression = {
             "status": "not_run_previous_cleanup_incomplete",
             "passed": False,
@@ -446,10 +455,14 @@ def run_judgement(
         regression = _run_stage("regression", **common)
     seconds = time.monotonic() - started
     timed_out = seconds >= total_seconds
-    if timed_out:
+    if timed_out and require_regression:
         regression["passed"] = False
         regression["status"] = "deadline_exhausted"
         write_json(root / "regression/result.json", regression)
+    elif timed_out:
+        oracle["passed"] = False
+        oracle["status"] = "deadline_exhausted"
+        write_json(root / "oracle/result.json", oracle)
     result = {
         "schemaVersion": 1,
         "policyVersion": JUDGE_POLICY["version"],

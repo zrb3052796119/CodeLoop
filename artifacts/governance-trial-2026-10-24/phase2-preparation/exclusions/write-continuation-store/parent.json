@@ -1,0 +1,23 @@
+{
+  "case": "write-continuation-store",
+  "side": "parent",
+  "ref": "114e63c016143c4a8d1279980895df789373c8b9",
+  "status": "rejected",
+  "returncode": 4,
+  "seconds": 0.922,
+  "testSha256": "9fcd8eb0703c513a56b688f7f54c0e63499479c7a0c9d5c5594809c10b15f664",
+  "argv": [
+    "@REPOSITORY@/.venv-acceptance/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_subagent_continuation.py::test_store_roundtrip",
+    "tests/test_subagent_continuation.py::test_store_evicts_oldest_beyond_cap",
+    "tests/test_subagent_continuation.py::test_store_rejects_non_positive_cap"
+  ],
+  "log": "@STUDY_ROOT@/offline-proof/write-continuation-store/parent.log",
+  "summary": "\n==================================== ERRORS ====================================\n_____________ ERROR collecting tests/test_subagent_continuation.py _____________\nImportError while importing test module '@STUDY_ROOT@/offline-proof/write-continuation-store/parent/tests/test_subagent_continuation.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_subagent_continuation.py:5: in <module>\n    from minicode.subagent_sessions import (\nE   ModuleNotFoundError: No module named 'minicode.subagent_sessions'\n=========================== short test summary info ============================\nERROR tests/test_subagent_continuation.py\n1 error in 0.32s\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-store/parent/tests/test_subagent_continuation.py::test_store_roundtrip\n\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-store/parent/tests/test_subagent_continuation.py::test_store_evicts_oldest_beyond_cap\n\nERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-store/parent/tests/test_subagent_continuation.py::test_store_rejects_non_positive_cap\n\n"
+}

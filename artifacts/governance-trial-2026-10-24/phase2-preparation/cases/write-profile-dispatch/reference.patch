@@ -1,0 +1,218 @@
+diff --git a/minicode/tools/task.py b/minicode/tools/task.py
+index a4d0cb26..f5045747 100644
+--- a/minicode/tools/task.py
++++ b/minicode/tools/task.py
+@@ -90,6 +90,11 @@ from minicode.subagent_result import (
+     render_subagent_result,
+ )
+ from minicode.subagent_sessions import SubagentSession
++from minicode.subagent_profiles import (
++    AGENT_NAME_RE,
++    load_agent_profiles,
++    resolve_agent_types,
++)
+ from minicode.subagent_supervisor import run_subagent_process
+ from minicode.subagent_types import AGENT_TYPES, MAX_AGENT_DEPTH, resolve_max_turns
+ from minicode.task_deadline import (
+@@ -233,6 +238,23 @@ def _run_with_delegation_circuit(
+ 
+ CONCURRENCY_SAFE_AGENT_TYPES = frozenset({"explore", "plan"})
+ 
++
++def _is_read_only_agent_type(agent_type: object) -> bool:
++    """Built-in read-only types plus project profiles (read-only by load).
++
++    ``general`` and ``workflow`` are the only write-capable routes and are
++    excluded; every project-defined profile passed loader validation that
++    restricts its tools to the read-only whitelist.
++    """
++    if not isinstance(agent_type, str):
++        return False
++    if agent_type in CONCURRENCY_SAFE_AGENT_TYPES:
++        return True
++    return (
++        agent_type not in AGENT_TYPES
++        and AGENT_NAME_RE.fullmatch(agent_type) is not None
++    )
++
+ # A centrally dispatched Executor is a narrowed logical role over the legacy
+ # `general` model route.  It has local workspace tools only: no task spawning,
+ # MCP, web/network tools, Git promotion, self-review, or user interaction.
+@@ -472,9 +494,12 @@ def _validate(input_data: dict) -> dict:
+         raise ValueError("description is required")
+ 
+     agent_type = input_data.get("agent_type", "general")
+-    if agent_type not in AGENT_TYPES:
+-        valid = ", ".join(AGENT_TYPES.keys())
+-        raise ValueError(f"agent_type must be one of: {valid}. Got: {agent_type}")
++    if AGENT_NAME_RE.fullmatch(agent_type) is None:
++        raise ValueError(
++            "agent_type must be a built-in type (explore, plan, general, "
++            "workflow) or a lowercase project-defined profile name from "
++            ".mini-code/agents/*.md"
++        )
+     if action == "spawn" and agent_type not in ASYNC_AGENT_TYPES:
+         raise ValueError(
+             "asynchronous spawn is restricted to read-only explore or plan "
+@@ -1942,6 +1967,29 @@ def _run(input_data: dict, context) -> ToolResult:
+     from minicode.tools import create_default_tool_registry
+ 
+     agent_type = input_data["agent_type"]
++    # Built-in types are code-defined; project profiles come from
++    # .mini-code/agents/*.md and resolve per dispatch so file edits apply
++    # between turns. An unknown name fails closed with the full menu plus
++    # any profile load errors so the model can self-correct.
++    agent_types = resolve_agent_types(getattr(context, "cwd", ".") or ".")
++    if agent_type not in agent_types:
++        _profiles, profile_errors = load_agent_profiles(
++            getattr(context, "cwd", ".") or "."
++        )
++        available = ", ".join(sorted(agent_types)) or "none"
++        problems = (
++            "; profile load errors: " + " | ".join(profile_errors)
++            if profile_errors
++            else ""
++        )
++        return ToolResult(
++            ok=False,
++            output=(
++                f"error[unknown_agent_type]: {agent_type} is not a built-in "
++                f"or project-defined agent type. Available: {available}."
++                f"{problems}"
++            ),
++        )
+     logical_role = getattr(context, "_logical_agent_role", None)
+     # Legacy model routes are transport choices, never permission fallbacks.
+     # A scheduler role must be recognized and paired with its declared route
+@@ -1971,7 +2019,7 @@ def _run(input_data: dict, context) -> ToolResult:
+             )
+     scheduler_executor = scheduler_role is WorkerRole.EXECUTOR
+     scheduler_read_worker = scheduler_role is not None and not scheduler_executor
+-    agent_def = dict(AGENT_TYPES[agent_type])
++    agent_def = dict(agent_types[agent_type])
+     if scheduler_executor:
+         agent_def.update(
+             {
+@@ -2004,9 +2052,10 @@ def _run(input_data: dict, context) -> ToolResult:
+                 "allowed_tools": _SCHEDULER_READ_ALLOWED_TOOLS,
+             }
+         )
+-    if agent_type != "workflow":
++    if agent_type in AGENT_TYPES and agent_type != "workflow":
+         # Host-overridable ceiling (MINI_CODE_SUBAGENT_<TYPE>_MAX_TURNS);
+-        # invalid values fail closed to the calibrated default.
++        # invalid values fail closed to the calibrated default. Project
++        # profiles carry their own bounded max_turns from the loader.
+         agent_def["max_turns"] = resolve_max_turns(agent_type)
+ 
+     # Continuation resolves the stored session before any expensive child
+@@ -3077,7 +3126,7 @@ def _call_is_concurrency_safe(call_input: object) -> bool:
+         return False
+     if action == "spawn":
+         return call_input.get("agent_type") in ASYNC_AGENT_TYPES
+-    return call_input.get("agent_type") in CONCURRENCY_SAFE_AGENT_TYPES
++    return _is_read_only_agent_type(call_input.get("agent_type"))
+ 
+ 
+ def _capability_for(call_input: Mapping[str, object]) -> CapabilityProfile:
+@@ -3108,7 +3157,7 @@ def _capability_for(call_input: Mapping[str, object]) -> CapabilityProfile:
+         )
+ 
+     agent_type = validated["agent_type"]
+-    workspace_read_only = agent_type in CONCURRENCY_SAFE_AGENT_TYPES
++    workspace_read_only = _is_read_only_agent_type(agent_type)
+     return CapabilityProfile(
+         domain=CapabilityDomain.EXECUTION,
+         scope=CapabilityScope.EXTERNAL,
+diff --git a/tests/test_subagent_profiles.py b/tests/test_subagent_profiles.py
+index 8f6ce638..83f74623 100644
+--- a/tests/test_subagent_profiles.py
++++ b/tests/test_subagent_profiles.py
+@@ -253,3 +253,87 @@ def test_observation_payload_accepts_custom_agent_type():
+     )
+     assert payload is not None
+     assert payload["agentType"] == "test-locator"
++
++
++# ---------------------------------------------------------------------------
++# Task 3: task dispatch accepts project-defined types
++# ---------------------------------------------------------------------------
++
++_IMPORTS_DONE = False
++
++
++def _dispatch_imports():
++    global _IMPORTS_DONE
++    if not _IMPORTS_DONE:
++        import minicode.tools.task as task_mod
++        from minicode.task_outcome import canonicalize_task_outcome
++        from minicode.tooling import ToolContext
++        from minicode.tools.task import task_tool
++
++        globals()["task_module"] = task_mod
++        globals()["canonicalize_task_outcome"] = canonicalize_task_outcome
++        globals()["ToolContext"] = ToolContext
++        globals()["task_tool"] = task_tool
++        _IMPORTS_DONE = True
++
++
++def test_run_dispatches_custom_profile_type(tmp_path, monkeypatch):
++    _dispatch_imports()
++    _write(tmp_path, "test-locator.md", _VALID_FRONTMATTER)
++    captured: dict = {}
++
++    def fake_run_agent_turn(**kwargs):
++        captured["messages"] = kwargs["messages"]
++        captured["max_steps"] = kwargs["max_steps"]
++        kwargs["outcome_capture"].record(
++            canonicalize_task_outcome("success", 0)
++        )
++        return [{"role": "assistant", "content": "located tests"}]
++
++    monkeypatch.setattr(task_module, "run_agent_turn", fake_run_agent_turn)
++    result = task_tool.run(
++        {
++            "description": "locate tests",
++            "prompt": "find the tests covering billing",
++            "agent_type": "test-locator",
++        },
++        ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"}),
++    )
++    assert result.ok, result.output
++    assert captured["max_steps"] == 8
++    system = captured["messages"][0]["content"].lower()
++    assert "test-locator agent" in system
++
++
++def test_unknown_type_lists_available_and_load_errors(tmp_path):
++    _dispatch_imports()
++    _write(tmp_path, "broken.md", "no frontmatter")
++    result = task_module._run(
++        {"description": "x", "prompt": "y", "agent_type": "ghost"},
++        ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"}),
++    )
++    assert not result.ok
++    assert "ghost" in result.output
++    assert "broken.md" in result.output
++
++
++def test_validate_rejects_malformed_type_name():
++    _dispatch_imports()
++    with pytest.raises(ValueError):
++        task_module._validate(
++            {"description": "x", "prompt": "y", "agent_type": "Bad Name"}
++        )
++
++
++def test_custom_type_is_concurrency_safe_and_read_only():
++    _dispatch_imports()
++    assert task_module._call_is_concurrency_safe(
++        {"agent_type": "test-locator"}
++    )
++    assert not task_module._call_is_concurrency_safe(
++        {"agent_type": "general"}
++    )
++    profile = task_module._capability_for(
++        {"description": "x", "prompt": "y", "agent_type": "test-locator"}
++    )
++    assert profile.effects.read_only is True

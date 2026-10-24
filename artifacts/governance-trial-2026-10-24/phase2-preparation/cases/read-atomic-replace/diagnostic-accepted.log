@@ -1,0 +1,58 @@
+current: .                                                                        [100%]
+1 passed in 0.86s
+
+historical-parent: F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_turn_write_closes_temporary_descriptor_before_atomic_replace _______
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-586/test_turn_write_closes_tempora0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10608a930>
+
+    def test_turn_write_closes_temporary_descriptor_before_atomic_replace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        store = _store(tmp_path)
+        opened_descriptors: list[int] = []
+        real_mkstemp = turn_store_module.tempfile.mkstemp
+        real_replace = turn_store_module.os.replace
+    
+        def tracked_mkstemp(*args, **kwargs):
+            descriptor, path = real_mkstemp(*args, **kwargs)
+            opened_descriptors.append(descriptor)
+            return (descriptor, path)
+    
+        def windows_style_replace(source, target) -> None:
+            assert opened_descriptors
+            with pytest.raises(OSError):
+                os.fstat(opened_descriptors[-1])
+            real_replace(source, target)
+        monkeypatch.setattr(turn_store_module.tempfile, 'mkstemp', tracked_mkstemp)
+        monkeypatch.setattr(turn_store_module.os, 'replace', windows_style_replace)
+>       claim = store.claim(turn_id=TURN_ID, fingerprint=_fingerprint(store))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_submitted_diagnostic.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+minicode/conversation_turn_store.py:667: in claim
+    self._write(record)
+minicode/conversation_turn_store.py:515: in _write
+    os.replace(temporary, path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+source = '/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-586/test_turn_write_closes_tempora0/home/.mini-code/dashboard/workspaces/ws_6dc5aa6b2453cc85/turns/.turn-6kabbo5v.tmp'
+target = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-586/test_turn_write_closes_tempora0/home/.mini-code/dashboard/workspaces/ws_6dc5aa6b2453cc85/turns/turn_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.json')
+
+    def windows_style_replace(source, target) -> None:
+        assert opened_descriptors
+>       with pytest.raises(OSError):
+             ^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE OSError
+
+tests/test_submitted_diagnostic.py:36: Failed
+=========================== short test summary info ============================
+FAILED tests/test_submitted_diagnostic.py::test_turn_write_closes_temporary_descriptor_before_atomic_replace
+1 failed in 0.94s
+
+read behavioral diagnostic accepted
+@STUDY_ROOT@/cases/read-atomic-replace/private/oracle.py:67: SyntaxWarning: "is not" with 'str' literal. Did you mean "!="?
+  if '@STUDY_ROOT@/sources/3717baa060de83970b43aceccb8ac7e738954ca8' is not None:
+
+

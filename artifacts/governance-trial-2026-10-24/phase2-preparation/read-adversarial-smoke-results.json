@@ -1,0 +1,47 @@
+[
+  {
+    "id": "read-deadline",
+    "referenceAccepted": true,
+    "returncode": 0,
+    "incorrectAnswerRejected": true,
+    "trivialDiagnosticRejected": true,
+    "answerOnlyRejected": true,
+    "xpassDiagnosticRejected": true
+  },
+  {
+    "id": "read-router",
+    "referenceAccepted": true,
+    "returncode": 0,
+    "incorrectAnswerRejected": true,
+    "trivialDiagnosticRejected": true,
+    "answerOnlyRejected": true,
+    "xpassDiagnosticRejected": true
+  },
+  {
+    "id": "read-atomic-replace",
+    "referenceAccepted": true,
+    "returncode": 0,
+    "incorrectAnswerRejected": true,
+    "trivialDiagnosticRejected": true,
+    "answerOnlyRejected": true,
+    "xpassDiagnosticRejected": true
+  },
+  {
+    "id": "read-image-boundaries",
+    "referenceAccepted": true,
+    "returncode": 0,
+    "incorrectAnswerRejected": true,
+    "trivialDiagnosticRejected": true,
+    "answerOnlyRejected": true,
+    "xpassDiagnosticRejected": true
+  },
+  {
+    "id": "read-closing-reminder",
+    "referenceAccepted": true,
+    "returncode": 0,
+    "incorrectAnswerRejected": true,
+    "trivialDiagnosticRejected": true,
+    "answerOnlyRejected": true,
+    "xpassDiagnosticRejected": true
+  }
+]

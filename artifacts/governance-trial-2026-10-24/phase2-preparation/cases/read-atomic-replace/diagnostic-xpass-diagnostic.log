@@ -1,0 +1,14 @@
+current: X                                                                        [100%]
+1 xpassed in 0.60s
+
+@STUDY_ROOT@/cases/read-atomic-replace/private/oracle.py:67: SyntaxWarning: "is not" with 'str' literal. Did you mean "!="?
+  if '@STUDY_ROOT@/sources/3717baa060de83970b43aceccb8ac7e738954ca8' is not None:
+
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-atomic-replace/private/oracle.py", line 49, in <module>
+    code,cases,observed=run_probe(workspace,"current",temp);calls=observed["calls"]
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "@STUDY_ROOT@/cases/read-atomic-replace/private/oracle.py", line 46, in run_probe
+    assert not observed["xfailReports"], "xfail/xpass diagnostic is not admissible"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: xfail/xpass diagnostic is not admissible

@@ -1,0 +1,274 @@
+diff --git a/minicode/agent_loop.py b/minicode/agent_loop.py
+index e200fe5c..14bf22d7 100644
+--- a/minicode/agent_loop.py
++++ b/minicode/agent_loop.py
+@@ -799,6 +799,7 @@ def _execute_single_tool(
+     subagent_mailbox: Any | None = None,
+     subagent_lifecycle: Any | None = None,
+     subagent_sessions: Any | None = None,
++    todo_state: Any | None = None,
+     allow_user_interaction: bool = True,
+     deadline_monotonic: float | None = None,
+     skill_load_policy: SkillLoadPolicy | None = None,
+@@ -886,6 +887,7 @@ def _execute_single_tool(
+                     _subagent_mailbox=subagent_mailbox,
+                     _subagent_lifecycle=subagent_lifecycle,
+                     _subagent_sessions=subagent_sessions,
++                    _todo_state=todo_state,
+                     _skill_load_policy=skill_load_policy,
+                 ),
+             )
+@@ -1977,6 +1979,10 @@ def run_agent_turn(
+     # read-only sub-agents. Created fresh even when a caller supplied a
+     # mailbox because nested loops have no `task` tool to consult it.
+     subagent_sessions = SubagentSessionStore()
++    # Loop-scoped todo state: this loop's todo_write target. Sub-agent
++    # loops create their own below at recursion, so a child's list never
++    # touches the parent's.
++    todo_state: dict = {"tasks": [], "counter": 0}
+     if budget_exhausted_policy not in {"fallback", "raise"}:
+         budget_exhausted_policy = "fallback"
+     tool_abandoned = False
+@@ -4042,6 +4048,7 @@ def run_agent_turn(
+                     subagent_mailbox,
+                     subagent_lifecycle,
+                     subagent_sessions,
++                    todo_state,
+                     allow_user_interaction,
+                     deadline_monotonic,
+                     skill_load_policy,
+@@ -4383,6 +4390,7 @@ def run_agent_turn(
+                             subagent_mailbox,
+                             subagent_lifecycle,
+                             subagent_sessions,
++                            todo_state,
+                             allow_user_interaction,
+                             deadline_monotonic,
+                             skill_load_policy,
+diff --git a/minicode/subagent_types.py b/minicode/subagent_types.py
+index 2a160154..0bb771d8 100644
+--- a/minicode/subagent_types.py
++++ b/minicode/subagent_types.py
+@@ -43,6 +43,7 @@ AGENT_TYPES = {
+             "find_symbols",
+             "find_references",
+             "get_ast_info",
++            "todo_write",
+             "load_skill",
+             "browse_skill_directory",
+             "search_skills",
+@@ -78,6 +79,7 @@ AGENT_TYPES = {
+             "find_symbols",
+             "find_references",
+             "get_ast_info",
++            "todo_write",
+             "code_review",
+             "load_skill",
+             "browse_skill_directory",
+diff --git a/minicode/tooling.py b/minicode/tooling.py
+index 8bb0131a..e47a0542 100644
+--- a/minicode/tooling.py
++++ b/minicode/tooling.py
+@@ -853,6 +853,15 @@ class ToolContext:
+         repr=False,
+         compare=False,
+     )
++    # Loop-scoped todo list state ({"tasks": [...], "counter": int}).
++    # Each agent loop owns one so a sub-agent's todo_write can never
++    # clobber the parent's or a sibling's list; absence falls back to the
++    # tool's process-global list for bare-ToolContext embedder calls.
++    _todo_state: Any | None = field(
++        default=None,
++        repr=False,
++        compare=False,
++    )
+ 
+ 
+ Validator = Callable[[Any], Any]
+diff --git a/minicode/tools/todo_write.py b/minicode/tools/todo_write.py
+index 3bd66116..92e1c68f 100644
+--- a/minicode/tools/todo_write.py
++++ b/minicode/tools/todo_write.py
+@@ -5,10 +5,12 @@ import time
+ 
+ from minicode.tooling import ToolDefinition, ToolResult
+ 
+-# Process-global compatibility storage. Calls are serialized, but moving this
+-# state into a session-owned context remains separate architectural work.
++# Process-global fallback storage for callers that construct a bare
++# ToolContext (embedders, direct script use). Agent loops own a per-loop
++# state dict instead, so a sub-agent's list never clobbered the parent's
++# or a sibling's — see ToolContext._todo_state.
+ _tasks = []
+-_task_id_counter = 0
++_globals_holder = {"counter": 0}
+ _tasks_lock = threading.Lock()
+ 
+ 
+@@ -28,20 +30,26 @@ def _validate(input_data: dict) -> dict:
+ 
+ 
+ def _run_locked(input_data: dict, context) -> ToolResult:
+-    global _task_id_counter
+-
+     todos = input_data["todos"]
+ 
+-    # Preserve the previous complete-list snapshot long enough to carry stable
+-    # identity and timestamps into the replacement list.
+-    previous_tasks = list(_tasks)
+-    _tasks.clear()
++    # Loop-scoped state when the caller provides one; the process-global
++    # list remains the fallback for bare-ToolContext calls. Both share the
++    # same replace-the-whole-list semantics.
++    state = getattr(context, "_todo_state", None)
++    if isinstance(state, dict) and isinstance(state.get("tasks"), list):
++        tasks = state["tasks"]
++    else:
++        state = _globals_holder
++        tasks = _tasks
++
++    previous_tasks = list(tasks)
++    tasks.clear()
+ 
+     for todo in todos:
+         # Prefer an item already selected into this replacement (deduplicating
+         # repeated content), then fall back to the previous snapshot.
+         existing = next(
+-            (task for task in _tasks if task["content"] == todo["content"]),
++            (task for task in tasks if task["content"] == todo["content"]),
+             None,
+         )
+         if existing is None:
+@@ -59,24 +67,23 @@ def _run_locked(input_data: dict, context) -> ToolResult:
+             existing["status"] = todo.get("status", existing["status"])
+             if todo.get("status") == "completed" and not existing.get("completed_at"):
+                 existing["completed_at"] = time.time()
+-            if existing not in _tasks:
+-                _tasks.append(existing)
++            if existing not in tasks:
++                tasks.append(existing)
+         else:
+-            # Create new task
+-            _task_id_counter += 1
++            state["counter"] = state.get("counter", 0) + 1
+             new_task = {
+-                "id": _task_id_counter,
++                "id": state["counter"],
+                 "content": todo["content"],
+                 "status": todo.get("status", "pending"),
+                 "created_at": time.time(),
+                 "completed_at": time.time() if todo.get("status") == "completed" else None,
+             }
+-            _tasks.append(new_task)
++            tasks.append(new_task)
+ 
+     # Format output
+     lines = ["Task list updated:", ""]
+ 
+-    for task in _tasks:
++    for task in tasks:
+         status_icon = {
+             "pending": "○",
+             "in_progress": "◐",
+@@ -88,10 +95,10 @@ def _run_locked(input_data: dict, context) -> ToolResult:
+     lines.append("")
+ 
+     # Summary
+-    pending = sum(1 for t in _tasks if t["status"] == "pending")
+-    in_progress = sum(1 for t in _tasks if t["status"] == "in_progress")
+-    completed = sum(1 for t in _tasks if t["status"] == "completed")
+-    total = len(_tasks)
++    pending = sum(1 for t in tasks if t["status"] == "pending")
++    in_progress = sum(1 for t in tasks if t["status"] == "in_progress")
++    completed = sum(1 for t in tasks if t["status"] == "completed")
++    total = len(tasks)
+ 
+     lines.extend([
+         f"Total: {total} | Pending: {pending} | In Progress: {in_progress} | Completed: {completed}",
+@@ -101,9 +108,9 @@ def _run_locked(input_data: dict, context) -> ToolResult:
+ 
+ 
+ def _run(input_data: dict, context) -> ToolResult:
+-    # The tool replaces one process-global list. ToolRegistry now classifies
+-    # it as serial, and the lock also protects direct callers or independent
+-    # registries from interleaving clear/append operations.
++    # ToolRegistry classifies the tool as serial; the lock also protects
++    # direct callers or independent registries from interleaving
++    # clear/append operations on the fallback list.
+     with _tasks_lock:
+         return _run_locked(input_data, context)
+ 
+diff --git a/tests/test_todo_state_isolation.py b/tests/test_todo_state_isolation.py
+new file mode 100644
+index 00000000..4f170a24
+--- /dev/null
++++ b/tests/test_todo_state_isolation.py
+@@ -0,0 +1,68 @@
++"""Per-loop todo state: read-only sub-agents self-organize without clobbering.
++
++todo_write used one process-global list with replace semantics, so sharing
++it with (parallel) sub-agents would have destroyed the parent's list and
++let siblings overwrite each other. These tests pin the loop-scoped state:
++each agent loop owns its own task list, read-only agents get the tool, and
++direct/embedder calls without a context keep the legacy global fallback.
++"""
++
++from __future__ import annotations
++
++import minicode.tools.todo_write as todo_module
++from minicode.tools.todo_write import todo_write_tool
++from minicode.tooling import ToolContext
++
++
++def _todos(*items):
++    return [{"content": item, "status": "pending"} for item in items]
++
++
++def test_context_todo_state_isolates_from_global():
++    state = {"tasks": [], "counter": 0}
++    context = ToolContext(_todo_state=state)
++    result = todo_write_tool.run({"todos": _todos("child task")}, context)
++    assert result.ok
++    assert [task["content"] for task in state["tasks"]] == ["child task"]
++    assert todo_module._tasks == []  # global untouched
++
++
++def test_two_contexts_do_not_share_state():
++    first = {"tasks": [], "counter": 0}
++    second = {"tasks": [], "counter": 0}
++    todo_write_tool.run({"todos": _todos("one")}, ToolContext(_todo_state=first))
++    todo_write_tool.run({"todos": _todos("two")}, ToolContext(_todo_state=second))
++    assert [t["content"] for t in first["tasks"]] == ["one"]
++    assert [t["content"] for t in second["tasks"]] == ["two"]
++
++
++def test_context_state_replaces_within_itself():
++    state = {"tasks": [], "counter": 0}
++    context = ToolContext(_todo_state=state)
++    todo_write_tool.run({"todos": _todos("a", "b")}, context)
++    todo_write_tool.run({"todos": _todos("b")}, context)
++    assert [t["content"] for t in state["tasks"]] == ["b"]
++
++
++def test_no_context_falls_back_to_global():
++    result = todo_write_tool.run({"todos": _todos("legacy")}, ToolContext())
++    assert result.ok
++    assert [task["content"] for task in todo_module._tasks] == ["legacy"]
++
++
++def test_explore_and_plan_allowlists_include_todo_write():
++    from minicode.subagent_types import AGENT_TYPES, READ_ONLY_TOOL_WHITELIST
++
++    for agent_type in ("explore", "plan"):
++        assert "todo_write" in AGENT_TYPES[agent_type]["allowed_tools"]
++    assert "todo_write" in READ_ONLY_TOOL_WHITELIST
++
++
++def test_sub_agent_registry_exposes_todo_write(tmp_path):
++    from minicode.tools import create_default_tool_registry
++    from minicode.subagent_types import AGENT_TYPES
++
++    allowed = AGENT_TYPES["explore"]["allowed_tools"]
++    registry = create_default_tool_registry(str(tmp_path), include_mcp=False)
++    child = registry.filtered(lambda tool: tool.name in allowed)
++    assert child.find("todo_write") is not None

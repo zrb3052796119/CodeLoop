@@ -1,0 +1,23 @@
+{
+  "tasks": 16,
+  "publicFileCounts": {
+    "read-router": 316,
+    "read-deadline": 208,
+    "read-atomic-replace": 208,
+    "read-closing-reminder": 267,
+    "read-image-boundaries": 268,
+    "write-cache-tip": 267,
+    "write-cache-fallback": 267,
+    "write-todo-isolation": 267,
+    "write-user-profiles": 267,
+    "write-profile-parser": 266,
+    "write-profile-dispatch": 267,
+    "write-profile-contracts": 267,
+    "refactor-finalization": 225,
+    "refactor-workflow-runner": 223,
+    "refactor-frozen-change": 223,
+    "refactor-workspace": 221
+  },
+  "output": null,
+  "providerCalls": 0
+}

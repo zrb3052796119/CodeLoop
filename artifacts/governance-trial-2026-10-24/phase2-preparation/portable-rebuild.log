@@ -1,0 +1,2 @@
+{"prepared": true, "tasks": 16, "trials": 32, "providerCalls": 0}
+{"verifiedTasks": 16, "verifiedSourceCommits": 25, "recordedReferenceChecks": 92, "providerCalls": 0, "formalFreezePerformed": false}

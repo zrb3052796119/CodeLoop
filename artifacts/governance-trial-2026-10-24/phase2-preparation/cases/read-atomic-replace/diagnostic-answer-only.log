@@ -1,0 +1,7 @@
+@STUDY_ROOT@/cases/read-atomic-replace/private/oracle.py:67: SyntaxWarning: "is not" with 'str' literal. Did you mean "!="?
+  if '@STUDY_ROOT@/sources/3717baa060de83970b43aceccb8ac7e738954ca8' is not None:
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-atomic-replace/private/oracle.py", line 8, in <module>
+    assert isinstance(probe,str) and probe.strip(), "missing executable diagnostic"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: missing executable diagnostic

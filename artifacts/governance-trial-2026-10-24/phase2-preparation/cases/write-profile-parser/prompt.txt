@@ -1,0 +1,4 @@
+Add project Markdown agent profiles in .mini-code/agents with validated frontmatter and a nonempty instruction body. Fail closed for malformed or unclosed frontmatter, unknown keys/tools, write tools, reserved or invalid names, and out-of-range turn limits. Missing directories are empty and mtime changes invalidate caches. Keep built-ins authoritative; add focused tests.
+
+This is a retrospective task reconstructed from a real CodeLoop change, not a quoted historical user message. Work only in the provided checkout. Do not access Git history, reference solutions, external networks, personal profiles, or other task workspaces.
+You may change only minicode/subagent_profiles.py, minicode/subagent_types.py, and tests/test_eval_regression.py. Existing tests are read-only. Add at least one meaningful regression in tests/test_eval_regression.py and report verification honestly.

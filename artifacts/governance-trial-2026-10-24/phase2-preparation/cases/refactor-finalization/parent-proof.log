@@ -1,0 +1,23 @@
+
+==================================== ERRORS ====================================
+_______ ERROR collecting tests/test_workflow_finalization_resilience.py ________
+ImportError while importing test module '@STUDY_ROOT@/offline-proof/refactor-finalization/parent/tests/test_workflow_finalization_resilience.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_workflow_finalization_resilience.py:10: in <module>
+    from minicode import workflow_finalization
+E   ImportError: cannot import name 'workflow_finalization' from 'minicode' (@STUDY_ROOT@/offline-proof/refactor-finalization/parent/minicode/__init__.py)
+=========================== short test summary info ============================
+ERROR tests/test_workflow_finalization_resilience.py
+1 error in 0.33s
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-finalization/parent/tests/test_workflow_finalization_resilience.py::test_uncommitted_audit_persistence_cancellation_propagates
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-finalization/parent/tests/test_workflow_finalization_resilience.py::test_phase_result_snapshot_rejects_tool_result_subclasses
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-finalization/parent/tests/test_workflow_finalization_resilience.py::test_direct_snapshot_rejects_invalid_initial_finalization_status
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-finalization/parent/tests/test_workflow_finalization_resilience.py::test_direct_snapshot_rejects_mutable_commit_error
+

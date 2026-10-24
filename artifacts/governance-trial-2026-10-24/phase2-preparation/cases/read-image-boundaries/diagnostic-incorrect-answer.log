@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-image-boundaries/private/oracle.py", line 6, in <module>
+    assert isinstance(answer,dict) and answer.get("facts")=={'network_url_accepted': False, 'fake_png_accepted': False, 'oversize_accepted': False, 'missing_vision_model_accepted': False, 'missing_or_insecure_credentials_accepted': False, 'visual_role_route_supported': True}, "incorrect scenario facts"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: incorrect scenario facts

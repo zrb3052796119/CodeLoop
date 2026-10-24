@@ -1,0 +1,83 @@
+diff --git a/minicode/conversation_turn_store.py b/minicode/conversation_turn_store.py
+index a678d12c..c576f87b 100644
+--- a/minicode/conversation_turn_store.py
++++ b/minicode/conversation_turn_store.py
+@@ -506,10 +506,16 @@ class ConversationTurnStore:
+             )
+             if _platform_name() == "posix":
+                 os.fchmod(descriptor, 0o600)
+-            with os.fdopen(descriptor, "wb", closefd=False) as handle:
++            # Windows refuses to rename/replace a file while its descriptor is
++            # still open.  Let fdopen own the descriptor and mark it consumed
++            # before the atomic replace; POSIX happened to tolerate the old
++            # close-after-replace ordering, which hid this in local tests.
++            handle = os.fdopen(descriptor, "wb", closefd=True)
++            descriptor = -1
++            with handle:
+                 handle.write(encoded)
+                 handle.flush()
+-                os.fsync(descriptor)
++                os.fsync(handle.fileno())
+             if path.exists() and path.is_symlink():
+                 raise OSError("unsafe turn record")
+             os.replace(temporary, path)
+diff --git a/minicode/deletion_store.py b/minicode/deletion_store.py
+index ec21fd06..2ff3ce40 100644
+--- a/minicode/deletion_store.py
++++ b/minicode/deletion_store.py
+@@ -314,10 +314,14 @@ class DeletionLedger:
+         try:
+             if os.name == "posix":
+                 os.fchmod(descriptor, 0o600)
+-            with os.fdopen(descriptor, "wb", closefd=False) as handle:
++            # Atomic replacement must happen after the temporary descriptor is
++            # closed: Windows does not permit replacing an open file.
++            handle = os.fdopen(descriptor, "wb", closefd=True)
++            descriptor = -1
++            with handle:
+                 handle.write(encoded)
+                 handle.flush()
+-                os.fsync(descriptor)
++                os.fsync(handle.fileno())
+             os.replace(temporary, path)
+             temporary = ""
+         finally:
+diff --git a/tests/test_conversation_turn_store.py b/tests/test_conversation_turn_store.py
+index 5fde8524..b7120f42 100644
+--- a/tests/test_conversation_turn_store.py
++++ b/tests/test_conversation_turn_store.py
+@@ -62,6 +62,34 @@ def test_windows_turn_write_does_not_require_fchmod(
+     assert store.get(TURN_ID) == claim.record
+ 
+ 
++def test_turn_write_closes_temporary_descriptor_before_atomic_replace(
++    tmp_path: Path,
++    monkeypatch: pytest.MonkeyPatch,
++) -> None:
++    store = _store(tmp_path)
++    opened_descriptors: list[int] = []
++    real_mkstemp = turn_store_module.tempfile.mkstemp
++    real_replace = turn_store_module.os.replace
++
++    def tracked_mkstemp(*args, **kwargs):
++        descriptor, path = real_mkstemp(*args, **kwargs)
++        opened_descriptors.append(descriptor)
++        return descriptor, path
++
++    def windows_style_replace(source, target) -> None:
++        assert opened_descriptors
++        with pytest.raises(OSError):
++            os.fstat(opened_descriptors[-1])
++        real_replace(source, target)
++
++    monkeypatch.setattr(turn_store_module.tempfile, "mkstemp", tracked_mkstemp)
++    monkeypatch.setattr(turn_store_module.os, "replace", windows_style_replace)
++
++    claim = store.claim(turn_id=TURN_ID, fingerprint=_fingerprint(store))
++
++    assert claim.disposition == "claimed"
++
++
+ def test_turn_id_and_fingerprint_are_closed_secure_hash_contracts(tmp_path: Path) -> None:
+     store = _store(tmp_path)
+ 

@@ -1,0 +1,43 @@
+
+==================================== ERRORS ====================================
+____________ ERROR collecting tests/test_frozen_workflow_change.py _____________
+ImportError while importing test module '@STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_frozen_workflow_change.py:11: in <module>
+    from minicode.workflow_workspace import (
+E   ImportError: cannot import name 'FrozenWorkflowChange' from 'minicode.workflow_workspace' (@STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/minicode/workflow_workspace.py)
+=========================== short test summary info ============================
+ERROR tests/test_frozen_workflow_change.py
+1 error in 0.40s
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_frozen_capability_cannot_be_constructed_directly
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_freeze_returns_detached_documents_and_owns_promotion
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_freeze_is_a_single_state_transition
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_failed_freeze_can_retry_without_reusing_a_partial_snapshot
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_freeze_maps_snapshot_os_errors_and_remains_retryable
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_freeze_rejects_a_tampered_trusted_git_template
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_verification_uses_frozen_bytes_and_promotion_rejects_later_drift
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_verification_rebuilds_a_tampered_frozen_git_index
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_verification_rebuilds_trusted_git_control_metadata
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_promotion_requires_the_approved_patch_digest
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_promotion_ignores_worker_git_config_and_checks_target_state
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_promotion_cannot_report_success_for_a_wrong_parent_state
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_promotion_maps_metadata_allocation_errors_and_remains_retryable
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/refactor-frozen-change/parent/tests/test_frozen_workflow_change.py::test_frozen_capability_fails_closed_after_owner_close
+

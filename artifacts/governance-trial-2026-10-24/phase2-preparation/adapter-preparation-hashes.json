@@ -1,0 +1,10 @@
+{
+  "status": "offline-preparation-only-not-formal-host-freeze",
+  "sha256": {
+    "scripts/run_three_arm_real.py": "54e988bfb005fd82225a24dca4801655518b5de1af01f803deced0c19be23b3e",
+    "scripts/implementation_judge.py": "8c5c2ba0ea13bb13ad473ab7c9635046cde64c9c79cb122c3fed04164713b1e2",
+    "tests/test_three_arm_live_harness.py": "c5360ce34707020bc92bc4482021871669b2082a5801ee6b5ba6c677afeb99c0"
+  },
+  "providerCalls": 0,
+  "finalExecutionHostSha": "pending Phase0 readiness and existing runner freeze"
+}

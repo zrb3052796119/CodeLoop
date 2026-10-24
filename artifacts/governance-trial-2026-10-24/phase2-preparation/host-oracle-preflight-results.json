@@ -1,0 +1,162 @@
+[
+  {
+    "id": "read-deadline",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 4.2832139590755105,
+    "oracleSha256": "3bf6745d54a6641b5f49219c8d20abeaaf4a5501fb91e1e0757dc398c4acde21",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "read-router",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 5.072236540960148,
+    "oracleSha256": "7140ba6ae2f9bb39874d768f6e7344908d802576d135c76329193eed359aa782",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "read-atomic-replace",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 4.935479708947241,
+    "oracleSha256": "3162b8a6a5de06600157ddbcecc3ad3e8ae328d7d840936c0fd1390bc87e43fb",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "read-image-boundaries",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 9.906510083004832,
+    "oracleSha256": "803a5257f42ebb33af996abdbe27411d0213150cb58bf99dbd0bc28a8482a587",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "write-cache-tip",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 5.594783334061503,
+    "oracleSha256": "6e52da4ad8b986779549d1eb837ec1b3700b6e76f9879589a071011a56c87f3f",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "read-closing-reminder",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 20.945381165947765,
+    "oracleSha256": "a681d28d25e3be5ae5fe6e2c2d56dff626f5b6ef8cb5c550936c7a5ddb78425d",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "write-cache-fallback",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 4.403099124901928,
+    "oracleSha256": "e968384902b6cca43255cfb3a23d75ddf6ea42187b7e8d679b9b8826462ba12a",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "write-user-profiles",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 3.055150250089355,
+    "oracleSha256": "d7d783a1af6603a2c127d22c05742a98594ab2fcf665462991c666fe4bb9d874",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "write-todo-isolation",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 6.958796542021446,
+    "oracleSha256": "2bf2c732505629d812d78ad055fc037631e95d7ce316e3d8a1c37cb126325e04",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "write-profile-parser",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 3.5884899590164423,
+    "oracleSha256": "159390c3a01c188600a7e903117287c7e3d87889a55465414f2e6f88ccbadc10",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "write-profile-contracts",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 3.1673040830064565,
+    "oracleSha256": "b6de1ddffd23aef66ca60d7d77c60abccc29a4ba05d62c5b79981bf539bc0875",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "write-profile-dispatch",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 6.7103495839983225,
+    "oracleSha256": "faf9152eda72b84466cab60eb89df1131d5b3c5ba40812ca55a9ad2125588805",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "refactor-finalization",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 3.1180441670585424,
+    "oracleSha256": "586388769e2291a0796a1432fb04497a24a877a4fa7a8489cf994028211ccd72",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "refactor-workflow-runner",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 4.8697896669618785,
+    "oracleSha256": "e287f3eb9eb844aff38c885662921d6795684578517aad4320945903c59afb5d",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "refactor-workspace",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 4.6463673749240115,
+    "oracleSha256": "3285b85219efd28f917227d7e74bc0cbbb5c78571ebec3090b9d3fbffda9d515",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  },
+  {
+    "id": "refactor-frozen-change",
+    "oraclePassed": true,
+    "cleanupComplete": true,
+    "status": "passed",
+    "seconds": 11.057963458937593,
+    "oracleSha256": "a09fc5e9b8b1606f463cfc312bdc4b53542ba8a175375c37c3e77c7c70f5022e",
+    "providerCalls": 0,
+    "generatedRegression": "not_applicable_to_reference_oracle_ABI_preflight"
+  }
+]

@@ -1,0 +1,7 @@
+@STUDY_ROOT@/cases/read-router/private/oracle.py:67: SyntaxWarning: "is not" with 'str' literal. Did you mean "!="?
+  if '@STUDY_ROOT@/sources/e85a95803e248e157523e10dd0f1fe5bbed3f9bb' is not None:
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-router/private/oracle.py", line 8, in <module>
+    assert isinstance(probe,str) and probe.strip(), "missing executable diagnostic"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: missing executable diagnostic

@@ -1,0 +1,64 @@
+FFF.FF                                                                   [100%]
+=================================== FAILURES ===================================
+_________________ test_context_todo_state_isolates_from_global _________________
+
+    def test_context_todo_state_isolates_from_global():
+        state = {"tasks": [], "counter": 0}
+>       context = ToolContext(_todo_state=state)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: ToolContext.__init__() got an unexpected keyword argument '_todo_state'
+
+tests/test_todo_state_isolation.py:23: TypeError
+_____________________ test_two_contexts_do_not_share_state _____________________
+
+    def test_two_contexts_do_not_share_state():
+        first = {"tasks": [], "counter": 0}
+        second = {"tasks": [], "counter": 0}
+>       todo_write_tool.run({"todos": _todos("one")}, ToolContext(_todo_state=first))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: ToolContext.__init__() got an unexpected keyword argument '_todo_state'
+
+tests/test_todo_state_isolation.py:33: TypeError
+__________________ test_context_state_replaces_within_itself ___________________
+
+    def test_context_state_replaces_within_itself():
+        state = {"tasks": [], "counter": 0}
+>       context = ToolContext(_todo_state=state)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: ToolContext.__init__() got an unexpected keyword argument '_todo_state'
+
+tests/test_todo_state_isolation.py:41: TypeError
+_____________ test_explore_and_plan_allowlists_include_todo_write ______________
+
+    def test_explore_and_plan_allowlists_include_todo_write():
+        from minicode.subagent_types import AGENT_TYPES, READ_ONLY_TOOL_WHITELIST
+    
+        for agent_type in ("explore", "plan"):
+>           assert "todo_write" in AGENT_TYPES[agent_type]["allowed_tools"]
+E           AssertionError: assert 'todo_write' in {'browse_skill_directory', 'file_tree', 'find_references', 'find_symbols', 'get_ast_info', 'grep_files', ...}
+
+tests/test_todo_state_isolation.py:57: AssertionError
+__________________ test_sub_agent_registry_exposes_todo_write __________________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-521/test_sub_agent_registry_expose0')
+
+    def test_sub_agent_registry_exposes_todo_write(tmp_path):
+        from minicode.tools import create_default_tool_registry
+        from minicode.subagent_types import AGENT_TYPES
+    
+        allowed = AGENT_TYPES["explore"]["allowed_tools"]
+        registry = create_default_tool_registry(str(tmp_path), include_mcp=False)
+        child = registry.filtered(lambda tool: tool.name in allowed)
+>       assert child.find("todo_write") is not None
+E       AssertionError: assert None is not None
+E        +  where None = find('todo_write')
+E        +    where find = <minicode.tooling.ToolRegistry object at 0x102aaa4b0>.find
+
+tests/test_todo_state_isolation.py:68: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_todo_state_isolation.py::test_context_todo_state_isolates_from_global
+FAILED tests/test_todo_state_isolation.py::test_two_contexts_do_not_share_state
+FAILED tests/test_todo_state_isolation.py::test_context_state_replaces_within_itself
+FAILED tests/test_todo_state_isolation.py::test_explore_and_plan_allowlists_include_todo_write
+FAILED tests/test_todo_state_isolation.py::test_sub_agent_registry_exposes_todo_write
+5 failed, 1 passed in 2.50s

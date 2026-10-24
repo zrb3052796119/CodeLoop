@@ -1,0 +1,37 @@
+
+==================================== ERRORS ====================================
+_____________ ERROR collecting tests/test_subagent_continuation.py _____________
+ImportError while importing test module '@STUDY_ROOT@/offline-proof/write-continuation-resume/parent/tests/test_subagent_continuation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_subagent_continuation.py:7: in <module>
+    import minicode.tools.task as task_module
+minicode/tools/__init__.py:7: in <module>
+    from minicode.mcp import create_mcp_backed_tools
+minicode/mcp.py:17: in <module>
+    from minicode.tooling import ToolDefinition, ToolResult
+minicode/tooling.py:11: in <module>
+    from minicode.capability_contracts import CapabilityClassifier, CapabilityProfile
+E   ModuleNotFoundError: No module named 'minicode.capability_contracts'
+=========================== short test summary info ============================
+ERROR tests/test_subagent_continuation.py
+1 error in 0.65s
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/parent/tests/test_subagent_continuation.py::test_validate_rejects_continue_with_spawn_action
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/parent/tests/test_subagent_continuation.py::test_validate_rejects_continue_with_workflow_type
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/parent/tests/test_subagent_continuation.py::test_validate_rejects_malformed_continue_id
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/parent/tests/test_subagent_continuation.py::test_run_continuation_error_lists_retained_sessions
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/parent/tests/test_subagent_continuation.py::test_run_type_mismatch_fails_closed
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/parent/tests/test_subagent_continuation.py::test_run_seeds_history_from_stored_session
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/parent/tests/test_subagent_continuation.py::test_successful_run_saves_new_session_and_advertises_it
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/write-continuation-resume/parent/tests/test_subagent_continuation.py::test_continuation_without_store_fails_closed
+

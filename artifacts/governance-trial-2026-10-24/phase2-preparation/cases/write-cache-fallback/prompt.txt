@@ -1,0 +1,4 @@
+Implement Anthropic prompt-cache markers for the stable system and final tool blocks. Respect the runtime disable flag and environment kill switch, preserve empty-system request shape, retry once without cache_control after a cache-related HTTP400, and attribute cache creation/read usage. Keep transport behavior and tool-schema caching compatible; add focused offline regression tests.
+
+This is a retrospective task reconstructed from a real CodeLoop change, not a quoted historical user message. Work only in the provided checkout. Do not access Git history, reference solutions, external networks, personal profiles, or other task workspaces.
+You may change only minicode/anthropic_adapter.py, and tests/test_eval_regression.py. Existing tests are read-only. Add at least one meaningful regression in tests/test_eval_regression.py and report verification honestly.

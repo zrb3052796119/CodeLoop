@@ -1,0 +1,28 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_request_timeout_never_exceeds_a_sub_millisecond_deadline _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x103edba10>
+
+    def test_request_timeout_never_exceeds_a_sub_millisecond_deadline(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        import minicode.model_call_control as control_module
+    
+        clock = SimpleNamespace(monotonic=lambda: 1_000.0)
+        remaining = 2**-11
+        monkeypatch.setattr(control_module, "time", clock)
+    
+        timeout = bounded_request_timeout(
+            120.0,
+            deadline_monotonic=clock.monotonic() + remaining,
+            cancellation_token=None,
+        )
+    
+>       assert timeout == remaining
+E       assert 0.001 == 0.00048828125
+
+tests/test_production_reliability_hardening.py:82: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_production_reliability_hardening.py::test_request_timeout_never_exceeds_a_sub_millisecond_deadline
+1 failed, 1 passed in 1.36s

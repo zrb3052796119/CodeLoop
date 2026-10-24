@@ -1,0 +1,154 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___________________ test_message_marker_lands_on_last_block ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1070b39e0>
+
+    def test_message_marker_lands_on_last_block(monkeypatch) -> None:
+        captured: list[dict] = []
+        monkeypatch.setattr(
+            "urllib.request.urlopen",
+            _capturing_urlopen(_END_TURN_PAYLOAD, captured),
+        )
+        adapter = AnthropicModelAdapter(
+            {"model": "claude", "baseUrl": "https://api.anthropic.com", "authToken": "x"},
+            _tool_registry(),
+        )
+    
+        adapter.next(
+            [
+                {"role": "system", "content": "sys"},
+                {"role": "user", "content": "hello"},
+                {"role": "assistant", "content": "hi"},
+                {"role": "user", "content": "one more thing"},
+            ]
+        )
+    
+        body = captured[0]
+        last_message = body["messages"][-1]
+>       assert last_message["content"][-1]["cache_control"] == {"type": "ephemeral"}
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'cache_control'
+
+tests/test_anthropic_adapter.py:445: KeyError
+________________ test_two_step_growth_keeps_prefix_bytes_stable ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1071fd5e0>
+
+    def test_two_step_growth_keeps_prefix_bytes_stable(monkeypatch) -> None:
+        captured: list[dict] = []
+        monkeypatch.setattr(
+            "urllib.request.urlopen",
+            _capturing_urlopen(_END_TURN_PAYLOAD, captured),
+        )
+        adapter = AnthropicModelAdapter(
+            {"model": "claude", "baseUrl": "https://api.anthropic.com", "authToken": "x"},
+            _tool_registry(),
+        )
+    
+        first_messages = [
+            {"role": "system", "content": "sys"},
+            {"role": "user", "content": "find the tests"},
+            {"role": "assistant", "content": "looking now"},
+        ]
+        adapter.next(first_messages)
+    
+        second_messages = [
+            *first_messages,
+            {"role": "user", "content": "tool result: found 3 files"},
+            {"role": "assistant", "content": "summary ready"},
+        ]
+        adapter.next(second_messages)
+    
+        first_body, second_body = captured
+        # Hard prerequisite for a cache hit: the previous request's message
+        # prefix is content-identical inside the next request. cache_control is
+        # breakpoint metadata, not content — the provider excludes it from the
+        # prefix match — so compare with markers stripped.
+        def _strip_markers(messages):
+            return [
+                {
+                    **message,
+                    "content": [
+                        {
+                            key: value
+                            for key, value in block.items()
+                            if key != "cache_control"
+                        }
+                        for block in message["content"]
+                    ],
+                }
+                for message in messages
+            ]
+    
+        assert (
+            _strip_markers(second_body["messages"][: len(first_body["messages"])])
+            == _strip_markers(first_body["messages"])
+        )
+        # The marker moved forward to the NEW last message.
+        marked_first = [
+            block
+            for message in first_body["messages"]
+            for block in message["content"]
+            if "cache_control" in block
+        ]
+        marked_second = [
+            block
+            for message in second_body["messages"]
+            for block in message["content"]
+            if "cache_control" in block
+        ]
+>       assert marked_first[0]["text"] == "looking now"
+               ^^^^^^^^^^^^^^^
+E       IndexError: list index out of range
+
+tests/test_anthropic_adapter.py:520: IndexError
+___________________ test_tool_result_last_block_gets_marker ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1071ff020>
+
+    def test_tool_result_last_block_gets_marker(monkeypatch) -> None:
+        captured: list[dict] = []
+        monkeypatch.setattr(
+            "urllib.request.urlopen",
+            _capturing_urlopen(_END_TURN_PAYLOAD, captured),
+        )
+        adapter = AnthropicModelAdapter(
+            {"model": "claude", "baseUrl": "https://api.anthropic.com", "authToken": "x"},
+            _tool_registry(),
+        )
+    
+        adapter.next(
+            [
+                {"role": "system", "content": "sys"},
+                {"role": "user", "content": "run it"},
+                {
+                    "role": "assistant_tool_call",
+                    "toolUseId": "tu-1",
+                    "toolName": "read_file",
+                    "input": {"path": "a.py"},
+                    "content": "",
+                    "assistantTurnId": "t1",
+                },
+                {
+                    "role": "user_tool_result",
+                    "toolUseId": "tu-1",
+                    "content": "file body",
+                    "isError": False,
+                },
+            ]
+        )
+    
+        body = captured[0]
+        last_block = body["messages"][-1]["content"][-1]
+        assert last_block["type"] == "tool_result"
+>       assert last_block["cache_control"] == {"type": "ephemeral"}
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'cache_control'
+
+tests/test_anthropic_adapter.py:559: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_anthropic_adapter.py::test_message_marker_lands_on_last_block
+FAILED tests/test_anthropic_adapter.py::test_two_step_growth_keeps_prefix_bytes_stable
+FAILED tests/test_anthropic_adapter.py::test_tool_result_last_block_gets_marker
+3 failed in 0.68s

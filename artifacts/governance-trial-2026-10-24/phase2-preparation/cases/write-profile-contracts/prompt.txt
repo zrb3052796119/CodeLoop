@@ -1,0 +1,4 @@
+Extend typed subagent result and observation contracts to validated project-defined agent type names. Keep invalid names rejected and let custom types inherit the configured parent model route unless explicitly configured. Preserve existing built-in contracts and add regression tests.
+
+This is a retrospective task reconstructed from a real CodeLoop change, not a quoted historical user message. Work only in the provided checkout. Do not access Git history, reference solutions, external networks, personal profiles, or other task workspaces.
+You may change only minicode/subagent_model_routing.py, minicode/subagent_observation.py, minicode/subagent_result.py, and tests/test_eval_regression.py. Existing tests are read-only. Add at least one meaningful regression in tests/test_eval_regression.py and report verification honestly.

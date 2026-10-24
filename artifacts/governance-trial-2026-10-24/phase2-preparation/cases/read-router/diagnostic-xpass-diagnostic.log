@@ -1,0 +1,14 @@
+current: XXXXXX                                                                   [100%]
+6 xpassed in 0.92s
+
+@STUDY_ROOT@/cases/read-router/private/oracle.py:67: SyntaxWarning: "is not" with 'str' literal. Did you mean "!="?
+  if '@STUDY_ROOT@/sources/e85a95803e248e157523e10dd0f1fe5bbed3f9bb' is not None:
+
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-router/private/oracle.py", line 49, in <module>
+    code,cases,observed=run_probe(workspace,"current",temp);calls=observed["calls"]
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "@STUDY_ROOT@/cases/read-router/private/oracle.py", line 46, in run_probe
+    assert not observed["xfailReports"], "xfail/xpass diagnostic is not admissible"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: xfail/xpass diagnostic is not admissible

@@ -1,0 +1,62 @@
+FF...                                                                    [100%]
+=================================== FAILURES ===================================
+_______________ test_missing_note_triggers_reminder_and_recovers _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1069b7d70>
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-518/test_missing_note_triggers_rem0')
+
+    def test_missing_note_triggers_reminder_and_recovers(monkeypatch, tmp_path):
+        mailbox = SubagentMailbox()
+        calls: list[dict] = []
+        state = {"submitted": False}
+    
+        def dispatch(**kwargs):
+            calls.append(kwargs)
+            is_remediation = len(calls) == 2
+            if is_remediation:
+                _submit_note_from_system(kwargs)
+                state["submitted"] = True
+            kwargs["outcome_capture"].record(canonicalize_task_outcome("success", 0))
+            closing_text = (
+                "<final> note submitted" if is_remediation else "<final> survey done"
+            )
+            return [*kwargs["messages"], {"role": "assistant", "content": closing_text}]
+    
+        monkeypatch.setattr(task_module, "run_agent_turn", dispatch)
+        result = _run_task(tmp_path, mailbox)
+    
+        assert result.ok, result.output
+>       assert state["submitted"] is True
+E       assert False is True
+
+tests/test_subagent_contract_compliance.py:113: AssertionError
+_________________________ test_model_refuses_reminder __________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1077595b0>
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-518/test_model_refuses_reminder0')
+
+    def test_model_refuses_reminder(monkeypatch, tmp_path):
+        mailbox = SubagentMailbox()
+        calls: list[dict] = []
+    
+        def dispatch(**kwargs):
+            calls.append(kwargs)
+            kwargs["outcome_capture"].record(canonicalize_task_outcome("success", 0))
+            return [
+                *kwargs["messages"],
+                {"role": "assistant", "content": "<final> no note"},
+            ]
+    
+        monkeypatch.setattr(task_module, "run_agent_turn", dispatch)
+        result = _run_task(tmp_path, mailbox)
+    
+        assert result.ok
+>       assert len(calls) == 2
+E       AssertionError: assert 1 == 2
+E        +  where 1 = len([{'model': <minicode.mock_model.MockModelAdapter object at 0x107758d70>, 'tools': <minicode.tooling.ToolRegistry objec...ate/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-518/test_model_refuses_reminder0', ...}])
+
+tests/test_subagent_contract_compliance.py:146: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_subagent_contract_compliance.py::test_missing_note_triggers_reminder_and_recovers
+FAILED tests/test_subagent_contract_compliance.py::test_model_refuses_reminder
+2 failed, 3 passed in 5.16s

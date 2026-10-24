@@ -1,0 +1,23 @@
+
+==================================== ERRORS ====================================
+_______ ERROR collecting tests/test_production_reliability_hardening.py ________
+ImportError while importing test module '@STUDY_ROOT@/offline-proof/read-deadline/parent/tests/test_production_reliability_hardening.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_production_reliability_hardening.py:30: in <module>
+    from scripts.check_release_reproducibility import classify_porcelain
+@REPOSITORY@/scripts/check_release_reproducibility.py:11: in <module>
+    from scripts.agent_quality_evaluator import evaluate_gate, evaluate_quality_suite
+@REPOSITORY@/scripts/agent_quality_evaluator.py:20: in <module>
+    from minicode.intent_parser import IntentContext, IntentType, parse_intent
+E   ImportError: cannot import name 'IntentContext' from 'minicode.intent_parser' (@STUDY_ROOT@/offline-proof/read-deadline/parent/minicode/intent_parser.py)
+=========================== short test summary info ============================
+ERROR tests/test_production_reliability_hardening.py
+1 error in 1.50s
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-deadline/parent/tests/test_production_reliability_hardening.py::test_request_timeout_is_bounded_by_remaining_agent_deadline
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-deadline/parent/tests/test_production_reliability_hardening.py::test_request_timeout_never_exceeds_a_sub_millisecond_deadline
+

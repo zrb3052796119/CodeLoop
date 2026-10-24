@@ -1,0 +1,11 @@
+current: .....                                                                    [100%]
+5 passed in 0.57s
+
+@STUDY_ROOT@/cases/read-closing-reminder/private/oracle.py:67: SyntaxWarning: "is not" with 'str' literal. Did you mean "!="?
+  if '@STUDY_ROOT@/sources/f724d382dedfe4a9fe54a1a54d8c07a8528cd259' is not None:
+
+Traceback (most recent call last):
+  File "@STUDY_ROOT@/cases/read-closing-reminder/private/oracle.py", line 52, in <module>
+    assert calls.get(name,0)>=count, "diagnostic did not execute required behavior: "+name
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: diagnostic did not execute required behavior: minicode/tools/task.py:_run

@@ -1,0 +1,4 @@
+Load user-level read-only agent profiles alongside project-level profiles. Merge distinct names, let the project override a user profile of the same name, retain origin information in loading errors, and use the home profile directory by default. Preserve existing profile validation and built-in name authority. Add regression coverage.
+
+This is a retrospective task reconstructed from a real CodeLoop change, not a quoted historical user message. Work only in the provided checkout. Do not access Git history, reference solutions, external networks, personal profiles, or other task workspaces.
+You may change only minicode/subagent_profiles.py, and tests/test_eval_regression.py. Existing tests are read-only. Add at least one meaningful regression in tests/test_eval_regression.py and report verification honestly.

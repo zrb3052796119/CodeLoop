@@ -1,0 +1,4 @@
+Give each agent loop its own todo state and let read-only explore/plan agents use todo_write. Independent ToolContext instances must not share todos; repeated writes within one context replace its own state. Preserve the legacy no-context fallback and ensure child registries expose the tool. Add focused regression coverage.
+
+This is a retrospective task reconstructed from a real CodeLoop change, not a quoted historical user message. Work only in the provided checkout. Do not access Git history, reference solutions, external networks, personal profiles, or other task workspaces.
+You may change only minicode/agent_loop.py, minicode/subagent_types.py, minicode/tooling.py, minicode/tools/todo_write.py, and tests/test_eval_regression.py. Existing tests are read-only. Add at least one meaningful regression in tests/test_eval_regression.py and report verification honestly.

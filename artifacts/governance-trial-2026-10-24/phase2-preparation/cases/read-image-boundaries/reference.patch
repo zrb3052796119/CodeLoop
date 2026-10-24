@@ -1,0 +1,482 @@
+diff --git a/minicode/tools/inspect_image.py b/minicode/tools/inspect_image.py
+new file mode 100644
+index 00000000..172ea899
+--- /dev/null
++++ b/minicode/tools/inspect_image.py
+@@ -0,0 +1,254 @@
++"""inspect_image — a read-only vision tool for local images.
++
++The visual-judge building block: one local image plus one question, one
++call to a configured OpenAI-compatible vision model, and a bounded text
++answer back into the conversation. Everything fails closed: the image must
++live inside the workspace (network URLs are rejected outright — no SSRF or
++exfiltration channel), the bytes must match a whitelisted image format's
++magic numbers (a renamed text file is not an image), and the vision model
++must be EXPLICITLY configured — there is deliberately no fallback to the
++default text model, which would silently send images to a model that
++cannot see them.
++"""
++
++from __future__ import annotations
++
++import base64
++import json
++import os
++import urllib.request
++from pathlib import Path
++from urllib.parse import urlparse
++
++from minicode.tooling import ToolDefinition, ToolResult
++from minicode.workspace import resolve_tool_path
++
++_MAX_IMAGE_BYTES = 8 * 1024 * 1024
++_MAX_ANSWER_CHARS = 4000
++_MAX_QUESTION_CHARS = 1000
++
++_ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
++_MAGIC_CHECKS = (
++    (b"\x89PNG\r\n\x1a\n", "image/png"),
++    (b"\xff\xd8\xff", "image/jpeg"),
++)
++
++
++def _sniff_mime(data: bytes) -> str | None:
++    if data.startswith(b"\x89PNG\r\n\x1a\n"):
++        return "image/png"
++    if data.startswith(b"\xff\xd8\xff"):
++        return "image/jpeg"
++    if len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
++        return "image/webp"
++    return None
++
++
++def _resolve_vision_config(runtime: dict) -> tuple[str, str, str] | None:
++    """Explicit vision model + the sub-agent route's endpoint/key."""
++    models = runtime.get("subagentModels")
++    model = str(
++        runtime.get("visionModel")
++        or (models.get("visual") if isinstance(models, dict) else "")
++        or ""
++    ).strip()
++    if not model:
++        return None
++    base_url = str(runtime.get("subagentBaseUrl") or "").strip().rstrip("/")
++    api_key = str(runtime.get("subagentApiKey") or "").strip()
++    if not base_url or not api_key:
++        return None
++    parsed = urlparse(base_url)
++    if parsed.scheme != "https" or not parsed.netloc:
++        return None
++    return model, base_url, api_key
++
++
++def _validate(input_data: dict) -> dict:
++    path = input_data.get("path")
++    if not isinstance(path, str) or not path.strip():
++        raise ValueError("path is required")
++    if path.strip().lower().startswith(("http://", "https://", "ftp://")):
++        raise ValueError(
++            "inspect_image accepts local workspace images only; network "
++            "URLs are rejected"
++        )
++    question = input_data.get("question")
++    if not isinstance(question, str) or not question.strip():
++        raise ValueError("question is required")
++    if len(question) > _MAX_QUESTION_CHARS:
++        raise ValueError(
++            f"question must be at most {_MAX_QUESTION_CHARS} characters"
++        )
++    return {"path": path.strip(), "question": question.strip()}
++
++
++def _extract_error_message(data: bytes, status: int) -> str:
++    try:
++        document = json.loads(data.decode("utf-8", errors="replace"))
++        message = document.get("error", {}).get("message")
++        if isinstance(message, str) and message.strip():
++            return message.strip()
++    except (ValueError, AttributeError):
++        pass
++    return f"vision endpoint returned HTTP {status}"
++
++
++def _run(input_data: dict, context) -> ToolResult:
++    raw_path = str(input_data.get("path", ""))
++    # Defense in depth: direct .run() callers bypass the validator, so the
++    # scheme gate is enforced here too.
++    if raw_path.strip().lower().startswith(("http://", "https://", "ftp://")):
++        return ToolResult(
++            ok=False,
++            output=(
++                "error[network_url_rejected]: inspect_image accepts local "
++                "workspace images only; network URLs are rejected"
++            ),
++        )
++    runtime = getattr(context, "_runtime", None) or {}
++    config = _resolve_vision_config(runtime)
++    if config is None:
++        models = runtime.get("subagentModels")
++        has_visual = isinstance(models, dict) and bool(models.get("visual"))
++        return ToolResult(
++            ok=False,
++            output=(
++                "error[vision_model_unconfigured]: inspect_image requires an "
++                "explicitly configured vision model (runtime 'visionModel' or "
++                "subagentModels.visual) plus HTTPS subagentBaseUrl and "
++                "subagentApiKey; there is deliberately no fallback to a "
++                f"text model. (visionModel={'set' if runtime.get('visionModel') else 'unset'}, "
++                f"subagentModels.visual={'set' if has_visual else 'unset'})"
++            ),
++        )
++
++    try:
++        target = resolve_tool_path(context, input_data["path"], "read")
++    except PermissionError as error:
++        return ToolResult(ok=False, output=f"error[path_denied]: {error}")
++    if target.suffix.lower() not in _ALLOWED_EXTENSIONS:
++        return ToolResult(
++            ok=False,
++            output=(
++                "error[unsupported_image_extension]: allowed extensions are "
++                + ", ".join(sorted(_ALLOWED_EXTENSIONS))
++            ),
++        )
++    try:
++        data = target.read_bytes()
++    except OSError as error:
++        return ToolResult(ok=False, output=f"error[read_failed]: {error}")
++    if len(data) > _MAX_IMAGE_BYTES:
++        return ToolResult(
++            ok=False,
++            output=(
++                f"error[image_too_large]: {len(data)} bytes exceeds the "
++                f"{_MAX_IMAGE_BYTES}-byte limit"
++            ),
++        )
++    mime = _sniff_mime(data)
++    if mime is None:
++        return ToolResult(
++            ok=False,
++            output=(
++                "error[not_an_image]: file content does not match any "
++                "supported image magic numbers (PNG/JPEG/WebP)"
++            ),
++        )
++
++    model, base_url, api_key = config
++    data_uri = (
++        f"data:{mime};base64," + base64.b64encode(data).decode("ascii")
++    )
++    request_body = {
++        "model": model,
++        "temperature": 0,
++        "max_tokens": 1024,
++        "messages": [
++            {
++                "role": "user",
++                "content": [
++                    {"type": "image_url", "image_url": {"url": data_uri}},
++                    {
++                        "type": "text",
++                        "text": (
++                            input_data["question"]
++                            + "\nAnswer concisely in plain text."
++                        ),
++                    },
++                ],
++            }
++        ],
++    }
++    request = urllib.request.Request(
++        url=f"{base_url}/chat/completions",
++        data=json.dumps(request_body).encode("utf-8"),
++        headers={
++            "content-type": "application/json",
++            "authorization": f"Bearer {api_key}",
++        },
++        method="POST",
++    )
++    timeout = float(os.environ.get("MINICODE_MODEL_TIMEOUT", "60"))
++    try:
++        with urllib.request.urlopen(request, timeout=timeout) as response:
++            payload = json.loads(response.read().decode("utf-8"))
++    except urllib.error.HTTPError as error:
++        body = error.read() if hasattr(error, "read") else b""
++        return ToolResult(
++            ok=False,
++            output=(
++                f"error[vision_http_{error.code}]: "
++                f"{_extract_error_message(body, error.code)}"
++            ),
++        )
++    except (urllib.error.URLError, OSError, ValueError) as error:
++        return ToolResult(ok=False, output=f"error[vision_unreachable]: {error}")
++
++    choices = payload.get("choices") if isinstance(payload, dict) else None
++    message = (
++        choices[0].get("message", {}) if isinstance(choices, list) and choices else {}
++    )
++    answer = str(message.get("content") or "").strip()
++    if not answer:
++        return ToolResult(
++            ok=False,
++            output="error[vision_empty_answer]: the vision model returned no text",
++        )
++    bounded = answer[:_MAX_ANSWER_CHARS]
++    if len(answer) > _MAX_ANSWER_CHARS:
++        bounded += f"\n…(truncated, {len(answer)} chars total)"
++    usage = payload.get("usage") if isinstance(payload, dict) else None
++    tokens = usage.get("total_tokens") if isinstance(usage, dict) else None
++    token_line = f"\n\n(vision tokens: {tokens})" if tokens is not None else ""
++    return ToolResult(ok=True, output=bounded + token_line)
++
++
++inspect_image_tool = ToolDefinition(
++    name="inspect_image",
++    description=(
++        "Inspect one local image (PNG/JPEG/WebP) with the configured vision "
++        "model and return a concise text answer to a question about it. "
++        "Local workspace images only; network URLs are rejected. Use for "
++        "visual acceptance of rendered artifacts (charts, dashboard pages, "
++        "exported documents)."
++    ),
++    input_schema={
++        "type": "object",
++        "properties": {
++            "path": {
++                "type": "string",
++                "description": "Workspace-relative (or absolute) path to a local image.",
++            },
++            "question": {
++                "type": "string",
++                "maxLength": _MAX_QUESTION_CHARS,
++                "description": "One focused question about the image.",
++            },
++        },
++        "required": ["path", "question"],
++    },
++    validator=_validate,
++    run=_run,
++)
+diff --git a/tests/test_inspect_image.py b/tests/test_inspect_image.py
+new file mode 100644
+index 00000000..c44a82a2
+--- /dev/null
++++ b/tests/test_inspect_image.py
+@@ -0,0 +1,216 @@
++"""inspect_image: read-only vision tool with fail-closed routing."""
++
++from __future__ import annotations
++
++import base64
++import io
++import json
++import urllib.error
++
++import pytest
++
++from minicode.tools.inspect_image import inspect_image_tool
++from minicode.tooling import ToolContext
++
++# Minimal valid 1x1 white PNG (67 bytes).
++_PNG_BYTES = base64.b64decode(
++    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4"
++    "/z8AAwMBAAJDAXQAAAAASUVORK5CYII="
++)
++
++_RUNTIME = {
++    "model": "fake-parent",
++    "visionModel": "qwen-vl-max",
++    "subagentBaseUrl": "https://dashscope.example.com/compatible-mode/v1",
++    "subagentApiKey": "sk-test",
++}
++
++
++class _Response:
++    def __init__(self, payload: dict, status: int = 200) -> None:
++        self._payload = payload
++        self.status = status
++
++    def read(self) -> bytes:
++        return json.dumps(self._payload).encode("utf-8")
++
++    def __enter__(self):
++        return self
++
++    def __exit__(self, *args):
++        return False
++
++
++def _ok_payload(text: str = "A white 1x1 pixel.") -> dict:
++    return {
++        "choices": [{"message": {"content": text}}],
++        "usage": {"total_tokens": 42},
++    }
++
++
++def _capture(captured, payload=None, error=None):
++    def fake(request, timeout=60):
++        captured.append(
++            {
++                "url": request.full_url,
++                "headers": dict(request.headers),
++                "body": json.loads(request.data.decode("utf-8")),
++            }
++        )
++        if error is not None:
++            raise error
++        return _Response(payload or _ok_payload())
++
++    return fake
++
++
++def _context(tmp_path, runtime=None) -> ToolContext:
++    return ToolContext(cwd=str(tmp_path), _runtime=runtime or _RUNTIME)
++
++
++def _write_png(tmp_path, name="pixel.png", data=_PNG_BYTES):
++    target = tmp_path / name
++    target.write_bytes(data)
++    return target
++
++
++def test_rejects_non_image_extension(tmp_path, monkeypatch):
++    target = tmp_path / "notes.txt"
++    target.write_bytes(_PNG_BYTES)
++    result = inspect_image_tool.run(
++        {"path": "notes.txt", "question": "what is this?"},
++        _context(tmp_path),
++    )
++    assert not result.ok
++    assert "extension" in result.output
++
++
++def test_rejects_disguised_image(tmp_path):
++    target = _write_png(tmp_path, "fake.png", b"this is plain text, not an image")
++    result = inspect_image_tool.run(
++        {"path": "fake.png", "question": "what?"},
++        _context(tmp_path),
++    )
++    assert not result.ok
++    assert "magic" in result.output or "image" in result.output
++
++
++def test_rejects_network_url(tmp_path):
++    result = inspect_image_tool.run(
++        {"path": "https://evil.example.com/x.png", "question": "what?"},
++        _context(tmp_path),
++    )
++    assert not result.ok
++    assert "network_url_rejected" in result.output or "local" in result.output
++
++
++def test_rejects_oversized_file(tmp_path, monkeypatch):
++    import minicode.tools.inspect_image as module
++
++    target = _write_png(tmp_path, "big.png")
++    monkeypatch.setattr(module, "_MAX_IMAGE_BYTES", 10)
++    result = inspect_image_tool.run(
++        {"path": "big.png", "question": "what?"},
++        _context(tmp_path),
++    )
++    assert not result.ok
++    assert "too_large" in result.output
++
++
++def test_missing_vision_model_fails_closed(tmp_path):
++    runtime = dict(_RUNTIME)
++    runtime.pop("visionModel")
++    _write_png(tmp_path)
++    result = inspect_image_tool.run(
++        {"path": "pixel.png", "question": "what?"},
++        _context(tmp_path, runtime),
++    )
++    assert not result.ok
++    assert "vision_model_unconfigured" in result.output
++
++
++def test_visual_key_in_subagent_models_suffices(tmp_path, monkeypatch):
++    captured: list[dict] = []
++    monkeypatch.setattr(
++        "urllib.request.urlopen", _capture(captured, payload=_ok_payload("ok"))
++    )
++    runtime = {
++        "subagentModels": {"visual": "qwen-vl-plus"},
++        "subagentBaseUrl": "https://dashscope.example.com/v1",
++        "subagentApiKey": "sk-test",
++    }
++    _write_png(tmp_path)
++    result = inspect_image_tool.run(
++        {"path": "pixel.png", "question": "describe"},
++        _context(tmp_path, runtime),
++    )
++    assert result.ok, result.output
++    assert captured[0]["body"]["model"] == "qwen-vl-plus"
++
++
++def test_missing_credentials_fail_closed(tmp_path):
++    _write_png(tmp_path)
++    for runtime in (
++        {"visionModel": "m"},
++        {"visionModel": "m", "subagentBaseUrl": "https://x.example.com"},
++        {
++            "visionModel": "m",
++            "subagentBaseUrl": "http://insecure.example.com",
++            "subagentApiKey": "k",
++        },
++    ):
++        result = inspect_image_tool.run(
++            {"path": "pixel.png", "question": "what?"},
++            _context(tmp_path, runtime),
++        )
++        assert not result.ok, runtime
++
++
++def test_request_shape_and_bounded_answer(tmp_path, monkeypatch):
++    captured: list[dict] = []
++    long_text = "x" * 9000
++    monkeypatch.setattr(
++        "urllib.request.urlopen",
++        _capture(captured, payload=_ok_payload(long_text)),
++    )
++    _write_png(tmp_path)
++    result = inspect_image_tool.run(
++        {"path": "pixel.png", "question": "describe precisely"},
++        _context(tmp_path),
++    )
++    assert result.ok, result.output
++    body = captured[0]
++    assert body["url"].endswith("/chat/completions")
++    headers = {key.lower(): value for key, value in captured[0]["headers"].items()}
++    assert headers.get("authorization") == "Bearer sk-test"
++    content = body["body"]["messages"][0]["content"]
++    image_block = next(b for b in content if b["type"] == "image_url")
++    assert image_block["image_url"]["url"].startswith("data:image/png;base64,")
++    assert base64.b64decode(
++        image_block["image_url"]["url"].split(",", 1)[1]
++    ) == _PNG_BYTES
++    text_block = next(b for b in content if b["type"] == "text")
++    assert "describe precisely" in text_block["text"]
++    assert body["body"]["temperature"] == 0
++    assert len(result.output) < 5000
++    assert "tokens" in result.output
++
++
++def test_http_error_surfaces_cleanly(tmp_path, monkeypatch):
++    error = urllib.error.HTTPError(
++        url="https://dashscope.example.com/v1/chat/completions",
++        code=500,
++        msg="Server Error",
++        hdrs=None,
++        fp=io.BytesIO(b'{"error": {"message": "boom"}}'),
++    )
++    monkeypatch.setattr(
++        "urllib.request.urlopen", _capture([], error=error)
++    )
++    _write_png(tmp_path)
++    result = inspect_image_tool.run(
++        {"path": "pixel.png", "question": "what?"},
++        _context(tmp_path),
++    )
++    assert not result.ok
++    assert "boom" in result.output or "500" in result.output

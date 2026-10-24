@@ -1,0 +1,4 @@
+Dispatch valid project-defined read-only agent profiles through the task tool. Preserve profile instruction/tool/turn limits, reject malformed type names, report available types and loading errors for unknown requests, and keep custom profiles classified read-only and concurrency-safe. Add regression tests without weakening existing built-in dispatch.
+
+This is a retrospective task reconstructed from a real CodeLoop change, not a quoted historical user message. Work only in the provided checkout. Do not access Git history, reference solutions, external networks, personal profiles, or other task workspaces.
+You may change only minicode/tools/task.py, and tests/test_eval_regression.py. Existing tests are read-only. Add at least one meaningful regression in tests/test_eval_regression.py and report verification honestly.

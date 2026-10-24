@@ -1,0 +1,180 @@
+diff --git a/minicode/subagent_model_routing.py b/minicode/subagent_model_routing.py
+index e64a3ebe..1c8df251 100644
+--- a/minicode/subagent_model_routing.py
++++ b/minicode/subagent_model_routing.py
+@@ -13,6 +13,14 @@ from urllib.parse import urlparse
+ 
+ 
+ _AGENT_TYPES = frozenset({"explore", "plan", "general"})
++
++
++def _is_known_agent_type(agent_type: str) -> bool:
++    """Built-in agent types plus valid project-profile type names."""
++    from minicode.subagent_profiles import AGENT_NAME_RE
++
++    return agent_type in _AGENT_TYPES or AGENT_NAME_RE.fullmatch(agent_type) is not None
++
+ _OPENAI_COMPATIBLE = "openai-compatible"
+ 
+ 
+@@ -35,7 +43,7 @@ def resolve_subagent_model_route(
+ ) -> SubagentModelRoute:
+     """Resolve one child route without inheriting a credential implicitly."""
+     normalized_type = str(agent_type).strip().lower()
+-    if normalized_type not in _AGENT_TYPES:
++    if not _is_known_agent_type(normalized_type):
+         raise SubagentModelRoutingError("subagent_type_unsupported")
+ 
+     if not bool(runtime.get("subagentRoutingEnabled", False)):
+diff --git a/minicode/subagent_observation.py b/minicode/subagent_observation.py
+index 9e92f919..42cd7318 100644
+--- a/minicode/subagent_observation.py
++++ b/minicode/subagent_observation.py
+@@ -21,6 +21,14 @@ from minicode.run_events import emit_event_safely
+ SUBAGENT_EVENT_TYPE = "subagent.completed"
+ 
+ _AGENT_TYPES = frozenset({"explore", "plan", "general", "workflow"})
++
++
++def _is_known_agent_type(agent_type: str) -> bool:
++    """Built-in agent types plus valid project-profile type names."""
++    from minicode.subagent_profiles import AGENT_NAME_RE
++
++    return agent_type in _AGENT_TYPES or AGENT_NAME_RE.fullmatch(agent_type) is not None
++
+ _OUTCOMES = frozenset(
+     {
+         "completed",
+@@ -125,7 +133,7 @@ def _normalize_v1(payload: Mapping[str, object]) -> dict[str, object] | None:
+     result_truncated = payload.get("resultTruncated")
+     counts = (model_turns, tool_calls, duration_ms, max_turns)
+     if (
+-        agent_type not in _AGENT_TYPES
++        not _is_known_agent_type(agent_type)
+         or outcome not in _OUTCOMES
+         or any(
+             isinstance(value, bool)
+@@ -241,7 +249,7 @@ def _normalize_v3(payload: Mapping[str, object]) -> dict[str, object] | None:
+     if (
+         not isinstance(subagent_id, str)
+         or _SUBAGENT_ID_RE.fullmatch(subagent_id) is None
+-        or agent_type not in _AGENT_TYPES
++        or not _is_known_agent_type(agent_type)
+         or outcome not in _OUTCOMES
+         or any(
+             isinstance(value, bool)
+@@ -321,7 +329,7 @@ def _normalize_v4(payload: Mapping[str, object]) -> dict[str, object] | None:
+     if (
+         not isinstance(subagent_id, str)
+         or _SUBAGENT_ID_RE.fullmatch(subagent_id) is None
+-        or agent_type not in _AGENT_TYPES
++        or not _is_known_agent_type(agent_type)
+         or outcome not in _OUTCOMES
+         or any(
+             isinstance(value, bool)
+diff --git a/minicode/subagent_result.py b/minicode/subagent_result.py
+index d0deba7c..0545bc20 100644
+--- a/minicode/subagent_result.py
++++ b/minicode/subagent_result.py
+@@ -18,6 +18,14 @@ SUBAGENT_RESULT_MARKER = "=== SUBAGENT RESULT v1 ==="
+ 
+ _SUBAGENT_ID_RE = re.compile(r"^sub_[0-9a-f]{32}$")
+ _AGENT_TYPES = frozenset({"explore", "plan", "general", "workflow"})
++
++
++def _is_known_agent_type(agent_type: str) -> bool:
++    """Built-in agent types plus valid project-profile type names."""
++    from minicode.subagent_profiles import AGENT_NAME_RE
++
++    return agent_type in _AGENT_TYPES or AGENT_NAME_RE.fullmatch(agent_type) is not None
++
+ _OUTCOMES = frozenset(
+     {"completed", "failed", "depth_rejected", "budget_exceeded"}
+ )
+@@ -157,7 +165,7 @@ def project_subagent_result(
+     """
+     if _SUBAGENT_ID_RE.fullmatch(subagent_id) is None:
+         raise ValueError("sub-agent id is invalid")
+-    if agent_type not in _AGENT_TYPES:
++    if not _is_known_agent_type(agent_type):
+         raise ValueError("agent type is invalid")
+     if outcome not in _OUTCOMES:
+         raise ValueError("sub-agent outcome is invalid")
+@@ -209,7 +217,7 @@ def _normalize_projected_result(value: object) -> dict[str, object] | None:
+     if (
+         not isinstance(identity, str)
+         or _SUBAGENT_ID_RE.fullmatch(identity) is None
+-        or agent_type not in _AGENT_TYPES
++        or not _is_known_agent_type(agent_type)
+         or outcome not in _OUTCOMES
+         or contract_status not in {"reported", "fallback", "derived"}
+         or not isinstance(partial, bool)
+diff --git a/tests/test_subagent_profiles.py b/tests/test_subagent_profiles.py
+index df9b4778..8f6ce638 100644
+--- a/tests/test_subagent_profiles.py
++++ b/tests/test_subagent_profiles.py
+@@ -192,3 +192,64 @@ def test_agent_name_re_shape():
+     assert AGENT_NAME_RE.fullmatch("Test") is None
+     assert AGENT_NAME_RE.fullmatch("a") is None  # 总长至少 2
+     assert AGENT_NAME_RE.fullmatch("bad name") is None
++
++
++# ---------------------------------------------------------------------------
++# Task 2: closed typed contracts accept project-defined agent types
++# ---------------------------------------------------------------------------
++
++
++def test_result_contract_accepts_custom_agent_type():
++    from minicode.subagent_result import project_subagent_result
++
++    result = project_subagent_result(
++        None,
++        subagent_id="sub_" + "1" * 32,
++        agent_type="test-locator",
++        outcome="completed",
++        fallback_summary="found it",
++        partial=False,
++    )
++    assert result["contractStatus"] == "fallback"
++
++
++def test_result_contract_still_rejects_bad_type_names():
++    from minicode.subagent_result import project_subagent_result
++
++    with pytest.raises(ValueError):
++        project_subagent_result(
++            None,
++            subagent_id="sub_" + "1" * 32,
++            agent_type="bad name; drop",
++            outcome="completed",
++            fallback_summary="x",
++            partial=False,
++        )
++
++
++def test_model_routing_inherits_for_custom_type():
++    from minicode.subagent_model_routing import resolve_subagent_model_route
++
++    route = resolve_subagent_model_route(
++        {"model": "parent-model"}, "test-locator"
++    )
++    assert route.provider == "inherit"
++    assert route.model == "parent-model"
++
++
++def test_observation_payload_accepts_custom_agent_type():
++    from minicode.subagent_observation import project_subagent_event
++
++    payload = project_subagent_event(
++        subagent_id="sub_" + "1" * 32,
++        agent_type="test-locator",
++        outcome="completed",
++        model_turns=3,
++        tool_calls=5,
++        duration_ms=1200,
++        max_turns=8,
++        result_contract_status="reported",
++        result_truncated=False,
++    )
++    assert payload is not None
++    assert payload["agentType"] == "test-locator"

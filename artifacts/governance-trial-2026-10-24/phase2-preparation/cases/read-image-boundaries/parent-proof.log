@@ -1,0 +1,29 @@
+
+==================================== ERRORS ====================================
+_________________ ERROR collecting tests/test_inspect_image.py _________________
+ImportError while importing test module '@STUDY_ROOT@/offline-proof/read-image-boundaries/parent/tests/test_inspect_image.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_inspect_image.py:12: in <module>
+    from minicode.tools.inspect_image import inspect_image_tool
+E   ModuleNotFoundError: No module named 'minicode.tools.inspect_image'
+=========================== short test summary info ============================
+ERROR tests/test_inspect_image.py
+1 error in 3.31s
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-image-boundaries/parent/tests/test_inspect_image.py::test_rejects_non_image_extension
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-image-boundaries/parent/tests/test_inspect_image.py::test_rejects_disguised_image
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-image-boundaries/parent/tests/test_inspect_image.py::test_rejects_network_url
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-image-boundaries/parent/tests/test_inspect_image.py::test_rejects_oversized_file
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-image-boundaries/parent/tests/test_inspect_image.py::test_missing_vision_model_fails_closed
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-image-boundaries/parent/tests/test_inspect_image.py::test_visual_key_in_subagent_models_suffices
+
+ERROR: found no collectors for @STUDY_ROOT@/offline-proof/read-image-boundaries/parent/tests/test_inspect_image.py::test_missing_credentials_fail_closed
+

@@ -1,0 +1,1677 @@
+diff --git a/minicode/tools/task.py b/minicode/tools/task.py
+index 2fd4e6c3..8055b141 100644
+--- a/minicode/tools/task.py
++++ b/minicode/tools/task.py
+@@ -115,6 +115,9 @@ from minicode.tooling import (
+ )
+ from minicode.turn_cancellation import TurnCancellationRequested
+ from minicode.verification_observation import project_verification
++from minicode.workflow_workspace import (
++    FrozenWorkflowChange as _FrozenWorkflowChange,
++)
+ from minicode.workflow_workspace import (
+     WorkflowIsolationError as _WorkflowIsolationError,
+ )
+@@ -1906,6 +1909,7 @@ def _run_workflow_phases(
+     review_result: ToolResult | None = None
+     typed_review = _workflow_review_not_applicable()
+     verification_result: dict[str, object] | None = None
++    frozen_workspace_change: _FrozenWorkflowChange | None = None
+     frozen_change_set: dict[str, object] | None = None
+     commit_error: _WorkflowIsolationError | None = None
+     commit_ready_status = "not_applicable"
+@@ -2013,6 +2017,7 @@ def _run_workflow_phases(
+ 
+     def run_worker(assignment) -> StageResult:
+         nonlocal plan_result, execute_result, review_result, typed_review
++        nonlocal frozen_workspace_change
+         nonlocal frozen_change_set, executor_assignment_id, analyst_report
+         nonlocal implementation_order, execution_artifact, locked_write_paths
+         nonlocal execution_artifact_id, verification_artifact_id
+@@ -2555,15 +2560,13 @@ def _run_workflow_phases(
+                         error_code=f"executor_{execution_artifact['status']}",
+                     )
+             try:
+-                if workflow_request.structured:
+-                    frozen_change_set = transaction.change_set(
+-                        allowed_paths=locked_write_paths,
+-                        paths_relative_to_cwd=True,
+-                    )
+-                else:
+-                    frozen_change_set = transaction.change_set(
+-                        allowed_paths=locked_write_paths,
+-                    )
++                frozen_workspace_change = transaction.freeze(
++                    allowed_paths=locked_write_paths,
++                    paths_relative_to_cwd=workflow_request.structured,
++                )
++                frozen_change_set = (
++                    frozen_workspace_change.change_set_document
++                )
+             except _WorkflowIsolationError:
+                 return StageResult(
+                     status="failed",
+@@ -2576,7 +2579,9 @@ def _run_workflow_phases(
+             )
+             if workflow_request.structured:
+                 try:
+-                    change_diff_artifact = transaction.frozen_diff_artifact()
++                    change_diff_artifact = (
++                        frozen_workspace_change.diff_artifact_document
++                    )
+                     change_diff_artifact_id = (
+                         f"artifact_{assignment.assignment_id}_"
+                         f"{assignment.attempt_id}_frozen_diff"
+@@ -2917,13 +2922,18 @@ def _run_workflow_phases(
+                 requires_human=True,
+                 error_code="human_approval_expired",
+             )
+-        if frozen_change_set is None or executor_assignment_id is None:
++        if (
++            transaction is None
++            or frozen_workspace_change is None
++            or frozen_change_set is None
++            or executor_assignment_id is None
++        ):
+             return StageResult(
+                 status="failed",
+                 artifact_id=_stage_receipt_artifact_id(assignment),
+                 error_code="change_set_missing",
+             )
+-        patch_digest = str(frozen_change_set["patchDigest"])
++        patch_digest = frozen_workspace_change.patch_digest
+         if not requested_checks:
+             return StageResult(
+                 status="inconclusive",
+@@ -2933,11 +2943,7 @@ def _run_workflow_phases(
+             )
+         from minicode.permissions import PermissionDeniedError, PermissionManager
+ 
+-        permission_cwd = (
+-            str(transaction.source_cwd)
+-            if transaction is not None
+-            else context.cwd
+-        )
++        permission_cwd = str(transaction.source_cwd)
+         verification_permissions = getattr(context, "permissions", None)
+         if verification_permissions is None:
+             verification_permissions = PermissionManager(
+@@ -2959,99 +2965,75 @@ def _run_workflow_phases(
+                 )
+                 verification_evidence_ids.append(artifact_id)
+ 
+-            if transaction is not None:
+-                verifier = _deterministic_verifier_for_context(
+-                    context,
+-                    trusted_git_executable=transaction.trusted_git_executable,
+-                    untrusted_executable_root=str(transaction.source_root),
+-                )
+-                isolated_checks: list[dict[str, object]] = []
+-                isolated_statuses: list[str] = []
+-                verification_id: str | None = None
+-                # Every check receives a fresh clone and private HOME. A test,
+-                # build or linter can therefore never influence the bytes seen
+-                # by a later gate.
+-                for check in requested_checks:
+-                    with transaction.verification_workspace(
+-                        read_roots=(
+-                            (".",)
+-                            if check.kind == "oracle"
+-                            else workflow_request.scope.read_roots
+-                        ),
+-                        forbidden_paths=workflow_request.scope.forbidden_paths,
+-                        paths_relative_to_cwd=workflow_request.structured,
+-                        retain_git_metadata=check.kind == "oracle",
+-                    ) as verification_cwd:
+-                        partial = verifier.run(
+-                            checks=(check,),
+-                            cwd=str(verification_cwd),
+-                            workflow_id=workflow_id,
+-                            task_id=task_id,
+-                            execution_assignment_id=executor_assignment_id,
+-                            patch_digest=patch_digest,
+-                            permissions=verifier_permission_gate,
+-                            permission_cwd=permission_cwd,
+-                            deadline_monotonic=getattr(
+-                                context,
+-                                "_task_deadline_monotonic",
+-                                None,
+-                            ),
+-                            cancellation_checkpoint=lambda: _raise_task_deadline(
+-                                context
+-                            ),
+-                            evidence_sink=publish_verification_evidence,
+-                        )
+-                    verification_id = str(partial["verificationId"])
+-                    isolated_checks.extend(partial["checks"])
+-                    isolated_statuses.append(str(partial["status"]))
+-                aggregate_status = (
+-                    "failed"
+-                    if "failed" in isolated_statuses
+-                    else "inconclusive"
+-                    if "inconclusive" in isolated_statuses
+-                    else "passed"
+-                )
+-                verification_result = parse_verification_result(
+-                    {
+-                        "verificationVersion": 1,
+-                        "verificationId": verification_id,
+-                        "workflowId": workflow_id,
+-                        "taskId": task_id,
+-                        "executionAssignmentId": executor_assignment_id,
+-                        "patchDigest": patch_digest,
+-                        "status": aggregate_status,
+-                        "checks": isolated_checks,
+-                    },
+-                    workflow_id=workflow_id,
+-                    task_id=task_id,
+-                    execution_assignment_id=executor_assignment_id,
+-                    patch_digest=patch_digest,
+-                    required_check_ids=tuple(
+-                        check.check_id for check in requested_checks
+-                    ),
+-                )
+-            else:
+-                verification_result = _deterministic_verifier_for_context(
+-                    context
+-                ).run(
+-                    checks=requested_checks,
+-                    cwd=context.cwd,
+-                    workflow_id=workflow_id,
+-                    task_id=task_id,
+-                    execution_assignment_id=executor_assignment_id,
+-                    patch_digest=patch_digest,
+-                    permissions=verifier_permission_gate,
+-                    permission_cwd=permission_cwd,
+-                    deadline_monotonic=getattr(
+-                        context,
+-                        "_task_deadline_monotonic",
+-                        None,
+-                    ),
+-                    cancellation_checkpoint=lambda: _raise_task_deadline(
+-                        context
++            verifier = _deterministic_verifier_for_context(
++                context,
++                trusted_git_executable=transaction.trusted_git_executable,
++                untrusted_executable_root=str(transaction.source_root),
++            )
++            isolated_checks: list[dict[str, object]] = []
++            isolated_statuses: list[str] = []
++            verification_id: str | None = None
++            # Every check receives a fresh clone and private HOME. A test,
++            # build or linter can therefore never influence the bytes seen
++            # by a later gate.
++            for check in requested_checks:
++                with frozen_workspace_change.verification_workspace(
++                    read_roots=(
++                        (".",)
++                        if check.kind == "oracle"
++                        else workflow_request.scope.read_roots
+                     ),
+-                    evidence_sink=publish_verification_evidence,
+-                )
++                    forbidden_paths=workflow_request.scope.forbidden_paths,
++                    retain_git_metadata=check.kind == "oracle",
++                ) as verification_cwd:
++                    partial = verifier.run(
++                        checks=(check,),
++                        cwd=str(verification_cwd),
++                        workflow_id=workflow_id,
++                        task_id=task_id,
++                        execution_assignment_id=executor_assignment_id,
++                        patch_digest=patch_digest,
++                        permissions=verifier_permission_gate,
++                        permission_cwd=permission_cwd,
++                        deadline_monotonic=getattr(
++                            context,
++                            "_task_deadline_monotonic",
++                            None,
++                        ),
++                        cancellation_checkpoint=lambda: _raise_task_deadline(
++                            context
++                        ),
++                        evidence_sink=publish_verification_evidence,
++                    )
++                verification_id = str(partial["verificationId"])
++                isolated_checks.extend(partial["checks"])
++                isolated_statuses.append(str(partial["status"]))
++            aggregate_status = (
++                "failed"
++                if "failed" in isolated_statuses
++                else "inconclusive"
++                if "inconclusive" in isolated_statuses
++                else "passed"
++            )
++            verification_result = parse_verification_result(
++                {
++                    "verificationVersion": 1,
++                    "verificationId": verification_id,
++                    "workflowId": workflow_id,
++                    "taskId": task_id,
++                    "executionAssignmentId": executor_assignment_id,
++                    "patchDigest": patch_digest,
++                    "status": aggregate_status,
++                    "checks": isolated_checks,
++                },
++                workflow_id=workflow_id,
++                task_id=task_id,
++                execution_assignment_id=executor_assignment_id,
++                patch_digest=patch_digest,
++                required_check_ids=tuple(
++                    check.check_id for check in requested_checks
++                ),
++            )
+         except (
+             TurnCancellationRequested,
+             ToolExecutionAbandoned,
+@@ -3269,7 +3251,7 @@ def _run_workflow_phases(
+ 
+     def commit_change(request) -> bool:
+         nonlocal commit_error
+-        if transaction is None:
++        if transaction is None or frozen_workspace_change is None:
+             return False
+         if (
+             profile.human_confirmation_required
+@@ -3280,17 +3262,9 @@ def _run_workflow_phases(
+             )
+             return False
+         try:
+-            if workflow_request.structured:
+-                transaction.commit(
+-                    expected_patch_digest=request.patch_digest,
+-                    allowed_paths=locked_write_paths,
+-                    paths_relative_to_cwd=True,
+-                )
+-            else:
+-                transaction.commit(
+-                    expected_patch_digest=request.patch_digest,
+-                    allowed_paths=locked_write_paths,
+-                )
++            frozen_workspace_change.promote(
++                approved_patch_digest=request.patch_digest,
++            )
+         except BaseException as exc:
+             # Promotion is the commit linearization point. Cleanup, lock
+             # release, or observer failures after it may degrade finalization,
+diff --git a/minicode/workflow_workspace.py b/minicode/workflow_workspace.py
+index 1c80627b..15aad2fb 100644
+--- a/minicode/workflow_workspace.py
++++ b/minicode/workflow_workspace.py
+@@ -145,22 +145,13 @@ def _prepare_workflow_parent_lock_namespace(lock_root: Path) -> None:
+             )
+ 
+ 
+-@dataclass(frozen=True, slots=True)
+-class _FrozenWorkflowChangeSet:
+-    """Exact isolated patch bytes reviewed by later workflow gates."""
+-
+-    patch: bytes
+-    patch_digest: str
+-    target_state_digest: str
+-    normalized_allowed_paths: tuple[str, ...]
+-    paths_relative_to_cwd: bool
+-
+-
+ _WORKFLOW_PARENT_COMMIT_LOCK = threading.RLock()
++_WORKSPACE_IGNORED_ENTRY_NAMES = frozenset({".git"})
++_MUTABLE_GIT_ROOT_ENTRIES = frozenset({"index", "index.lock", "objects"})
+ 
+ 
+ class WorkflowWorkspaceTransaction:
+-    """Run workflow phases in a disposable snapshot and commit on approval.
++    """Run mutable workflow work in a disposable snapshot until freeze.
+ 
+     Every workspace is snapshotted as plain filesystem data without consulting
+     the source repository's index or configuration.  This preserves the
+@@ -195,7 +186,7 @@ class WorkflowWorkspaceTransaction:
+         self._temp_root = Path(self._temporary.name)
+         self._commit_checkpoint()
+         self._transaction_lock = threading.RLock()
+-        self._frozen_change_set: _FrozenWorkflowChangeSet | None = None
++        self._frozen_change: FrozenWorkflowChange | None = None
+         self._parent_promotion_completed = False
+         self._parent_promotion_unknown = False
+         self.source_root = self._discover_git_root() or self.source_cwd
+@@ -249,6 +240,7 @@ class WorkflowWorkspaceTransaction:
+                     "isolated workflow cwd was not materialized"
+                 )
+             self._initialize_isolated_repository()
++            self._snapshot_trusted_git_metadata()
+             self._source_state_digest = source_state_digest
+         except BaseException:
+             self.close()
+@@ -580,12 +572,16 @@ class WorkflowWorkspaceTransaction:
+         root: Path,
+         *,
+         use_operation_guard: bool = True,
++        ignored_names: frozenset[str] = _WORKSPACE_IGNORED_ENTRY_NAMES,
++        ignored_root_entries: frozenset[str] = frozenset(),
+     ) -> str:
+         """Hash workspace bytes and entry types without following symlinks."""
+         return self._workspace_state_digest(
+             root,
+             include_directories=True,
+             use_operation_guard=use_operation_guard,
++            ignored_names=ignored_names,
++            ignored_root_entries=ignored_root_entries,
+         )
+ 
+     def _promotion_state_digest(
+@@ -605,6 +601,16 @@ class WorkflowWorkspaceTransaction:
+             root,
+             include_directories=False,
+             use_operation_guard=use_operation_guard,
++            ignored_names=_WORKSPACE_IGNORED_ENTRY_NAMES,
++            ignored_root_entries=frozenset(),
++        )
++
++    def _git_control_state_digest(self, root: Path) -> str:
++        """Hash repo-local oracle semantics, excluding staged data/objects."""
++        return self._filesystem_state_digest(
++            root,
++            ignored_names=frozenset(),
++            ignored_root_entries=_MUTABLE_GIT_ROOT_ENTRIES,
+         )
+ 
+     def _workspace_state_digest(
+@@ -613,6 +619,8 @@ class WorkflowWorkspaceTransaction:
+         *,
+         include_directories: bool,
+         use_operation_guard: bool,
++        ignored_names: frozenset[str],
++        ignored_root_entries: frozenset[str],
+     ) -> str:
+         digest = hashlib.sha256()
+ 
+@@ -633,7 +641,10 @@ class WorkflowWorkspaceTransaction:
+                 ) from exc
+             for entry in entries:
+                 checkpoint()
+-                if entry.name == ".git":
++                if entry.name in ignored_names or (
++                    relative_parent == Path()
++                    and entry.name in ignored_root_entries
++                ):
+                     continue
+                 path = Path(entry.path)
+                 relative_path = relative_parent / entry.name
+@@ -686,11 +697,12 @@ class WorkflowWorkspaceTransaction:
+                 "parent workspace changed after workflow snapshot; rerun required"
+             )
+ 
+-    def _validate_snapshot_symlinks(self) -> None:
++    def _validate_snapshot_symlinks(self, root: Path | None = None) -> None:
+         """Reject links that could route isolated writes into the parent."""
+-        canonical_root = self.workspace_root.resolve(strict=True)
++        snapshot_root = self.workspace_root if root is None else root
++        canonical_root = snapshot_root.resolve(strict=True)
+         for directory, dirnames, filenames in os.walk(
+-            self.workspace_root,
++            snapshot_root,
+             followlinks=False,
+         ):
+             self._commit_checkpoint()
+@@ -708,7 +720,7 @@ class WorkflowWorkspaceTransaction:
+                 if not contained:
+                     raise WorkflowIsolationError(
+                         f"snapshot contains an escaping symlink: "
+-                        f"{candidate.relative_to(self.workspace_root)}"
++                        f"{candidate.relative_to(snapshot_root)}"
+                     )
+ 
+     def _initialize_isolated_repository(self) -> None:
+@@ -756,6 +768,77 @@ class WorkflowWorkspaceTransaction:
+         ).stdout
+         self.base_digest = "sha256:" + hashlib.sha256(baseline_tree).hexdigest()
+ 
++    def _snapshot_trusted_git_metadata(self) -> None:
++        """Preserve scheduler-created baseline metadata before worker access."""
++        self._trusted_git_root = self._temp_root / "trusted-baseline-git"
++        self._copytree_with_checkpoints(
++            self.workspace_root / ".git",
++            self._trusted_git_root,
++        )
++        self._trusted_git_state_digest = self._filesystem_state_digest(
++            self._trusted_git_root,
++            ignored_names=frozenset(),
++        )
++        self._trusted_git_control_digest = self._git_control_state_digest(
++            self._trusted_git_root
++        )
++
++    def _materialize_trusted_git_metadata(
++        self,
++        destination_git: Path,
++    ) -> None:
++        """Clone scheduler-owned baseline metadata and verify it exactly."""
++        try:
++            if (
++                self._filesystem_state_digest(
++                    self._trusted_git_root,
++                    ignored_names=frozenset(),
++                )
++                != self._trusted_git_state_digest
++            ):
++                raise WorkflowIsolationError(
++                    "workflow trusted Git metadata changed after initialization"
++                )
++            self._copytree_with_checkpoints(
++                self._trusted_git_root,
++                destination_git,
++            )
++            if (
++                self._filesystem_state_digest(
++                    self._trusted_git_root,
++                    ignored_names=frozenset(),
++                )
++                != self._trusted_git_state_digest
++                or self._filesystem_state_digest(
++                    destination_git,
++                    ignored_names=frozenset(),
++                )
++                != self._trusted_git_state_digest
++            ):
++                raise WorkflowIsolationError(
++                    "workflow trusted Git metadata changed while cloning"
++                )
++        except WorkflowIsolationError:
++            raise
++        except OSError as exc:
++            raise WorkflowIsolationError(
++                "workflow trusted Git metadata could not be cloned"
++            ) from exc
++
++    def _materialize_trusted_repository(
++        self,
++        source_root: Path,
++        destination_root: Path,
++    ) -> None:
++        """Copy worktree data and attach only clean scheduler Git metadata."""
++        self._validate_snapshot_symlinks(source_root)
++        self._copytree_with_checkpoints(
++            source_root,
++            destination_root,
++            ignore=shutil.ignore_patterns(".git"),
++        )
++        self._materialize_trusted_git_metadata(destination_root / ".git")
++
+     def remap_text(self, text: str) -> str:
+         """Replace parent absolute paths before giving the task to agents."""
+         mapped = str(text)
+@@ -776,52 +859,6 @@ class WorkflowWorkspaceTransaction:
+         """Host-frozen Git capability for the internal verification oracle."""
+         return self._git_executable
+ 
+-    @contextmanager
+-    def verification_workspace(
+-        self,
+-        *,
+-        read_roots: tuple[str, ...] = (".",),
+-        forbidden_paths: tuple[str, ...] = (),
+-        paths_relative_to_cwd: bool = False,
+-        retain_git_metadata: bool = False,
+-    ) -> Iterator[Path]:
+-        """Clone the frozen workspace so checks cannot alter commit bytes."""
+-        with self._transaction_lock:
+-            if self._frozen_change_set is None:
+-                raise WorkflowIsolationError(
+-                    "workflow change set must be frozen before verification"
+-                )
+-            self._validate_snapshot_symlinks()
+-            temporary = tempfile.TemporaryDirectory(
+-                prefix="verification-",
+-                dir=self._temp_root,
+-            )
+-            verification_root = Path(temporary.name) / "workspace"
+-            try:
+-                self._copytree_with_checkpoints(
+-                    self.workspace_root,
+-                    verification_root,
+-                )
+-                self._sanitize_verification_workspace(
+-                    verification_root,
+-                    read_roots=read_roots,
+-                    forbidden_paths=forbidden_paths,
+-                    paths_relative_to_cwd=paths_relative_to_cwd,
+-                    retain_git_metadata=retain_git_metadata,
+-                )
+-            except BaseException:
+-                temporary.cleanup()
+-                raise
+-        try:
+-            verification_cwd = verification_root / self.relative_cwd
+-            if not verification_cwd.is_dir():
+-                raise WorkflowIsolationError(
+-                    "verification workspace cwd was not materialized"
+-                )
+-            yield verification_cwd
+-        finally:
+-            temporary.cleanup()
+-
+     def _sanitize_verification_workspace(
+         self,
+         root: Path,
+@@ -1003,11 +1040,12 @@ class WorkflowWorkspaceTransaction:
+             )
+         return projected
+ 
+-    def _staged_patch(self) -> bytes:
+-        self._validate_snapshot_symlinks()
++    def _staged_patch(self, workspace_root: Path | None = None) -> bytes:
++        root = self.workspace_root if workspace_root is None else workspace_root
++        self._validate_snapshot_symlinks(root)
+         self._run_checked(
+             self._git_args("add", "-A", "-f", "--", "."),
+-            cwd=self.workspace_root,
++            cwd=root,
+             env=self._git_environment,
+         )
+         return self._run_checked(
+@@ -1020,11 +1058,15 @@ class WorkflowWorkspaceTransaction:
+                 self._baseline,
+                 "--",
+             ),
+-            cwd=self.workspace_root,
++            cwd=root,
+             env=self._git_environment,
+         ).stdout
+ 
+-    def _changed_files(self) -> list[dict[str, str]]:
++    def _changed_files(
++        self,
++        workspace_root: Path | None = None,
++    ) -> list[dict[str, str]]:
++        root = self.workspace_root if workspace_root is None else workspace_root
+         output = self._run_checked(
+             self._git_args(
+                 "diff",
+@@ -1035,7 +1077,7 @@ class WorkflowWorkspaceTransaction:
+                 self._baseline,
+                 "--",
+             ),
+-            cwd=self.workspace_root,
++            cwd=root,
+             env=self._git_environment,
+         ).stdout
+         fields = output.decode("utf-8", errors="surrogateescape").split("\0")
+@@ -1061,230 +1103,458 @@ class WorkflowWorkspaceTransaction:
+             changed.append({"path": path, "action": action})
+         return changed
+ 
+-    def change_set(
++    def freeze(
+         self,
+         *,
+         allowed_paths: tuple[str, ...],
+         paths_relative_to_cwd: bool = False,
+-    ) -> dict[str, object]:
+-        """Freeze and scope-check the current isolated workspace delta."""
++    ) -> FrozenWorkflowChange:
++        """End mutation and return the exact scoped change capability."""
+         with self._transaction_lock:
++            if self._temporary is None:
++                raise WorkflowIsolationError("workflow transaction is closed")
++            if self._frozen_change is not None:
++                raise WorkflowIsolationError(
++                    "workflow change set was already frozen"
++                )
+             normalized_allowed = self._root_relative_scope(
+                 allowed_paths,
+                 paths_relative_to_cwd=paths_relative_to_cwd,
+             )
+-            patch = self._staged_patch()
+-            changed = self._changed_files()
+-            outside = [
+-                item["path"]
+-                for item in changed
+-                if not self._path_is_allowed(item["path"], normalized_allowed)
+-            ]
+-            if outside:
+-                raise WorkflowIsolationError(
+-                    "workflow changed paths are outside allowed paths: "
+-                    + ", ".join(outside[:10])
++            source_state_digest = self._filesystem_state_digest(
++                self.workspace_root
++            )
++            source_target_digest = self._promotion_state_digest(
++                self.workspace_root
++            )
++            frozen_container: Path | None = None
++            try:
++                frozen_container = Path(
++                    tempfile.mkdtemp(
++                        prefix="frozen-workspace-",
++                        dir=self._temp_root,
++                    )
++                )
++                frozen_workspace_root = frozen_container / "workspace"
++                self._materialize_trusted_repository(
++                    self.workspace_root,
++                    frozen_workspace_root,
++                )
++                frozen_state_digest = self._filesystem_state_digest(
++                    frozen_workspace_root
++                )
++                target_state_digest = self._promotion_state_digest(
++                    frozen_workspace_root
++                )
++                if (
++                    frozen_state_digest != source_state_digest
++                    or target_state_digest != source_target_digest
++                ):
++                    raise WorkflowIsolationError(
++                        "workflow workspace changed while freezing"
++                    )
++                patch = self._staged_patch(frozen_workspace_root)
++                changed = self._changed_files(frozen_workspace_root)
++                if (
++                    self._filesystem_state_digest(self.workspace_root)
++                    != source_state_digest
++                    or self._git_control_state_digest(
++                        frozen_workspace_root / ".git"
++                    )
++                    != self._trusted_git_control_digest
++                    or self._filesystem_state_digest(frozen_workspace_root)
++                    != frozen_state_digest
++                ):
++                    raise WorkflowIsolationError(
++                        "workflow workspace changed while freezing"
++                    )
++                outside = [
++                    item["path"]
++                    for item in changed
++                    if not self._path_is_allowed(
++                        item["path"],
++                        normalized_allowed,
++                    )
++                ]
++                if outside:
++                    raise WorkflowIsolationError(
++                        "workflow changed paths are outside allowed paths: "
++                        + ", ".join(outside[:10])
++                    )
++                scoped_files = self._scope_relative_files(
++                    changed,
++                    paths_relative_to_cwd=paths_relative_to_cwd,
+                 )
++            except BaseException as exc:
++                if frozen_container is not None:
++                    shutil.rmtree(frozen_container, ignore_errors=True)
++                if isinstance(exc, OSError):
++                    raise WorkflowIsolationError(
++                        "workflow frozen snapshot could not be created"
++                    ) from exc
++                raise
++
+             patch_digest = "sha256:" + hashlib.sha256(patch).hexdigest()
+-            self._frozen_change_set = _FrozenWorkflowChangeSet(
++            frozen = FrozenWorkflowChange._create(
++                owner=self,
+                 patch=patch,
+                 patch_digest=patch_digest,
+-                target_state_digest=self._promotion_state_digest(
+-                    self.workspace_root
+-                ),
+-                normalized_allowed_paths=normalized_allowed,
++                base_digest=self.base_digest,
++                target_state_digest=target_state_digest,
+                 paths_relative_to_cwd=paths_relative_to_cwd,
+-            )
+-            return {
+-                "workspaceRef": "isolated://workflow",
+-                "baseDigest": self.base_digest,
+-                "patchDigest": patch_digest,
+-                "files": self._scope_relative_files(
+-                    changed,
+-                    paths_relative_to_cwd=paths_relative_to_cwd,
++                files=tuple(
++                    (item["path"], item["action"])
++                    for item in scoped_files
+                 ),
+-            }
+-
+-    def frozen_diff_artifact(self) -> dict[str, object]:
+-        """Project the exact frozen patch into bounded review evidence."""
+-        with self._transaction_lock:
+-            frozen = self._frozen_change_set
+-            if frozen is None:
+-                raise WorkflowIsolationError(
+-                    "workflow change set was not frozen before review"
+-                )
+-            patch = frozen.patch
+-        limit = 12_000
+-        complete = len(patch) <= limit
+-        if complete:
+-            preview = patch
+-            try:
+-                diff = patch.decode("utf-8")
+-            except UnicodeDecodeError:
+-                complete = False
+-                diff = base64.b64encode(preview).decode("ascii")
+-                encoding = "base64"
+-            else:
+-                encoding = "utf-8"
++                frozen_state_digest=frozen_state_digest,
++                frozen_workspace_root=frozen_workspace_root,
++                relative_cwd=self.relative_cwd,
++            )
++            self._frozen_change = frozen
++            return frozen
++
++
++def _frozen_diff_document(
++    *,
++    patch: bytes,
++    base_digest: str,
++    patch_digest: str,
++) -> dict[str, object]:
++    """Project exact frozen patch bytes into bounded review evidence."""
++    limit = 12_000
++    complete = len(patch) <= limit
++    if complete:
++        preview = patch
++        try:
++            diff = patch.decode("utf-8")
++        except UnicodeDecodeError:
++            complete = False
++            diff = base64.b64encode(preview).decode("ascii")
++            encoding = "base64"
+         else:
+-            half = limit // 2
+-            preview = patch[:half] + b"\n...<truncated>...\n" + patch[-half:]
+-            try:
+-                diff = preview.decode("utf-8")
+-            except UnicodeDecodeError:
+-                diff = base64.b64encode(preview).decode("ascii")
+-                encoding = "base64"
+-            else:
+-                encoding = "utf-8"
+-        if (
+-            encoding == "utf-8"
+-            and len(json.dumps(diff, ensure_ascii=False).encode("utf-8")) > 17_000
+-        ):
+-            # JSON escaping can make an otherwise bounded text preview exceed
+-            # the artifact channel's byte cap. Base64 stays exact and bounded;
+-            # marking it incomplete prevents semantic approval of an unreadable
+-            # representation.
++            encoding = "utf-8"
++    else:
++        half = limit // 2
++        preview = patch[:half] + b"\n...<truncated>...\n" + patch[-half:]
++        try:
++            diff = preview.decode("utf-8")
++        except UnicodeDecodeError:
+             diff = base64.b64encode(preview).decode("ascii")
+             encoding = "base64"
+-            complete = False
+-        return {
+-            "diffVersion": 1,
+-            "baseDigest": self.base_digest,
+-            "patchDigest": frozen.patch_digest,
+-            "byteCount": len(patch),
+-            "complete": complete,
+-            "encoding": encoding,
+-            "diff": diff,
++        else:
++            encoding = "utf-8"
++    if (
++        encoding == "utf-8"
++        and len(json.dumps(diff, ensure_ascii=False).encode("utf-8")) > 17_000
++    ):
++        # JSON escaping can make an otherwise bounded text preview exceed the
++        # artifact channel's byte cap. Base64 stays exact and bounded; marking
++        # it incomplete prevents approval of an unreadable representation.
++        diff = base64.b64encode(preview).decode("ascii")
++        encoding = "base64"
++        complete = False
++    return {
++        "diffVersion": 1,
++        "baseDigest": base_digest,
++        "patchDigest": patch_digest,
++        "byteCount": len(patch),
++        "complete": complete,
++        "encoding": encoding,
++        "diff": diff,
++    }
++
++
++@dataclass(frozen=True, slots=True, init=False, repr=False, eq=False)
++class FrozenWorkflowChange:
++    """Digest-bound capability for verification evidence and promotion."""
++
++    _owner: WorkflowWorkspaceTransaction
++    _patch: bytes
++    _patch_digest: str
++    _base_digest: str
++    _target_state_digest: str
++    _paths_relative_to_cwd: bool
++    _files: tuple[tuple[str, str], ...]
++    _frozen_state_digest: str
++    _frozen_workspace_root: Path
++    _relative_cwd: Path
++
++    def __init__(self) -> None:
++        raise TypeError(
++            "FrozenWorkflowChange instances are created by "
++            "WorkflowWorkspaceTransaction.freeze()"
++        )
++
++    @classmethod
++    def _create(
++        cls,
++        *,
++        owner: WorkflowWorkspaceTransaction,
++        patch: bytes,
++        patch_digest: str,
++        base_digest: str,
++        target_state_digest: str,
++        paths_relative_to_cwd: bool,
++        files: tuple[tuple[str, str], ...],
++        frozen_state_digest: str,
++        frozen_workspace_root: Path,
++        relative_cwd: Path,
++    ) -> FrozenWorkflowChange:
++        capability = object.__new__(cls)
++        values = {
++            "_owner": owner,
++            "_patch": patch,
++            "_patch_digest": patch_digest,
++            "_base_digest": base_digest,
++            "_target_state_digest": target_state_digest,
++            "_paths_relative_to_cwd": paths_relative_to_cwd,
++            "_files": files,
++            "_frozen_state_digest": frozen_state_digest,
++            "_frozen_workspace_root": frozen_workspace_root,
++            "_relative_cwd": relative_cwd,
+         }
++        for name, value in values.items():
++            object.__setattr__(capability, name, value)
++        return capability
+ 
+-    def commit(
++    @contextmanager
++    def _owner_session(self) -> Iterator[WorkflowWorkspaceTransaction]:
++        owner = getattr(self, "_owner", None)
++        if not isinstance(owner, WorkflowWorkspaceTransaction):
++            raise WorkflowIsolationError(
++                "workflow frozen change owner is unavailable"
++            )
++        with owner._transaction_lock:
++            if (
++                owner._temporary is None
++                or owner._frozen_change is not self
++            ):
++                raise WorkflowIsolationError(
++                    "workflow frozen change owner is unavailable"
++                )
++            yield owner
++
++    @property
++    def patch_digest(self) -> str:
++        with self._owner_session():
++            return self._patch_digest
++
++    @property
++    def change_set_document(self) -> dict[str, object]:
++        """Return a detached JSON projection of this frozen change."""
++        with self._owner_session():
++            return {
++                "workspaceRef": "isolated://workflow",
++                "baseDigest": self._base_digest,
++                "patchDigest": self._patch_digest,
++                "files": [
++                    {"path": path, "action": action}
++                    for path, action in self._files
++                ],
++            }
++
++    @property
++    def diff_artifact_document(self) -> dict[str, object]:
++        """Return detached, bounded review evidence for the exact patch."""
++        with self._owner_session():
++            patch = self._patch
++            base_digest = self._base_digest
++            patch_digest = self._patch_digest
++        return _frozen_diff_document(
++            patch=patch,
++            base_digest=base_digest,
++            patch_digest=patch_digest,
++        )
++
++    @contextmanager
++    def verification_workspace(
+         self,
+         *,
+-        expected_patch_digest: object | None = None,
+-        allowed_paths: tuple[str, ...] | None = None,
+-        paths_relative_to_cwd: bool = False,
+-    ) -> None:
+-        """Apply the approved, digest-bound isolated delta to the parent."""
+-        with self._transaction_lock:
+-            frozen = self._frozen_change_set
+-            if frozen is None:
+-                if allowed_paths is not None:
+-                    raise WorkflowIsolationError(
+-                        "workflow change set was not frozen before commit"
+-                    )
+-                patch = self._staged_patch()
+-                frozen = _FrozenWorkflowChangeSet(
+-                    patch=patch,
+-                    patch_digest="sha256:" + hashlib.sha256(patch).hexdigest(),
+-                    target_state_digest=self._promotion_state_digest(
+-                        self.workspace_root
+-                    ),
+-                    normalized_allowed_paths=(),
+-                    paths_relative_to_cwd=paths_relative_to_cwd,
++        read_roots: tuple[str, ...] = (".",),
++        forbidden_paths: tuple[str, ...] = (),
++        retain_git_metadata: bool = False,
++    ) -> Iterator[Path]:
++        """Clone exact frozen bytes so checks cannot alter promotion bytes."""
++        with self._owner_session() as owner:
++            owner._validate_snapshot_symlinks(self._frozen_workspace_root)
++            if (
++                owner._filesystem_state_digest(self._frozen_workspace_root)
++                != self._frozen_state_digest
++            ):
++                raise WorkflowIsolationError(
++                    "workflow frozen workspace changed after freeze"
+                 )
+-                self._frozen_change_set = frozen
+-            if allowed_paths is not None:
+-                normalized_allowed = self._root_relative_scope(
+-                    allowed_paths,
+-                    paths_relative_to_cwd=paths_relative_to_cwd,
++            try:
++                temporary = tempfile.TemporaryDirectory(
++                    prefix="verification-",
++                    dir=owner._temp_root,
++                )
++            except OSError as exc:
++                raise WorkflowIsolationError(
++                    "workflow verification workspace could not be created"
++                ) from exc
++            verification_root = Path(temporary.name) / "workspace"
++            try:
++                owner._materialize_trusted_repository(
++                    self._frozen_workspace_root,
++                    verification_root,
+                 )
+                 if (
+-                    normalized_allowed != frozen.normalized_allowed_paths
+-                    or paths_relative_to_cwd != frozen.paths_relative_to_cwd
++                    owner._filesystem_state_digest(verification_root)
++                    != self._frozen_state_digest
++                    or owner._staged_patch(verification_root) != self._patch
++                    or owner._git_control_state_digest(
++                        verification_root / ".git"
++                    )
++                    != owner._trusted_git_control_digest
++                    or owner._filesystem_state_digest(verification_root)
++                    != self._frozen_state_digest
+                 ):
+                     raise WorkflowIsolationError(
+-                        "workflow commit scope differs from frozen change set"
++                        "workflow verification workspace differs from frozen change"
+                     )
+-            if (
+-                expected_patch_digest is not None
+-                and expected_patch_digest != frozen.patch_digest
+-            ):
++                owner._sanitize_verification_workspace(
++                    verification_root,
++                    read_roots=read_roots,
++                    forbidden_paths=forbidden_paths,
++                    paths_relative_to_cwd=self._paths_relative_to_cwd,
++                    retain_git_metadata=retain_git_metadata,
++                )
++            except BaseException:
++                temporary.cleanup()
++                raise
++        try:
++            verification_cwd = verification_root / self._relative_cwd
++            if not verification_cwd.is_dir():
++                raise WorkflowIsolationError(
++                    "verification workspace cwd was not materialized"
++                )
++            yield verification_cwd
++        finally:
++            temporary.cleanup()
++
++    def promote(self, *, approved_patch_digest: object) -> None:
++        """Apply this externally approved frozen delta to the parent."""
++        with self._owner_session() as owner:
++            if approved_patch_digest != self._patch_digest:
+                 raise WorkflowIsolationError(
+                     "workflow patch digest changed after verification"
+                 )
+-            current_patch = self._staged_patch()
+-            current_digest = "sha256:" + hashlib.sha256(current_patch).hexdigest()
+-            if current_digest != frozen.patch_digest:
++            if (
++                owner._filesystem_state_digest(owner.workspace_root)
++                != self._frozen_state_digest
++                or owner._promotion_state_digest(owner.workspace_root)
++                != self._target_state_digest
++            ):
+                 raise WorkflowIsolationError(
+                     "workflow patch digest changed after verification"
+                 )
+-            patch = frozen.patch
++            patch = self._patch
+         if not patch:
+-            self._commit_checkpoint()
+-            self._parent_promotion_completed = True
++            owner._commit_checkpoint()
++            owner._parent_promotion_completed = True
+             return
+-        apply_args = self._git_args(
++        apply_args = owner._git_args(
+             "apply",
+             "--binary",
+             "--whitespace=nowarn",
+             "-",
+         )
+-        apply_check_args = self._git_args(
++        apply_check_args = owner._git_args(
+             "apply",
+             "--check",
+             "--binary",
+             "--whitespace=nowarn",
+             "-",
+         )
+-        parent_git_environment = dict(self._git_environment)
+-        parent_git_environment.update(
+-            {
+-                "GIT_DIR": str(self.workspace_root / ".git"),
+-                "GIT_WORK_TREE": str(self.source_root),
+-            }
+-        )
+-        self._acquire_parent_commit_lock()
+         try:
+-            with self._cross_process_commit_lock():
+-                self._validate_parent_baseline()
+-                remaining = self._commit_checkpoint()
+-                self._run_checked(
+-                    apply_check_args,
+-                    cwd=self.source_root,
+-                    env=parent_git_environment,
+-                    input_bytes=patch,
+-                    timeout_seconds=remaining,
+-                )
+-                # This is the final cooperative checkpoint. Once the actual
+-                # apply starts, finish the short local promotion and report its
+-                # real outcome instead of claiming a timeout with unknown writes.
+-                self._commit_checkpoint()
+-                # The write is unresolved from this point until either the
+-                # apply returns or an exact base/target reconciliation finishes.
+-                # This sentinel survives a second BaseException during recovery.
+-                self._parent_promotion_unknown = True
+-                try:
+-                    self._run_checked(
+-                        apply_args,
+-                        cwd=self.source_root,
++            promotion_metadata = tempfile.TemporaryDirectory(
++                prefix="promotion-git-",
++                dir=owner._temp_root,
++            )
++        except OSError as exc:
++            raise WorkflowIsolationError(
++                "workflow promotion metadata could not be created"
++            ) from exc
++        try:
++            promotion_git = Path(promotion_metadata.name) / ".git"
++            owner._materialize_trusted_git_metadata(promotion_git)
++            parent_git_environment = dict(owner._git_environment)
++            parent_git_environment.update(
++                {
++                    "GIT_DIR": str(promotion_git),
++                    "GIT_WORK_TREE": str(owner.source_root),
++                }
++            )
++            owner._acquire_parent_commit_lock()
++            try:
++                with owner._cross_process_commit_lock():
++                    owner._validate_parent_baseline()
++                    remaining = owner._commit_checkpoint()
++                    owner._run_checked(
++                        apply_check_args,
++                        cwd=owner.source_root,
+                         env=parent_git_environment,
+                         input_bytes=patch,
+-                        use_operation_guard=False,
++                        timeout_seconds=remaining,
+                     )
+-                    self._parent_promotion_completed = True
+-                    self._parent_promotion_unknown = False
+-                except BaseException:
++                    # This is the final cooperative checkpoint. Once the
++                    # actual apply starts, finish the short local promotion and
++                    # report its real outcome instead of claiming a timeout
++                    # with unknown writes.
++                    owner._commit_checkpoint()
++                    # The write is unresolved from this point until either the
++                    # apply returns or exact reconciliation finishes. This
++                    # sentinel survives a second BaseException during recovery.
++                    owner._parent_promotion_unknown = True
+                     try:
+-                        parent_state = self._promotion_state_digest(
+-                            self.source_root,
++                        owner._run_checked(
++                            apply_args,
++                            cwd=owner.source_root,
++                            env=parent_git_environment,
++                            input_bytes=patch,
+                             use_operation_guard=False,
+                         )
+-                    except Exception:  # noqa: BLE001 - state is conservatively unknown
+-                        self._parent_promotion_unknown = True
+-                    else:
+-                        if parent_state == frozen.target_state_digest:
+-                            self._parent_promotion_completed = True
+-                            self._parent_promotion_unknown = False
+-                        else:
+-                            full_parent_state = self._filesystem_state_digest(
+-                                self.source_root,
++                        if (
++                            owner._promotion_state_digest(
++                                owner.source_root,
+                                 use_operation_guard=False,
+                             )
+-                            if full_parent_state == self._source_state_digest:
+-                                self._parent_promotion_unknown = False
+-                    raise
++                            != self._target_state_digest
++                        ):
++                            raise WorkflowIsolationError(
++                                "workflow parent state differs after promotion"
++                            )
++                        owner._parent_promotion_completed = True
++                        owner._parent_promotion_unknown = False
++                    except BaseException:
++                        try:
++                            parent_state = owner._promotion_state_digest(
++                                owner.source_root,
++                                use_operation_guard=False,
++                            )
++                        except Exception:  # noqa: BLE001 - conservatively unknown
++                            owner._parent_promotion_unknown = True
++                        else:
++                            if parent_state == self._target_state_digest:
++                                owner._parent_promotion_completed = True
++                                owner._parent_promotion_unknown = False
++                            else:
++                                full_parent_state = owner._filesystem_state_digest(
++                                    owner.source_root,
++                                    use_operation_guard=False,
++                                )
++                                if full_parent_state == owner._source_state_digest:
++                                    owner._parent_promotion_unknown = False
++                        raise
++            finally:
++                _WORKFLOW_PARENT_COMMIT_LOCK.release()
+         finally:
+-            _WORKFLOW_PARENT_COMMIT_LOCK.release()
++            promotion_metadata.cleanup()
+ 
+ 
+-__all__ = ["WorkflowIsolationError", "WorkflowWorkspaceTransaction"]
++__all__ = [
++    "FrozenWorkflowChange",
++    "WorkflowIsolationError",
++    "WorkflowWorkspaceTransaction",
++]
+diff --git a/tests/test_frozen_workflow_change.py b/tests/test_frozen_workflow_change.py
+new file mode 100644
+index 00000000..bacc6234
+--- /dev/null
++++ b/tests/test_frozen_workflow_change.py
+@@ -0,0 +1,447 @@
++"""Public state transition for frozen workflow changes."""
++
++from __future__ import annotations
++
++import hashlib
++from pathlib import Path
++
++import pytest
++
++import minicode.workflow_workspace as workspace_module
++from minicode.workflow_workspace import (
++    FrozenWorkflowChange,
++    WorkflowIsolationError,
++    WorkflowWorkspaceTransaction,
++)
++
++
++def test_frozen_capability_cannot_be_constructed_directly() -> None:
++    with pytest.raises(
++        TypeError,
++        match="created by WorkflowWorkspaceTransaction.freeze",
++    ):
++        FrozenWorkflowChange()
++
++
++def test_freeze_returns_detached_documents_and_owns_promotion(
++    tmp_path: Path,
++) -> None:
++    target = tmp_path / "allowed.txt"
++    target.write_text("before", encoding="utf-8")
++
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        Path(transaction.cwd, "allowed.txt").write_text(
++            "after",
++            encoding="utf-8",
++        )
++
++        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
++
++        assert isinstance(frozen, FrozenWorkflowChange)
++        assert not hasattr(transaction, "change_set")
++        assert not hasattr(transaction, "frozen_diff_artifact")
++        assert not hasattr(transaction, "verification_workspace")
++        assert not hasattr(transaction, "commit")
++
++        change_set = frozen.change_set_document
++        assert change_set == {
++            "workspaceRef": "isolated://workflow",
++            "baseDigest": transaction.base_digest,
++            "patchDigest": frozen.patch_digest,
++            "files": [{"path": "allowed.txt", "action": "modified"}],
++        }
++        change_set["files"].clear()
++        assert frozen.change_set_document["files"] == [
++            {"path": "allowed.txt", "action": "modified"}
++        ]
++        assert frozen.diff_artifact_document["patchDigest"] == frozen.patch_digest
++
++        frozen.promote(approved_patch_digest=frozen.patch_digest)
++
++    assert target.read_text(encoding="utf-8") == "after"
++
++
++def test_freeze_is_a_single_state_transition(tmp_path: Path) -> None:
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        frozen = transaction.freeze(allowed_paths=(".",))
++
++        with pytest.raises(
++            WorkflowIsolationError,
++            match="workflow change set was already frozen",
++        ):
++            transaction.freeze(allowed_paths=(".",))
++
++        assert frozen.change_set_document["files"] == []
++
++
++def test_failed_freeze_can_retry_without_reusing_a_partial_snapshot(
++    tmp_path: Path,
++    monkeypatch: pytest.MonkeyPatch,
++) -> None:
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        original_copy = WorkflowWorkspaceTransaction._copytree_with_checkpoints
++        failed_once = False
++
++        def copy_with_one_partial_failure(self, source, destination, **kwargs):
++            nonlocal failed_once
++            if not failed_once and destination.parent.name.startswith(
++                "frozen-workspace-"
++            ):
++                failed_once = True
++                destination.mkdir()
++                raise WorkflowIsolationError("injected frozen snapshot failure")
++            return original_copy(self, source, destination, **kwargs)
++
++        monkeypatch.setattr(
++            WorkflowWorkspaceTransaction,
++            "_copytree_with_checkpoints",
++            copy_with_one_partial_failure,
++        )
++
++        with pytest.raises(
++            WorkflowIsolationError,
++            match="injected frozen snapshot failure",
++        ):
++            transaction.freeze(allowed_paths=(".",))
++
++        frozen = transaction.freeze(allowed_paths=(".",))
++        assert frozen.change_set_document["files"] == []
++
++
++def test_freeze_maps_snapshot_os_errors_and_remains_retryable(
++    tmp_path: Path,
++    monkeypatch: pytest.MonkeyPatch,
++) -> None:
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        original_mkdtemp = workspace_module.tempfile.mkdtemp
++        failed_once = False
++
++        def mkdtemp_with_one_failure(*args, **kwargs):
++            nonlocal failed_once
++            if kwargs.get("prefix") == "frozen-workspace-" and not failed_once:
++                failed_once = True
++                raise OSError("injected snapshot allocation failure")
++            return original_mkdtemp(*args, **kwargs)
++
++        monkeypatch.setattr(
++            workspace_module.tempfile,
++            "mkdtemp",
++            mkdtemp_with_one_failure,
++        )
++
++        with pytest.raises(
++            WorkflowIsolationError,
++            match="workflow frozen snapshot could not be created",
++        ):
++            transaction.freeze(allowed_paths=(".",))
++
++        frozen = transaction.freeze(allowed_paths=(".",))
++        assert frozen.change_set_document["files"] == []
++
++
++def test_freeze_rejects_a_tampered_trusted_git_template(tmp_path: Path) -> None:
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        Path(transaction._trusted_git_root, "config").write_text(
++            "[core]\nrepositoryformatversion = 0\nwhitespace = -trailing-space\n",
++            encoding="utf-8",
++        )
++
++        with pytest.raises(
++            WorkflowIsolationError,
++            match="trusted Git metadata changed after initialization",
++        ):
++            transaction.freeze(allowed_paths=(".",))
++
++
++def test_verification_uses_frozen_bytes_and_promotion_rejects_later_drift(
++    tmp_path: Path,
++) -> None:
++    target = tmp_path / "allowed.txt"
++    target.write_text("before", encoding="utf-8")
++
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        isolated = Path(transaction.cwd, "allowed.txt")
++        isolated.write_text("frozen", encoding="utf-8")
++        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
++        isolated.write_text("drifted", encoding="utf-8")
++
++        with frozen.verification_workspace() as verification_cwd:
++            assert Path(verification_cwd, "allowed.txt").read_text(
++                encoding="utf-8"
++            ) == "frozen"
++
++        with pytest.raises(
++            WorkflowIsolationError,
++            match="workflow patch digest changed after verification",
++        ):
++            frozen.promote(approved_patch_digest=frozen.patch_digest)
++
++    assert target.read_text(encoding="utf-8") == "before"
++
++
++def test_verification_rebuilds_a_tampered_frozen_git_index(
++    tmp_path: Path,
++) -> None:
++    target = tmp_path / "allowed.txt"
++    target.write_text("before", encoding="utf-8")
++
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        Path(transaction.cwd, "allowed.txt").write_text(
++            "after",
++            encoding="utf-8",
++        )
++        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
++
++        transaction._run_checked(
++            transaction._git_args("reset", "-q", transaction._baseline, "--"),
++            cwd=frozen._frozen_workspace_root,
++            env=transaction._git_environment,
++        )
++
++        with frozen.verification_workspace(
++            retain_git_metadata=True,
++        ) as verification_cwd:
++            patch = transaction._run_checked(
++                transaction._git_args(
++                    "diff",
++                    "--cached",
++                    "--binary",
++                    "--full-index",
++                    "--no-ext-diff",
++                    transaction._baseline,
++                    "--",
++                ),
++                cwd=verification_cwd,
++                env=transaction._git_environment,
++            ).stdout
++
++        assert "sha256:" + hashlib.sha256(patch).hexdigest() == frozen.patch_digest
++
++
++@pytest.mark.parametrize("metadata_attack", ["config", "info_attributes"])
++def test_verification_rebuilds_trusted_git_control_metadata(
++    tmp_path: Path,
++    metadata_attack: str,
++) -> None:
++    target = tmp_path / "allowed.txt"
++    target.write_text("before\n", encoding="utf-8")
++
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        Path(transaction.cwd, "allowed.txt").write_text(
++            "after with trailing whitespace \n",
++            encoding="utf-8",
++        )
++        if metadata_attack == "config":
++            transaction._run_checked(
++                transaction._git_args(
++                    "config",
++                    "core.whitespace",
++                    "-trailing-space",
++                ),
++                cwd=transaction.workspace_root,
++                env=transaction._git_environment,
++            )
++        else:
++            Path(
++                transaction.workspace_root,
++                ".git",
++                "info",
++                "attributes",
++            ).write_text("* -whitespace\n", encoding="utf-8")
++
++        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
++        if metadata_attack == "config":
++            transaction._run_checked(
++                transaction._git_args(
++                    "config",
++                    "core.whitespace",
++                    "-trailing-space",
++                ),
++                cwd=frozen._frozen_workspace_root,
++                env=transaction._git_environment,
++            )
++        else:
++            Path(
++                frozen._frozen_workspace_root,
++                ".git",
++                "info",
++                "attributes",
++            ).write_text("* -whitespace\n", encoding="utf-8")
++
++        with frozen.verification_workspace(
++            retain_git_metadata=True,
++        ) as verification_cwd:
++            oracle = transaction._run_checked(
++                transaction._git_args("diff", "--cached", "--check"),
++                cwd=verification_cwd,
++                env=transaction._git_environment,
++                check=False,
++            )
++
++        assert oracle.returncode != 0
++        assert b"trailing whitespace" in oracle.stdout
++
++
++def test_promotion_requires_the_approved_patch_digest(tmp_path: Path) -> None:
++    target = tmp_path / "allowed.txt"
++    target.write_text("before", encoding="utf-8")
++
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        Path(transaction.cwd, "allowed.txt").write_text(
++            "after",
++            encoding="utf-8",
++        )
++        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
++
++        with pytest.raises(
++            WorkflowIsolationError,
++            match="workflow patch digest changed after verification",
++        ):
++            frozen.promote(approved_patch_digest="sha256:" + "0" * 64)
++
++    assert target.read_text(encoding="utf-8") == "before"
++
++
++def test_promotion_ignores_worker_git_config_and_checks_target_state(
++    tmp_path: Path,
++) -> None:
++    target = tmp_path / "target.txt"
++    target.write_text("target", encoding="utf-8")
++
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        link = Path(transaction.cwd, "link.txt")
++        try:
++            link.symlink_to("target.txt")
++        except OSError as exc:
++            pytest.skip(f"file symlinks are unavailable: {exc}")
++        transaction._run_checked(
++            transaction._git_args("config", "core.symlinks", "false"),
++            cwd=transaction.workspace_root,
++            env=transaction._git_environment,
++        )
++        frozen = transaction.freeze(allowed_paths=("link.txt",))
++
++        frozen.promote(approved_patch_digest=frozen.patch_digest)
++
++        assert transaction.parent_promotion_completed is True
++        assert transaction.parent_promotion_unknown is False
++
++    promoted = tmp_path / "link.txt"
++    assert promoted.is_symlink()
++    assert promoted.readlink() == Path("target.txt")
++
++
++def test_promotion_cannot_report_success_for_a_wrong_parent_state(
++    tmp_path: Path,
++    monkeypatch: pytest.MonkeyPatch,
++) -> None:
++    target = tmp_path / "allowed.txt"
++    target.write_text("before", encoding="utf-8")
++    original_run_checked = WorkflowWorkspaceTransaction._run_checked
++
++    def apply_then_corrupt_parent(self, args, **kwargs):
++        completed = original_run_checked(self, args, **kwargs)
++        if (
++            "apply" in args
++            and "--check" not in args
++            and kwargs.get("use_operation_guard") is False
++        ):
++            target.write_text("wrong", encoding="utf-8")
++        return completed
++
++    monkeypatch.setattr(
++        WorkflowWorkspaceTransaction,
++        "_run_checked",
++        apply_then_corrupt_parent,
++    )
++
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        Path(transaction.cwd, "allowed.txt").write_text(
++            "after",
++            encoding="utf-8",
++        )
++        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
++
++        with pytest.raises(
++            WorkflowIsolationError,
++            match="workflow parent state differs after promotion",
++        ):
++            frozen.promote(approved_patch_digest=frozen.patch_digest)
++
++        assert transaction.parent_promotion_completed is False
++        assert transaction.parent_promotion_unknown is True
++
++    assert target.read_text(encoding="utf-8") == "wrong"
++
++
++def test_promotion_maps_metadata_allocation_errors_and_remains_retryable(
++    tmp_path: Path,
++    monkeypatch: pytest.MonkeyPatch,
++) -> None:
++    target = tmp_path / "allowed.txt"
++    target.write_text("before", encoding="utf-8")
++
++    with WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
++        Path(transaction.cwd, "allowed.txt").write_text(
++            "after",
++            encoding="utf-8",
++        )
++        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
++        original_temporary_directory = workspace_module.tempfile.TemporaryDirectory
++        failed_once = False
++
++        def temporary_directory_with_one_failure(*args, **kwargs):
++            nonlocal failed_once
++            if kwargs.get("prefix") == "promotion-git-" and not failed_once:
++                failed_once = True
++                raise OSError("injected promotion metadata failure")
++            return original_temporary_directory(*args, **kwargs)
++
++        monkeypatch.setattr(
++            workspace_module.tempfile,
++            "TemporaryDirectory",
++            temporary_directory_with_one_failure,
++        )
++
++        with pytest.raises(
++            WorkflowIsolationError,
++            match="workflow promotion metadata could not be created",
++        ):
++            frozen.promote(approved_patch_digest=frozen.patch_digest)
++
++        assert transaction.parent_promotion_completed is False
++        assert transaction.parent_promotion_unknown is False
++        assert target.read_text(encoding="utf-8") == "before"
++
++        frozen.promote(approved_patch_digest=frozen.patch_digest)
++
++    assert target.read_text(encoding="utf-8") == "after"
++
++
++def test_frozen_capability_fails_closed_after_owner_close(tmp_path: Path) -> None:
++    transaction = WorkflowWorkspaceTransaction(str(tmp_path))
++    frozen = transaction.freeze(allowed_paths=(".",))
++    approved_digest = frozen.patch_digest
++    transaction.close()
++
++    with pytest.raises(
++        WorkflowIsolationError,
++        match="workflow frozen change owner is unavailable",
++    ):
++        _ = frozen.change_set_document
++    with pytest.raises(
++        WorkflowIsolationError,
++        match="workflow frozen change owner is unavailable",
++    ):
++        _ = frozen.diff_artifact_document
++    with pytest.raises(
++        WorkflowIsolationError,
++        match="workflow frozen change owner is unavailable",
++    ):
++        with frozen.verification_workspace():
++            pass
++    with pytest.raises(
++        WorkflowIsolationError,
++        match="workflow frozen change owner is unavailable",
++    ):
++        frozen.promote(approved_patch_digest=approved_digest)
