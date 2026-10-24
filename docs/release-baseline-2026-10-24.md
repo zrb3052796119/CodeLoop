@@ -1,8 +1,8 @@
 # CodeLoop 治理基线 — 2026-10-24
 
-**当前状态：P0 冻结提交 `9f936942` 的本机完整随机验收通过，已合入并推送 main；Phase 1 go 仍待最终验收。** P0 为 14,923 passed / 8 skipped / 0 failed / 0 errors / 3 warnings。首次 P1/P3 候选 `eb17c62a` 全量已结束，14,932 passed / 1 failed / 8 skipped / 3 warnings；后续定向修复不能替代最终组合候选全量或原生 Windows CI。Phase 2 已冻结，模型 API 调用和结果均为零。
+**当前状态：P0 `9f936942` 的本机完整随机验收已通过并推送 main；Phase 1 go 仍未成立。** 首次 P1/P3 `eb17c62a` 为 14,932 passed / 1 failed，第二次 `3cadcb75` 为 14,932 passed / 14 failed；两次均为 8 skipped / 0 errors / 3 warnings。后续修复已提交，最新版完整 CI 尚未运行。Phase 2 旧冻结已撤销运行用途，r2 已发布并启动 32 个正式 cell；截至本次状态更新尚无 completed 结果。
 
-main 与开发分支已于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档/证据提交序列的生产及测试字节与通过的 `9f936942` 相同。其后 Phase 2 冻结记录 `ab17ca7e` / `ea31eed2` 已推送开发分支。当前发布候选为 `3cadcb75`，本机全量与原生 CI 进行中，已知本机 v40 closure 失败；后续跟进修正尚未提交发布，Phase 1 go 未成立。
+main 与开发分支已于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档/证据序列的生产及测试字节与通过的 `9f936942` 相同。其后 Phase 2 历史冻结记录 `ab17ca7e` / `ea31eed2` 已推送开发分支。P1 最新源码修复为 `54367b5d`、`1f39822b`、`693f504a`，等待与这些字节对应的完整 CI 证据；旧尝试失败和局部通过均保留。
 
 ## 可复现环境
 
@@ -49,7 +49,11 @@ main 与开发分支已于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档
 
 ## 首次 P1 全量与后续修复
 
-首次组合候选 `eb17c62a5510b6746c5fc677618303c9b83b96e6` 已完整执行，seed `20261024`：**14,932 passed / 1 failed / 8 skipped / 0 errors / 3 warnings**，pytest 2889.76 秒，外层 2892.346 秒，退出码 1。唯一失败为 `tests/test_memory_hot_store.py::test_nested_budget_caps_cumulative_wait_across_multiple_commands` 的 `200.36325 ms < 200 ms` 断言；不是新增 context-retention 行为断言失败。完整 XML SHA-256 为 `32ee65f8c431da2096afedbaf0970e7cc3b5a9c4cde4a7a51b6e3c313ceb8b87`，原件与 `phase1-candidate-summary.json` 保留在本机治理证据目录，待随最终候选记录归档；不冒称已包含在较早的 hot-store 包中。
+首次组合候选 `eb17c62a5510b6746c5fc677618303c9b83b96e6` 已完整执行，seed `20261024`：**14,932 passed / 1 failed / 8 skipped / 0 errors / 3 warnings**，pytest 2889.76 秒、外层 2892.346 秒，退出码 1。唯一失败为 `tests/test_memory_hot_store.py::test_nested_budget_caps_cumulative_wait_across_multiple_commands` 的 `200.36325 ms < 200 ms` 断言；不是新增 context-retention 行为断言失败。完整 XML SHA-256 为 `32ee65f8c431da2096afedbaf0970e7cc3b5a9c4cde4a7a51b6e3c313ceb8b87`。
+
+第二次本机完整尝试 `3cadcb7584526b41af7cc928d6c58d5bb19d8ea5` 已结束，seed `20261024`：**14,932 passed / 14 failed / 8 skipped / 0 errors / 3 warnings**，pytest **2631.92 秒**、外层 **2634.330 秒**，退出码 1。14 项失败全部属于 v40/v41 staged source 声明；`827c1751` 已提交相应修正，不能倒填为旧尝试通过。
+
+[两次本机完整尝试证据包](../artifacts/governance-trial-2026-10-24/phase1-acceptance/README.md)同时保留 `eb17c62a` 与 `3cadcb75` 的完整日志、XML、元数据和失败节点，共 **21 个成员**，gzip **1,212,390 字节**，SHA-256 `048f611bce563fd55c8c56bf361046379d6354b36a43b2c93aed1d64d913a5c6`。包内 `repairedAcceptancePassed=false`；它记录两次本机失败尝试，不是最新 PR 的完整验收。JUnit suite 时间分别为 2889.078 / 2631.148 秒，与 pytest 汇总和外层计时边界不同。
 
 | 后续提交 | 已验证范围 | 可恢复证据与独立审查 |
 | --- | --- | --- |
@@ -59,13 +63,17 @@ main 与开发分支已于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档
 
 独立 wheel-only 检查已分别从精确 `9f936942` 和 `eb17c62a` 构建/安装实际 wheel，用 `python -I -S` 验证各自 **9 个指定模块**的 resolved `__file__` 均在 installed target，sys.path 无源码、editable 或 site-packages。记录位于上述 wheel 包的 `wheel-only/`；不外推到全部递归依赖。
 
-原 CI run `40111546762` 的 Windows 3.11/3.12 job 确认是既存 `_publish_portable` 的 WinError 32，故障文件在初始 `88ec62d0`、`9f936942`、P0 main 字节相同。同一 run 的 Ubuntu Python 3.11.17 与 macOS Python 3.11.9 内部错误均来自既有 `test_run_command_lifecycle.py:246` 全局猴补 `os.name="nt"`：`run_command.py:288` 的 `Path(command).name` 选择不支持的 WindowsPath，随后 pytest 报告/退出也崩溃。Ubuntu 原 JUnit 4934 tests / 0 failures / 1 internal error / 7 skipped；旧 fixture 已在真实 Python 3.11.15 复现。`7b8157e7` 修复只使用测试模块局部 `os`/`sys`/`subprocess` 代理，生产字节不变；Python 3.11/3.12 各 124 项相关通过，最终同字节目标测试在 exact P0 1 passed，2 个合成坏 flags/session 反例仍正常断言失败。[fixture 修复和原始 CI 证据](../artifacts/governance-trial-2026-10-24/run-command-fixture-proofs/README.md)已归档，不将其归为生产 bug。上述定向结果不代替**组合候选最终全量与修复后的原生 Windows CI**；这两项仍待完成，Phase 1 go 尚未成立。
+原 CI run `40111546762` 的 Windows 3.11/3.12 job 确认是既存 `_publish_portable` 的 WinError 32，故障文件在初始 `88ec62d0`、`9f936942`、P0 main 字节相同。同一 run 的 Ubuntu Python 3.11.17 与 macOS Python 3.11.9 内部错误均来自既有 `test_run_command_lifecycle.py:246` 全局猴补 `os.name="nt"`：`run_command.py:288` 的 `Path(command).name` 选择不支持的 WindowsPath，随后 pytest 报告/退出也崩溃。Ubuntu 原 JUnit 4934 tests / 0 failures / 1 internal error / 7 skipped；旧 fixture 已在真实 Python 3.11.15 复现。`7b8157e7` 修复只使用测试模块局部 `os`/`sys`/`subprocess` 代理，生产字节不变；Python 3.11/3.12 各 124 项相关通过，最终同字节目标测试在 exact P0 1 passed，2 个合成坏 flags/session 反例仍正常断言失败。[fixture 修复和原始 CI 证据](../artifacts/governance-trial-2026-10-24/run-command-fixture-proofs/README.md)已归档，不将其归为生产 bug。上述定向结果不代替新版组合候选的完整 CI 验收，Phase 1 go 尚未成立。
 
-封存候选 `3cadcb7584526b41af7cc928d6c58d5bb19d8ea5` 的本机完整随机套件仍在运行，已知 v40 closure 失败；[草稿 PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) 的原生 [CI run `40114448888`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40114448888) 同样运行中。以下跟进修正尚未提交发布，不能用于覆盖该封存候选的失败或宣称 Phase 1 go。
+`3c844a39` 的原生 [CI run `40115957909`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40115957909) 已观察到 Windows 3.11/3.12 的 packaging 与 clean-archive 步骤通过；这不是 Windows job 或完整套件通过。**包含 `54367b5d`、`1f39822b`、`693f504a` 的新版完整 CI 尚未运行，Phase 1 go 继续 pending。**
 
-旧 CI `40111546762` 的 Ubuntu 3.12 完整结果为 14,911 passed / 2 failed / 18 skipped；两项失败分别源于 fixture 依赖目录枚举顺序、在真实 outer Future 完成前过早发出信号。修正仅调整测试前提，相关 60 项（seed `20261024`）与 124 项（seed `42`）通过，但范围有重叠、不相加。另将已审查的 Windows publisher 生产改动补入未冻结 v41 的精确 staged source 声明：相同最终测试旧声明 15 failed / 19 passed，新声明 34 passed，相关 179 项通过；40 份历史 pin 字节不变，不激活 v41。原始失败、独立审查及边界见[跟进证据包](../artifacts/governance-trial-2026-10-24/ci-followup-proofs/README.md)。
+旧 CI `40111546762` 的 Ubuntu 3.12 完整结果为 14,911 passed / 2 failed / 18 skipped；两项失败分别源于 fixture 依赖目录枚举顺序、在真实 outer Future 完成前过早发出信号。`c6d1e485` 已提交修正，仅调整测试前提，相关 60 项（seed `20261024`）与 124 项（seed `42`）通过，但范围有重叠、不相加。`827c1751` 已将审查通过的 Windows publisher 生产改动补入未冻结 v41 的精确 staged source 声明：相同最终测试旧声明 15 failed / 19 passed，新声明 34 passed，相关 179 项通过；40 份历史 pin 字节不变，不激活 v41。原始失败、独立审查及边界见[跟进证据包](../artifacts/governance-trial-2026-10-24/ci-followup-proofs/README.md)。
 
-修复后候选已另行通过 `compileall minicode tests`（缓存写入临时目录），以及全部 `minicode`、wheel checker 和 4 个相关测试文件的 Ruff `E,F --ignore=E501`。检查结果和 10 文件 SHA 保存在本机 `phase1-repaired-static-checks.json`；这些静态检查不替代尚未通过的最终完整套件，也不覆盖随后新增的测试/声明修改。
+最新修复已分组提交：`54367b5d` 使用显式宿主 Python fixture，并为已注册 toolchain 的祖先目录保留 metadata-only 查询；文件内容读取与沙箱拒绝断言保留。`1f39822b` 用局部时钟、真实 reader 和 Future 完成同步修正两项调度前提，没有延长 sleep 或放宽墙钟阈值。`693f504a` 修复 evaluation transport 将 durable ledger 消费滞后误判为 idle：先检查已收到的队列项，仍按 reader 时间拒绝真实 receive gap，并保留绝对 deadline、取消、EOF/error 与字节上限。沙箱邻接 **108 passed**、timing 两文件 **77 passed**、transport 相关 **87 passed**；其中 transport 最终同字节 10 个边界用例在旧源 **3 failed / 7 passed**、新源 **10 passed**。这些范围有重叠，不能相加。原始失败、反例、故障注入和独立审查见[macOS 跟进证据包](../artifacts/governance-trial-2026-10-24/macos-ci-followup-proofs/README.md)。
+
+最新离线 quality 为 current **88/88**、a **57/57**，两次 remote calls 均为 0；执行前后核验的 `minicode/**/*.py` 内容集合 SHA-256 均为 `fff5e4db7d261650dd431587dd0bbb6c016474bc6ecada3555679b7b3d1fd3f8`，与当前目录一致。元数据的 HEAD 为当时的 `3c844a39`，实际源码摘要包含随后提交的修复；这是离线开发集重放，不能凭相同生产字节推断完整测试或新的 transport 路径已通过验收。
+
+较早修复候选的 `compileall minicode tests` 与 scoped Ruff 结果、10 文件 SHA 已随两次本机尝试归档（`phase1-repaired-static-checks.json`）；它们绑定当时源码，不覆盖随后新增的测试、声明或 transport 修改，也不替代最新完整 CI。
 
 ## 已验证项目
 
@@ -108,8 +116,11 @@ R2 的局部事件日志、完整原始错误及续跑 XML 均保留在诊断证
 
 这些证据解释已复现的失败族，不能外推原报告全部 workflow 失败。其余诊断分为真实生产缺陷、fixture 契约漂移、测试环境限制和诊断工具失效；原始红日志、无效基线尝试及每组范围均保留。真实缺陷包括 MCP SSE 错误路径的未定义变量、阶段输出预算漏算工具 schema、v6 失败诊断后的 Analyst→Reviewer 审计绑定、checkpoint 把准备耗时误作执行证据，以及历史 verifier-only 提交授权和多轮修复后的长 trace 投影错误。fixture 迁移则显式选择 bounded/full 模式或 Analyst/Reviewer 路由，并提供当前要求的真实独立检查及分页证据，不据此宣称生产修复。todo 测试中同文件共享默认列表的污染也已用局部 monkeypatch 隔离，不与上述跨文件最小前导证明混为一谈。
 
-Phase 2 的 [16 个历史任务准备包](../artifacts/governance-trial-2026-10-24/phase2-preparation/README.md)和 runner 适配已提交；92 项历史 oracle 检查与 114 项 runner 离线回归已完成。P0 已通过，Phase 2 已在同一 `9f936942` 源码冻结 32 个 cell，manifest SHA-256 为 `987f7cf31627ca85f18cdf2a270dae3918c5bf6cacac68cf02053dd767da91be`。角色轮数显式配置为 12/8/15，不能称为当前默认值；首次因默认值误认而失败的 freeze 未生成 manifest、未调用 API。冻结记录 `ab17ca7e` / `ea31eed2` 已推送开发分支；当前模型 API 调用为零、结果为零，正式运行尚未开始。详见[冻结原件](../artifacts/governance-trial-2026-10-24/phase2-freeze/README.md)与[正式任务预注册](real-task-comparison-2026-10-24.md)。本 P0 证据包不混入 Phase 2 证据。
+Phase 2 的 [16 个历史任务准备包](../artifacts/governance-trial-2026-10-24/phase2-preparation/README.md)和 runner 适配已提交；92 项历史 oracle 检查与 114 项 runner 离线回归已完成。Phase 2 的旧 `9f936942` 冻结（manifest SHA-256 `987f7cf31627ca85f18cdf2a270dae3918c5bf6cacac68cf02053dd767da91be`）已在 0 模型试次 / 0 结果时撤销运行用途，[原件](../artifacts/governance-trial-2026-10-24/phase2-freeze/README.md)保留供审计。transport 修复已单独 cherry-pick 到实验分支 `8b15640a`，该分支的 `minicode` 仍为 P0，未混入 Phase 1 抽取。[r2 冻结更正](../artifacts/governance-trial-2026-10-24/phase2-freeze-r2/README.md)已随 `2706e00e` 发布，新 manifest SHA-256 为 `32dacc257169eff53026a3b8e1663ed68b62ceae1adac118589073921d47d332`；16 个任务内容、32 个 cell 顺序与验收条件不变，角色轮数仍显式配置为 12/8/15，经济预算为 `null`。**32 个正式 cell 已启动；截至本次状态更新尚无 completed 结果。** 实验分支的生产、脚本和测试字节保持冻结至报告，不将离线检查计入模型成绩。首次默认值误认导致的 freeze 失败也未调用 API；详见[正式任务预注册](real-task-comparison-2026-10-24.md)。本 P0 验收结果不混入 Phase 2 证据。
 
 ## 反馈回路建议
 
 本轮先记录成本，不新增 gate。开发时用变更相关单测（秒级）和有明确边界的集成回归（分钟级）；PR/合并候选保留随机全量。本轮 P0 实测 pytest 53 分 51.54 秒，外层 53 分 54.411 秒；历史约 34 分钟不能代替此次成本。后续拆档应由实际测试耗时和隔离依赖决定，不能凭文件名把慢测试整体豁免。
+
+
+旧 `3cadcb75` 的 Windows 完整 CI 另有系统性平台失败：Python 3.11 为 13,222 passed / 1,390 failed / 246 errors / 112 skipped，3.12 为 13,217 passed / 1,395 failed / 246 errors / 112 skipped。主簇涉及可信 Git 查找、POSIX 文件权限/信号和路径契约；当前仓库仍承诺 Windows 支持，正在独立分类，未批量跳过、未改支持范围。上述 Windows 打包步骤通过不能代替完整平台验收。
