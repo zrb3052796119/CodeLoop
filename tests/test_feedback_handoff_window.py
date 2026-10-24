@@ -30,7 +30,7 @@ def test_late_edit_runs_actual_check_and_retains_handoff_time(tmp_path, monkeypa
 
     cap = ExecutorCheckCapability((VerificationCheck("public", "tests", ("python3", "-m", "pytest", "-q", "test_value.py"), 5),), check)
     budget = AgentTurnBudget(max_model_calls=40, max_total_tokens=500000)
-    phases = ImplementationPhaseController(snapshot=budget.snapshot(), max_steps=30,
+    phases = ImplementationPhaseController(bounded=True, snapshot=budget.snapshot(), max_steps=30,
         now=66.0, deadline=520.0, allow_checked_source_completion=True,
         allow_test_completion=True, require_structured_handoff=True)
     phases.observe_verification(failed=True)

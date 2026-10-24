@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 
 import minicode.tools.task as task_module
-from minicode.tooling import ToolContext, ToolResult
+from minicode.tooling import ToolContext, ToolResult, ToolUsageCounts
 from minicode.tools.task import MAX_AGENT_DEPTH, task_tool
 from minicode.turn_cancellation import (
     TurnCancellationRequested,
@@ -1051,13 +1051,13 @@ def test_workflow_runs_plan_execute_review_phases_with_shared_budget(
     assert result.ok is True
     assert [call[0] for call in captured] == ["plan", "general", "plan"]
     assert all(call[2] == 1 for call in captured)
-    # The workflow wraps the shared budget in one attribution view (so the
-    # workflow journal row can carry the whole chain's tokens); phases still
-    # share that single object, which delegates to the same underlying
-    # budget.
-    assert all(call[3] is captured[0][3] for call in captured)
-    captured[0][3].record_model_call(input_tokens=7, output_tokens=3)
-    assert budget.snapshot().used_total_tokens == 10
+    # Each phase may have its own allowance/attribution view, but charges from
+    # every view must reach the same parent ledger and be visible to siblings.
+    for index, call in enumerate(captured, start=1):
+        call[3].record_model_call(input_tokens=7, output_tokens=3)
+        assert budget.snapshot().used_total_tokens == index * 10
+        assert all(phase[3].snapshot().used_total_tokens == index * 10 for phase in captured)
+        assert budget.snapshot().reserved_total_tokens == 0
     assert "=== PLAN ===" in result.output
     assert "=== EXECUTE ===" in result.output
     assert "=== REVIEW VERDICT ===" in result.output
@@ -1095,6 +1095,7 @@ def test_workflow_observation_separates_model_limit_from_phase_limit(
                 "  Model turns: 4 (tool calls: 2)\n"
                 "phase complete"
             ),
+            _usage_counts=ToolUsageCounts(model_turns=4, tool_calls=2),
         )
 
     monkeypatch.setattr(task_module, "_run", fake_run)
@@ -1191,8 +1192,9 @@ def test_run_journal_accepts_workflow_v2_observation(tmp_path: Path) -> None:
     assert event.payload == payload
 
 
+@pytest.mark.parametrize("configured_calls", [None, 150])
 def test_standalone_workflow_creates_one_budget_shared_by_all_phases(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, configured_calls: int | None,
 ) -> None:
     from minicode.subagent_mailbox import SubagentMailbox
 
@@ -1206,6 +1208,9 @@ def test_standalone_workflow_creates_one_budget_shared_by_all_phases(
         return ToolResult(ok=True, output="phase complete")
 
     monkeypatch.setattr(task_module, "_run", fake_run)
+    runtime = {"model": "fake"}
+    if configured_calls is not None:
+        runtime["agentTurnBudgetModelCalls"] = configured_calls
     result = task_module.task_tool.run(
         {
             "description": "auth refactor",
@@ -1216,13 +1221,17 @@ def test_standalone_workflow_creates_one_budget_shared_by_all_phases(
             tmp_path,
             _agent_depth=0,
             _subagent_mailbox=mailbox,
+            _runtime=runtime,
         ),
     )
 
     assert result.ok is True
     assert budgets[0] is not None
-    assert all(budget is budgets[0] for budget in budgets)
-    assert budgets[0].snapshot().limit_model_calls == 150
+    assert all(budget.max_model_calls == configured_calls for budget in budgets)
+    for index, phase_budget in enumerate(budgets, start=1):
+        phase_budget.record_model_call(input_tokens=7, output_tokens=3)
+        assert all(budget.snapshot().used_total_tokens == index * 10 for budget in budgets)
+        assert all(budget.snapshot().reserved_total_tokens == 0 for budget in budgets)
 
 
 def test_workflow_review_failure_is_a_typed_failure(

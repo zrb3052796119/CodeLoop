@@ -134,7 +134,7 @@ def test_legacy_approved_with_named_but_absent_coverage_is_rejected_before_promo
     with observe_run(workspace=tmp_path, source="headless", title="legacy approval coverage gate",
                      journal_factory=lambda workspace: RunJournal(workspace, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run({"description": "return required value", "agent_type": "workflow",
-            "prompt": "Return integer 3 and retain regression coverage.", "workflow_request": request},
+            "prompt": "Return integer 3, retain regression coverage, and review the resulting change.", "workflow_request": request},
             ToolContext(cwd=str(tmp_path), _runtime={"model": "local-fixture"}, _agent_budget=budget,
                         _event_sink=observation, _central_workflow_v2_enforced=True))
         run_id = observation.run_id
