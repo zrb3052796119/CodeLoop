@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from minicode.agent_loop import run_agent_turn
 from minicode.mock_model import MockModelAdapter
+from minicode.task_outcome import AgentOutcomeCapture
 from minicode.permissions import PermissionManager
 from minicode.tooling import ToolContext, ToolRegistry, ToolDefinition, ToolResult
 from minicode.tools import create_default_tool_registry
@@ -327,19 +328,27 @@ class TestAgentLoopIntegration:
                 raise ConnectionError("Simulated network failure")
 
         system_messages.append({"role": "user", "content": "test error"})
+        capture = AgentOutcomeCapture()
         result = run_agent_turn(
             model=ErrorModel(),
             tools=tools,
             messages=system_messages,
             cwd=str(tmp_workspace),
             permissions=auto_allow_permissions,
+            outcome_capture=capture,
         )
 
         last_assistant = next(
             (m for m in reversed(result) if m["role"] == "assistant"), None
         )
         assert last_assistant is not None
-        assert "network error" in last_assistant["content"].lower() or "connection" in last_assistant["content"].lower()
+        assert last_assistant["_partial"] is True
+        assert "Model transport failed" in last_assistant["content"]
+        assert capture.outcome.status == "failed" and not capture.outcome.goal_achieved
+        failures = [json.loads(message["content"]) for message in result
+                    if message.get("_model_transport_failure")]
+        assert failures and all(failure["errorType"] == "ConnectionError"
+                                and failure["usage"] == "unknown" for failure in failures)
 
     def test_timeout_error_handling(self, tools, system_messages, tmp_workspace, auto_allow_permissions):
         """Agent loop handles timeout errors with specific message."""
@@ -349,19 +358,27 @@ class TestAgentLoopIntegration:
                 raise TimeoutError("Request timed out after 60s")
 
         system_messages.append({"role": "user", "content": "test timeout"})
+        capture = AgentOutcomeCapture()
         result = run_agent_turn(
             model=TimeoutModel(),
             tools=tools,
             messages=system_messages,
             cwd=str(tmp_workspace),
             permissions=auto_allow_permissions,
+            outcome_capture=capture,
         )
 
         last_assistant = next(
             (m for m in reversed(result) if m["role"] == "assistant"), None
         )
         assert last_assistant is not None
-        assert "timeout" in last_assistant["content"].lower()
+        assert last_assistant["_partial"] is True
+        assert "Model transport failed" in last_assistant["content"]
+        assert capture.outcome.status == "failed" and not capture.outcome.goal_achieved
+        failures = [json.loads(message["content"]) for message in result
+                    if message.get("_model_transport_failure")]
+        assert failures and all(failure["errorType"] == "TimeoutError"
+                                and failure["usage"] == "unknown" for failure in failures)
 
 
 # ---------------------------------------------------------------------------

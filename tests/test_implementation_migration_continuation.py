@@ -15,7 +15,7 @@ from minicode.tools.write_file import write_file_tool
 from minicode.types import AgentStep
 from test_completion_probe_purposes import DIAGNOSIS, _legacy
 from test_implementation_completion_review import (
-    OBJECTIVE, PROBE, SOURCE, _fixture, _probe, _rows, _submit,
+    OBJECTIVE, PROBE, SOURCE, _fixture, _probe, _rows, _submit, _native_coverage_step,
 )
 
 
@@ -136,12 +136,16 @@ def test_partial_migration_restores_same_parent_child_context_and_finishes_check
     completed_unit = document["migrationState"]["state"]["completedUnits"][0]
     completed_bytes = Path(completed_unit["evidenceRef"]).read_bytes()
     continuation = HostImplementationContinuation.from_document(document, spec=case["spec"], messages=messages)
-    requests, recorded = [], []
+    requests, recorded, coverage_requests = [], [], []
     before_commands = len(case["commands"])
 
     class ResumedModel:
         def next(self, messages, **kwargs):
             names = set(kwargs["tools_override"].list_all())
+            coverage = _native_coverage_step(messages, registry=kwargs["tools_override"])
+            if coverage is not None:
+                coverage_requests.append({"names": names, "messages": deepcopy(messages)})
+                return coverage
             requests.append({"names": names, "messages": deepcopy(messages)})
             if "write_file" in names:
                 assert len(requests) == 1
@@ -180,6 +184,9 @@ def test_partial_migration_restores_same_parent_child_context_and_finishes_check
     assert all(command["cwd"] != str(case["tmp_path"]) for command in case["commands"])
     assert Path(completed_unit["evidenceRef"]).read_bytes() == completed_bytes
     ledger = final_document["reviewState"]
+    assert sum("completion_coverage_inspection_submit" in row["names"] for row in coverage_requests) == 2
+    assert sum("completion_coverage_audit_submit" in row["names"] for row in coverage_requests) == 3
+    assert ledger["reviews"][-1]["coverageAudit"]["status"] == "approved"
     migration_ref = ledger["legacyResolutions"][-1]["resolution"]["reviewEvidenceRef"]
     migrated = json.loads(Path(migration_ref).read_text())["decisions"]
     retained = next(row for row in migrated if row["probeId"] == case["diagnostic"]["probeId"])

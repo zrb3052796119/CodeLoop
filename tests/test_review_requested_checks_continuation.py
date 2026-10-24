@@ -161,7 +161,8 @@ def test_actionable_review_requested_checks_resumes_original_executor(tmp_path, 
     class Verifier(DeterministicVerifier):
         def run(self, **kwargs):
             assert target.read_text() == INITIAL
-            assert [tuple(check.argv) for check in kwargs["checks"]] == [approved_argv]
+            argv = [tuple(check.argv) for check in kwargs["checks"]]
+            assert argv in ([approved_argv], [("python", "-m", "pytest", "-q", "__minicode_review_probe__.py")])
             formal = getattr(kwargs["evidence_sink"], "__name__", "") == "per_check_sink"
             result = super().run(**kwargs)
             checks.extend({"formal": formal, "exit": check["exitCode"]} for check in result["checks"])
@@ -186,7 +187,7 @@ def test_actionable_review_requested_checks_resumes_original_executor(tmp_path, 
     with observe_run(workspace=tmp_path, source="headless", title="actionable requested checks",
                      journal_factory=lambda workspace: RunJournal(workspace, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run({"description": "complete public behavior", "agent_type": "workflow",
-            "prompt": "Strip whitespace and handle None with a public regression test.", "workflow_request": request},
+            "prompt": "Strip whitespace and handle None with a public regression test. Please review the changes.", "workflow_request": request},
             ToolContext(cwd=str(tmp_path), _runtime={"model": "local-fixture"}, _agent_budget=budget,
                 _task_deadline_monotonic=deadline, _event_sink=observation, _central_workflow_v2_enforced=True))
         run_id = observation.run_id
