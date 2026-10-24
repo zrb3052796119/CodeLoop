@@ -406,45 +406,62 @@ def test_verification_checks_run_concurrently_and_keep_request_order(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Independent checks must overlap in time yet sequence their evidence.
+    """Real check futures overlap and finish out of request order."""
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
 
-    Uses the real structured-routing harness: three checks whose stubbed
-    verifier sleeps briefly prove wall-time overlap, and the projected
-    verification keeps the request-order evidence chain the audit replays.
-    """
-
-    import time as _time
-
-    import sys as _sys
-
-    _sys.path.insert(0, str(Path(__file__).parent))
+    monkeypatch.syspath_prepend(str(Path(__file__).parent))
     import test_workflow_v2_structured_routing as routing
 
     (tmp_path / "allowed.txt").write_text("before", encoding="utf-8")
-    execution_windows: list[tuple[float, float]] = []
-    lock = __import__("threading").Lock()
+    all_entered = threading.Barrier(3)
+    finished = [threading.Event() for _ in range(3)]
+    completion_order: list[str] = []
+    evidence_refs: dict[str, str] = {}
+    lock = threading.Lock()
+
+    class ObservedPool(ThreadPoolExecutor):
+        def submit(self, fn, check):
+            future = super().submit(fn, check)
+
+            def completed(done):
+                assert done.done()
+                with lock:
+                    completion_order.append(check.check_id)
+                finished[int(check.check_id.rsplit("_", 1)[1])].set()
+
+            future.add_done_callback(completed)
+            return future
 
     def worker(input_data, context):
         role = routing._worker_role(input_data)
         if role == "analyst":
             routing._write_analyst_result(input_data, context, prepare_change=True)
         elif role == "executor":
-            executor_prompt_text = input_data["prompt"]
             Path(context.cwd, "allowed.txt").write_text("after", encoding="utf-8")
             routing._write_executor_declaration(input_data, context)
         else:
             routing._write_reviewer_result(input_data, context)
         return routing.ToolResult(ok=True, output="ok")
 
-    def slow_verifier(self, **request):
-        started = _time.monotonic()
-        _time.sleep(0.4)
+    def verifier(self, **request):
+        check_id = request["checks"][0].check_id
+        index = int(check_id.rsplit("_", 1)[1])
+        # Watchdogs detect a deadlocked/serial implementation; they do not
+        # impose a wall-clock performance budget on the whole workflow.
+        all_entered.wait(timeout=5)
+        if index < 2:
+            assert finished[index + 1].wait(timeout=5)
+        result = routing._verification_result(request)
         with lock:
-            execution_windows.append((started, _time.monotonic()))
-        return routing._verification_result(request)
+            evidence_refs[check_id] = result["checks"][0]["artifactRef"]
+        return result
 
     monkeypatch.setattr(routing.task_module, "_run", worker)
-    monkeypatch.setattr(routing.DeterministicVerifier, "run", slow_verifier)
+    monkeypatch.setattr(routing.DeterministicVerifier, "run", verifier)
+    monkeypatch.setattr(
+        routing.workflow_runner_module, "ThreadPoolExecutor", ObservedPool
+    )
 
     request = routing._request()
     request["verificationChecks"] = [
@@ -457,26 +474,24 @@ def test_verification_checks_run_concurrently_and_keep_request_order(
         for index in range(3)
     ]
 
-    started = _time.monotonic()
     result = routing._run(
         tmp_path,
         request,
         monkeypatch,
         commit_audit_waived=True,
     )
-    elapsed = _time.monotonic() - started
 
     assert result.ok is True
-    # Three 0.4s checks overlapped: below the 1.2s serial floor even with
-    # pool overhead on a loaded machine (the pairwise-overlap assertions
-    # below prove concurrency without wall-clock sensitivity).
-    assert elapsed < 1.15
-    # All three genuinely executed concurrently (pairwise overlapping).
-    assert len(execution_windows) == 3
-    for (start_a, end_a), (start_b, end_b) in zip(
-        execution_windows, execution_windows[1:]
-    ):
-        assert start_b < end_a
+    assert completion_order == ["check_2", "check_1", "check_0"]
+    projected = routing.extract_subagent_result(result.output)
+    assert projected is not None
+    assert projected["verification"] == {
+        "status": "passed",
+        "checks": [
+            f"check_{index}: passed [{evidence_refs[f'check_{index}']}]"
+            for index in range(3)
+        ],
+    }
 
 
 # --- P3: structured workflows accept on-demand parallel exploration ---------
