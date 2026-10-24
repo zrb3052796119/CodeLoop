@@ -48,4 +48,16 @@ jobs:
         run: python scripts/check_clean_archive_package.py
 
       - name: Run test suite
-        run: python -m pytest -q
+        # Changes per CI run, remains identical across its OS/Python matrix and
+        # retries, and is printed by pytest-randomly for exact reproduction.
+        env:
+          PYTEST_RANDOMLY_SEED: ${{ github.run_number }}
+        run: python -m pytest -ra --randomly-seed=${{ env.PYTEST_RANDOMLY_SEED }} --junitxml=pytest-results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-${{ matrix.os }}-py${{ matrix.python-version }}-seed-${{ github.run_number }}
+          path: pytest-results.xml
+          if-no-files-found: ignore

@@ -2699,7 +2699,11 @@ def test_ci_workflow_runs_release_quality_gates() -> None:
     assert workflow.exists()
     content = workflow.read_text(encoding="utf-8")
     assert "python -m compileall -q minicode tests" in content
-    assert "python -m pytest -q" in content
+    assert "python -m pytest -ra --randomly-seed=" in content
+    assert "PYTEST_RANDOMLY_SEED: ${{ github.run_number }}" in content
+    assert "--junitxml=pytest-results.xml" in content
+    assert "if: always()" in content
+    assert "path: pytest-results.xml" in content
     assert "tests/test_packaging.py" in content
     assert "python scripts/check_clean_archive_package.py" in content
 
