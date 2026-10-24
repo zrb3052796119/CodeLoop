@@ -1,0 +1,702 @@
+{
+  "schemaVersion": 1,
+  "archive": "package.tar.gz",
+  "archiveBytes": 358672,
+  "archiveSha256": "f2e19a68e93a7db019387449052b5fbe77d7c23c9ed5c8529a30b1dde7507944",
+  "entryCount": 138,
+  "rawBytes": 1615242,
+  "registrationSha256": "eaa9645d3a2a39649d1e80c28ae3db39fc3c9bab89f8586e12515378babee5b2",
+  "restorationVerification": "All members actually restored and byte-compared",
+  "entries": [
+    {
+      "path": "README.md",
+      "bytes": 3239,
+      "sha256": "de25dfb717fe5630c19997c3d3addea8849718ef3cf6c800f57e95a642d2bfd8"
+    },
+    {
+      "path": "SHA256SUMS.json",
+      "bytes": 15914,
+      "sha256": "4d8b88a9bf5bac2ddbace85b8b3bb10b465a1a9283f5ec91e8a976115eacbcce"
+    },
+    {
+      "path": "adapter-preparation-hashes.json",
+      "bytes": 512,
+      "sha256": "f1bb1e97482a3fd5e9adccb9530c595b0c25ba638f2ad0fcb2cd8683a9d39c8d"
+    },
+    {
+      "path": "cases/read-atomic-replace/diagnostic-accepted.log",
+      "bytes": 3183,
+      "sha256": "bdc58df2f3072eef68be3b442cfb33a35db80c594fb7fdc4ca4da59617aa1958"
+    },
+    {
+      "path": "cases/read-atomic-replace/diagnostic-answer-only.log",
+      "bytes": 509,
+      "sha256": "c596fce87c2149a2acfb84098cc2f5105cca50c5ac0a4a67569422a7c6573683"
+    },
+    {
+      "path": "cases/read-atomic-replace/diagnostic-incorrect-answer.log",
+      "bytes": 739,
+      "sha256": "c675702d610e9b26493cc654e6735fac7d280e5b8aff1bbbfcca3b233b9b3b65"
+    },
+    {
+      "path": "cases/read-atomic-replace/diagnostic-trivia-probe.log",
+      "bytes": 670,
+      "sha256": "0f92709ff554fb6cc404495e20f19c1e8c60f12c6d992d86cb4c0400879b7aeb"
+    },
+    {
+      "path": "cases/read-atomic-replace/diagnostic-xpass-diagnostic.log",
+      "bytes": 853,
+      "sha256": "157056b838cfccba3d37bf99439fc1b4440780b241223ee6ce6219a5dfb135fa"
+    },
+    {
+      "path": "cases/read-atomic-replace/oracle.py",
+      "bytes": 22074,
+      "sha256": "ca01e17ef0c2f8f06b760e42d46614832978958b2ddbcb17bb1cf5e03d75d0a1"
+    },
+    {
+      "path": "cases/read-atomic-replace/parent-proof.log",
+      "bytes": 2851,
+      "sha256": "bcf4ed7b6c1598f76ee253e152bb5b14e87c5b5c11ba5f0c063ec88c11254dd4"
+    },
+    {
+      "path": "cases/read-atomic-replace/prompt.txt",
+      "bytes": 3405,
+      "sha256": "7d0699638cbf0e4f71a1de08bd446198bbd912e8e1277b8dcd03db0e5cde9aaf"
+    },
+    {
+      "path": "cases/read-atomic-replace/reference-diagnostic.json",
+      "bytes": 2330,
+      "sha256": "148d231ad144a0380c43c0e91185ac2379be9012aa8ac3f0057a391683ffe06c"
+    },
+    {
+      "path": "cases/read-atomic-replace/reference-proof.log",
+      "bytes": 98,
+      "sha256": "106e2242acc92dbbe0317802bbe2046a9d0be71b46ef14dc833068c0a34e7939"
+    },
+    {
+      "path": "cases/read-atomic-replace/reference.patch",
+      "bytes": 3513,
+      "sha256": "71f0d3336f1dc15f5de568c87351fbc117c9bb982847a1d41aa8a6e206ac681a"
+    },
+    {
+      "path": "cases/read-closing-reminder/diagnostic-accepted.log",
+      "bytes": 3292,
+      "sha256": "f7d063c85b24d47e44717f911869d44ab8d2dfd68c1302e51126e9bc3ac04be2"
+    },
+    {
+      "path": "cases/read-closing-reminder/diagnostic-answer-only.log",
+      "bytes": 513,
+      "sha256": "5557efa4cbbb7aa96a93c7b60e703547dbc5e84b48d37d5e15530416bc26e450"
+    },
+    {
+      "path": "cases/read-closing-reminder/diagnostic-incorrect-answer.log",
+      "bytes": 865,
+      "sha256": "79935e866a255731f954dd86a8c07a437f19bdd66e68dc05e8e3ffef93d37dfa"
+    },
+    {
+      "path": "cases/read-closing-reminder/diagnostic-trivia-probe.log",
+      "bytes": 659,
+      "sha256": "9569608be806c975c8bb9eadacb71eae758299884a0ac88686cda0ea51ff3e4f"
+    },
+    {
+      "path": "cases/read-closing-reminder/diagnostic-xpass-diagnostic.log",
+      "bytes": 859,
+      "sha256": "fd283952cd18be87c42eac25b5a1703145a1c9d9a6ef5e8bd03cd3581594830c"
+    },
+    {
+      "path": "cases/read-closing-reminder/oracle.py",
+      "bytes": 22066,
+      "sha256": "742a605c706b545815d922d242409a3644ad8f41af943ccf12b30ae64fb11319"
+    },
+    {
+      "path": "cases/read-closing-reminder/parent-proof.log",
+      "bytes": 3041,
+      "sha256": "833c5532429fbce7c9db9107887b20b1e295da166324ff8a7e4c8080cbcc7ecc"
+    },
+    {
+      "path": "cases/read-closing-reminder/prompt.txt",
+      "bytes": 3377,
+      "sha256": "60a7ba4402df50ecb4c2a32a86692298b8db6d32c93f4adc428d67c6a17ab65d"
+    },
+    {
+      "path": "cases/read-closing-reminder/reference-diagnostic.json",
+      "bytes": 5674,
+      "sha256": "72aec5e95b67845e55341dfef7d328141ce5beb7e7de4ba71289f26bcc3eefa7"
+    },
+    {
+      "path": "cases/read-closing-reminder/reference-proof.log",
+      "bytes": 98,
+      "sha256": "d74f900f7c066edb53c51d26a16860951f134df3ee837be28483d02c5f29b1ee"
+    },
+    {
+      "path": "cases/read-closing-reminder/reference.patch",
+      "bytes": 13869,
+      "sha256": "71f25c6b626f297db26d82a92de9deca9f7b42f8955f5d1b1b7c5c8183f5948b"
+    },
+    {
+      "path": "cases/read-deadline/diagnostic-accepted.log",
+      "bytes": 1468,
+      "sha256": "05b04240d0d9d0582311056572bddd36834c7bea181257a7acd893976901a688"
+    },
+    {
+      "path": "cases/read-deadline/diagnostic-answer-only.log",
+      "bytes": 497,
+      "sha256": "14f6749a71f082af7dce8829cbddf0dbd2a849b48caf64e37785e424196d6dae"
+    },
+    {
+      "path": "cases/read-deadline/diagnostic-incorrect-answer.log",
+      "bytes": 763,
+      "sha256": "8dbdf7f0234238eb2cee555dbe4128d3b7f5d89b0a472f1c272a133005f8fb51"
+    },
+    {
+      "path": "cases/read-deadline/diagnostic-trivia-probe.log",
+      "bytes": 670,
+      "sha256": "798e9a5612e9a42da03ebd0b06cd4adbc8a6d37b9d646f68a92bf430bc8629bc"
+    },
+    {
+      "path": "cases/read-deadline/diagnostic-xpass-diagnostic.log",
+      "bytes": 835,
+      "sha256": "3a7a9bbf09df8417ac0d674d55167936b46ca2c47bd126d1beb86227a11350bd"
+    },
+    {
+      "path": "cases/read-deadline/oracle.py",
+      "bytes": 21997,
+      "sha256": "73a671733546d53a63c29f03fb7217823dddaa4d43e6175afec4d09e43c93c32"
+    },
+    {
+      "path": "cases/read-deadline/parent-proof.log",
+      "bytes": 1200,
+      "sha256": "b4c2573022c7d6fbd6dce209190b4a190db6decc03f413dc5a3d535e185195df"
+    },
+    {
+      "path": "cases/read-deadline/prompt.txt",
+      "bytes": 3455,
+      "sha256": "9e35f2474b342ba8f7b693c5bf66c593fc2e771fd0d9f31eb5f75ba5541f566e"
+    },
+    {
+      "path": "cases/read-deadline/reference-diagnostic.json",
+      "bytes": 1390,
+      "sha256": "0c26ead0c4371d9899e74973ea62aac5c9597014551392ceb70dc1fb3953b19a"
+    },
+    {
+      "path": "cases/read-deadline/reference-proof.log",
+      "bytes": 98,
+      "sha256": "3c45c895af180ba13823a5bdb06b10781ebeb63818c54cae60c943ea3d34458a"
+    },
+    {
+      "path": "cases/read-deadline/reference.patch",
+      "bytes": 3228,
+      "sha256": "17137f2b1b0245715d07f714a556db9643fe757a4dd240187684c865d292af13"
+    },
+    {
+      "path": "cases/read-image-boundaries/diagnostic-accepted.log",
+      "bytes": 145,
+      "sha256": "a08ff5beaaee9ca64941fbebb09849f89101e28bb717028a4e7514a08865b826"
+    },
+    {
+      "path": "cases/read-image-boundaries/diagnostic-answer-only.log",
+      "bytes": 305,
+      "sha256": "9de31b4fe4d5905d9fea48e5496bf64d53f4a248f73372f1c4ef30a5e5984251"
+    },
+    {
+      "path": "cases/read-image-boundaries/diagnostic-incorrect-answer.log",
+      "bytes": 745,
+      "sha256": "08baf1c46f2702b54f654f31891b3412db12e593742d4119fb354cc8f82b3559"
+    },
+    {
+      "path": "cases/read-image-boundaries/diagnostic-trivia-probe.log",
+      "bytes": 460,
+      "sha256": "f5f6587be6fd12fe34e10df6202e14aea1701381ea6d38a6e67b4d6113cc8654"
+    },
+    {
+      "path": "cases/read-image-boundaries/diagnostic-xpass-diagnostic.log",
+      "bytes": 651,
+      "sha256": "f43fb90adfbf000c3d469664c13ccc0ed527880a9044f1af22c6a6f0eae5895f"
+    },
+    {
+      "path": "cases/read-image-boundaries/oracle.py",
+      "bytes": 22115,
+      "sha256": "803a5257f42ebb33af996abdbe27411d0213150cb58bf99dbd0bc28a8482a587"
+    },
+    {
+      "path": "cases/read-image-boundaries/parent-proof.log",
+      "bytes": 1972,
+      "sha256": "6214fbddb2985525ab75f153a515af8b50bc470217a483aa9c8f5f0ac00a7c6b"
+    },
+    {
+      "path": "cases/read-image-boundaries/prompt.txt",
+      "bytes": 4937,
+      "sha256": "d50761b7dbc6744126d859f59b95b169993e800bc4ef83647e8c19cba7dda328"
+    },
+    {
+      "path": "cases/read-image-boundaries/reference-diagnostic.json",
+      "bytes": 4845,
+      "sha256": "64fa3b5ee3e2a9d766c3f535d112927a308544840975956c3171f94ef1996d7f"
+    },
+    {
+      "path": "cases/read-image-boundaries/reference-proof.log",
+      "bytes": 98,
+      "sha256": "e94620bac0c486c3ee7045b45ea79a79dfc2d45118fbd7961f8ab1592dfd9f7c"
+    },
+    {
+      "path": "cases/read-image-boundaries/reference.patch",
+      "bytes": 16792,
+      "sha256": "e45924b6256bba54b51a74a8570893d5ae1cf9a5d6765576eb77b490efb2fba0"
+    },
+    {
+      "path": "cases/read-router/diagnostic-accepted.log",
+      "bytes": 3889,
+      "sha256": "9902219d0f8ee908fc542d355917c6c4bcd9e511414e1f118433ebe95792f9b8"
+    },
+    {
+      "path": "cases/read-router/diagnostic-answer-only.log",
+      "bytes": 493,
+      "sha256": "38061661186a83ce123099b24bc37689791b6ac293cc6bebe1f7df152139f274"
+    },
+    {
+      "path": "cases/read-router/diagnostic-incorrect-answer.log",
+      "bytes": 833,
+      "sha256": "85051532c35677c286ec75384ed463c69d636e8a92e744ded6f199a85e927f55"
+    },
+    {
+      "path": "cases/read-router/diagnostic-trivia-probe.log",
+      "bytes": 647,
+      "sha256": "7d0ee758e72d3e03557e60c13fd61b5351db156f9a025666dfae56b9a0b6d9fe"
+    },
+    {
+      "path": "cases/read-router/diagnostic-xpass-diagnostic.log",
+      "bytes": 829,
+      "sha256": "e80476ec3f620a0ca55a6ba8067a8c3d8ee1ebb175d3cf2c004c4cef147e5c3b"
+    },
+    {
+      "path": "cases/read-router/oracle.py",
+      "bytes": 22208,
+      "sha256": "97e6a0fe6dd518af0b8d43dc693db39942e5f4fc53fd84d5b5b8136e2810da25"
+    },
+    {
+      "path": "cases/read-router/parent-proof.log",
+      "bytes": 3693,
+      "sha256": "9824f1f4e2349416e3042bdbb02d3c51e68dfb2a10016e63e93a517d0abc172b"
+    },
+    {
+      "path": "cases/read-router/prompt.txt",
+      "bytes": 3680,
+      "sha256": "4ec7d976f67b9dee97524223ca7ab7adefc4a40001c2eefac300ebdc7b0b8c2c"
+    },
+    {
+      "path": "cases/read-router/reference-diagnostic.json",
+      "bytes": 3002,
+      "sha256": "9c37146b83124e9f6c3369b7217fb158c66203ada90c0ba2f130dcf4a2c76689"
+    },
+    {
+      "path": "cases/read-router/reference-proof.log",
+      "bytes": 98,
+      "sha256": "0f18846f02505ee432787dbe3891961c1d8a1fbe2c82d1b7deb7e21dde073c5c"
+    },
+    {
+      "path": "cases/read-router/reference.patch",
+      "bytes": 6233,
+      "sha256": "0b2dea4a1fa9f6c1669e8d5958356c0c29650397d85c6a1b14499836e5353feb"
+    },
+    {
+      "path": "cases/refactor-finalization/oracle.py",
+      "bytes": 20760,
+      "sha256": "586388769e2291a0796a1432fb04497a24a877a4fa7a8489cf994028211ccd72"
+    },
+    {
+      "path": "cases/refactor-finalization/parent-proof.log",
+      "bytes": 1817,
+      "sha256": "384cddada83903c5468fb2bd094b4acce91d32dfc14e3b07648d385a96ec74df"
+    },
+    {
+      "path": "cases/refactor-finalization/prompt.txt",
+      "bytes": 3998,
+      "sha256": "b7603904840458c93a6c7918198d0b40c408e7729c63bd285f6d8d712b324ef2"
+    },
+    {
+      "path": "cases/refactor-finalization/reference-proof.log",
+      "bytes": 98,
+      "sha256": "d659bd6603166793c084fa55538154b1e66dc1fb0a6b6de0f8bdd839943321ed"
+    },
+    {
+      "path": "cases/refactor-finalization/reference.patch",
+      "bytes": 234963,
+      "sha256": "6003adb880069142fe772ce1acd00c5bda996e1236db43ae12b9b1de6bef0e62"
+    },
+    {
+      "path": "cases/refactor-frozen-change/oracle.py",
+      "bytes": 33513,
+      "sha256": "a09fc5e9b8b1606f463cfc312bdc4b53542ba8a175375c37c3e77c7c70f5022e"
+    },
+    {
+      "path": "cases/refactor-frozen-change/parent-proof.log",
+      "bytes": 3626,
+      "sha256": "511f38b3ece27d0cb12e067c5ff5cd093906d163852812eeeca27beb3c229643"
+    },
+    {
+      "path": "cases/refactor-frozen-change/prompt.txt",
+      "bytes": 4872,
+      "sha256": "67ffc8f364bc96bf91fb27d8a46e039604f3b70e76ff8913498aed40ea35d994"
+    },
+    {
+      "path": "cases/refactor-frozen-change/reference-proof.log",
+      "bytes": 99,
+      "sha256": "ebd71f7d48e070d843d4d4a457f2bc8941bf00fabb68163506ca38d052779351"
+    },
+    {
+      "path": "cases/refactor-frozen-change/reference.patch",
+      "bytes": 68153,
+      "sha256": "43288ec26e7dfdc83ce26a444677f18515a9cc1ccba4a015b608c4c62f28a99f"
+    },
+    {
+      "path": "cases/refactor-workflow-runner/oracle.py",
+      "bytes": 20017,
+      "sha256": "e287f3eb9eb844aff38c885662921d6795684578517aad4320945903c59afb5d"
+    },
+    {
+      "path": "cases/refactor-workflow-runner/parent-proof.log",
+      "bytes": 4942,
+      "sha256": "bc4243ad2af7cc7d1dfee58dca8918f4071f94f39e6e10cf84d3317068209567"
+    },
+    {
+      "path": "cases/refactor-workflow-runner/prompt.txt",
+      "bytes": 2558,
+      "sha256": "ab09b69fe2012314dd0c7662ffff700d9b0442cd62a3dfdab174688d4a96578e"
+    },
+    {
+      "path": "cases/refactor-workflow-runner/reference-proof.log",
+      "bytes": 98,
+      "sha256": "f9d03954048267f47951ae34eb7f09c6df44c2c8a31cfb104abb3da7d64b7ca3"
+    },
+    {
+      "path": "cases/refactor-workflow-runner/reference.patch",
+      "bytes": 364973,
+      "sha256": "2cba03fe902f47b11ebf2e2ac12c60a7b56538d38cb1126b5a413a0baab883d1"
+    },
+    {
+      "path": "cases/refactor-workspace/oracle.py",
+      "bytes": 17998,
+      "sha256": "3285b85219efd28f917227d7e74bc0cbbb5c78571ebec3090b9d3fbffda9d515"
+    },
+    {
+      "path": "cases/refactor-workspace/parent-proof.log",
+      "bytes": 1562,
+      "sha256": "80d1e07fc492d320a4109a9b37a85aa1c921ebccc2afa37bba729095684a1640"
+    },
+    {
+      "path": "cases/refactor-workspace/prompt.txt",
+      "bytes": 2211,
+      "sha256": "126bbce90cd72782f4941f9c156b9daca62ed344298fccf3d70c1fee41dff34e"
+    },
+    {
+      "path": "cases/refactor-workspace/reference-proof.log",
+      "bytes": 98,
+      "sha256": "43070f769e236d6133131b818344f14b9cc70eb0b06d977dc080afb56e79db89"
+    },
+    {
+      "path": "cases/refactor-workspace/reference.patch",
+      "bytes": 104553,
+      "sha256": "2425fffa993d85c14144282c0b1135293ad293b7ae2eca822cda29013c380664"
+    },
+    {
+      "path": "cases/write-cache-fallback/oracle.py",
+      "bytes": 29187,
+      "sha256": "e968384902b6cca43255cfb3a23d75ddf6ea42187b7e8d679b9b8826462ba12a"
+    },
+    {
+      "path": "cases/write-cache-fallback/parent-proof.log",
+      "bytes": 12140,
+      "sha256": "41135bbd10a16e5df976b41fd27cc42325fd42c3abbc34c11f4916cd69f6a183"
+    },
+    {
+      "path": "cases/write-cache-fallback/prompt.txt",
+      "bytes": 2436,
+      "sha256": "0d1b2ea02221716b5794bb8cf05a05e84df63ef3eb55e7511f87c565aa58092e"
+    },
+    {
+      "path": "cases/write-cache-fallback/reference-proof.log",
+      "bytes": 98,
+      "sha256": "f7c1fdc3644d020ba74994d5153230018b4748cb350b707ddcfd3ab9dacc8093"
+    },
+    {
+      "path": "cases/write-cache-fallback/reference.patch",
+      "bytes": 13879,
+      "sha256": "a9988f7cb03f121c1a8bb19ebcfe6c98bca4f05c576609e893b68d1c9112d838"
+    },
+    {
+      "path": "cases/write-cache-tip/oracle.py",
+      "bytes": 34424,
+      "sha256": "6e52da4ad8b986779549d1eb837ec1b3700b6e76f9879589a071011a56c87f3f"
+    },
+    {
+      "path": "cases/write-cache-tip/parent-proof.log",
+      "bytes": 5945,
+      "sha256": "7dd842304ca4d250bb2799d0859bdd78af23de7aab17d69eecb6c53d84e7f22e"
+    },
+    {
+      "path": "cases/write-cache-tip/prompt.txt",
+      "bytes": 2050,
+      "sha256": "bea40e6c4609e45b0f8b341014e5fe5dae2cda8396917aca7c0ed7357e518102"
+    },
+    {
+      "path": "cases/write-cache-tip/reference-proof.log",
+      "bytes": 98,
+      "sha256": "a469a5e7cce5ca5537b9826f25fd0934548c00eaea63709fd909af84354078f8"
+    },
+    {
+      "path": "cases/write-cache-tip/reference.patch",
+      "bytes": 8809,
+      "sha256": "55188d075cda8e9e66b6c0fe780f4a5f790cb36808903dbf1b087d618253adf3"
+    },
+    {
+      "path": "cases/write-profile-contracts/oracle.py",
+      "bytes": 25018,
+      "sha256": "b6de1ddffd23aef66ca60d7d77c60abccc29a4ba05d62c5b79981bf539bc0875"
+    },
+    {
+      "path": "cases/write-profile-contracts/parent-proof.log",
+      "bytes": 3996,
+      "sha256": "ef52c46cb00ec98dfe648ea28bff9d5907d1fc5459532be9d63d95297a43ebc7"
+    },
+    {
+      "path": "cases/write-profile-contracts/prompt.txt",
+      "bytes": 2047,
+      "sha256": "33de698660a3db2a9c563434938821dacfebd23d846837ccb37259b764bbc4fa"
+    },
+    {
+      "path": "cases/write-profile-contracts/reference-proof.log",
+      "bytes": 98,
+      "sha256": "cd9f00546c34cfb5721e29ec23a1ed6cb673c65a1f499cca23fbf0be701ed940"
+    },
+    {
+      "path": "cases/write-profile-contracts/reference.patch",
+      "bytes": 6888,
+      "sha256": "48c2d6d2468ec518dd71f81174e9b82f41dc6bb703864406c97906d56c13df05"
+    },
+    {
+      "path": "cases/write-profile-dispatch/oracle.py",
+      "bytes": 27948,
+      "sha256": "faf9152eda72b84466cab60eb89df1131d5b3c5ba40812ca55a9ad2125588805"
+    },
+    {
+      "path": "cases/write-profile-dispatch/parent-proof.log",
+      "bytes": 8699,
+      "sha256": "2e1ab1a23a68f18a8ca45d3bdb3bb88d577228dd32168a4c9ffc40ceed05de96"
+    },
+    {
+      "path": "cases/write-profile-dispatch/prompt.txt",
+      "bytes": 2142,
+      "sha256": "0477edf416dedce87704c62d0d44a0a9e57e340aa2d3cd6daf102babeaa7b06b"
+    },
+    {
+      "path": "cases/write-profile-dispatch/reference-proof.log",
+      "bytes": 98,
+      "sha256": "9e38cf7f72ce428e3b1ef2377628c9e2aeb9092423519a3541519cfd13b9c9b3"
+    },
+    {
+      "path": "cases/write-profile-dispatch/reference.patch",
+      "bytes": 8980,
+      "sha256": "07e3d122669228e09ddc1137985f7d7b4b9bad4edf7b067cf4c67383b335209c"
+    },
+    {
+      "path": "cases/write-profile-parser/oracle.py",
+      "bytes": 23937,
+      "sha256": "159390c3a01c188600a7e903117287c7e3d87889a55465414f2e6f88ccbadc10"
+    },
+    {
+      "path": "cases/write-profile-parser/parent-proof.log",
+      "bytes": 3504,
+      "sha256": "6922e77df89c1931a5959f6e45de523138f84fac0affb9ee0c3a7a9907c91b75"
+    },
+    {
+      "path": "cases/write-profile-parser/prompt.txt",
+      "bytes": 3262,
+      "sha256": "279144d548623fe86739b2752e0c9dc4c8ab06373a61a61b2d7f60ad5d243273"
+    },
+    {
+      "path": "cases/write-profile-parser/reference-proof.log",
+      "bytes": 99,
+      "sha256": "fd7437788317a65349dd45638b6c12ee94e33a151ed6fa39d0995986098d68df"
+    },
+    {
+      "path": "cases/write-profile-parser/reference.patch",
+      "bytes": 14670,
+      "sha256": "0dd75e7d0cb886615b8bf7dc17f778b2636af7354499599ed1b0ffb05399748c"
+    },
+    {
+      "path": "cases/write-todo-isolation/oracle.py",
+      "bytes": 19584,
+      "sha256": "2bf2c732505629d812d78ad055fc037631e95d7ce316e3d8a1c37cb126325e04"
+    },
+    {
+      "path": "cases/write-todo-isolation/parent-proof.log",
+      "bytes": 3553,
+      "sha256": "4c43ed83351f5e8ae91453e5e21fd3dbbda0df798a4d53fab7d235b7604ec7cb"
+    },
+    {
+      "path": "cases/write-todo-isolation/prompt.txt",
+      "bytes": 2290,
+      "sha256": "557e9e31b4f0a1dedbded2d5614c9def3e666c5758641f2602751d2b4cab0bd4"
+    },
+    {
+      "path": "cases/write-todo-isolation/reference-proof.log",
+      "bytes": 98,
+      "sha256": "34c526cad1480af004eaf81acccf4af5226205617ad5a709833236b0ddb4a41b"
+    },
+    {
+      "path": "cases/write-todo-isolation/reference.patch",
+      "bytes": 11158,
+      "sha256": "e2cf440a561e5e2dcc60067d78830f14cb6e66a5eb9e5fb8123e7d3a9b0f0292"
+    },
+    {
+      "path": "cases/write-user-profiles/oracle.py",
+      "bytes": 35892,
+      "sha256": "d7d783a1af6603a2c127d22c05742a98594ab2fcf665462991c666fe4bb9d874"
+    },
+    {
+      "path": "cases/write-user-profiles/parent-proof.log",
+      "bytes": 3801,
+      "sha256": "c63910d094a076433382615af7b0e8474984141e7c535a938f5e2ab0e1efddff"
+    },
+    {
+      "path": "cases/write-user-profiles/prompt.txt",
+      "bytes": 2275,
+      "sha256": "818327d2415f970ce253b51be568e07149e238d7fef046e43e1751d73edb2cbb"
+    },
+    {
+      "path": "cases/write-user-profiles/reference-proof.log",
+      "bytes": 98,
+      "sha256": "d9e7f0060f94f8cf8cd79289b21e226ea7368472d94b0aa47ba098b76482b4d5"
+    },
+    {
+      "path": "cases/write-user-profiles/reference.patch",
+      "bytes": 10803,
+      "sha256": "3e13bdc55d06280ba48c749450b47de677e31e8839d7fe3b81829592b0db919a"
+    },
+    {
+      "path": "exclusions/write-continuation-resume/parent.json",
+      "bytes": 2755,
+      "sha256": "020842aafa3f137cce0d6fe11add47cd6c76559979e8e908cf4eec107f2afafb"
+    },
+    {
+      "path": "exclusions/write-continuation-resume/parent.log",
+      "bytes": 2644,
+      "sha256": "c1d03169d85b1da5d62101480043a52025ea36a7ca03f5ae6ddd59fb8d00a586"
+    },
+    {
+      "path": "exclusions/write-continuation-resume/reference.json",
+      "bytes": 2761,
+      "sha256": "d0f1c1879257f8f68ee556dbe31c541c4456b941f34fa20ac8c8975b1285fa27"
+    },
+    {
+      "path": "exclusions/write-continuation-resume/reference.log",
+      "bytes": 2671,
+      "sha256": "87023ce7794cb2ffb9760242b37a9d3429c0861a87a9821d4e7616c87dd34521"
+    },
+    {
+      "path": "exclusions/write-continuation-store/parent.json",
+      "bytes": 2141,
+      "sha256": "1a086c3f2a5e326df66c7aac97ac59e732db5f4f08511de63d3666f1608f43a0"
+    },
+    {
+      "path": "exclusions/write-continuation-store/parent.log",
+      "bytes": 1400,
+      "sha256": "7035f0e2641210887e5627c91690d6d824e32f95bae316f043029027be0f0949"
+    },
+    {
+      "path": "exclusions/write-continuation-store/reference.json",
+      "bytes": 824,
+      "sha256": "eae0f3f360736de318b5f5e3e7ef62b9570c8943ad7d9dd1b37feeb583b5b053"
+    },
+    {
+      "path": "exclusions/write-continuation-store/reference.log",
+      "bytes": 98,
+      "sha256": "09fe4441627f625ef92c265990f13e7b462b863c5c79a8b5dc18c887f0020ca0"
+    },
+    {
+      "path": "host-oracle-preflight-results.json",
+      "bytes": 5537,
+      "sha256": "51c3a4d745b6e7e8f669af12d6e3c8842cd7738d5ba475bd01451daa9b766f06"
+    },
+    {
+      "path": "independent-review.md",
+      "bytes": 3005,
+      "sha256": "758c3dddd1b406df87b52722b48e19228b308c3e7983c0a5c0d2a9c76499e6c3"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 85796,
+      "sha256": "eaa9645d3a2a39649d1e80c28ae3db39fc3c9bab89f8586e12515378babee5b2"
+    },
+    {
+      "path": "materialization-check.json",
+      "bytes": 603,
+      "sha256": "15efc6b70f870174e2f223eac742b295d69aac53d0d201304794142d8fce0e83"
+    },
+    {
+      "path": "portable-check.log",
+      "bytes": 134,
+      "sha256": "8ea5320c0670ad519919f58f83713a54f870b3590a3e1bfc0575e373f8d1a10b"
+    },
+    {
+      "path": "portable-oracle-check.log",
+      "bytes": 3711,
+      "sha256": "0ddfab695a160e1d1de66fb1ab6e64107b5557462c7a192f7f5e4d163d66b11f"
+    },
+    {
+      "path": "portable-rebuild.log",
+      "bytes": 200,
+      "sha256": "5c71b8d15b0f554d0cc14e71870cc005c481a892f69115ae4e6dbe9e133a8353"
+    },
+    {
+      "path": "preparation-errors/read-deadline/parent-initial-incomplete-support.json",
+      "bytes": 2295,
+      "sha256": "75e07cc235e2cbb4dea3d51f83f2859562c37277f34a8525cc7445a34958b205"
+    },
+    {
+      "path": "preparation-errors/read-deadline/parent-initial-incomplete-support.log",
+      "bytes": 1739,
+      "sha256": "97c22d238f40dc9347c83ed47dbf8648084df574cb5c58eca8878f365d6556ac"
+    },
+    {
+      "path": "preparation-errors/read-deadline/reference-initial-incomplete-support.json",
+      "bytes": 2301,
+      "sha256": "11e647a8bf2efc10948b5f99ef1b5bb09d4c18513d38306eff931b1e7a6f7e9b"
+    },
+    {
+      "path": "preparation-errors/read-deadline/reference-initial-incomplete-support.log",
+      "bytes": 1751,
+      "sha256": "92c1b440575b602c10eebc3cee74ef219ed39b5e980adf2814f554af8b8f8315"
+    },
+    {
+      "path": "protocol.md",
+      "bytes": 9978,
+      "sha256": "22f6215fcdaa7969f59677d9f7122a51ac5178698c5efb6fc104f7217ffb0813"
+    },
+    {
+      "path": "read-adversarial-smoke-results.json",
+      "bytes": 1183,
+      "sha256": "0619ba8ef4ac1263d81eba570afb4f73147978938c3c1fea1fe764e176f8ba9e"
+    },
+    {
+      "path": "rebuild.py",
+      "bytes": 7329,
+      "sha256": "b7e9cf98646d0c22c877c189f17ec6992d37b3557389c9be5bf92cb57d4319af"
+    },
+    {
+      "path": "relocated-oracle-preflight-results.json",
+      "bytes": 4719,
+      "sha256": "ee36eb972ab75985b091a143bedbd402a1573c85b03bf5d9ec4a3b6a1c63292f"
+    },
+    {
+      "path": "runner-regression-current.log",
+      "bytes": 181,
+      "sha256": "f456046c62a72cc90e027e0ddc51cd6d2cd86c2caf134aa73df9975b52fc9a0b"
+    },
+    {
+      "path": "scheduler-independent-review.log",
+      "bytes": 99,
+      "sha256": "e7686b067cc5d04d9de489f805a228009dc60e73e797a0af94d36b7f02fa2bd2"
+    }
+  ]
+}

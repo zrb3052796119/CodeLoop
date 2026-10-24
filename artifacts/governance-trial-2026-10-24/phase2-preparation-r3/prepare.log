@@ -1,0 +1,3 @@
+{"stage": "verify", "tasks": 16, "sourceCommits": 25, "recordedHistoricalReferenceChecks": 92, "newOracleExecutions": 0}
+{"prepared": true, "tasks": 16, "trials": 32, "providerCalls": 0}
+{"status": "prepared_not_frozen", "package": "/private/tmp/codeloop-governance-20261024/phase2-r3/portable", "execution": "/private/tmp/codeloop-governance-20261024/phase2-r3/prepared/execution", "providerCalls": 0, "newOracleExecutions": 0, "formalFreezePerformed": false}
