@@ -1,8 +1,21 @@
 # CodeLoop 治理基线 — 2026-10-24
 
-**当前状态：P0 `9f936942` 的本机完整随机验收已通过并推送 main；Phase 1 go 仍未成立。** 首次 P1/P3 `eb17c62a` 为 14,932 passed / 1 failed，第二次 `3cadcb75` 为 14,932 passed / 14 failed；两次均为 8 skipped / 0 errors / 3 warnings。旧候选 `1decc813` 的 CI `40124691703` 已结束：四个正式 runtime job 中3个通过，macOS 3.11新增1项 fixture 失败，该项已定点修复。历史候选 `fd485a56` 的 CI `40127563208` 仍在运行，未含本次修订；下一候选完整 CI 待启动。Phase 2 r2 已受控停止并保留为 5 完成 / 1 中断未判分 / 26 未运行的 pilot；补齐公开契约的 r3 注册与冻结已发布并启动，使用 `b32718a7…`，不合并新旧成绩。
+**当前状态：Phase 1 候选 `e6492f9b` 已取得完整支持矩阵验收，原定 GO 条件成立，待正常 PR 合入 main。** P0 `9f936942` 的完整本机验收及 main `ff2f18ea` 保持历史身份。Phase 2 r2 已受控停止，保留 5 完成 / 1 中断未判分 / 26 未运行的 pilot；补齐公开契约的 r3 已注册、冻结并启动，仍待完整 32 次报告，不能据 Phase 1 验收推断收益或改变默认路径。
 
-main 与开发分支已于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档/证据序列的生产及测试字节与通过的 `9f936942` 相同。已发布 P1 历史候选 `fd485a5630a82be3f4fc9392662022b859a0e4d5` 包括取消完成顺序、最终观测预算修订及已发布的 r3 注册资料，其 CI 仍在运行。本次 failed-write 检查顺序修订仅改测试、尚未纳入该运行；旧尝试失败和局部通过均保留，下一候选完整 CI 尚待启动。
+main 与开发分支曾于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档/证据序列的生产及测试字节与通过的 `9f936942` 相同。当前验收对应 P1 PR head `e6492f9b` 及其 CI merge ref，尚未完成正常 PR 合入；此前两次本机失败、各旧 CI 失败与局部证明保持原记录。
+
+## Phase 1 最终支持矩阵
+
+**Phase 1 GO：候选 `e6492f9be7357a707bb8f05c722aa2af4eefcc3d` 已满足原定验收条件，待正常 PR 合入 main。** `run_agent_turn` 净减 497 行、4 个目标闭包迁出、新增函数最多 11 个参数；[CI run `40130139264`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40130139264) 的完整支持矩阵已通过，seed `50`，实际 checkout merge 为 `b0091e50b8f434cf811f3cdec5159d44052d3e09`，与 PR head 分别记录。Linux Python 3.11/3.12 **各 14,952 passed / 19 skipped**，macOS Python 3.11/3.12 **各 14,963 passed / 8 skipped**，四份 XML 均为 **0 failed / 0 errors**；六个选定 job 的安装、编译、lint、离线质量与包检查均成功。结果由 **attempt 1 的五个成功 job + attempt 2 重跑的 macOS 3.11 整个 job** 组成；只执行过一次 `rerun --failed`。原 macOS 3.11 pytest 通过后上传遇到 `ENOTFOUND`，job 失败且缺少 XML，这些原迹保留；另外五个 attempt 2 API job ID 是继承记录，不能当作五次新执行。原始日志、四份 XML、来源映射及逐成员 SHA 见[最终支持矩阵证据包](../artifacts/governance-trial-2026-10-24/phase1-supported-matrix/README.md)，46 个成员已实际恢复比对。Windows 两项仅为实验性包/静态检查通过，完整 runtime 仍有已知失败，不属于本期正式支持验收；历史失败不改判。
+
+| 正式平台 | Python | passed | skipped | failed / errors | 证据 attempt / 原始 job ID |
+| --- | --- | ---: | ---: | --- | --- |
+| Linux（ubuntu-latest） | 3.11 | 14,952 | 19 | 0 / 0 | 1 / `120979908190` |
+| Linux（ubuntu-latest） | 3.12 | 14,952 | 19 | 0 / 0 | 1 / `120979908000` |
+| macOS（macos-latest） | 3.11 | 14,963 | 8 | 0 / 0 | 2 / `120994485852` |
+| macOS（macos-latest） | 3.12 | 14,963 | 8 | 0 / 0 | 1 / `120979908130` |
+
+各环境和重跑次数不累加；跳过不计为通过。此结论覆盖支持矩阵与本次代码治理，不是 Phase 2 模型能力或生产级保证。
 
 ## 可复现环境
 
@@ -49,6 +62,8 @@ main 与开发分支已于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档
 
 ## 首次 P1 全量与后续修复
 
+以下保留各次尝试与修复当时的状态；“完整 CI 仍待”等原记录不代表当前状态，最终结论见上方支持矩阵。历史失败与证据包不改判。
+
 首次组合候选 `eb17c62a5510b6746c5fc677618303c9b83b96e6` 已完整执行，seed `20261024`：**14,932 passed / 1 failed / 8 skipped / 0 errors / 3 warnings**，pytest 2889.76 秒、外层 2892.346 秒，退出码 1。唯一失败为 `tests/test_memory_hot_store.py::test_nested_budget_caps_cumulative_wait_across_multiple_commands` 的 `200.36325 ms < 200 ms` 断言；不是新增 context-retention 行为断言失败。完整 XML SHA-256 为 `32ee65f8c431da2096afedbaf0970e7cc3b5a9c4cde4a7a51b6e3c313ceb8b87`。
 
 第二次本机完整尝试 `3cadcb7584526b41af7cc928d6c58d5bb19d8ea5` 已结束，seed `20261024`：**14,932 passed / 14 failed / 8 skipped / 0 errors / 3 warnings**，pytest **2631.92 秒**、外层 **2634.330 秒**，退出码 1。14 项失败全部属于 v40/v41 staged source 声明；`827c1751` 已提交相应修正，不能倒填为旧尝试通过。
@@ -65,7 +80,7 @@ main 与开发分支已于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档
 
 原 CI run `40111546762` 的 Windows 3.11/3.12 job 确认是既存 `_publish_portable` 的 WinError 32，故障文件在初始 `88ec62d0`、`9f936942`、P0 main 字节相同。同一 run 的 Ubuntu Python 3.11.17 与 macOS Python 3.11.9 内部错误均来自既有 `test_run_command_lifecycle.py:246` 全局猴补 `os.name="nt"`：`run_command.py:288` 的 `Path(command).name` 选择不支持的 WindowsPath，随后 pytest 报告/退出也崩溃。Ubuntu 原 JUnit 4934 tests / 0 failures / 1 internal error / 7 skipped；旧 fixture 已在真实 Python 3.11.15 复现。`7b8157e7` 修复只使用测试模块局部 `os`/`sys`/`subprocess` 代理，生产字节不变；Python 3.11/3.12 各 124 项相关通过，最终同字节目标测试在 exact P0 1 passed，2 个合成坏 flags/session 反例仍正常断言失败。[fixture 修复和原始 CI 证据](../artifacts/governance-trial-2026-10-24/run-command-fixture-proofs/README.md)已归档，不将其归为生产 bug。上述定向结果不代替新版组合候选的完整 CI 验收，Phase 1 go 尚未成立。
 
-旧 `3c844a39` 原生 Windows 包检查通过的事实保持原范围，不代表完整套件通过。旧候选 `1decc8134528aa9795f32deab58493a288153c02` 的 [CI run `40124691703`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40124691703) 已结束：四个正式 runtime job 中3个通过，macOS 3.11新增1项检查完成顺序 fixture 失败。该项已定点修复；历史候选 `fd485a5630a82be3f4fc9392662022b859a0e4d5` 的 [CI run `40127563208`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40127563208) 仍在运行，未含本次修订。**下一候选完整 CI 尚待启动，Phase 1 go 继续 pending**。正式验收按用户批准的[平台范围](platform-support.md)：Linux/macOS × Python 3.11/3.12 四个完整随机 runtime job，以及六个 OS/Python job 的安装、编译、lint、离线质量与包检查；原生 Windows 完整套件保留为独立失败可见诊断，不能写成全平台通过。
+上述旧候选和定向记录不替代最终矩阵；当前 `e6492f9b` 的 Phase 1 GO 结论见[本页最终支持矩阵](#phase-1-最终支持矩阵)，待正常 PR 合入 main。
 
 旧 CI `40111546762` 的 Ubuntu 3.12 完整结果为 14,911 passed / 2 failed / 18 skipped；两项失败分别源于 fixture 依赖目录枚举顺序、在真实 outer Future 完成前过早发出信号。`c6d1e485` 已提交修正，仅调整测试前提，相关 60 项（seed `20261024`）与 124 项（seed `42`）通过，但范围有重叠、不相加。`827c1751` 已将审查通过的 Windows publisher 生产改动补入未冻结 v41 的精确 staged source 声明：相同最终测试旧声明 15 failed / 19 passed，新声明 34 passed，相关 179 项通过；40 份历史 pin 字节不变，不激活 v41。原始失败、独立审查及边界见[跟进证据包](../artifacts/governance-trial-2026-10-24/ci-followup-proofs/README.md)。
 

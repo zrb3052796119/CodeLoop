@@ -1,6 +1,6 @@
 # 本期平台支持与验收范围
 
-2026-10-25，用户在审阅 Windows 完整诊断后明确选择：**本期正式支持 Linux/macOS，原生 Windows 标为实验性，保留可见失败诊断和移植清单**。这是对既有 README 平台承诺的显式收窄，不是将旧 Windows 失败改判为通过。当前 P1 候选仍须完成正式平台验收。
+2026-10-25，用户在审阅 Windows 完整诊断后明确选择：**本期正式支持 Linux/macOS，原生 Windows 标为实验性，保留可见失败诊断和移植清单**。这是对既有 README 平台承诺的显式收窄，不是将旧 Windows 失败改判为通过。P1 候选 `e6492f9b` 已完成本期正式平台验收，Phase 1 GO，待正常 PR 合入 main。
 
 | 能力 / 验证 | Linux、macOS（Python 3.11 / 3.12） | 原生 Windows（Python 3.11 / 3.12） |
 | --- | --- | --- |
@@ -11,6 +11,8 @@
 | POSIX 实验守护与恢复脚本 | 保持原安全与清理契约 | 尚无等价原生 Windows 契约 |
 
 这里的“支持”仍是研究项目的验收目标，不是生产级保证。WSL 属于 Linux 执行环境，不能作为原生 Windows 通过证据；本轮也未单独认证 WSL。
+
+当前 [CI `40130139264`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40130139264) / seed `50`：Linux Python 3.11/3.12 各 **14,952 passed / 19 skipped**，macOS 两版各 **14,963 passed / 8 skipped**，均 **0 failed / 0 errors**。PR head 为 `e6492f9b`，实际 checkout merge 为 `b0091e50`。最终六项成功来自 attempt 1 的五项与 attempt 2 重跑的 macOS 3.11 整个 job；原上传 `ENOTFOUND` 失败和缺失 XML 保留，其他五个新 API ID 属继承记录。Windows 两项只验实验性包/静态子集，不能据此消除完整 runtime 的已知失败。详见[最终支持矩阵证据](../artifacts/governance-trial-2026-10-24/phase1-supported-matrix/README.md)。
 
 ## CI 状态如何读取
 

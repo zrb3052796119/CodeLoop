@@ -69,11 +69,13 @@ support layer across them, not a fifth capability track.
 
 ## Evidence at a Glance
 
+**Governance status: Phase 1 GO at `e6492f9b`, awaiting the normal PR merge.** The first extraction removes 497 lines from `run_agent_turn`, moves all four target closures, and uses at most 11 parameters per new function. The [acceptance record](./docs/release-baseline-2026-10-24.md#phase-1-最终支持矩阵) documents the complete supported-platform CI and one infrastructure retry. [Phase 2 r3](./docs/real-task-comparison-r3-2026-10-25.md) is still running; efficiency claims and default-path decisions await its complete report.
+
 First, the contract surface for the four tracks and their support layer:
 
 | System evidence | Result | What it does—and does not—show |
 | --- | ---: | --- |
-| [Repository regression suite](./.github/workflows/ci.yml) | **14,923 passed, 8 skipped** | Local macOS Python 3.12 P0 acceptance at `9f936942` on 2026-10-25; later candidates need their own acceptance. CI requires the full suite on Linux/macOS; native Windows has experimental package checks and separate visible full-runtime diagnostics. |
+| [Repository regression suite](./artifacts/governance-trial-2026-10-24/phase1-supported-matrix/README.md) | **Linux: 14,952 passed / 19 skipped; macOS: 14,963 passed / 8 skipped, per Python version** | Phase 1 candidate `e6492f9b`, Python 3.11 and 3.12, CI seed `50`; all four supported runtime jobs have zero failures/errors. Native Windows has passing experimental package checks and separate, still-failing full-runtime diagnostics. Counts are not added across environments. |
 | [Skill-routing gate](./docs/agent-quality-gates.md) | **60/60 legacy; 96/96 joined routing decisions** | The joined production-shaped development set also records 84/96 full cases; its 12 residuals are intent/context labels, not Skill decisions. Both are offline with `remoteCallCount=0`, not live Qwen, a blind production holdout, or an external benchmark. |
 | [Repeated-compaction gate](./docs/agent-quality-gates.md) | **12/12 gate + 60/60 stress** | Forced one-to-five-round cases cover summary chains, rejected approaches, the task ledger, latest instruction, loaded Skill, and tool turns across four history scales and three marker layouts. Proves the frozen contract, not zero drift in every long conversation. |
 | [Paired context-compaction study](./docs/context-compaction-experiment-study.md) | **12/12 pairs complete; 24 cases** | Canonical/control provider input tokens were 4,288,270 vs 6,011,480 (**-28.7% aggregate; 22.7% median paired**, exact `p=0.00537`). Strict success was 9/12 vs 10/12 because five cases hit remote `IncompleteRead`; all executable tests and protected markers still passed. This supports token efficiency, not a quality-neutrality claim. |
