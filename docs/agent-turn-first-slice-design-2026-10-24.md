@@ -1,8 +1,8 @@
 # Agent Turn 首个切片设计与候选实现（2026-10-24）
 
-本候选把“上下文压缩结果的安装与权威消息保留”移到现有 `agent_loop.py` 的模块级操作。`run_agent_turn` 同一 AST 节点从 **5321 行降为 4824 行，净减 497 行**；4 个目标闭包全部迁出，新增函数最多 11 个参数。局部行为对照已通过，但 **Phase 0 最终全量与 Phase 1 候选全量尚未验收**，这不是合入或发布结论。
+本候选把“上下文压缩结果的安装与权威消息保留”移到现有 `agent_loop.py` 的模块级操作。`run_agent_turn` 同一 AST 节点从 **5321 行降为 4824 行，净减 497 行**；4 个目标闭包全部迁出，新增函数最多 11 个参数。局部行为对照已通过；**P0 完整验收已通过并推送 main，首次 P1 全量有 1 项失败，后续组合候选的最终全量与原生 Windows CI 仍待，Phase 1 go 未成立**。这不是本切片的合入或发布结论。
 
-原设计只检查若干命名闭包，暂时未找到自然的 300 行边界；后续独立复审补查了主循环中较大的同职责应用段。依据 [D1 状态矩阵](agent-turn-state-ownership-2026-10-24.md)，92 个捕获绑定中 28 个跨职责组共享，占 30.43%，**没有触发 >60% no-go**。暂停是等待基线与补齐所有权设计的时序约束，不需要另设人工批准点。
+原设计只检查若干命名闭包，暂时未找到自然的 300 行边界；后续独立复审补查了主循环中较大的同职责应用段。依据 [D1 状态矩阵](agent-turn-state-ownership-2026-10-24.md)，92 个捕获绑定中 28 个跨职责组共享，占 30.43%，**没有触发 >60% no-go**。此前暂停源于等待基线与补齐所有权设计的时序约束，不需要另设人工批准点。
 
 ## 基准与实际减量
 
@@ -97,7 +97,7 @@ guard 拒绝后仍先安装 memory-free prefix、finalize 控制器状态、同�
 
 解释器使用 root 的 `.venv-acceptance/bin/python`，但每次执行显式设置目标 `PYTHONPATH`，打印并校验 `minicode.agent_loop.__file__`；隔离 HOME，清除 provider 凭证和 `MINI_CODE_*`，seed 固定为 `20261024`。测试使用本地模型和实际本地验证命令，没有调用 live API。
 
-精确基线源从 `git archive 9f936942` 提取到临时目录；没有修改正在执行 Phase 0 全量的冻结 clone。六个测试文件在两边字节相同：
+精确基线源从 `git archive 9f936942` 提取到临时目录；没有修改当时执行 Phase 0 全量的冻结 clone。六个测试文件在两边字节相同：
 
 - `test_memory_compaction_feedback.py`：真实 Memory guard 拒绝、回调后失败/回滚、counter、provenance、控制态确认。
 - `test_task_ledger.py`：ledger 连续性和新反馈重绑定场景。
@@ -117,7 +117,7 @@ guard 拒绝后仍先安装 memory-free prefix、finalize 控制器状态、同�
 
 最终候选与原源码是纯重构的 **before/after 均绿** 证明。synthetic fault 仅验证测试能抓住丢失当前 feedback 的错误，**不宣称历史缺陷 PROVEN**。日志、输入哈希、AST 统计与运行脚本保存在 `/private/tmp/codeloop-governance-20261024/phase1-implementation/`；该本机证据目录不是新评测 gate。
 
-最终候选重新执行上述 95 项与另 8 个邻接文件，合计 **336 passed，44.24s**，证据为 `after-final-tests.log`。邻接文件为：`test_agent_loop.py`、`test_agent_loop_work_chain_disabled.py`、`test_context_compactor.py`、`test_context_cybernetics.py`、`test_implementation_continuation.py`、`test_requirement_completion_revalidation.py`、`test_request_schema_soft_landing_review.py`、`test_bounded_completion_entrypoints.py`。初始抽取的 87 项与 241 项日志保留作过程证据，不作为最终版本验收。`git diff --check` 及本次三个 Python 文件按仓库 CI 口径的 Ruff（`--select=E,F --ignore=E501`）均通过。最终文件哈希与统计见同目录 `implementation-report.json`。局部绿色不替代 Phase 0 和候选完整随机顺序套件；最终合入仍由这两项完整验收决定。
+最终候选重新执行上述 95 项与另 8 个邻接文件，合计 **336 passed，44.24s**，证据为 `after-final-tests.log`。邻接文件为：`test_agent_loop.py`、`test_agent_loop_work_chain_disabled.py`、`test_context_compactor.py`、`test_context_cybernetics.py`、`test_implementation_continuation.py`、`test_requirement_completion_revalidation.py`、`test_request_schema_soft_landing_review.py`、`test_bounded_completion_entrypoints.py`。初始抽取的 87 项与 241 项日志保留作过程证据，不作为最终版本验收。`git diff --check` 及本次三个 Python 文件按仓库 CI 口径的 Ruff（`--select=E,F --ignore=E501`）均通过。最终文件哈希与统计见同目录 `implementation-report.json`。局部绿色不替代候选完整随机顺序套件；P0 已通过，后续组合候选的最终验收仍待。
 
 ## ToolContext：只迁移会话存储这一域
 
@@ -128,3 +128,13 @@ guard 拒绝后仍先安装 memory-free prefix、finalize 控制器状态、同�
 会话域三文件及 lifecycle 邻接共 23 项已通过，包含真实并行工具观察共享对象 identity 的断言。它与本切片共用同一候选 `agent_loop.py` 构造调用；该小域不计入 497 行主函数净减量，也不扩展本次 compaction 状态对象。
 
 定向原始证据已保存为仓库内的 [Phase 1 证据包](../artifacts/governance-trial-2026-10-24/phase1-proofs/README.md)，包含逐文件 SHA、独立审查及被否决抽取的恢复材料。
+
+## 候选验收状态（2026-10-25）
+
+P0 `9f936942` 已取得 14,923 passed / 8 skipped 的完整随机结果，随后 P0 文档/证据序列随 `ff2f18ea` 原子推送 main 与开发分支。Phase 2 冻结记录 `ab17ca7e` / `ea31eed2` 已推送开发分支，仍为 0 API / 0 results；不改变本切片的实验或验收结论。
+
+首次 P1/P3 组合 `eb17c62a` 的全量已结束：14,932 passed / 1 failed / 8 skipped / 3 warnings，2889.76 秒。唯一失败是 hot-store 的 `200.36325 ms < 200 ms` 墙钟断言，完整来源身份见 [release baseline](release-baseline-2026-10-24.md#首次-p1-全量与后续修复)。`71347fd5` 修正该计时承诺与测试，生产 AST 不变；累计预算、真实 worker 和迟到命令拒绝的对照及独立审查见 [hot-store 证据包](../artifacts/governance-trial-2026-10-24/hot-store-budget-proofs/README.md)。
+
+`d0f728e0` 修复既有 wheel 检查器的 editable 来源误判；另已独立以 `-I -S` 验证精确 `9f936942` / `eb17c62a` 实际 wheel 的各 9 个指定模块来源，[证据与独立审查](../artifacts/governance-trial-2026-10-24/wheel-import-proofs/README.md)已归档。原 CI run `40111546762` 两个 Windows job 的失败为既存 portable 临时句柄未关闭，`37761457` 的最小修复及同字节反例见 [Windows 证据包](../artifacts/governance-trial-2026-10-24/windows-portable-publication-proofs/README.md)。同一 CI 的 Ubuntu 3.11 / macOS 3.11 内部错误同因于既有测试全局猴补 `os.name`；真实 Python 3.11.15 复现 WindowsPath/pytest INTERNALERROR。`7b8157e7` 仅以模块局部 `os`/`sys`/`subprocess` 代理隔离测试，生产不变；Python 3.11/3.12 各 124 项相关通过，最终同字节目标测试在 exact P0 1 passed，2 个合成坏 flags/session 反例正常失败。[fixture 证据](../artifacts/governance-trial-2026-10-24/run-command-fixture-proofs/README.md)已归档。
+
+上述已提交修复已组合到文档更新前候选 `2630661f`；Python 3.11 fixture 修复已由 `7b8157e7` 提交并通过上述定向核验，待一并封存候选。**最终随机全量与修复后的原生远程 CI 重跑尚待；Phase 1 go 继续 pending。** 不将首次候选的通过部分、定向回归或 P0 结果拼成该候选的完整通过。

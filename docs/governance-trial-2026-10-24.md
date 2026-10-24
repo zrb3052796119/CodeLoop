@@ -22,12 +22,13 @@
 - [x] 审计工具集合/汇总计数验证。
 - [x] R2 诊断失败分类与定点修复：已证明 session 路径、评测 task 包装、模块缓存三处顺序污染；保留红绿反例。
 - [x] P0 修复分组提交；冻结提交 `9f9369421486f018c837f84d21bd727aed6ab326` 完成随机全量验收：14,923 passed / 8 skipped / 0 failed / 0 errors / 3 warnings，seed `20261024`。
-- [x] main 本地快进合入：与开发分支对齐至 `d0ea1452`；含通过的 P0 源码和验收文档，无批准豁免。远端同步另行核验。
+- [x] P0 已合入并原子推送：main 与开发分支一并推至 `ff2f18ea`，含通过的 P0 源码和验收文档；其后 Phase 2 冻结记录 `ab17ca7e` / `ea31eed2` 已另行推送开发分支。后续 P1 修复候选尚未合入 main。
 - [x] P0 源码内的 Phase 3 整理：指定杂物、个人文件、4 份可复现大报告归档；当时保留 8 份测试/回放大输入；license 来源核验与 mock 文档修正。
-- [x] Phase 1 D1/D2、生产抽取及独立审阅完成；后续 8 份 pinned 输入安全归档也已独立提交。二者合并候选 `eb17c62a5510` 的完整验收仍在运行，已有一项未关闭失败，不能由 P0 通过推定其通过。
+- [x] Phase 1 D1/D2、生产抽取及独立审阅完成；8 份 pinned 输入已独立归档。首次合并候选 `eb17c62a5510` 全量结束：14,932 passed / 1 failed / 8 skipped / 3 warnings，2889.76 秒；唯一失败是 hot-store 累计等待测试的 `200.36325 ms < 200 ms` 墙钟断言。
+- [ ] Phase 1 go：hot-store 测试、wheel 检查器及 Windows portable 发布修复已完成定向验证；组合后的最终随机全量和修复后原生 Windows CI 尚待，不能把首次候选或局部通过当作最终验收。
 - [x] Phase 2 准备包与 runner 适配已提交：16 个真实历史任务、32 个配对 cell、92 项历史 oracle 检查、114 项 runner 离线回归。
 - [x] Phase 2 在 `9f936942` 冻结 32 个 cell，manifest SHA-256 `987f7cf31627ca85f18cdf2a270dae3918c5bf6cacac68cf02053dd767da91be`；角色轮数显式配置为 12/8/15，非当前默认值，经济预算仍为 `null`。
-- [ ] Phase 2 实付运行：模型 API 调用为零、结果为零，等待本机全量进程退出后运行；首次默认值误认导致的 freeze 失败也未调用 API，详情见[任务预注册与冻结记录](real-task-comparison-2026-10-24.md)。
+- [ ] Phase 2 实付运行：模型 API 调用为零、结果为零，正式运行尚未开始；已推送的[冻结记录](../artifacts/governance-trial-2026-10-24/phase2-freeze/README.md)仍绑定 `9f936942`。首次默认值误认导致的 freeze 失败也未调用 API，详情见[任务预注册](real-task-comparison-2026-10-24.md)。
 
 ## 新发现与已执行决策
 
@@ -45,9 +46,11 @@
 
 - 原有 core WIP 依赖组已提交：76 文件随机测试1060通过、1处旧提示词断言失败；修正后该文件18通过。未把两次结果拼成同次全绿。
 - 功能审计已动态观察真实契约，0 findings；故障注入仍能报告元数据/required参数/会话事实保存失败。
-- current 88/88、a 57/57、compileall 与现有 scoped Ruff 已通过。P0 随机全量于 2026-10-24 23:16:53.215103 至 2026-10-25 00:10:47.626483（Asia/Shanghai）完成：pytest 3231.54 秒，外层进程 3234.411 秒。源码为 `9f9369421486f018c837f84d21bd727aed6ab326`，干净独立 clone、独立 HOME、无自定义逐用例诊断插件，退出码 0。main 已快进合入 P0 基线及验收文档，没有批准豁免。
+- current 88/88、a 57/57、compileall 与现有 scoped Ruff 已通过。P0 随机全量于 2026-10-24 23:16:53.215103 至 2026-10-25 00:10:47.626483（Asia/Shanghai）完成：pytest 3231.54 秒，外层进程 3234.411 秒。源码为 `9f9369421486f018c837f84d21bd727aed6ab326`，干净独立 clone、独立 HOME、无自定义逐用例诊断插件，退出码 0。P0 基线及验收文档已随 `ff2f18ea` 原子推送 main / 开发分支，没有批准豁免；该本机结果不代表后续跨平台 CI 全绿。
 - 收集 14,927 个用例 = 14,923 通过 + 4 个运行时跳过；XML 另计 4 个收集跳过模块，因此是 14,931 条记录、8 项跳过。跳过分别来自 4 个可选 numpy 分析模块、2 个临时本地 TLS 证书 fixture 和 2 个缺少 API 凭证的 live 测试；3 条警告均为多线程进程 `fork()` 的 Python 3.12 弃用警告。逐项节点、原因与警告位置见 [release baseline](release-baseline-2026-10-24.md#p0-完整随机验收)，跳过项未计为通过。
-- 既有 CI 安装/导入 smoke 不能证明导入来源是新构建的 wheel；模块来源检查正在复核，本轮 P0 证据不包含 wheel 来源验收。
+- 既有 CI 安装/导入 smoke 存在 editable 来源误判，已由 `d0f728e0` 修复：同字节测试旧检查器 3 failed / 2 passed，修复后 5 passed。另从精确 `9f936942` / `eb17c62a` 构建并安装真实 wheel，以 `python -I -S` 独立验证各自 9 个指定模块全部来自 installed target；这不是所有递归依赖来源审计。[来源证明及独立审查](../artifacts/governance-trial-2026-10-24/wheel-import-proofs/README.md)。
+- `71347fd5` 将 hot-store 断言改为实际等待请求、累计余额和迟到命令拒绝，撤回 200 ms 总墙钟保证；生产 AST 不变。347 项邻接通过，3 种人工故障仍被拒绝，独立审查和清理探针无阻塞。[证据包](../artifacts/governance-trial-2026-10-24/hot-store-budget-proofs/README.md)中的“全量 trace 待输出”是打包时状态；现已由首次候选完整 XML 确认上述唯一失败。
+- CI run `40111546762` 的 Windows 3.11/3.12 失败来自既存 portable 发布路径的 WinError 32，相关生产字节在 `88ec62d0`、`9f936942`、P0 main 相同。`37761457` 在 fsync/fstat 后关闭临时句柄，再保留前后路径校验；同字节反例 2 failed → 2 passed，portable 10 passed、安全/发布 96 passed、packaging 9 passed，独立审查通过。[原 CI、修复和审查证据](../artifacts/governance-trial-2026-10-24/windows-portable-publication-proofs/README.md)。修复后原生 Windows CI 待运行。同一 run 的 Ubuntu 3.11 与 macOS 3.11 内部错误同因：既有 `test_run_command_lifecycle.py` 全局修改 `os.name`，使 Python 3.11 构造不支持的 WindowsPath，继而破坏 pytest 报告/退出；Ubuntu 原 JUnit 为 4934 tests / 0 failures / 1 internal error / 7 skipped。本机真实 Python 3.11.15 已复现。`7b8157e7` 仅将测试改为模块局部 `os`/`sys`/`subprocess` 代理，生产不变；Python 3.11/3.12 各 124 项相关通过，最终同字节目标测试在 exact P0 1 passed，2 个合成坏 flags/session 反例正常断言失败。[fixture 证据包](../artifacts/governance-trial-2026-10-24/run-command-fixture-proofs/README.md)。原生远程重跑和最终完整套件仍待，不能将 fixture 污染称为生产缺陷。
 - 本轮原始日志、XML、初始/诊断源码哈希和关键证明已整理到[仓库证据包](../artifacts/governance-trial-2026-10-24/phase0-diagnostics/README.md)，含逐文件 SHA-256、压缩包 SHA-256 和恢复步骤。失败、诊断中断和无效基线尝试均保留；不复制临时源码树。
 - 后续 P0 完整通过的 5 份原始文件另存于 [P0 验收证据包](../artifacts/governance-trial-2026-10-24/phase0-acceptance-9f936942/README.md)，压缩后 596,106 字节，逐文件恢复比对通过。它只覆盖 `9f936942`，不覆盖后续 P1/P3 候选，不覆盖后续 main 状态变化，也不代表 Phase 2 已执行。
 
