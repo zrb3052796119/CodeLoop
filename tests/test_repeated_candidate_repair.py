@@ -41,6 +41,25 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
     calls, billed, workers, adapters, commands, review_receipts = [], [], [], [], [], []
     original_worker = task_module._run
 
+    def formal_rounds():
+        # Observer callbacks finish concurrently; identify the candidate and
+        # requested command instead of treating append order as request order.
+        rounds = {}
+        expected_argv = {
+            check["checkId"]: tuple(check["argv"])
+            for check in request["verificationChecks"]
+        }
+        for item in commands:
+            if not item["formal"]:
+                continue
+            assert item["argv"] == expected_argv[item["checkId"]]
+            identity = (item["assignmentId"], item["patchDigest"])
+            checks = rounds.setdefault(identity, {})
+            assert item["checkId"] not in checks, "duplicate formal result"
+            checks[item["checkId"]] = item["exit"]
+        assert all(set(checks) == set(expected_argv) for checks in rounds.values())
+        return list(rounds.values())
+
     def run_worker(data, context):
         ledger = context._agent_budget
         while hasattr(ledger, "_budget"):
@@ -62,11 +81,13 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
         if context._logical_agent_role == "analyst":
             # Script only semantic diagnosis. Actual formal failures, frozen
             # source and the assigned ledger channel remain authoritative.
-            formal = [item for item in commands if item["formal"]]
-            assert formal and formal[-1]["exit"] in {1, 2}
+            formal = formal_rounds()
+            assert formal and formal[-1]["compat"] == 0
+            failed_exit = formal[-1]["regression"]
+            assert failed_exit in {1, 2}
             assert target.read_text() == INITIAL
             assert (Path(context.cwd) / "candidate.py").read_text() == PARTIAL
-            bad_fixture = formal[-1]["exit"] == 2
+            bad_fixture = failed_exit == 2
             test_source = (Path(context.cwd) / "test_none.py").read_text()
             assert test_source == (BAD_TEST if bad_fixture else REPAIRED_TEST)
             assignment = json.loads(data["prompt"].split("ASSIGNMENT:\n", 1)[1])
@@ -185,7 +206,12 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
             formal = getattr(kwargs["evidence_sink"], "__name__", "") == "per_check_sink"
             assert target.read_text() == INITIAL, "failed or unreviewed candidates must not touch the parent"
             result = super().run(**kwargs)
+            requested = {check.check_id: check for check in kwargs["checks"]}
+            assert len(result["checks"]) == len(requested)
+            assert {item["checkId"] for item in result["checks"]} == set(requested)
             commands.extend({"formal": formal, "exit": item["exitCode"], "cwd": kwargs["cwd"],
+                             "checkId": item["checkId"], "argv": requested[item["checkId"]].argv,
+                             "assignmentId": kwargs["execution_assignment_id"], "patchDigest": kwargs["patch_digest"],
                              "usedTokens": budget.snapshot().used_total_tokens,
                              "usedCalls": budget.snapshot().used_model_calls}
                             for item in result["checks"])
@@ -230,7 +256,9 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
     assert snapshot.reserved_total_tokens == 0
     assert snapshot.used_total_tokens < 150000 and snapshot.used_model_calls == 7
     assert time.monotonic() < deadline - 120
-    assert [item["exit"] for item in commands if item["formal"]][:4] == [0, 2, 0, 1]
+    assert formal_rounds()[:2] == [
+        {"compat": 0, "regression": 2}, {"compat": 0, "regression": 1},
+    ]
     assert result.ok and trace["committed"], (
         "The second actionable failure stopped despite ample unchanged budget and the same candidate:",
         trace["terminalReason"], snapshot.used_total_tokens, snapshot.used_model_calls,
@@ -245,7 +273,10 @@ def test_second_actionable_failure_resumes_same_executor_with_budget_and_candida
     assert len(executor_workers) == 3
     assert executor_workers[0]["session"] is not None
     assert all(item["session"] is executor_workers[0]["session"] for item in executor_workers)
-    assert [item["exit"] for item in commands if item["formal"]] == [0, 2, 0, 1, 0, 0]
+    assert formal_rounds() == [
+        {"compat": 0, "regression": 2}, {"compat": 0, "regression": 1},
+        {"compat": 0, "regression": 0},
+    ]
     assert all(not Path(item["cwd"]).exists() for item in commands)
     reloaded = RunJournal(tmp_path, data_dir=data_dir)
     audit = reloaded.get_scheduler_audit(run_id, trace["workflowId"])
