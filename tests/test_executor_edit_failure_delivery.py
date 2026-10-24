@@ -6,8 +6,8 @@ the formal Verifier, durable audit and parent promotion are production code.
 The prefix is a small executable analogue of the recorded investigation; its
 two unknown-usage requests are allocated the observed aggregate charge. This
 is a deterministic execution regression, not a model-quality result. Its three
-historical repair cases explicitly retain policy 3; the separate policy 4 case
-documents that mandatory review reserves make this spent prefix unaffordable.
+historical repair cases explicitly retain policy 3; the separate policy 5 bounded
+case preserves the mandatory-review floor and the exact spent prefix.
 The frozen prefix also retains its pre-V24 request view, so its historical
 provider charges are not calibrated against a newly compressed request body.
 """
@@ -77,14 +77,27 @@ REPAIRED = "    reminder_model_turns = 2\n    model_turns = message_model_turns 
 
 def _exercise(tmp_path, monkeypatch, *, candidate_stays_bad=False, cancel_repair=False,
               historical_policy=True):
-    if historical_policy:
-        from minicode.central_scheduler import CentralScheduler
-        current_plan = CentralScheduler.plan
+    from minicode.central_scheduler import CentralScheduler
+    current_plan = CentralScheduler.plan
+    replay_policy = 3 if historical_policy else 5
 
-        def historical_plan(self, profile, *, policy_version=3):
-            return current_plan(self, profile, policy_version=policy_version)
+    def historical_plan(self, profile, *, policy_version=replay_policy):
+        return current_plan(self, profile, policy_version=policy_version)
 
-        monkeypatch.setattr(CentralScheduler, "plan", historical_plan)
+    monkeypatch.setattr(CentralScheduler, "plan", historical_plan)
+    if not historical_policy:
+        # This negative is the recorded policy-5 bounded handoff, not the
+        # current policy-6 continuous execution default.
+        import minicode.workflow_review_policy as review_policy
+        current_decision = review_policy.review_routing_decision
+        def historical_decision(**kwargs):
+            return current_decision(**{**kwargs, "policy_version": 5})
+        monkeypatch.setattr(review_policy, "review_routing_decision", historical_decision)
+        actual_turn = task_module.run_agent_turn
+        def bounded_turn(**kwargs):
+            kwargs["bounded_implementation_phases"] = True
+            return actual_turn(**kwargs)
+        monkeypatch.setattr(task_module, "run_agent_turn", bounded_turn)
     # Real source reads leave a large, compressible history. They are not fake
     # messages injected into a controller, and the latest edit error remains
     # small enough to preserve in a bounded repair view.
@@ -107,7 +120,7 @@ def _exercise(tmp_path, monkeypatch, *, candidate_stays_bad=False, cancel_repair
     calls, commands, model_instances = [], [], []
     # V18's fixed provider charges belong to the historical unprojected
     # prefix. Pairing them with V24's smaller view invents provider overhead.
-    # Freeze that policy-3 prefix only; the repair and policy-4 negative case
+    # Freeze that policy-3 prefix only; the repair and policy-5 negative case
     # use the current real projection. New early projection also has separate
     # real-edit integration coverage.
     import minicode.implementation_recovery as recovery
@@ -270,7 +283,8 @@ def _exercise(tmp_path, monkeypatch, *, candidate_stays_bad=False, cancel_repair
                      journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run(task_module.task_tool.validator({
             "description": "V18 last-edit delivery regression",
-            "prompt": "Fix candidate.py and verify the reminder counter.",
+            "prompt": ("Fix candidate.py and verify the reminder counter."
+                + (" Independently review the resulting change." if not historical_policy else "")),
             "agent_type": "workflow", "workflow_request": request,
         }), ToolContext(cwd=str(tmp_path), _runtime={"model": "fake", "maxOutputTokens": 8192},
             _event_sink=observation, _central_workflow_v2_enforced=True,
@@ -417,7 +431,7 @@ def test_cancelled_repair_cannot_bypass_the_final_gate_or_parent_writeback(tmp_p
     _durable_recovery_evidence(tmp_path.parent / f"{tmp_path.name}-journal")
 
 
-def test_current_review_policy_keeps_review_floor_with_historical_spent_prefix(tmp_path, monkeypatch):
+def test_policy5_bounded_review_keeps_review_floor_with_historical_spent_prefix(tmp_path, monkeypatch):
     result, calls, _commands, models, budget, target, initial, data_dir = _exercise(
         tmp_path, monkeypatch, historical_policy=False)
     assert len(calls) == 16 and len(models) == 1
@@ -439,7 +453,9 @@ def test_current_review_policy_keeps_review_floor_with_historical_spent_prefix(t
                           if row.get("recordType") == "start" and row.get("agentType") == "general")
     assert executor_start["budgetAtStart"]["limitTotalTokens"] == 427054
     assert 500000 - executor_start["budgetAtStart"]["limitTotalTokens"] == 72946
-    manifest = json.loads(next(data_dir.rglob("scheduler-workflows/*/manifest.json")).read_text())
+    manifests = list(data_dir.rglob("scheduler-workflows/*/manifest.json"))
+    assert len(manifests) == 1, result.output
+    manifest = json.loads(manifests[0].read_text())
     assert manifest["dispatchPlan"]["policyVersion"] == 5
     assert manifest["dispatchPlan"]["stages"] == ["executor", "verifier", "reviewer"]
     assert list(data_dir.rglob("failure-candidate.json"))

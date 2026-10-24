@@ -5465,7 +5465,31 @@ class _WorkflowRunSession:
             review_artifact = state.artifact_store.read(review_artifact_id)
             if review_artifact is None:
                 raise ValueError("final review authority artifact is missing")
-            if request.rule_id in {"route.verified_change", "route.analyzed_change"}:
+            plan = (CentralScheduler().plan(state.profile)
+                    if request.rule_id == "route.scoped_change" else None)
+            legacy_verified = (
+                plan is not None and plan.policy_version in {2, 3}
+                and plan.rule_id == request.rule_id == "route.scoped_change"
+                and plan.stages == (DispatchStage.EXECUTOR, DispatchStage.VERIFIER)
+            )
+            if legacy_verified:
+                # Recorded pre-review plans keep their verifier-only meaning.
+                # The same rule name in current policy still requires review.
+                if (request.workflow_id != state.workflow_id or request.task_id != state.task_id
+                        or review_artifact_id != state.verification_artifact_id):
+                    raise ValueError("legacy delivery has no current verifier authority")
+                document = json.loads(review_artifact.content)
+                if document.pop("resultType", None) != "VerificationResult.v1":
+                    raise ValueError("legacy delivery authority is not a verifier result")
+                verification = parse_verification_result(
+                    document, workflow_id=state.workflow_id,
+                    task_id=state.task_id, execution_assignment_id=state.executor_assignment_id,
+                    patch_digest=request.patch_digest,
+                    required_check_ids=tuple(check.check_id for check in state.requested_checks),
+                )
+                if verification["status"] != "passed" or verification != state.verification_result:
+                    raise ValueError("legacy delivery requires the actual passed verifier result")
+            elif request.rule_id in {"route.verified_change", "route.analyzed_change"}:
                 from minicode.workflow_review_policy import (
                     review_routing_artifact_id, validate_review_routing_decision,
                     observe_review_scope, validate_unreviewed_change_set,
