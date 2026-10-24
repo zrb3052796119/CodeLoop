@@ -27,8 +27,10 @@ def case(tmp_path, monkeypatch):
 
 
 def packet(body):
-    return next(json.loads(message["content"]) for message in body["messages"]
-                if message["role"] == "user")
+    packets = [json.loads(message["content"]) for message in body["messages"]
+               if message["role"] == "user" and '"evidenceIndex"' in message["content"]]
+    assert len(packets) == 1
+    return packets[0]
 
 
 def last_output(body):
