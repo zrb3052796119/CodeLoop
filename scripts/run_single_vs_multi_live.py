@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 from contextlib import ExitStack
 from copy import deepcopy
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from functools import wraps
 import hashlib
@@ -483,12 +483,16 @@ def execute_trial(output, trial_id):
         kwargs["include_user_interaction"] = False
         registry_ = original_factory(*args, **kwargs)
         owned_registries.append(registry_)
-        return registry_.filtered(
+        selected = registry_.filtered(
             lambda t: (
                 t.name in LOCAL_TOOLS and (trial["arm"] == "multi" or t.name != "task")
             ),
             skills=[],
         )
+        # Filtered registries borrow core definitions. The trial's task
+        # observer must not change another role or a later runtime's scope.
+        task = selected.find("task")
+        return selected.overlay([replace(task)]) if task is not None else selected
 
     def memory(*args, **kwargs):
         kwargs["data_root"] = root / "memory"

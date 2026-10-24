@@ -43,8 +43,10 @@ def test_real_runtime_smoke_uses_local_scope_and_provider_receipts(
     """Exercise real factory, ToolCall dictionary, edit approval, oracle and ledger."""
     from minicode.skills import discover_skills
     from minicode import cybernetic_supervisor
+    from minicode.tools.task import task_tool
 
     original_discovery = discover_skills
+    original_task_run = task_tool.run
     user_state = tmp_path / "user-supervisor.json"
     user_state.write_text("keep user state")
     monkeypatch.setattr(cybernetic_supervisor, "SUPERVISOR_STATE_PATH", user_state)
@@ -84,6 +86,7 @@ def test_real_runtime_smoke_uses_local_scope_and_provider_receipts(
 
     monkeypatch.setattr(OpenAIModelAdapter, "next", scripted)
     live.execute_trial(tmp_path, f"smoke-r1-{arm}")
+    assert task_tool.run is original_task_run, "Trial scope must not escape into later workflows."
     row = live.read_json(tmp_path / "trials" / f"smoke-r1-{arm}.json")
     assert row["success"], row
     assert row["modelCalls"] == len(calls) == 2
