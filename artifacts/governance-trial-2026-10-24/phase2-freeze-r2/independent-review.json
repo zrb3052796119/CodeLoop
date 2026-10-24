@@ -1,0 +1,134 @@
+{
+  "status": "GO for r2 freeze consistency; execution remains pending explicit withdrawal/publication by root",
+  "checkedAtUtc": "2026-10-24T17:52:48.592423+00:00",
+  "readOnly": true,
+  "providerCalls": 0,
+  "sourceHead": "8b15640ab14316873596e921a7b6dda116320672",
+  "productionBaseline": "9f9369421486f018c837f84d21bd727aed6ab326",
+  "sourceChangedPathsSinceP0": [
+    "scripts/evaluation_transport.py",
+    "tests/test_evaluation_transport.py"
+  ],
+  "oldManifestSha256": "987f7cf31627ca85f18cdf2a270dae3918c5bf6cacac68cf02053dd767da91be",
+  "r2ManifestSha256": "32dacc257169eff53026a3b8e1663ed68b62ceae1adac118589073921d47d332",
+  "manifestChanges": {
+    "createdAt": {
+      "old": "2026-10-24T16:21:38.283104+00:00",
+      "new": "2026-10-24T17:50:32.691491+00:00"
+    },
+    "frozenCodeArchiveSha256": {
+      "old": "da9df69f95336df256e4510903da370b75bab08afd9ccec148ff0f7d4b49e12c",
+      "new": "39d0b5b1d5b05484cc30100405924bb087f69ff4c5e3a5f36b18f28bdfd337ed"
+    },
+    "harnessSha256": {
+      "old": "cf67177d024cb46d2966047f057941a2afe2bbc8d8c27e2678a764a397ed9e71",
+      "new": "15898623cbc94e6a313cee6032bd008dc691ac0fac8739711405d32d4044a4ef"
+    },
+    "taskSha256": {
+      "old": "5604be911fec98deffd4c7e3670ebfb529d024e11530a3ea3ed03505872cd39f",
+      "new": "1e134e338af2b19b78a54ded0ecf0bdcccdfc3c45803cf3c60bab5dc960e8cd5"
+    }
+  },
+  "unchangedMaterialSha256": {
+    "analysis-plan.md": "22f6215fcdaa7969f59677d9f7122a51ac5178698c5efb6fc104f7217ffb0813",
+    "study-design.json": "c14a90c3b26d8d1bb366c6f74a9a84c7ad6e417934a7c8e32f17c00295fda104",
+    "oracle-support-hashes.json": "5c2281ac40e4bca07942b3bc3c5a582b61aa8b05276a426b7687589384d24585"
+  },
+  "supportFilesVerifiedEach": 999,
+  "taskChange": {
+    "onlyChange": "oracle_source absolute oracle-support prefix relocation",
+    "oldPrefix": "/private/tmp/codeloop-governance-20261024/phase2-portable/execution/oracle-support",
+    "newPrefix": "/private/tmp/codeloop-governance-20261024/phase2-portable/execution-r2/oracle-support",
+    "prefixReplacements": 8,
+    "affectedCases": [
+      "read-router",
+      "read-deadline",
+      "read-atomic-replace",
+      "read-closing-reminder"
+    ],
+    "rawBytesEqualAfterPrefixSubstitution": true,
+    "registeredTaskBaselineAndOracleHashesVerified": true
+  },
+  "schedule": {
+    "exactOrderAndContentsEqual": true,
+    "cells": 32,
+    "cases": 16,
+    "arms": [
+      "single",
+      "auto"
+    ],
+    "repeats": 1,
+    "concurrency": 1
+  },
+  "configuration": {
+    "model": "glm-5.3-flash",
+    "routeSha256": "7444aa98a782906660118e04d250088226353e8f5f948e26a13193f2c49d3c19",
+    "resolvedTransportRouteSha256": "dfe1c0c0c520107cb4bd5bbc9ad05a6c372cbaa75b6657387e997980c904652a",
+    "limits": {
+      "maxTokens": null,
+      "maxModelCalls": null,
+      "maxCostUsd": null,
+      "wallSeconds": 1800,
+      "requestTimeoutSeconds": 300,
+      "idleTimeoutSeconds": 120,
+      "connectTimeoutSeconds": 30,
+      "maxOutputTokens": 8192
+    },
+    "roleTurnLimits": {
+      "explore": 12,
+      "plan": 8,
+      "general": 15
+    },
+    "temperature": 0,
+    "price": {
+      "known": false,
+      "currency": null,
+      "reason": "configured route price unknown"
+    },
+    "externalJudgeSeconds": 180
+  },
+  "archives": {
+    "memberCounts": {
+      "old": 330,
+      "r2": 330
+    },
+    "onlyChangedMember": [
+      "scripts/evaluation_transport.py"
+    ],
+    "allR2RuntimeMembersMatchSourceBytes": true,
+    "recomputedHashes": {
+      "old": {
+        "productionSha256": "13151ca1031c9ec8b4ffec4fa23b43509946018a61fa8a01445aad65af4bccd8",
+        "harnessSha256": "cf67177d024cb46d2966047f057941a2afe2bbc8d8c27e2678a764a397ed9e71",
+        "archiveSha256": "da9df69f95336df256e4510903da370b75bab08afd9ccec148ff0f7d4b49e12c"
+      },
+      "r2": {
+        "productionSha256": "13151ca1031c9ec8b4ffec4fa23b43509946018a61fa8a01445aad65af4bccd8",
+        "harnessSha256": "15898623cbc94e6a313cee6032bd008dc691ac0fac8739711405d32d4044a4ef",
+        "archiveSha256": "39d0b5b1d5b05484cc30100405924bb087f69ff4c5e3a5f36b18f28bdfd337ed"
+      }
+    },
+    "repairedTransportSha256": "b3034785c2268067b0503731aadafb4f29b5c36df5141b98e1a4fa1c69232534"
+  },
+  "noExecutionEvidence": {
+    "execution": {
+      "markers": {
+        "trials": false,
+        "private": false,
+        "results.json": false
+      },
+      "receiptFiles": [],
+      "trialCount": 0
+    },
+    "execution-r2": {
+      "markers": {
+        "trials": false,
+        "private": false,
+        "results.json": false
+      },
+      "receiptFiles": [],
+      "trialCount": 0
+    }
+  },
+  "limits": "Read-only artifact/source consistency review. No runtime settings, credentials, provider connectivity, or live execution was queried. Absence of execution artifacts is verified at checkedAtUtc, not a promise about later activity. Original freeze remains intact."
+}

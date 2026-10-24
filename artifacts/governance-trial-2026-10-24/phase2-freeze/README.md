@@ -1,5 +1,7 @@
 # Phase 2 首次调用前冻结记录
 
+状态：此版已在首次模型调用前撤销，由[冻结更正 r2](../phase2-freeze-r2/README.md)替代。原 manifest、记录及日志原字节保留；此版未执行任何 cell。
+
 本目录保存 2026-10-25 的冻结记录，此时 **32 个试次均未调用模型、未产生结果**。生产源码和 runner 来自已通过 P0 完整验收的 `9f9369421486f018c837f84d21bd727aed6ab326`；之后的文档提交不改变其字节。题目、验收与顺序见[准备包](../phase2-preparation/README.md)，实际执行条件见[预注册文档](../../../docs/real-task-comparison-2026-10-24.md)。
 
 `manifest.json` 为现有 runner 原样输出，SHA-256 为 `987f7cf31627ca85f18cdf2a270dae3918c5bf6cacac68cf02053dd767da91be`。`freeze-record.json` 记录源码身份、首次冻结拒绝原因以及成功冻结所用的三个显式角色上限；`freeze.log` 是成功进程输出。这里只存模型名和端点摘要，不存凭证或端点明文。

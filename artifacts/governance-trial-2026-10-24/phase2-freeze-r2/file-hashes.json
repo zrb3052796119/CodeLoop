@@ -1,0 +1,30 @@
+{
+  "README.md": {
+    "bytes": 1996,
+    "sha256": "c24429882aa6b949c04cd4026edec977923b47aa1b4e3ed468dd37af4b0e3f2f"
+  },
+  "freeze-record.json": {
+    "bytes": 1777,
+    "sha256": "9a0c82bd75e79b992e8e9870a740684c9b87a0b755d9f982e01f93c4300e7566"
+  },
+  "freeze.log": {
+    "bytes": 57,
+    "sha256": "526995fcb1ff119fe6d3e1b15013c7e4849cbee01df0c8b4d5e50ed7afa56726"
+  },
+  "independent-review.json": {
+    "bytes": 4881,
+    "sha256": "af17799aa97404b1b10f383ff5743d0fd6de9a10eb6931dbc6f1980cc74c6a0e"
+  },
+  "independent-review.md": {
+    "bytes": 2088,
+    "sha256": "36b05d12f3f46b52e7c1dce9350ad9fae3a94233d6b9f9047fa7aa8015882048"
+  },
+  "manifest.json": {
+    "bytes": 6615,
+    "sha256": "32dacc257169eff53026a3b8e1663ed68b62ceae1adac118589073921d47d332"
+  },
+  "preparation-equality.json": {
+    "bytes": 554,
+    "sha256": "e759a5d800a0409434d064a9a878ac7d3dcacd4a32b27f0a0a9374315a7eccfc"
+  }
+}

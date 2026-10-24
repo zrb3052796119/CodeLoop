@@ -1,0 +1,12 @@
+{
+  "oldManifestSha256": "987f7cf31627ca85f18cdf2a270dae3918c5bf6cacac68cf02053dd767da91be",
+  "status": "replacement prepared, not frozen or executed",
+  "bothRunsHaveZeroExecutionReceipts": true,
+  "taskEquality": "all fields byte-equal after replacing only prepared oracle support directory prefix",
+  "unchangedFiles": [
+    "study-design.json",
+    "oracle-support-hashes.json",
+    "analysis-plan.md"
+  ],
+  "reason": "evaluation_transport queue consumption delay can misclassify active stream as network idle; repair pending independent review"
+}
