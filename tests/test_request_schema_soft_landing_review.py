@@ -98,16 +98,19 @@ def test_soft_landing_rejects_schema_cost_before_second_model_call(tmp_path: Pat
     assert result[-1]["content"] == "Reached the maximum tool step limit for this turn."
 
 
-def test_explicit_adapter_tools_none_keeps_messages_only_admission(tmp_path: Path) -> None:
-    tools = _catalog()
+@pytest.mark.parametrize("execution_has_tools", [False, True])
+def test_turn_registry_controls_admission_with_adapter_tools_none(
+    tmp_path: Path, execution_has_tools: bool,
+) -> None:
+    tools = _catalog() if execution_has_tools else ToolRegistry([])
     budget = AgentTurnBudget(max_total_tokens=1024, max_model_calls=1)
-    assert _schemas_price(tools) > 1024
+    assert (_schemas_price(tools) > 1024) is execution_has_tools
     inputs: list[tuple[int, int]] = []
 
     class Model(OpenAIModelAdapter):
         def next(self, messages: list[dict[str, Any]], **options: Any) -> AgentStep:
-            assert options.get("tools_override") is None
-            assert self._get_serialized_tools() == []
+            assert options.get("tools_override") is tools
+            assert self._get_serialized_tools(options["tools_override"]) == []
             sent = _messages_price(messages)
             inputs.append((sent, budget.snapshot().reserved_total_tokens))
             return AgentStep(type="assistant", kind="final", content="Done.",
@@ -121,7 +124,16 @@ def test_explicit_adapter_tools_none_keeps_messages_only_admission(tmp_path: Pat
         enable_work_chain=False, enable_bounded_completion=False,
         enable_implementation_phases=False,
     )
-    assert len(inputs) == 1, "An adapter with tools=None sends no schema, even with a nonempty execution registry."
+    if execution_has_tools:
+        # The invocation registry is authoritative even when an adapter was
+        # constructed without defaults. Its actual schemas must be priced.
+        assert inputs == []
+        assert budget.snapshot().used_model_calls == 0
+        assert budget.snapshot().used_total_tokens == 0
+        assert budget.snapshot().reserved_total_tokens == 0
+        assert any("turn_budget_exceeded" in message.get("content", "") for message in result)
+        return
+    assert len(inputs) == 1, "An empty invocation registry has no schema charge."
     actual_input, reserved_input = inputs[0]
     assert actual_input == reserved_input
     assert result[-1]["content"] == "Done."
@@ -144,7 +156,7 @@ def test_observed_input_calibration_does_not_count_schema_twice(tmp_path: Path) 
         runtime = {"maxOutputTokens": 256}
 
         def next(self, messages: list[dict[str, Any]], **options: Any) -> AgentStep:
-            assert options.get("tools_override") is None, "Both ordinary native-worker requests fit."
+            assert options.get("tools_override") is tools, "Both ordinary native-worker requests fit."
             assert not options.get("disable_tools")
             actual_input = _messages_price(messages) + schema_cost + provider_framing
             actions = ([{"id": "inspection", "toolName": "inspect_catalog",
