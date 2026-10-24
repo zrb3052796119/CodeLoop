@@ -659,6 +659,62 @@ def test_memory_result_forwards_versioned_materializations_without_exposing_dige
     assert digest not in str(sink.events)
 
 
+def test_draft_ids_reach_journal_without_changing_canonical_events_or_versions(
+    tmp_path: Path,
+) -> None:
+    journal = RunJournal(tmp_path, data_dir=tmp_path / "data")
+    run = journal.create_run(title="Draft attribution", source="gateway")
+    journal.transition(run.id, "running")
+    canonical_id = "project-1785082406796413000-b6ecf281"
+    draft_id = "project-1785082406796413001-c6ecf282"
+    digest = "a" * 64
+
+    class JournalSink(RecordingSink):
+        def record_rendered_memory_ids(self, entry_ids: list[str]) -> None:
+            journal.record_rendered_memory_ids(run.id, entry_ids)
+
+        def record_rendered_memory_versions(self, versions) -> None:
+            journal.record_rendered_memory_versions(run.id, versions)
+
+    result = MemoryRetrievalResult(
+        rendered_ids=(canonical_id,),
+        rendered=(SimpleNamespace(entry_id=canonical_id, authority_digest=digest),),
+        no_match=False,
+        controller_decision={"mode": "standard"},
+    )
+    expected_events = RecordingSink()
+    emit_memory_result_safely(expected_events, result)
+    sink = JournalSink()
+    emit_memory_result_safely(sink, result, draft_rendered_ids=(draft_id,))
+
+    assert sink.events == expected_events.events
+    assert result.rendered_ids == (canonical_id,)
+    assert journal.get_rendered_memory_ids(run.id) == (canonical_id, draft_id)
+    assert journal.get_rendered_memory_versions(run.id) == ((canonical_id, digest),)
+    assert journal.get_memory_provenance(run.id, "rendered").materializations == (
+        (canonical_id, digest),
+    )
+
+
+def test_draft_only_attribution_does_not_fabricate_authority_versions(
+    tmp_path: Path,
+) -> None:
+    journal = RunJournal(tmp_path, data_dir=tmp_path / "data")
+    run = journal.create_run(title="Draft only", source="gateway")
+    journal.transition(run.id, "running")
+    draft_id = "project-1785082406796413001-c6ecf282"
+
+    class JournalSink(RecordingSink):
+        def record_rendered_memory_ids(self, entry_ids: list[str]) -> None:
+            journal.record_rendered_memory_ids(run.id, entry_ids)
+
+    sink = JournalSink()
+    emit_memory_result_safely(sink, None, draft_rendered_ids=(draft_id,))
+    assert sink.events == []
+    assert journal.get_rendered_memory_ids(run.id) == (draft_id,)
+    assert journal.get_rendered_memory_versions(run.id) is None
+
+
 def test_memory_result_forwarding_ignores_a_sink_that_raises() -> None:
     class RaisingSink(RecordingSink):
         def record_rendered_memory_ids(self, entry_ids: list[str]) -> None:

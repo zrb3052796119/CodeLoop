@@ -10,11 +10,14 @@ from __future__ import annotations
 import json
 import re
 import shlex
+import tomllib
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field, replace
 from typing import Any, Literal
 from urllib.parse import urlparse
+
+from minicode.memory_deposition_experiment import deposition_feature_enabled
 
 EpistemicStatus = Literal["confirmed", "inferred", "unknown"]
 
@@ -249,6 +252,9 @@ _MANIFEST_NAMES = {
     "package-lock.json",
     "cargo.toml",
     "go.mod",
+}
+_DECLARED_MANIFEST_NAMES = {
+    "requirements.txt", "requirements-dev.txt", "package.json", "pyproject.toml", "pipfile",
 }
 _POLICY_BASENAMES = {
     "policy.md",
@@ -612,7 +618,7 @@ class ToolEvidence:
 @dataclass(frozen=True)
 class LibraryEvidence:
     name: str
-    status: Literal["confirmed", "weak_mention"]
+    status: Literal["confirmed", "declared", "weak_mention"]
     event_ids: tuple[str, ...]
     import_name: str | None = None
     epistemic_status: EpistemicStatus = "confirmed"
@@ -1637,6 +1643,8 @@ def _looks_like_local_file(path: str) -> bool:
     without_selector = candidate.split("::", 1)[0]
     basename = re.split(r"[/\\]", without_selector)[-1].lower()
     if basename in _MANIFEST_NAMES or basename in {"dockerfile", "makefile", "license"}:
+        return True
+    if basename == "pipfile" and deposition_feature_enabled("declared_dependencies"):
         return True
     if re.match(r"^[A-Za-z]:[\\/]", without_selector):
         return "." in basename
@@ -3340,10 +3348,110 @@ class TraceEvidenceExtractor:
                 by_call[event.call_id].append(event.event_id)
         return {call_id: _ordered_unique(ids) for call_id, ids in by_call.items()}
 
+    @staticmethod
+    def _declared_manifest_names(event: _Event, basename: str) -> list[str]:
+        """Parse captured declarations, without treating a read as execution.
+
+        Read-file envelopes and older numbered renderings are presentation,
+        not manifest syntax. Structured documents must parse completely; a
+        truncated JSON/TOML fragment cannot establish its enclosing section.
+        """
+        raw_text = (
+            _safe_get(event.raw, "output_summary")
+            or _safe_get(event.raw, "content")
+            or _safe_get(event.raw, "message")
+            or ""
+        )
+        text = sanitize_evidence_text(raw_text, EVIDENCE_MAX_TEXT_CHARS * 8)
+        lines = text.splitlines()
+        partial_first_line = False
+        partial_last_line = False
+        if lines and lines[0].startswith("FILE: "):
+            header = re.compile(
+                r"^(?:FILE|OFFSET|END|TOTAL_CHARS|TRUNCATED|REQUESTED_LINES|RETURNED_LINES):"
+            )
+            headers: list[str] = []
+            while lines and header.match(lines[0]):
+                headers.append(lines.pop(0))
+            partial_first_line = any(
+                re.match(r"OFFSET: [1-9]\d*", line) for line in headers
+            ) and not any(line.startswith("REQUESTED_LINES:") for line in headers)
+            partial_last_line = any(
+                line.startswith("TRUNCATED: yes") for line in headers
+            ) and not text.endswith("\n")
+        lines = [re.sub(r"^\s*\d+\s*[|:]\s?", "", line) for line in lines]
+        text = "\n".join(lines)
+
+        def requirement_name(value: object) -> str | None:
+            if not isinstance(value, str) or re.search(r"\[[^\]]*truncated[^\]]*\]", value):
+                return None
+            # Names only: versions, extras, markers and direct URL targets
+            # must never become purported additional packages.
+            match = re.match(
+                r"^\s*([A-Za-z0-9][A-Za-z0-9_.-]*)"
+                r"(?=\s*(?:\[|[<>=!~;@#]|$))",
+                value,
+            )
+            return match.group(1) if match else None
+
+        names: list[str] = []
+        if basename.startswith("requirements"):
+            incomplete = {0} if partial_first_line else set()
+            if partial_last_line:
+                incomplete.add(len(lines) - 1)
+            for index, line in enumerate(lines):
+                if re.search(r"\[[^\]]*truncated[^\]]*\]", line):
+                    # Trace bounding inserts newlines around an elided
+                    # middle. Both adjacent fragments may be cut names.
+                    incomplete.update({index - 1, index, index + 1})
+            for index, line in enumerate(lines[: EVIDENCE_MAX_LIST_ITEMS * 4]):
+                if index in incomplete:
+                    continue
+                if name := requirement_name(line):
+                    names.append(name)
+            return names[:EVIDENCE_MAX_LIST_ITEMS]
+
+        try:
+            if basename == "package.json":
+                structured = _safe_get(event.raw, "structured_result")
+                document = structured if isinstance(structured, Mapping) else json.loads(text)
+                if not isinstance(document, Mapping):
+                    return []
+                for key in ("dependencies", "devDependencies", "optionalDependencies", "peerDependencies"):
+                    dependencies = document.get(key, {})
+                    if isinstance(dependencies, Mapping):
+                        for name in list(dependencies)[:EVIDENCE_MAX_LIST_ITEMS]:
+                            if isinstance(name, str) and re.fullmatch(
+                                r"(?:@[A-Za-z0-9_.-]+/)?[A-Za-z0-9][A-Za-z0-9_.-]*", name
+                            ):
+                                names.append(name)
+            else:
+                document = tomllib.loads(text)
+                if basename == "pyproject.toml":
+                    project = document.get("project", {})
+                    dependencies = project.get("dependencies", []) if isinstance(project, dict) else []
+                    if isinstance(dependencies, list):
+                        names.extend(
+                            name for value in dependencies[:EVIDENCE_MAX_LIST_ITEMS]
+                            if (name := requirement_name(value))
+                        )
+                elif basename == "pipfile":
+                    for key in ("packages", "dev-packages"):
+                        dependencies = document.get(key, {})
+                        if isinstance(dependencies, dict):
+                            names.extend(
+                                name for value in list(dependencies)[:EVIDENCE_MAX_LIST_ITEMS]
+                                if (name := requirement_name(value))
+                            )
+        except (ValueError, TypeError, RecursionError):
+            return []
+        return names[:EVIDENCE_MAX_LIST_ITEMS]
+
     def _extract_libraries(
         self, events: list[_Event], files: list[FileEvidence]
     ) -> list[LibraryEvidence]:
         records: dict[str, dict[str, Any]] = {}
+        declared_enabled = deposition_feature_enabled("declared_dependencies")
         local_modules: set[str] = set()
         for file in files:
             normalized_path = file.path.replace("\\", "/").strip("/")
@@ -3374,13 +3482,17 @@ class TraceEvidenceExtractor:
             in {"success", "succeeded", "ok", "passed", "completed"}
         }
         paths_by_call: dict[str, set[str]] = defaultdict(set)
+        tools_by_call = {
+            event.call_id: event.tool_name
+            for event in events if event.call_id and event.tool_name
+        }
         for file in files:
             if file.call_id:
                 paths_by_call[file.call_id].add(file.path.lower())
 
         def add(
             name: str,
-            status: Literal["confirmed", "weak_mention"],
+            status: Literal["confirmed", "declared", "weak_mention"],
             evidence_ids: Sequence[str],
             import_name: str | None = None,
         ) -> None:
@@ -3396,6 +3508,15 @@ class TraceEvidenceExtractor:
                     "import_name": import_name,
                 }
                 return
+            if declared_enabled:
+                ranks = {"weak_mention": 0, "declared": 1, "confirmed": 2}
+                if ranks[status] < ranks[existing["status"]]:
+                    return
+                if ranks[status] > ranks[existing["status"]]:
+                    # A later use proves this package, not every other
+                    # declaration sharing the manifest-read event.
+                    existing["event_ids"] = []
+                    existing["status"] = status
             existing["event_ids"].extend(evidence_ids)
             if status == "confirmed":
                 existing["status"] = "confirmed"
@@ -3410,6 +3531,26 @@ class TraceEvidenceExtractor:
                 and event.call_id in successful_call_ids
             )
             evidence_ids = call_ids.get(event.call_id, (event.event_id,)) if event.call_id else (event.event_id,)
+            manifest_paths = paths_by_call.get(event.call_id or "", set())
+            basenames = {re.split(r"[/\\]", path)[-1] for path in manifest_paths}
+            is_manifest_read = (
+                declared_enabled
+                and (event.tool_name or tools_by_call.get(event.call_id)) == "read_file"
+                and bool(basenames & _DECLARED_MANIFEST_NAMES)
+            )
+            if is_manifest_read:
+                if (
+                    successful_result
+                    and not bool(_safe_get(event.raw, "is_error"))
+                    and _normalize_name(_safe_get(event.raw, "status", ""))
+                    in {"success", "succeeded", "ok", "passed", "completed"}
+                ):
+                    for basename in sorted(basenames & _DECLARED_MANIFEST_NAMES):
+                        for name in self._declared_manifest_names(event, basename):
+                            add(name, "declared", evidence_ids)
+                # Manifest text (including comments containing imports or
+                # commands) cannot also act as confirmation of actual use.
+                continue
             structured = _safe_get(event.raw, "structured_result")
             if isinstance(structured, Mapping) and successful_result:
                 for key in ("dependencies", "devDependencies", "optionalDependencies"):
@@ -3426,8 +3567,6 @@ class TraceEvidenceExtractor:
                     for name in installed[:EVIDENCE_MAX_LIST_ITEMS]:
                         add(sanitize_evidence_text(name, 100), "confirmed", evidence_ids)
 
-            manifest_paths = paths_by_call.get(event.call_id or "", set())
-            basenames = {re.split(r"[/\\]", path)[-1] for path in manifest_paths}
             if successful_result and basenames & _MANIFEST_NAMES:
                 if any(name.startswith("requirements") for name in basenames):
                     for line in text.splitlines()[:EVIDENCE_MAX_LIST_ITEMS]:
@@ -3518,6 +3657,7 @@ class TraceEvidenceExtractor:
                 status=record["status"],
                 event_ids=_ordered_unique(record["event_ids"]),
                 import_name=record["import_name"],
+                epistemic_status="inferred" if record["status"] == "declared" else "confirmed",
             )
             for record in records.values()
         ][:EVIDENCE_MAX_LIST_ITEMS]

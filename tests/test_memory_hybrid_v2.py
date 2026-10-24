@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -514,6 +516,247 @@ def _cached_provider(
     )
     assert isinstance(provider, HybridRuntimeProvider)
     return provider
+
+
+@pytest.fixture
+def shared_adjudication_store(monkeypatch):
+    class SharedCache:
+        available = True
+
+        def __init__(self):
+            self.values = {}
+            self.reads = []
+            self.ttls = []
+            self.fail_next_read = False
+
+        def budget(self):
+            return nullcontext()
+
+        def get_adjudication(self, key):
+            self.reads.append(key)
+            if self.fail_next_read:
+                self.available = False
+                return None
+            return deepcopy(self.values.get(key))
+
+        def put_adjudication(self, key, value, ttl_seconds=3600):
+            self.values[key] = deepcopy(value)
+            self.ttls.append(ttl_seconds)
+
+    store = SharedCache()
+    monkeypatch.setenv("MINI_CODE_MEMORY_REDIS_URL", "redis://unused-test-host/0")
+    monkeypatch.setattr(
+        "minicode.memory_hybrid_runtime.get_memory_hot_store", lambda _root: store
+    )
+    clear_hybrid_provider_cache()
+    yield store
+    clear_hybrid_provider_cache()
+
+
+def _hot_cache_query(entry):
+    return {
+        "request": SimpleNamespace(
+            query=f"apply {entry.id} durable rule",
+            current_files=(),
+            active_domains=(),
+        ),
+        "entries": (entry,),
+        "lexical_accepted_ids": (entry.id,),
+        "authority_revision": "frozen-authority-1",
+    }
+
+
+def test_redis_adjudication_shares_across_independent_provider_caches(
+    tmp_path, monkeypatch, shared_adjudication_store
+):
+    batches = []
+    activation = _cache_activation(batches)
+    first_verifier = _CacheVerifier()
+    first = _cached_provider(activation, tmp_path, batches, first_verifier)
+    kwargs = _hot_cache_query(_memory("safe-entry"))
+    original = first.adjudicate(**kwargs)
+    assert original is not None and first_verifier.calls == 2
+
+    # Model a different process: neither the LRU nor its process salt survives.
+    clear_hybrid_provider_cache()
+    monkeypatch.setattr("minicode.memory_hybrid_runtime._PROVIDER_CACHE_SALT", b"new")
+    second_verifier = _CacheVerifier()
+    second = _cached_provider(activation, tmp_path, batches, second_verifier)
+    assert second._shared_state is not first._shared_state
+    reused = second.adjudicate(**kwargs)
+    assert reused is not None and reused.signals == original.signals
+    assert reused.candidate_ids == original.candidate_ids
+    assert reused.diagnostics["cache_hit"] is True
+    assert reused.diagnostics["model_call_count"] == 0
+    assert second_verifier.calls == 0
+    assert len(set(shared_adjudication_store.reads)) == 1
+    assert shared_adjudication_store.ttls == [3600]
+
+    # Redis precedes the warm LRU, and an eviction is backfilled from that LRU.
+    shared_adjudication_store.values.clear()
+    assert second.adjudicate(**kwargs).diagnostics["cache_hit"] is True
+    assert len(shared_adjudication_store.values) == 1
+    assert second_verifier.calls == 0
+
+
+def test_redis_adjudication_uses_frozen_revision_and_recomputes_after_write(
+    tmp_path, shared_adjudication_store
+):
+    batches = []
+    activation = _cache_activation(batches)
+    verifier = _CacheVerifier()
+    provider = _cached_provider(activation, tmp_path, batches, verifier)
+    manager = MemoryManager(project_root=tmp_path, data_root=tmp_path / "user-memory")
+    manager.add_entry(
+        MemoryScope.PROJECT, "testing",
+        "Invoice retry tests use a bounded failure schedule.",
+        tags=["invoice", "retry", "tests"], domains=["testing"],
+    )
+    retriever = CanonicalMemoryRetriever(manager, hybrid_provider=provider)
+    request = MemoryRetrievalRequest(query="run invoice retry tests")
+    first = retriever.retrieve(request)
+    original_calls = verifier.calls
+    assert original_calls > 0
+    second = retriever.retrieve(request)
+    assert second.authority_revision == first.authority_revision
+    assert verifier.calls == original_calls
+    assert len(shared_adjudication_store.values) == 1
+
+    manager.add_entry(
+        MemoryScope.PROJECT, "architecture",
+        "Database transactions require an explicit rollback boundary.",
+        tags=["database", "rollback"],
+    )
+    third = retriever.retrieve(request)
+    assert third.authority_revision != first.authority_revision
+    assert verifier.calls > original_calls
+    assert len(shared_adjudication_store.values) == 2
+
+
+def test_redis_adjudication_identity_binds_protocol_query_order_and_config(
+    tmp_path, monkeypatch, shared_adjudication_store
+):
+    batches = []
+    activation = _cache_activation(batches)
+    provider = _cached_provider(activation, tmp_path, batches, _CacheVerifier())
+    kwargs = _hot_cache_query(_memory("safe-entry"))
+    key = provider._revision_cache_key(
+        kwargs["request"], ("safe-entry", "other-entry"), "authority"
+    )
+    reversed_key = provider._revision_cache_key(
+        kwargs["request"], ("other-entry", "safe-entry"), "authority"
+    )
+    assert key != reversed_key
+    provider._minimum_confidence += 0.01
+    assert key != provider._revision_cache_key(
+        kwargs["request"], ("safe-entry", "other-entry"), "authority"
+    )
+    provider._minimum_confidence -= 0.01
+    monkeypatch.setattr("minicode.memory_hybrid_runtime.HYBRID_PROMPT_VERSION", "next")
+    assert key != provider._revision_cache_key(
+        kwargs["request"], ("safe-entry", "other-entry"), "authority"
+    )
+
+
+@pytest.mark.parametrize("changed", ["model", "credential", "route", "temperature", "embedding"])
+def test_redis_provider_identity_binds_models_routes_and_credentials(
+    tmp_path, shared_adjudication_store, changed
+):
+    from minicode.memory_hybrid_runtime import _provider_cache_key
+
+    batches = []
+    activation = _cache_activation(batches)
+    verifier = _CacheVerifier()
+    embedding = _CacheEmbeddingClient(batches, "embedding-key")
+    kwargs = dict(
+        activation=activation, model_adapter=verifier, workspace_path=tmp_path,
+        embedding_client=embedding, persistent=True,
+    )
+    original = _provider_cache_key(**kwargs)
+    if changed == "model":
+        verifier.runtime["model"] = "different-model"
+    elif changed == "credential":
+        verifier.runtime["customApiKey"] = "rotated"
+    elif changed == "route":
+        verifier.runtime["customBaseUrl"] = "https://other.invalid/v1"
+    elif changed == "temperature":
+        verifier.runtime["temperature"] = 0.5
+    else:
+        embedding._api_key = "rotated"
+    assert original != _provider_cache_key(**kwargs)
+
+
+def test_redis_failure_preserves_local_cache_and_missing_revision_uses_content_key(
+    tmp_path, shared_adjudication_store
+):
+    batches = []
+    activation = _cache_activation(batches)
+    verifier = _CacheVerifier()
+    provider = _cached_provider(activation, tmp_path, batches, verifier)
+    kwargs = _hot_cache_query(_memory("safe-entry"))
+    original = provider.adjudicate(**kwargs)
+    shared_adjudication_store.fail_next_read = True
+    fallback = provider.adjudicate(**kwargs)
+    assert fallback is not None and fallback.signals == original.signals
+    assert verifier.calls == 2
+    calls_after_break = len(shared_adjudication_store.reads)
+    provider.adjudicate(**kwargs)
+    assert len(shared_adjudication_store.reads) == calls_after_break
+
+    del kwargs["authority_revision"]
+    provider.adjudicate(**kwargs)
+    assert verifier.calls == 4
+    kwargs["entries"][0].content += " Preserve rollback behavior."
+    provider.adjudicate(**kwargs)
+    assert verifier.calls == 6
+    assert len(shared_adjudication_store.reads) == calls_after_break
+
+
+def test_redis_disabled_keeps_existing_content_cache_identity(tmp_path, monkeypatch):
+    monkeypatch.delenv("MINI_CODE_MEMORY_REDIS_URL", raising=False)
+    clear_hybrid_provider_cache()
+    batches = []
+    verifier = _CacheVerifier()
+    provider = _cached_provider(_cache_activation(batches), tmp_path, batches, verifier)
+    kwargs = _hot_cache_query(_memory("safe-entry"))
+    assert provider._hot_store is None
+    first = provider.adjudicate(**kwargs)
+    kwargs["authority_revision"] = "a-different-revision-with-identical-content"
+    second = provider.adjudicate(**kwargs)
+    assert second.signals == first.signals
+    assert second.diagnostics["cache_hit"] is True
+    assert verifier.calls == 2
+    clear_hybrid_provider_cache()
+
+
+@pytest.mark.parametrize("corruption", ["accepted", "score", "unknown_id", "cohort", "duplicate"])
+def test_malformed_redis_adjudication_is_a_cache_miss(
+    tmp_path, shared_adjudication_store, corruption
+):
+    batches = []
+    activation = _cache_activation(batches)
+    first = _cached_provider(activation, tmp_path, batches, _CacheVerifier())
+    kwargs = _hot_cache_query(_memory("safe-entry"))
+    assert first.adjudicate(**kwargs) is not None
+    value = next(iter(shared_adjudication_store.values.values()))
+    signal = value["signals"][0]
+    if corruption == "accepted":
+        signal["accepted"] = "false"
+    elif corruption == "score":
+        signal["dense_score"] = float("nan")
+    elif corruption == "unknown_id":
+        signal["entry_id"] = "outside-authority"
+    elif corruption == "cohort":
+        value["candidate_ids"] = []
+    else:
+        value["signals"].append(deepcopy(signal))
+    clear_hybrid_provider_cache()
+    verifier = _CacheVerifier()
+    second = _cached_provider(activation, tmp_path, batches, verifier)
+    result = second.adjudicate(**kwargs)
+    assert result is not None
+    assert result.diagnostics["cache_hit"] is False
+    assert verifier.calls == 2
 
 
 def test_cross_turn_cache_reuses_canary_and_documents_but_not_turn_budget(

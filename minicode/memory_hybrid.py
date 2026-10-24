@@ -48,7 +48,7 @@ from minicode.memory_hybrid_release import (
 )
 
 HYBRID_EVIDENCE_SCHEMA_VERSION = "3.0"
-HYBRID_PROTOCOL_VERSION = "hybrid-canonical-v8"
+HYBRID_PROTOCOL_VERSION = "hybrid-canonical-v8.1"
 HYBRID_QWEN_ONE_SHOT_MARKER_NAME = QWEN_PROMOTION_ONE_SHOT_MARKER_NAME
 HYBRID_MODEL_LIST_LIMIT = 16
 HYBRID_MODEL_STRING_LIMIT = 256
@@ -112,15 +112,15 @@ HYBRID_RESOLVER_SYSTEM_PROMPT = """You are the single, final disagreement resolv
 Resolve as relevant only when all of these are proven: the query is grounded; the exact object and actor match (including a genuine cross-language alias); the claimed relation is directly supported; no fatal disqualifier remains; and one substantive segment from each side supports that conclusion. A current_files segment is authoritative grounding, but an exact file alone does not prove the operation. A cause vote requires verified root-cause provenance; a recovery vote requires verified recovery provenance. Never substitute one authority type for the other. This resolver may use verified_recovery only for a recovery disagreement; a contested root-cause claim remains denied. A deterministic path/order/polarity/version veto is outside your authority and cannot be overturned. If evidence is incomplete or uncertain, resolve as irrelevant.
 
 Return queryEvidenceId and memoryEvidenceId exactly as IDs present in that pair's supplied segment arrays. The runtime binds each ID to its pair, source kind, authority, challenger reason, and content-free character span; missing, cross-pair, invented, or support-kind-incompatible IDs fail closed. The challenger reason is already pair-bound input: do not echo or replace it in the output. Return one compact JSON object only: {"resolutions":[{"id":"...","decision":"relevant|irrelevant","confidence":0.0,"queryGrounded":true,"objectMatch":true,"relationSupported":true,"supportKind":"none|exact_file_context|cross_language_equivalence|semantic_equivalence|verified_recovery|explicit_constraint|explicit_configuration|established_preference|verified_rename","disqualifier":"none|query_underspecified|different_object|different_actor|contradictory_order|contradictory_polarity|path_conflict|unsupported_relation|unrelated","queryEvidenceId":"pair-specific-query-segment-id","memoryEvidenceId":"pair-specific-memory-segment-id"}]}. A relevant result requires all booleans true, supportKind other than none, disqualifier=none, and high confidence. Include every input ID exactly once and no extra IDs."""
-HYBRID_RESOLVER_PRESSURE_DATASET_ID = "resolver-pressure-sealed-v5-blind"
+HYBRID_RESOLVER_PRESSURE_DATASET_ID = "resolver-pressure-sealed-v12-blind"
 HYBRID_RESOLVER_PRESSURE_ARTIFACT = (
-    ".repair-work/memory-retrieval-quality-2026-09-03/resolver-pressure-report-v5.json"
+    ".repair-work/memory-retrieval-quality-2026-09-03/resolver-pressure-report-v12.json"
 )
 HYBRID_RESOLVER_PRESSURE_HOLDOUT_SHA256 = (
-    "1833a55f1e6e2fb4c9ec30773400474ae22d7204599a7263332bf1eb4a3b9e4a"
+    "de53ab6524f59291b45d18496e3e3242e82b4f93cf08e96fb79d13a50bf5dbcd"
 )
 HYBRID_RESOLVER_PRESSURE_MANIFEST_SHA256 = (
-    "752a14bc8eee0b59f71cf73fbebb3b38bae12d2d22a99f07b056191566c716b4"
+    "7f53fcef007d3adfb3d7581a6ed42aa265f4fcfc559752e8ae51c34f0a2ee71f"
 )
 HYBRID_RESOLVER_PRESSURE_CASE_COUNT = 60
 # Production must reproduce the inference controls used by the canonical

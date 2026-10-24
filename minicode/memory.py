@@ -6604,10 +6604,35 @@ class MemoryManager:
         # is re-checked; anything not plainly safe stays pending.
         promoted_to_approved = False
         recurrence_count = int(metadata["recurrence"])
+        draft = metadata.get("deposition_draft")
+        draft_reasons = draft.get("reason_codes", ()) if isinstance(draft, dict) else ()
+        reflection = metadata.get("structured_reflection")
+        claims = reflection.get("claims", ()) if isinstance(reflection, dict) else ()
+        # Reading the same declaration again never verifies that dependency.
+        # Inspect the stored evidence, independent of today's experiment
+        # mode, so rollback cannot turn an old declaration into approval.
+        # The claim fallback recognizes the persisted manifest caveat;
+        # unrelated inferred dependencies keep historical recurrence rules.
+        declared_dependency = (
+            isinstance(draft_reasons, (list, tuple))
+            and "declared_dependency" in draft_reasons
+        ) or (
+            isinstance(claims, (list, tuple))
+            and any(
+                isinstance(claim, dict)
+                and claim.get("claim_type") == "dependency"
+                and claim.get("epistemic_status") == "inferred"
+                and isinstance(claim.get("limitations"), (list, tuple))
+                and "Declared in manifest; not yet exercised in this trace."
+                in claim["limitations"]
+                for claim in claims
+            )
+        )
         if (
             previous_approval == _APPROVAL_PENDING
             and entry.safety_status == _SAFETY_SAFE
             and recurrence_count >= RECURRENCE_AUTO_APPROVE_THRESHOLD
+            and not declared_dependency
         ):
             entry.approval_status = _APPROVAL_APPROVED
             entry.approval_reason = (

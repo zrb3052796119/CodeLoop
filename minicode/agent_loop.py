@@ -2719,6 +2719,9 @@ def run_agent_turn(
                                 event_sink,
                                 orch.memory_pipeline.last_retrieval_result,
                                 provenance_batch=provenance,
+                                draft_rendered_ids=getattr(
+                                    orch.memory_pipeline, "injected_draft_ids", ()
+                                ),
                             )
                     except ModelCallDeadlineExceeded as exc:
                         raise AgentTurnDeadlineExceeded(str(exc)) from exc

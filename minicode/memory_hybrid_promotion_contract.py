@@ -7,17 +7,24 @@ cannot choose the dataset, output, or verifier route used to validate itself.
 
 from __future__ import annotations
 
-QWEN_PROMOTION_DATASET_ID = "independent-sealed-v2"
+QWEN_PROMOTION_DATASET_ID = "independent-sealed-v12"
 QWEN_PROMOTION_HOLDOUT_SHA256 = (
-    "e7a0a464995ebd1d854ebc5381b6ea7f6cbe13f7339b21e1a7472fccbf2384b9"
+    "58436efc810ff5f5c0e9e6b98b05a08a3c8fa00de769160a1fb4e666b520c55d"
 )
 QWEN_PROMOTION_MANIFEST_SHA256 = (
-    "ef83f779fc91d92bbcdceb76e1f45c51b4fbeaefd77cd52f0215322d4359dc38"
+    "3c2e85a4ab3575a083dc1f8a646ea394b238da66b7a7377e427bf80224bb36ea"
 )
 QWEN_PROMOTION_BACKGROUND_COUNT = 80
 QWEN_PROMOTION_CASE_COUNT = 84
 QWEN_PROMOTION_POSITIVE_COUNT = 24
 QWEN_PROMOTION_HARD_NEGATIVE_COUNT = 60
+
+# Protocol v8.1 (2026-10-22, owner-approved amendment): the verifier lane may
+# carry retried-then-recovered schema failures. Attempts that end in a
+# model.failed event are acceptable when every case retains a final verdict
+# (enforced by the canonical row join) and the per-run failure rate stays at
+# or below this bound; challenger and resolver lanes remain zero-failure.
+QWEN_PROMOTION_VERIFIER_FAILED_CALL_RATE = 0.05
 
 QWEN_PROMOTION_REPORT_ARTIFACT = (
     "artifacts/memory-retrieval-hybrid-v8-qwen-canonical.json"

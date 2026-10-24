@@ -24,12 +24,12 @@ fail-closed and cannot silently downgrade that run to lexical injection.
 
 from __future__ import annotations
 
-import re
-
 import hashlib
 import inspect
 import json
+import math
 import os
+import re
 import stat
 import time
 import uuid
@@ -44,6 +44,7 @@ from minicode.run_events import emit_event_safely, verification_corroboration
 from minicode.turn_cancellation import TurnCancellationRequested
 
 if TYPE_CHECKING:
+    from minicode.memory import MemoryEntry
     from minicode.memory_injector import (
         MemoryInjectionController,
         MemoryInjectionDecision,
@@ -435,6 +436,24 @@ def _remove_memory_prompt_metadata(message: dict[str, Any]) -> dict[str, Any]:
     return sanitized
 
 
+def _strip_hot_draft_message(message: dict[str, Any]) -> dict[str, Any]:
+    """Remove the previous turn's ephemeral lane independently of authority."""
+    sanitized = dict(message)
+    block = sanitized.pop("_memory_draft_block", None)
+    sanitized.pop("_memory_draft_ids", None)
+    sanitized.pop("_memory_draft_expires_at", None)
+    sanitized.pop("_memory_pending_draft_proofs", None)
+    if isinstance(block, str) and block.startswith("## Recent draft notes\n\n"):
+        visible = str(sanitized.get("content", ""))
+        position = visible.rfind(block)
+        if position >= 0:
+            start = position
+            while start > 0 and visible[start - 1] == "\n":
+                start -= 1
+            sanitized["content"] = visible[:start] + visible[position + len(block):]
+    return sanitized
+
+
 def _strip_materialized_memory_message(
     message: dict[str, Any],
 ) -> dict[str, Any] | None:
@@ -647,6 +666,30 @@ def _user_facet_statement(task_description: str) -> str | None:
     return text.rstrip("。.!！?？ ")
 
 
+def _extract_user_preference(task_description: str) -> str | None:
+    """Extract a short first-person statement without its accompanying command."""
+    pattern = re.compile(
+        r"^(?:我(?:叫|是|(?:更)?(?:喜欢|偏好)|(?:习惯)?用)|"
+        r"我希望你(?:称呼|叫|用|使用|回复|回答)|"
+        r"(?:i am|i'm|my name is|i prefer|i like)\b|"
+        r"i want you to\s+(?:call me|reply|respond|speak|use)\b)",
+        re.IGNORECASE,
+    )
+    for sentence in re.split(r"[。！？!?\n;；]|(?<!\w)\.(?:\s|$)|(?<=\w)\.\s+", str(task_description or "")):
+        # A request after a comma is a separate task, not part of the preference.
+        statement = re.split(
+            r"[,，]\s*(?:请|帮我|帮忙|然后|修复|实现|添加|删除|创建|生成|运行|安装|"
+            r"please\b|fix\b|implement\b|create\b|run\b|install\b)",
+            sentence, maxsplit=1, flags=re.IGNORECASE,
+        )[0].strip().rstrip("。. ")
+        if not 2 <= len(statement) <= 200 or not pattern.search(statement):
+            continue
+        if re.search(r"(?:帮我|帮忙|修复|实现|删除|创建|生成|安装)|\b(?:fix|implement|delete|install)\b", statement, re.IGNORECASE):
+            continue
+        return statement
+    return None
+
+
 def _classify_user_facet(text: str) -> str | None:
     normalized = str(text or "").strip()
     if not normalized:
@@ -766,6 +809,8 @@ class MemoryPipeline:
         self._write_count = 0
         self._maintain_count = 0
         self._last_injected_ids: list[str] = []
+        self._last_injected_draft_ids: tuple[str, ...] = ()
+        self._hot_store: Any = None
         self._last_injected_versions: list[tuple[str, str]] = []
         self._committed_receipt_digests: dict[str, str] = {}
         self._durably_accounted_receipt_digests: dict[str, str] = {}
@@ -1544,7 +1589,42 @@ class MemoryPipeline:
         the current Turn's Memory, while any changed/unavailable authority
         removes generated Memory fail-closed.
         """
-        copied = [dict(message) for message in messages]
+        from minicode.memory_deposition_experiment import deposition_mode
+
+        pending_proofs_valid = True
+        pending_messages = [
+            message for message in messages
+            if message.get("_memory_pending_draft_proofs")
+        ]
+        if pending_messages:
+            try:
+                self._memory.refresh_if_stale()
+                pending_proofs_valid = all(
+                    self._pending_draft_proofs_current(
+                        message["_memory_pending_draft_proofs"]
+                    )
+                    for message in pending_messages
+                )
+            except Exception:
+                logger.debug("Pending draft authority revalidation failed", exc_info=True)
+                pending_proofs_valid = False
+
+        copied = []
+        for message in messages:
+            expiry = message.get("_memory_draft_expires_at")
+            if "_memory_draft_block" in message and (
+                deposition_mode() != "inject"
+                or not isinstance(expiry, (int, float))
+                or not math.isfinite(expiry)
+                or not expiry > time.time()
+                or (
+                    message.get("_memory_pending_draft_proofs")
+                    and not pending_proofs_valid
+                )
+            ):
+                copied.append(_strip_hot_draft_message(message))
+            else:
+                copied.append(dict(message))
         marked = any(
             message.get("role") == "system"
             and (
@@ -1611,6 +1691,238 @@ class MemoryPipeline:
         return tuple(self._last_injected_versions)
 
     @property
+    def injected_draft_ids(self) -> tuple[str, ...]:
+        """Ephemeral prompt attribution, without granting durable authority."""
+        return self._last_injected_draft_ids
+
+    def _memory_hot_store(self) -> Any:
+        if self._hot_store is None and os.environ.get("MINI_CODE_MEMORY_REDIS_URL", "").strip():
+            from minicode.memory_hot_store import get_memory_hot_store
+
+            self._hot_store = get_memory_hot_store(
+                getattr(self._memory, "workspace", None) or self._workspace or Path.cwd()
+            )
+        return self._hot_store
+
+    def _pending_draft_candidates(self) -> list[tuple[MemoryEntry, float, bool]]:
+        """Read eligible pending notes without changing their approval authority.
+
+        Explicit declared-dependency drafts precede ordinary pending notes
+        whose review has aged out. Both remain excluded from canonical recall.
+        """
+        from minicode.memory import (
+            MemoryScope,
+            MemoryTier,
+            _approval_hash_for_entry,
+            assess_memory_safety,
+        )
+        from minicode.memory_authority_io import is_memory_entry_id
+        from minicode.memory_deposition_experiment import (
+            deposition_feature_enabled,
+            deposition_mode,
+            draft_ttl_seconds,
+            pending_draft_age_seconds,
+        )
+
+        if deposition_mode() != "inject" or self._memory is None:
+            return []
+        memory = self._memory.memories.get(MemoryScope.PROJECT)
+        if memory is None:
+            return []
+        now = time.time()
+        declared: list[tuple[MemoryEntry, float, bool]] = []
+        aged: list[tuple[MemoryEntry, float, bool]] = []
+        for entry in memory.entries:
+            try:
+                if (
+                    not is_memory_entry_id(entry.id)
+                    or entry.scope != MemoryScope.PROJECT
+                    or entry.approval_status != "pending"
+                    or entry.safety_status != "safe"
+                    or entry.lifecycle_status != "active"
+                    or entry.curator_locked
+                    or entry.tier == MemoryTier.ARCHIVAL
+                    or not entry._authority_state_is_current()
+                    or (
+                        entry.approval_content_hash
+                        and entry.approval_content_hash != _approval_hash_for_entry(entry)
+                    )
+                    or not assess_memory_safety(entry.content, source=entry.source).allowed
+                ):
+                    continue
+                if "deposition_draft" in entry.metadata:
+                    draft = entry.metadata["deposition_draft"]
+                    if not isinstance(draft, dict):
+                        continue
+                    expiry = draft.get("expires_at")
+                    if (
+                        deposition_feature_enabled("declared_dependencies")
+                        and draft.get("injectable") is True
+                        and "declared_dependency" in draft.get("reason_codes", [])
+                        and isinstance(expiry, (int, float))
+                        and not isinstance(expiry, bool)
+                        and math.isfinite(expiry)
+                        and expiry > now
+                    ):
+                        declared.append((entry, float(expiry), False))
+                elif (
+                    deposition_feature_enabled("pending_drafts")
+                    and isinstance(entry.updated_at, (int, float))
+                    and not isinstance(entry.updated_at, bool)
+                    and math.isfinite(entry.updated_at)
+                    and now - entry.updated_at > pending_draft_age_seconds()
+                ):
+                    aged.append((entry, now + draft_ttl_seconds(), True))
+            except (AttributeError, TypeError, ValueError):
+                # Malformed optional notes cannot suppress the normal prompt.
+                continue
+        return declared + aged
+
+    def _pending_draft_proofs_current(self, proofs: object) -> bool:
+        """Bind the optional prompt lane to still-eligible pending versions."""
+        from minicode.memory import _approval_hash_for_entry
+
+        if not isinstance(proofs, (list, tuple)) or not proofs:
+            return False
+        current = {
+            entry.id: _approval_hash_for_entry(entry)
+            for entry, _expiry, _aged in self._pending_draft_candidates()
+        }
+        return all(
+            isinstance(proof, (list, tuple))
+            and len(proof) == 2
+            and isinstance(proof[0], str)
+            and isinstance(proof[1], str)
+            and current.get(proof[0]) == proof[1]
+            for proof in proofs
+        )
+
+    def _render_hot_drafts(
+        self,
+        lesson_block: str,
+        result: Any,
+        *,
+        max_memories: int,
+        max_total_tokens: int,
+        max_tokens_per_memory: int,
+    ) -> tuple[str, tuple[str, ...], float]:
+        from minicode.context_manager import estimate_tokens
+        from minicode.memory import (
+            MemoryEntry,
+            MemoryScope,
+            _approval_hash_for_entry,
+            assess_memory_safety,
+        )
+        from minicode.memory_authority_io import is_memory_entry_id
+        from minicode.memory_deposition_experiment import (
+            deposition_mode,
+            draft_entry_retrievable,
+        )
+
+        self._rendered_pending_draft_proofs: tuple[tuple[str, str], ...] = ()
+        self._rendered_aged_pending_ids: tuple[str, ...] = ()
+        if deposition_mode() != "inject" or result is None:
+            return "", (), 0.0
+        store = self._memory_hot_store()
+        decision = result.controller_decision
+        count = min(max_memories, int(decision.get("max_memories", 0))) - len(result.rendered_ids)
+        per_memory = min(max_tokens_per_memory, int(decision.get("max_tokens_per_memory", 0)))
+        if count <= 0 or per_memory <= 0 or max_total_tokens <= 0:
+            return "", (), 0.0
+        from minicode.memory_hot_store import project_fingerprint
+
+        fingerprint = project_fingerprint(
+            getattr(self._memory, "workspace", None) or self._workspace or Path.cwd()
+        )
+        # A timed-out Redis write may complete after disk fallback. Disk wins
+        # on the next healthy process, including when its copy was not selected.
+        disk_contents = {
+            entry.content
+            for memory in self._memory.memories.values()
+            for entry in memory.entries
+            if entry.metadata.get("deposition_draft")
+            and entry.is_active
+            and draft_entry_retrievable(entry)
+        }
+        lines: list[str] = []
+        ids: list[str] = []
+        contents: set[str] = set()
+        expires_at = float("inf")
+        drafts = []
+        if store is not None and store.available:
+            try:
+                with store.budget():
+                    drafts = store.load_active_drafts(MemoryScope.PROJECT, fingerprint)
+            except Exception:
+                # The disk-backed pending lane remains usable during outages.
+                logger.debug("Memory hot draft read failed", exc_info=True)
+        for raw in drafts:
+            try:
+                entry = MemoryEntry.from_dict(raw)
+                draft = entry.metadata.get("deposition_draft", {})
+                expiry = draft.get("expires_at")
+                if (
+                    not is_memory_entry_id(entry.id)
+                    or entry.scope != MemoryScope.PROJECT
+                    or not entry.is_active
+                    or not draft.get("injectable")
+                    or not isinstance(expiry, (int, float))
+                    or not math.isfinite(expiry)
+                    or not expiry > time.time()
+                    or not draft_entry_retrievable(entry)
+                    or not assess_memory_safety(entry.content, source=entry.source).allowed
+                    or entry.content in disk_contents
+                    or entry.content in contents
+                    or entry.id in ids
+                    or entry.id in result.rendered_ids
+                ):
+                    continue
+                line = f"{len(lines) + 1}. [draft] {entry.content}"
+                candidate = "## Recent draft notes\n\n" + "\n".join((*lines, line))
+                combined = "\n\n".join(block for block in (lesson_block, candidate) if block)
+                if estimate_tokens(line) > per_memory or estimate_tokens(combined) > max_total_tokens:
+                    continue
+                lines.append(line)
+                ids.append(entry.id)
+                contents.add(entry.content)
+                expires_at = min(expires_at, expiry)
+                if len(ids) >= count:
+                    break
+            except Exception:
+                # A malformed disposable entry cannot suppress canonical text.
+                continue
+        pending_proofs: list[tuple[str, str]] = []
+        aged_pending_ids: list[str] = []
+        for entry, expiry, aged in self._pending_draft_candidates():
+            if len(ids) >= count:
+                break
+            if (
+                entry.id in ids
+                or entry.id in result.rendered_ids
+                or entry.content in contents
+                or entry.content in disk_contents
+                or entry.content in lesson_block
+            ):
+                continue
+            line = f"{len(lines) + 1}. [draft] {entry.content}"
+            candidate = "## Recent draft notes\n\n" + "\n".join((*lines, line))
+            combined = "\n\n".join(block for block in (lesson_block, candidate) if block)
+            if estimate_tokens(line) > per_memory or estimate_tokens(combined) > max_total_tokens:
+                continue
+            lines.append(line)
+            ids.append(entry.id)
+            contents.add(entry.content)
+            expires_at = min(expires_at, expiry)
+            pending_proofs.append((entry.id, _approval_hash_for_entry(entry)))
+            if aged:
+                aged_pending_ids.append(entry.id)
+        self._rendered_pending_draft_proofs = tuple(pending_proofs)
+        self._rendered_aged_pending_ids = tuple(aged_pending_ids)
+        if not lines:
+            return "", (), 0.0
+        return "## Recent draft notes\n\n" + "\n".join(lines), tuple(ids), expires_at
+
+    @property
     def last_committed_prompt_receipt(self) -> MemoryPromptReceipt | None:
         """Most recent successfully installed prompt receipt in this Turn."""
         return self._last_committed_receipt
@@ -1640,6 +1952,13 @@ class MemoryPipeline:
         """
         if not self._initialized:
             return messages
+        store = self._memory_hot_store()
+        if store is not None:
+            store.begin_turn()
+        self._last_injected_draft_ids = ()
+        for index, message in enumerate(messages):
+            if "_memory_draft_block" in message:
+                messages[index] = _strip_hot_draft_message(message)
         self._last_injected_ids = []
         self._last_injected_versions = []
         self._committed_receipt_digests = {}
@@ -1746,7 +2065,16 @@ class MemoryPipeline:
                 )
                 if estimate_tokens(policy_candidate) <= effective_total_tokens:
                     lesson_block = policy_candidate
-            prompt_blocks = [block for block in (lesson_block, facts_block) if block]
+            draft_block, draft_ids, draft_expiry = self._render_hot_drafts(
+                lesson_block,
+                result,
+                max_memories=effective_max_memories,
+                max_total_tokens=effective_total_tokens,
+                max_tokens_per_memory=effective_per_memory,
+            )
+            pending_draft_proofs = self._rendered_pending_draft_proofs
+            aged_pending_ids = self._rendered_aged_pending_ids
+            prompt_blocks = [block for block in (lesson_block, facts_block, draft_block) if block]
             if not prompt_blocks:
                 if result is not None and result.selected_ids:
                     _call_memory_accounting(
@@ -1776,7 +2104,6 @@ class MemoryPipeline:
                     )
                 return messages
             original_system_message = messages[system_index]
-            prompt_addition = "\n\n".join(prompt_blocks)
             render_proofs = (
                 memory_rendered_proofs(result)
                 if lesson_block and result is not None
@@ -1784,6 +2111,17 @@ class MemoryPipeline:
             )
 
             def materialize_prompt() -> None:
+                current_draft_block = draft_block
+                if pending_draft_proofs and not self._pending_draft_proofs_current(
+                    pending_draft_proofs
+                ):
+                    current_draft_block = ""
+                prompt_addition = "\n\n".join(
+                    block for block in (lesson_block, facts_block, current_draft_block)
+                    if block
+                )
+                if not prompt_addition:
+                    return
                 updated_system_message = {
                     **messages[system_index],
                     "content": (
@@ -1792,6 +2130,14 @@ class MemoryPipeline:
                         + prompt_addition
                     ),
                 }
+                if current_draft_block:
+                    updated_system_message["_memory_draft_block"] = current_draft_block
+                    updated_system_message["_memory_draft_ids"] = draft_ids
+                    updated_system_message["_memory_draft_expires_at"] = draft_expiry
+                    if pending_draft_proofs:
+                        updated_system_message["_memory_pending_draft_proofs"] = (
+                            pending_draft_proofs
+                        )
                 if lesson_block and result is not None:
                     existing_rendered_ids = tuple(
                         entry_id
@@ -1889,8 +2235,28 @@ class MemoryPipeline:
                         "authority_changed_before_prompt"
                     )
                     return messages
+            elif pending_draft_proofs:
+                try:
+                    with self._memory.retrieval_snapshot():
+                        materialize_prompt()
+                except BaseException:
+                    messages[system_index] = original_system_message
+                    raise
             else:
                 materialize_prompt()
+            self._last_injected_draft_ids = tuple(
+                messages[system_index].get("_memory_draft_ids", ())
+            )
+            rendered_aged_ids = tuple(
+                entry_id for entry_id in aged_pending_ids
+                if entry_id in self._last_injected_draft_ids
+            )
+            if rendered_aged_ids:
+                logger.info(
+                    "MemoryPipeline: aged pending rendered as draft count=%d ids=%s",
+                    len(rendered_aged_ids),
+                    ",".join(rendered_aged_ids),
+                )
             if result is not None:
                 if lesson_block and receipt is not None:
                     try:
@@ -2007,6 +2373,11 @@ class MemoryPipeline:
         self._last_write_result = None
         reflection_result = None
         authority_commit = None
+        trace_safety = None
+        accepted = False
+        draft_entries: list[Any] = []
+        preference_captured = False
+        self._pending_user_facet_text = None
         payload_digest = self._empty_write_payload_digest(
             current_operation_id,
             "pipeline_unavailable",
@@ -2017,6 +2388,7 @@ class MemoryPipeline:
             reason_codes=("pipeline_unavailable",),
         )
         if not self._reflection or not self._memory:
+            self._log_deposition_funnel(None, outcome, [])
             return self._publish_write_result(outcome)
 
         try:
@@ -2088,12 +2460,34 @@ class MemoryPipeline:
                     "MemoryPipeline: skipped reflection write reasons=%s",
                     ",".join(str(code) for code in raw_reasons[:8]),
                 )
+                # Permissive deposition experiment: value-gate rejections
+                # with validator-clean claims become draft entries instead
+                # of being dropped. Strict mode (default) returns None here,
+                # leaving the historical behavior byte-for-byte intact.
+                draft_entries = self._commit_deposition_drafts(
+                    current_operation_id,
+                    reflection_result,
+                    accepted_claim_ids=accepted_claim_ids,
+                    valid_by_id=valid_by_id,
+                    trace_safety=trace_safety,
+                    task_description=task_description,
+                    execution_trace=execution_trace,
+                    provenance=provenance,
+                )
                 conversation_plan = self._prepare_conversation_fact(
                     task_description,
                     execution_trace,
                     reflection_result,
                     provenance=provenance,
                 )
+                if conversation_plan is None and trace_safety.allowed:
+                    conversation_plan = self._prepare_user_preference(
+                        task_description,
+                        execution_trace,
+                        operation_id=current_operation_id,
+                        provenance=provenance,
+                    )
+                    preference_captured = conversation_plan is not None
                 if conversation_plan is not None:
                     payload_digest = self._aggregate_write_payload_digest(
                         conversation_fact_payload_digest=conversation_plan[2],
@@ -2104,7 +2498,11 @@ class MemoryPipeline:
                         authority_kind="conversation_fact",
                         authority_payload_digest=conversation_plan[2],
                     )
-                    authority_commit = self._commit_conversation_fact(
+                    commit_fact = (
+                        self._commit_user_preference
+                        if preference_captured else self._commit_conversation_fact
+                    )
+                    authority_commit = commit_fact(
                         conversation_plan,
                         operation_id=current_operation_id,
                         operation_payload_digest=payload_digest,
@@ -2115,7 +2513,9 @@ class MemoryPipeline:
                         authority_kind="conversation_fact",
                         authority_commit=authority_commit,
                         reason_codes=(
-                            "conversation_fact_replayed"
+                            "user_preference_replayed" if preference_captured and authority_commit.replayed
+                            else "user_preference_committed" if preference_captured
+                            else "conversation_fact_replayed"
                             if authority_commit.replayed
                             else "conversation_fact_committed",
                         ),
@@ -2154,6 +2554,7 @@ class MemoryPipeline:
                     claim
                     for claim in accepted_claims
                     if claim.claim_type != "dependency"
+                    or self._is_declared_dependency(claim)
                 ]
                 if lesson_claims:
                     claim_writes = self._build_reflection_claim_writes(
@@ -2163,6 +2564,7 @@ class MemoryPipeline:
                         task_description=task_description,
                         execution_trace=execution_trace,
                         provenance=provenance,
+                        operation_id=current_operation_id,
                     )
                     lesson_payload_digest = reflection_batch_payload_digest(
                         claim_writes
@@ -2335,6 +2737,28 @@ class MemoryPipeline:
             & {"memory_write_conflict", "reflection_write_failed"}
         )
         if not outcome_failed:
+            if not preference_captured and trace_safety is not None and trace_safety.allowed and accepted:
+                # Technical lessons and personal preferences commonly coexist.
+                # Keep the USER transaction separate from the PROJECT batch.
+                preference_operation_id = "memoryop_" + hashlib.sha256(
+                    f"user-preference:{current_operation_id}".encode()
+                ).hexdigest()[:32]
+                try:
+                    preference_plan = self._prepare_user_preference(
+                        task_description, execution_trace,
+                        operation_id=preference_operation_id, provenance=provenance,
+                    )
+                    if preference_plan is not None:
+                        preference_captured = True
+                        preference_commit = self._commit_user_preference(
+                            preference_plan,
+                            operation_id=preference_operation_id,
+                            operation_payload_digest=preference_plan[2],
+                        )
+                        draft_entries.extend(self._entries_for_commit(preference_commit))
+                        self._pending_user_facet_text = preference_plan[1]["content"]
+                except Exception:
+                    logger.info("MemoryPipeline: user preference side write failed safely", exc_info=True)
             self._record_pending_user_facet(
                 event_sink, task_description=str(task_description or "")
             )
@@ -2384,6 +2808,10 @@ class MemoryPipeline:
             except Exception:
                 logger.info("MemoryPipeline: shadow comparison failed safely")
 
+        self._log_deposition_funnel(
+            reflection_result, outcome, draft_entries,
+            preference_captured=preference_captured,
+        )
         return self._publish_write_result(outcome)
 
     @staticmethod
@@ -2407,6 +2835,68 @@ class MemoryPipeline:
                 "files_changed",
                 "libraries",
             )
+        )
+
+    def _entries_for_commit(self, commit: Any) -> list[Any]:
+        if commit is None or self._memory is None:
+            return []
+        ids = {
+            item.entry_id for item in commit.materializations
+            if item.remains_materialized
+        }
+        return [
+            entry for memory in self._memory.memories.values()
+            for entry in memory.entries if entry.id in ids
+        ]
+
+    def _log_deposition_funnel(
+        self, reflection: Any, outcome: MemoryWriteResult, draft_entries: list[Any],
+        *, preference_captured: bool = False,
+    ) -> None:
+        """Content-free counts of actual materializations, including side lanes."""
+        from minicode.memory_deposition_experiment import deposition_mode
+
+        candidate = getattr(reflection, "reflection_candidate", None)
+        validation = getattr(reflection, "claim_validation", None)
+        decision = getattr(reflection, "value_decision", None)
+        candidates = len(getattr(candidate, "claims", []) or []) + int(preference_captured)
+        validated = len(getattr(validation, "valid_claims", []) or []) + int(preference_captured)
+        value_accepted = len(getattr(decision, "accepted_claim_ids", []) or []) + int(preference_captured)
+        entries = {
+            entry.id: entry
+            for entry in (*self._entries_for_commit(outcome.authority_commit), *draft_entries)
+        }
+        captured_claim_ids = {
+            item.claim_id for item in getattr(outcome.authority_commit, "materializations", ())
+            if item.remains_materialized
+        }
+        captured_claim_ids.update(
+            entry.metadata.get("claim_identity", {}).get("claim_id")
+            for entry in draft_entries
+            if entry.metadata.get("claim_identity", {}).get("claim_id")
+        )
+        if outcome.project_facts_effect.status in {"committed", "replayed"}:
+            captured_claim_ids.update(
+                claim.claim_id for claim in getattr(validation, "valid_claims", [])
+                if claim.claim_type == "dependency" and claim.epistemic_status == "confirmed"
+                and claim.claim_id in (getattr(decision, "accepted_claim_ids", []) or [])
+            )
+        preference_count = int(any(entry.category == "user_preference" for entry in entries.values()))
+        # Ordinary conversation facts are an existing non-reflection intake.
+        facts = sum(entry.category == "conversation_fact" for entry in entries.values())
+        candidates += facts
+        validated += facts
+        value_accepted += facts
+        reflected_ids = {claim.claim_id for claim in getattr(validation, "valid_claims", []) or []}
+        captured = len(captured_claim_ids & reflected_ids) + preference_count + facts
+        logger.info(
+            "MemoryPipeline: deposition candidates=%d validated=%d value_accepted=%d "
+            "auto_approved=%d pending=%d drafted=%d lost=%d mode=%s",
+            candidates, validated, value_accepted,
+            sum(entry.approval_status == "approved" for entry in entries.values()),
+            sum(entry.approval_status == "pending" for entry in entries.values()),
+            sum(bool(entry.metadata.get("deposition_draft")) for entry in entries.values()),
+            max(0, candidates - captured), deposition_mode(),
         )
 
     @staticmethod
@@ -2489,6 +2979,195 @@ class MemoryPipeline:
         self.save_state()
         return result
 
+    def _commit_deposition_drafts(
+        self,
+        primary_operation_id: str,
+        result: Any,
+        *,
+        accepted_claim_ids: set[str],
+        valid_by_id: dict[str, Any],
+        trace_safety: Any,
+        task_description: str,
+        execution_trace: list[dict[str, Any]],
+        provenance: dict[str, Any] | None,
+    ) -> list[Any]:
+        """Best-effort draft capture for the permissive deposition experiment.
+
+        Runs only when ``MINI_CODE_MEMORY_DEPOSITION_MODE`` is non-strict and
+        validator-clean claims exist that the value gate rejected. The draft
+        batch is its own deterministic operation, committed after the primary
+        write outcome is decided; any failure is logged and swallowed so the
+        experiment can never disturb the durable lesson path. The primary
+        outcome's reason codes and payload digest are intentionally left
+        untouched.
+        """
+        from minicode.memory import reflection_batch_payload_digest
+        from minicode.memory_deposition_experiment import (
+            apply_draft_metadata,
+            deposition_mode,
+            draft_operation_id,
+            draft_ttl_seconds,
+        )
+
+        mode = deposition_mode()
+        if mode == "strict":
+            return []
+        value_decision = getattr(result, "value_decision", None)
+        if value_decision is None:
+            return []
+        reason_codes = list(value_decision.reason_codes or [])
+        draft_claims = [
+            claim
+            for claim_id, claim in valid_by_id.items()
+            if claim_id not in accepted_claim_ids
+        ]
+        if not draft_claims:
+            return []
+        declared_ids = {
+            claim.claim_id for claim in draft_claims if self._is_declared_dependency(claim)
+        }
+        declared_operation_id = (
+            draft_operation_id(primary_operation_id)
+            if declared_ids and mode == "inject"
+            else None
+        )
+        synthetic_result = replace(
+            result,
+            structured_claims=list(draft_claims),
+            claim_validation=replace(
+                result.claim_validation,
+                valid_claims=list(draft_claims),
+                rejected_claims=[],
+            ),
+            value_decision=replace(
+                value_decision,
+                accepted=True,
+                durable_signals=[],
+                accepted_claim_ids=[
+                    claim.claim_id for claim in draft_claims
+                ],
+            ),
+        )
+        try:
+            writes = list(
+                self._build_reflection_claim_writes(
+                    synthetic_result,
+                    draft_claims,
+                    trace_safety=trace_safety,
+                    task_description=task_description,
+                    execution_trace=execution_trace,
+                    provenance=provenance,
+                    operation_id=declared_operation_id,
+                )
+            )
+            expires_at = (
+                (
+                    self._deposition_expiry(declared_operation_id, claims=draft_claims)
+                    if declared_ids
+                    else time.time() + draft_ttl_seconds()
+                )
+                if mode == "inject"
+                else None
+            )
+            draft_writes = [
+                replace(
+                    write,
+                    add_entry_kwargs=apply_draft_metadata(
+                        write.add_entry_kwargs,
+                        reason_codes=reason_codes,
+                        expires_at=expires_at,
+                        injectable=(mode == "inject"),
+                    ),
+                )
+                for write in writes
+            ]
+            if declared_ids:
+                from minicode.memory import MemoryApprovalPolicy
+
+                draft_writes = [
+                    replace(write, add_entry_kwargs={
+                        **write.add_entry_kwargs,
+                        "approval_policy": MemoryApprovalPolicy.USER_REVIEW_REQUIRED,
+                        "metadata": {
+                            **write.add_entry_kwargs["metadata"],
+                            "deposition_draft": {
+                                **write.add_entry_kwargs["metadata"]["deposition_draft"],
+                                "reason_codes": ["declared_dependency", *reason_codes][:8],
+                            },
+                        },
+                    }) if write.claim_id in declared_ids else write
+                    for write in draft_writes
+                ]
+            store = self._memory_hot_store() if mode == "inject" else None
+            if store is not None and store.available and not declared_ids:
+                from minicode.memory import (
+                    MemoryEntry,
+                    MemoryScope,
+                    assess_memory_safety,
+                )
+                from minicode.memory_hot_store import (
+                    project_fingerprint,
+                    redis_draft_ttl_seconds,
+                )
+
+                fingerprint = project_fingerprint(
+                    getattr(self._memory, "workspace", None) or self._workspace or Path.cwd()
+                )
+                ttl = redis_draft_ttl_seconds(fallback=draft_ttl_seconds())
+                hot_expires_at = time.time() + ttl
+                all_stored = True
+                stored_entries = []
+                with store.budget():
+                    for write in draft_writes:
+                        kwargs = apply_draft_metadata(
+                            write.add_entry_kwargs,
+                            reason_codes=reason_codes,
+                            expires_at=hot_expires_at,
+                            injectable=True,
+                        )
+                        safety = assess_memory_safety(kwargs["content"], source=kwargs["source"])
+                        kwargs.setdefault("safety_status", safety.status)
+                        kwargs.setdefault("safety_reason", safety.reason)
+                        identity = f"{draft_operation_id(primary_operation_id)}:{write.claim_id}"
+                        entry = MemoryEntry(
+                            id="draft_" + hashlib.sha256(identity.encode()).hexdigest()[:32],
+                            scope=MemoryScope.PROJECT,
+                            approval_status=(
+                                "approved" if safety.allowed and trace_safety.allowed else "pending"
+                            ),
+                            **kwargs,
+                        )
+                        if not store.put_draft(MemoryScope.PROJECT, fingerprint, entry.to_dict(), ttl):
+                            all_stored = False
+                            break
+                        stored_entries.append(entry)
+                if all_stored:
+                    return stored_entries
+                # Even when the availability check passed, a failed SET must
+                # fall back to the original atomic disk batch and its TTL.
+            batch_digest = reflection_batch_payload_digest(draft_writes)
+            commit = self._memory.commit_reflection_batch(
+                operation_id=draft_operation_id(primary_operation_id),
+                payload_digest=batch_digest,
+                authority_payload_digest=batch_digest,
+                claims=draft_writes,
+            )
+            logger.info(
+                "MemoryPipeline: deposition draft committed mode=%s "
+                "claims=%d replayed=%s reasons=%s",
+                mode,
+                len(draft_writes),
+                commit.replayed,
+                ",".join(str(code) for code in reason_codes[:8]),
+            )
+            return self._entries_for_commit(commit)
+        except Exception:
+            logger.exception(
+                "MemoryPipeline: deposition draft commit failed "
+                "(experiment side-channel; primary write unaffected)"
+            )
+            return []
+
     def _build_reflection_claim_writes(
         self,
         result: Any,
@@ -2498,6 +3177,7 @@ class MemoryPipeline:
         task_description: str,
         execution_trace: list[dict[str, Any]],
         provenance: dict[str, Any] | None,
+        operation_id: str | None = None,
     ):
         from minicode.memory import (
             MemoryApprovalPolicy,
@@ -2522,6 +3202,11 @@ class MemoryPipeline:
             if isinstance(event, dict) and event.get("event_id")
         ][:64]
         writes = []
+        declared_expiry = (
+            self._deposition_expiry(operation_id, claims=lesson_claims)
+            if any(self._is_declared_dependency(claim) for claim in lesson_claims)
+            else None
+        )
         for claim in lesson_claims:
             claim_signals = tuple(
                 signal
@@ -2580,6 +3265,22 @@ class MemoryPipeline:
             )
             mem_data = single_result.to_memory_entry()
             metadata = dict(mem_data.get("metadata", {}))
+            if self._is_declared_dependency(claim):
+                from minicode.memory_deposition_experiment import (
+                    apply_draft_metadata,
+                    deposition_mode,
+                )
+
+                # Manifest declarations remain pending even in inject mode.
+                # Only the separate draft renderer may expose them.
+                metadata = apply_draft_metadata(
+                    {"metadata": metadata},
+                    reason_codes=["declared_dependency"],
+                    expires_at=declared_expiry if deposition_mode() == "inject" else None,
+                    injectable=deposition_mode() == "inject",
+                )["metadata"]
+                metadata["deposition_operation_id"] = operation_id
+                approval_policy = MemoryApprovalPolicy.USER_REVIEW_REQUIRED
             metadata["claim_identity"] = {
                 "claim_id": claim.claim_id,
                 "semantic_key": claim.semantic_key,
@@ -2732,6 +3433,129 @@ class MemoryPipeline:
             add_entry_kwargs=add_entry_kwargs,
         )
         return claim_id, add_entry_kwargs, payload_digest
+
+    @staticmethod
+    def _is_declared_dependency(claim: Any) -> bool:
+        from minicode.memory_deposition_experiment import deposition_feature_enabled
+
+        return (
+            deposition_feature_enabled("declared_dependencies")
+            and claim.claim_type == "dependency"
+            and claim.epistemic_status == "inferred"
+        )
+
+    def _deposition_expiry(
+        self, operation_id: str | None, *, claims: list[Any] | None = None,
+    ) -> float:
+        """Keep TTL stable on a replay of the same logical experimental write."""
+        from minicode.memory_deposition_experiment import draft_ttl_seconds
+
+        if operation_id or claims:
+            self._memory.refresh_if_stale()
+            claim_identities = {
+                (claim.semantic_key, claim.statement) for claim in (claims or [])
+                if self._is_declared_dependency(claim)
+            }
+            recurring_expiries = []
+            for memory in self._memory.memories.values():
+                for entry in memory.entries:
+                    draft = entry.metadata.get("deposition_draft", {})
+                    if not isinstance(draft, dict):
+                        continue
+                    expiry = draft.get("expires_at")
+                    if not isinstance(expiry, (int, float)) or not math.isfinite(expiry):
+                        continue
+                    if operation_id and entry.metadata.get("deposition_operation_id") == operation_id:
+                        return float(expiry)
+                    identity = entry.metadata.get("claim_identity", {})
+                    if (
+                        isinstance(identity, dict)
+                        and "declared_dependency" in draft.get("reason_codes", [])
+                        and (identity.get("semantic_key"), identity.get("statement"))
+                        in claim_identities
+                    ):
+                        recurring_expiries.append(float(expiry))
+            # Recurrence keeps the original entry's metadata. Reuse its TTL
+            # when building a later operation too, so retrying that operation
+            # produces the same digest without extending the stored draft.
+            if recurring_expiries:
+                return min(recurring_expiries)
+        return time.time() + draft_ttl_seconds()
+
+    def _prepare_user_preference(
+        self,
+        task_description: str,
+        execution_trace: list[dict[str, Any]],
+        *,
+        operation_id: str,
+        provenance: dict[str, Any] | None,
+    ) -> tuple[str, dict[str, Any], str] | None:
+        from minicode.memory import (
+            MemoryApprovalPolicy,
+            MemoryTier,
+            assess_memory_safety,
+            conversation_fact_payload_digest,
+            persistence_text_contains_secret,
+        )
+        from minicode.memory_deposition_experiment import (
+            apply_draft_metadata,
+            deposition_feature_enabled,
+            deposition_mode,
+        )
+
+        if not deposition_feature_enabled("user_preferences"):
+            return None
+        preference = _extract_user_preference(task_description)
+        if (
+            preference is None
+            or persistence_text_contains_secret(preference)
+            or not assess_memory_safety(preference, source="conversation_fact").allowed
+        ):
+            return None
+        injectable = deposition_mode() == "inject"
+        claim_id = "user-preference-" + hashlib.sha256(preference.encode()).hexdigest()[:16]
+        kwargs = apply_draft_metadata(
+            {
+                "category": "user_preference",
+                "content": preference,
+                "tags": ["user-preference", "user-statement"],
+                "domains": ["memory"],
+                "tier": MemoryTier.SHORT_TERM,
+                "source": "conversation_fact",
+                "approval_policy": MemoryApprovalPolicy.USER_REVIEW_REQUIRED,
+                "metadata": {"evidence_kind": "user_statement", "deposition_operation_id": operation_id},
+                "provenance": {
+                    **dict(provenance or {}),
+                    "task": task_description[:300],
+                    "trace_events": len(execution_trace),
+                    "intake": "deterministic_user_preference",
+                    "scope_basis": "personal_preference",
+                    "approval_basis": "experimental_user_preference" if injectable else "user_review",
+                },
+            },
+            reason_codes=["user_preference"],
+            expires_at=self._deposition_expiry(operation_id) if injectable else None,
+            injectable=injectable,
+        )
+        return claim_id, kwargs, conversation_fact_payload_digest(claim_id=claim_id, add_entry_kwargs=kwargs)
+
+    def _commit_user_preference(
+        self,
+        plan: tuple[str, dict[str, Any], str],
+        *,
+        operation_id: str,
+        operation_payload_digest: str,
+    ):
+        claim_id, kwargs, digest = plan
+        commit = self._memory.commit_conversation_fact(
+            operation_id=operation_id,
+            payload_digest=operation_payload_digest,
+            authority_payload_digest=digest,
+            claim_id=claim_id,
+            add_entry_kwargs=kwargs,
+        )
+        logger.info("MemoryPipeline: user preference committed id=%s replayed=%s", commit.representative_id or "none", commit.replayed)
+        return commit
 
     def _commit_conversation_fact(
         self,
@@ -3036,7 +3860,7 @@ class MemoryPipeline:
         if self._memory is None:
             return ""
         try:
-            from minicode.memory import MemoryScope, USER_PROFILE_CATEGORY
+            from minicode.memory import USER_PROFILE_CATEGORY, MemoryScope
 
             entries = [
                 entry

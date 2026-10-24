@@ -14,6 +14,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "fakeredis>=2",
     "jsonschema>=4.0.0",
     "pytest>=8.0.0",
     "pytest-randomly>=4.0.0,<5",
@@ -21,6 +22,7 @@ dev = [
     "setuptools>=68",
     "wheel",
 ]
+redis = ["redis>=5"]
 memory-hybrid = [
     "huggingface-hub>=0.33.4,<1",
     "numpy>=2.0.0,<3",

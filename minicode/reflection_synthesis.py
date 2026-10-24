@@ -11,6 +11,10 @@ from collections import defaultdict
 from dataclasses import dataclass, field, replace
 from typing import Any, Literal, Protocol, runtime_checkable
 
+from minicode.memory_deposition_experiment import (
+    deposition_feature_enabled,
+    deposition_mode,
+)
 from minicode.reflection_evidence import (
     DecisionEvidence,
     ErrorEvidence,
@@ -40,6 +44,7 @@ ClaimSeverity = Literal["info", "warning", "error"]
 CLAIM_MAX_TEXT_CHARS = 1_200
 CLAIM_MAX_AUX_TEXT_CHARS = 600
 CLAIM_MAX_ITEMS = 256
+DECLARED_DEPENDENCY_LIMITATION = "Declared in manifest; not yet exercised in this trace."
 
 
 @runtime_checkable
@@ -679,6 +684,13 @@ def durable_signals_for_claim(claim: ReflectionClaim) -> tuple[str, ...]:
         return ("stable_project_constraint",)
     if claim.claim_type == "dependency" and claim.epistemic_status == "confirmed":
         return ("confirmed_dependency",)
+    if (
+        claim.claim_type == "dependency"
+        and claim.epistemic_status == "inferred"
+        and DECLARED_DEPENDENCY_LIMITATION in claim.limitations
+        and deposition_feature_enabled("declared_dependencies")
+    ):
+        return ("declared_dependency",)
     if claim.claim_type in {"error_pattern", "warning"}:
         return ("reusable_error_pattern",)
     if claim.claim_type == "root_cause" and claim.epistemic_status == "confirmed":
@@ -858,6 +870,21 @@ class RuleReflectionSynthesizer:
                 "confirmed",
             )
 
+        if deposition_feature_enabled("declared_dependencies"):
+            declared_libraries = [
+                item for item in evidence.libraries if item.status == "declared"
+            ]
+            if declared_libraries:
+                names = sorted(dict.fromkeys(item.name for item in declared_libraries))
+                add_claim(
+                    "dependency",
+                    _semantic_slug("declared_" + "_".join(names), "declared_dependencies"),
+                    f"Project declared dependencies: {', '.join(names)}.",
+                    [event_id for item in declared_libraries for event_id in item.event_ids],
+                    "inferred",
+                    limitations=[DECLARED_DEPENDENCY_LIMITATION],
+                )
+
         recovery_error_ids = {
             error_id for recovery in evidence.recoveries for error_id in recovery.related_error_ids
         }
@@ -881,6 +908,33 @@ class RuleReflectionSynthesizer:
             if not self._specific_error(error):
                 continue
             if self._environment_scoped_error(error):
+                # Strict policy: a transport failure usually generalises to
+                # nothing but itself ("when X reports connection refused, X
+                # reported connection refused"), so the claim is skipped
+                # entirely.  The deposition experiment instead lets the claim
+                # through: the value gate still rejects it, and the pipeline
+                # files it as a short-TTL draft — which is where a genuinely
+                # project-specific workflow lesson (e.g. a local service that
+                # must be started before the tests) can survive instead of
+                # being lost with the tautologies.
+                if deposition_mode() == "strict":
+                    continue
+                add_claim(
+                    "error_pattern",
+                    _semantic_slug(
+                        f"{error.tool_name or 'tool'} {error.error_type or ''} {error.message}",
+                        "error",
+                    ),
+                    self._error_statement(error),
+                    error.source_event_ids,
+                    error.epistemic_status,
+                    applies_when=self._error_applies_when(error),
+                    limitations=[
+                        "Observed in one task trace; broader recurrence is not yet established.",
+                        "Environment-scoped failure; may describe this host rather than the project.",
+                    ],
+                    related_error_ids=[error.error_id],
+                )
                 continue
             add_claim(
                 "error_pattern",
@@ -1574,8 +1628,19 @@ class ReflectionClaimValidator:
                 for event_id in claim.evidence_ids
                 for item in indexes["libraries_by_event"].get(event_id, [])
             ]
-            if not libraries or any(item.status != "confirmed" for item in libraries):
+            allowed_statuses = {"confirmed"}
+            if deposition_feature_enabled("declared_dependencies"):
+                allowed_statuses.add("declared")
+            if not libraries or any(item.status not in allowed_statuses for item in libraries):
                 reject("dependency_not_confirmed", "Dependency lacks confirmed LibraryEvidence.")
+            if any(item.status == "declared" for item in libraries):
+                if claim.epistemic_status != "inferred":
+                    reject("declared_dependency_overclaim", "A manifest declaration is inferred, not verified use.")
+                if (
+                    DECLARED_DEPENDENCY_LIMITATION not in claim.limitations
+                    or "declared" not in _normalize_text(claim.statement)
+                ):
+                    reject("declared_dependency_missing_caveat", "Declared dependencies require explicit declaration wording and limitation.")
         if claim.claim_type == "correction" and not any(
             item.source_kind in {"user_correction", "old_memory_disproved"}
             for item in decisions
@@ -1778,7 +1843,10 @@ class ReflectionClaimValidator:
                 source_text(item.statement) in statement for item in decisions
             )
         elif claim.claim_type == "dependency":
-            names = {source_text(item.name) for item in libraries if item.status == "confirmed"}
+            allowed_statuses = {"confirmed"}
+            if deposition_feature_enabled("declared_dependencies"):
+                allowed_statuses.add("declared")
+            names = {source_text(item.name) for item in libraries if item.status in allowed_statuses}
             aligned = bool(names) and all(name in statement for name in names)
         elif claim.claim_type in {"error_pattern", "warning"}:
             aligned = any(quotes_source(item.message) for item in errors)

@@ -311,6 +311,35 @@ def test_legacy_id_only_run_feedback_fails_closed(
     assert entry.is_active is True
 
 
+def test_unversioned_draft_attribution_cannot_widen_delayed_feedback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manager = _manager(tmp_path, monkeypatch)
+    canonical = _entry(manager, "Use isolated checkout fixtures.")
+    unversioned = _entry(manager, "Keep transaction updates atomic.")
+    workspace = tmp_path / "workspace"
+    journal = RunJournal(workspace, data_dir=tmp_path / "journal")
+    run = journal.create_run(title="Draft feedback isolation", source="gateway")
+    journal.transition(run.id, "running")
+    journal.record_rendered_memory_versions(run.id, [canonical])
+    # Even if a draft ID happens to match a durable entry, its bare rendering
+    # attribution must never grant a feedback version for that entry.
+    journal.record_rendered_memory_ids(run.id, [canonical[0], unversioned[0]])
+    journal.transition(run.id, "completed")
+
+    assert journal.get_rendered_memory_ids(run.id) == (
+        canonical[0], unversioned[0],
+    )
+    assert journal.get_rendered_memory_versions(run.id) == (canonical,)
+    _apply_run_outcome_memory_feedback(workspace, journal, run.id, "reject")
+
+    current = MemoryManager(project_root=workspace)
+    entries = current.memories[MemoryScope.PROJECT]._id_index
+    assert entries[canonical[0]].failure_count == 1
+    assert entries[unversioned[0]].failure_count == 0
+
+
 def test_matching_version_feedback_is_idempotent_per_delivery_channel(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

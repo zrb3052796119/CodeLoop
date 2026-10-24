@@ -1790,11 +1790,17 @@ class CanonicalMemoryRetriever:
         return result
 
     def _active_entries(self) -> list[MemoryEntry]:
+        # Deposition drafts (permissive experiment) age out of the corpus
+        # once past their TTL; all other entries are unaffected.
+        from minicode.memory_deposition_experiment import (
+            draft_entry_retrievable,
+        )
+
         entries = [
             entry
             for memory_file in self._memory.memories.values()
             for entry in memory_file.entries
-            if entry.is_active
+            if entry.is_active and draft_entry_retrievable(entry)
         ]
         return sorted(entries, key=lambda entry: (entry.scope.value, entry.id))
 
@@ -2635,6 +2641,11 @@ class CanonicalMemoryRetriever:
                     "request": request,
                     "entries": hybrid_entries,
                     "lexical_accepted_ids": lexical_accepted_ids,
+                    "authority_revision": (
+                        prepared_corpus_snapshot.authority_revision
+                        if prepared_corpus_snapshot is not None
+                        else None
+                    ),
                     "agent_budget": agent_budget,
                     "event_sink": event_sink,
                     "cancellation_token": cancellation_token,

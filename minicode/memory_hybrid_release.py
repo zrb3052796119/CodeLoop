@@ -14,5 +14,5 @@ HYBRID_ACCEPTED_QWEN_PROMOTION_FINGERPRINT = (
 # Populated only after the preregistered resolver-pressure one-shot passes.
 # An empty value deliberately blocks the independent promotion holdout.
 HYBRID_ACCEPTED_RESOLVER_PRESSURE_REPORT_FINGERPRINT = (
-    "b727d2dd61d4fdf78289553fbfc4ef9c0c4fe83789af1bbead9e24ef4c404fcf"
+    "8d33e538d1ba6f69d994ec4c8fc455cca88da7401ab92b2619a966239e200b5f"
 )

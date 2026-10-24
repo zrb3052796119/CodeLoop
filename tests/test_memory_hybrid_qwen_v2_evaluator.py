@@ -366,9 +366,9 @@ def _passing_report() -> dict[str, object]:
     }
     usage = {
         "embedding": {
-            "completed_call_count": 255,
+            "completed_call_count": 263,
             "failed_call_count": 0,
-            "input_tokens": 255,
+            "input_tokens": 263,
             "output_tokens": 0,
             "usage_unavailable_count": 0,
         },
@@ -382,7 +382,7 @@ def _passing_report() -> dict[str, object]:
             }
             for stage, count in {
                 "identity": 2,
-                "global_documents": 1,
+                "global_documents": 9,
                 "global_query": 84,
                 "canonical_documents": 84,
                 "canonical_query": 84,
@@ -858,7 +858,7 @@ def test_evaluation_evidence_uses_the_v7_canonical_decision_contract() -> None:
     decision_contract = build_hybrid_decision_contract("qwen3.7-plus")
 
     assert evidence["schema_version"] == "3.0"
-    assert evidence["protocol_version"] == "hybrid-canonical-v8"
+    assert evidence["protocol_version"] == "hybrid-canonical-v8.1"
     assert evidence["inference_profile"] == dict(HYBRID_PROMOTION_INFERENCE_PROFILE)
     assert evidence["verifier"] == decision_contract["verifier"]
     assert evidence["challenger"] == decision_contract["challenger"]

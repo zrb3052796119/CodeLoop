@@ -1914,7 +1914,12 @@ class RunJournal:
             )
 
     def get_rendered_memory_ids(self, run_id: str) -> tuple[str, ...] | None:
-        """Read rendered IDs, preferring the authoritative version sidecar."""
+        """Read all rendered IDs, including drafts without authority versions.
+
+        Exact versions remain the only authority for delayed feedback. The
+        content-free ID sidecar also attributes ephemeral draft text, while
+        the version ledger can include later compaction materializations.
+        """
         self._validate_run_id(run_id)
         record, _ = self._read_run(run_id)
         if record is None:
@@ -1925,16 +1930,19 @@ class RunJournal:
             _RENDERED_MEMORY_VERSION_FILE,
             "Rendered",
         )
+        rendered_ids = self._read_memory_id_sidecar(
+            run_dir, _RENDERED_MEMORY_FILE, "Rendered"
+        )
         if versions is not None:
             return tuple(
                 dict.fromkeys(
-                    entry_id
-                    for entry_id, _digest in versions.materializations
+                    (
+                        *(entry_id for entry_id, _digest in versions.materializations),
+                        *(rendered_ids or ()),
+                    )
                 )
             )
-        return self._read_memory_id_sidecar(
-            run_dir, _RENDERED_MEMORY_FILE, "Rendered"
-        )
+        return rendered_ids
 
     def record_rendered_memory_versions(
         self,

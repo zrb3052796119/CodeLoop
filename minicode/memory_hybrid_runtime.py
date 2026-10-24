@@ -12,6 +12,7 @@ import threading
 import time
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,8 @@ from minicode.memory_hybrid import (
     HYBRID_MODEL_STRING_LIMIT,
     HYBRID_PROMOTION_INFERENCE_PROFILE,
     HYBRID_PROMPT_VERSION,
+    HYBRID_PROTOCOL_VERSION,
+    HYBRID_QUERY_GATE_VERSION,
     HYBRID_RELEVANT_REASONS,
     HYBRID_RESOLVER_MODE,
     HYBRID_RESOLVER_NON_OVERRIDABLE_VETO_REASONS,
@@ -57,6 +60,7 @@ from minicode.memory_hybrid_promotion_contract import (
     QWEN_VERIFIER_BASE_URL,
     qwen_verifier_route_identity,
 )
+from minicode.memory_hot_store import MemoryHotStore, get_memory_hot_store
 from minicode.memory_path_identity import (
     complete_identity_occurrence_spans,
     extract_complete_path_identities,
@@ -2604,6 +2608,8 @@ class HybridRuntimeProvider:
         embedding_provider: str = "local-e5",
         shared_state: _HybridSharedState | None = None,
         provider_cache_reused: bool = False,
+        hot_store: MemoryHotStore | None = None,
+        hot_cache_identity: str | None = None,
     ) -> None:
         if (
             isinstance(dense_top_k, bool)
@@ -2639,6 +2645,8 @@ class HybridRuntimeProvider:
         self._adjudication_lock = state.adjudication_lock
         self._cache = state.cache
         self._provider_cache_reused = bool(provider_cache_reused)
+        self._hot_store = hot_store
+        self._hot_cache_identity = hot_cache_identity
 
     def _reserve_model_call(self) -> None:
         if self._model_calls >= self._max_model_calls:
@@ -2761,6 +2769,121 @@ class HybridRuntimeProvider:
         }
         return _sha256_bytes(_stable_json(payload).encode("utf-8"))
 
+    def _revision_cache_key(
+        self,
+        request: Any,
+        lexical_accepted_ids: Sequence[str] | frozenset[str],
+        authority_revision: str,
+    ) -> str:
+        # The revision is supplied with the immutable retrieval snapshot. The
+        # bounded request includes paths/domains and lexical rescue order;
+        # normalizing only the free-text query would alias different decisions.
+        payload = {
+            "schema": "memory_hot_adjudication_v1",
+            "authority_revision": authority_revision,
+            "query": _canonical_request_fields(request),
+            "query_projection_complete": _bounded_projection_is_complete(
+                getattr(request, "query", ""), MAX_QUERY_CHARS
+            ),
+            "lexical_accepted_ids": list(
+                _ordered_lexical_candidate_ids(lexical_accepted_ids)
+            ),
+            "provider": self._hot_cache_identity,
+            "protocol": HYBRID_PROTOCOL_VERSION,
+            "query_gate": HYBRID_QUERY_GATE_VERSION,
+            "prompts": [
+                [HYBRID_PROMPT_VERSION, HYBRID_SYSTEM_PROMPT],
+                [HYBRID_CHALLENGER_PROMPT_VERSION, HYBRID_CHALLENGER_SYSTEM_PROMPT],
+                [HYBRID_RESOLVER_PROMPT_VERSION, HYBRID_RESOLVER_SYSTEM_PROMPT],
+            ],
+            "configuration": [
+                self._dense_top_k,
+                self._max_candidates,
+                self._minimum_confidence,
+                self._challenger_minimum_confidence,
+                self._resolver_minimum_confidence,
+                self._max_model_calls,
+                self._embedding_provider,
+            ],
+        }
+        return _sha256_bytes(_stable_json(payload).encode("utf-8"))
+
+    @staticmethod
+    def _serialize_adjudication(result: HybridAdjudication) -> dict[str, Any]:
+        return {
+            "schema": "memory_hot_adjudication_v1",
+            "signals": [
+                {
+                    "entry_id": signal.entry_id,
+                    "dense_score": signal.dense_score,
+                    "relevance_score": signal.relevance_score,
+                    "accepted": signal.accepted,
+                    "reason_codes": list(signal.reason_codes),
+                }
+                for signal in result.signals
+            ],
+            "diagnostics": result.diagnostics,
+            "candidate_ids": (
+                None if result.candidate_ids is None else list(result.candidate_ids)
+            ),
+        }
+
+    @staticmethod
+    def _deserialize_adjudication(
+        value: dict[str, Any] | None,
+        entries: tuple[Any, ...],
+    ) -> HybridAdjudication | None:
+        # Redis is disposable external state. Reject malformed/coerced values
+        # instead of letting truthy strings or unknown IDs grant admission.
+        if not isinstance(value, dict) or set(value) != {
+            "schema", "signals", "diagnostics", "candidate_ids"
+        }:
+            return None
+        if value["schema"] != "memory_hot_adjudication_v1":
+            return None
+        signals = value["signals"]
+        candidate_ids = value["candidate_ids"]
+        diagnostics = value["diagnostics"]
+        active_ids = {entry.id for entry in entries}
+        if (
+            not isinstance(signals, list)
+            or len(signals) > len(active_ids)
+            or not isinstance(diagnostics, dict)
+            or not all(isinstance(key, str) for key in diagnostics)
+            or not isinstance(candidate_ids, list)
+            or not all(isinstance(item, str) and item for item in candidate_ids)
+        ):
+            return None
+        parsed: list[HybridCandidateSignal] = []
+        try:
+            # Validate nested diagnostic numbers as well as signal scores.
+            json.dumps(diagnostics, allow_nan=False)
+            for signal in signals:
+                if not isinstance(signal, dict) or set(signal) != {
+                    "entry_id", "dense_score", "relevance_score", "accepted",
+                    "reason_codes",
+                }:
+                    return None
+                if (
+                    not isinstance(signal["entry_id"], str)
+                    or signal["entry_id"] not in active_ids
+                    or type(signal["accepted"]) is not bool
+                    or any(
+                        type(signal[field]) not in (int, float)
+                        for field in ("dense_score", "relevance_score")
+                    )
+                    or not isinstance(signal["reason_codes"], list)
+                    or not all(
+                        isinstance(reason, str) and 0 < len(reason) <= 64
+                        for reason in signal["reason_codes"]
+                    )
+                ):
+                    return None
+                parsed.append(HybridCandidateSignal(**signal))
+            return HybridAdjudication(tuple(parsed), diagnostics, tuple(candidate_ids))
+        except (TypeError, ValueError, OverflowError):
+            return None
+
     def _cached(self, key: str) -> HybridAdjudication | None:
         with self._lock:
             cached = self._cache.get(key)
@@ -2806,10 +2929,14 @@ class HybridRuntimeProvider:
         event_sink: Any = None,
         cancellation_token: Any = None,
         deadline_monotonic: float | None = None,
+        authority_revision: str | None = None,
     ) -> HybridAdjudication | None:
         if not getattr(request, "query", "").strip():
             return None
-        with self._adjudication_lock:
+        hot_store = self._hot_store
+        with self._adjudication_lock, (
+            hot_store.budget() if hot_store is not None else nullcontext()
+        ):
             try:
                 # Without a turn-owned AgentTurnBudget this public call is the
                 # only reliable task boundary.  Do not let one query consume a
@@ -2821,9 +2948,32 @@ class HybridRuntimeProvider:
                 elif self._model_call_budget_owner is not agent_budget:
                     self._model_calls = 0
                     self._model_call_budget_owner = agent_budget
-                cache_key = self._cache_key(request, entries, lexical_accepted_ids)
+                use_revision = bool(
+                    hot_store is not None
+                    and self._hot_cache_identity
+                    and isinstance(authority_revision, str)
+                    and authority_revision
+                )
+                cache_key = (
+                    self._revision_cache_key(
+                        request, lexical_accepted_ids, authority_revision
+                    )
+                    if use_revision
+                    else self._cache_key(request, entries, lexical_accepted_ids)
+                )
+                shared = None
+                if use_revision and hot_store.available:
+                    shared = self._deserialize_adjudication(
+                        hot_store.get_adjudication(cache_key), entries
+                    )
+                    if shared is not None:
+                        self._remember(cache_key, shared)
                 cached = self._cached(cache_key)
                 if cached is not None:
+                    if use_revision and hot_store.available and shared is None:
+                        hot_store.put_adjudication(
+                            cache_key, self._serialize_adjudication(cached)
+                        )
                     return cached
                 result = self._adjudicate_uncached(
                     request=request,
@@ -2835,6 +2985,10 @@ class HybridRuntimeProvider:
                     deadline_monotonic=deadline_monotonic,
                 )
                 self._remember(cache_key, result)
+                if use_revision and hot_store.available:
+                    hot_store.put_adjudication(
+                        cache_key, self._serialize_adjudication(result)
+                    )
                 return result
             except (TurnCancellationRequested, ModelCallDeadlineExceeded):
                 raise
@@ -4066,6 +4220,12 @@ def _salted_digest(value: object) -> str:
     return _sha256_bytes(_PROVIDER_CACHE_SALT + serialized)
 
 
+def _stable_digest(value: object) -> str:
+    # Shared Redis identities must survive process restarts. Only the final
+    # digest is sent to Redis; credentials and route details stay local.
+    return _sha256_bytes(_stable_json(value).encode("utf-8"))
+
+
 def _explicit_cache_identity(owner: Any) -> object | None:
     identity = getattr(owner, "hybrid_runtime_cache_identity", None)
     if callable(identity):
@@ -4078,7 +4238,10 @@ def _explicit_cache_identity(owner: Any) -> object | None:
     return None
 
 
-def _model_adapter_cache_identity(model_adapter: Any) -> dict[str, Any] | None:
+def _model_adapter_cache_identity(
+    model_adapter: Any, *, persistent: bool = False
+) -> dict[str, Any] | None:
+    digest = _stable_digest if persistent else _salted_digest
     adapter_type = (
         f"{type(model_adapter).__module__}.{type(model_adapter).__qualname__}"
     )
@@ -4089,7 +4252,7 @@ def _model_adapter_cache_identity(model_adapter: Any) -> dict[str, Any] | None:
             return None
         return {
             "model_id": _model_id(model_adapter),
-            "explicit_digest": _salted_digest(
+            "explicit_digest": digest(
                 {"adapter_type": adapter_type, "identity": explicit}
             ),
         }
@@ -4139,7 +4302,7 @@ def _model_adapter_cache_identity(model_adapter: Any) -> dict[str, Any] | None:
         if str(runtime.get(name) or "")
     }
     try:
-        runtime_digest = _salted_digest(identity_payload)
+        runtime_digest = digest(identity_payload)
     except (TypeError, ValueError):
         # Unstable or unserializable transport configuration disables sharing
         # instead of falling back to an incomplete cache identity.
@@ -4150,7 +4313,10 @@ def _model_adapter_cache_identity(model_adapter: Any) -> dict[str, Any] | None:
     }
 
 
-def _embedding_client_cache_identity(client: Any) -> dict[str, Any] | None:
+def _embedding_client_cache_identity(
+    client: Any, *, persistent: bool = False
+) -> dict[str, Any] | None:
+    digest = _stable_digest if persistent else _salted_digest
     explicit = _explicit_cache_identity(client)
     model = str(getattr(client, "model", "") or getattr(client, "_model", ""))
     endpoint = (
@@ -4162,7 +4328,7 @@ def _embedding_client_cache_identity(client: Any) -> dict[str, Any] | None:
         return {
             "model": model,
             "endpoint": endpoint,
-            "explicit_digest": _salted_digest(explicit),
+            "explicit_digest": digest(explicit),
         }
     credential = getattr(client, "_api_key", None)
     if not model or not endpoint or not isinstance(credential, str) or not credential:
@@ -4170,7 +4336,7 @@ def _embedding_client_cache_identity(client: Any) -> dict[str, Any] | None:
     return {
         "model": model,
         "endpoint": endpoint,
-        "credential_digest": _salted_digest(credential),
+        "credential_digest": digest(credential),
     }
 
 
@@ -4180,12 +4346,15 @@ def _provider_cache_key(
     model_adapter: Any,
     workspace_path: str | Path | None,
     embedding_client: Any | None,
+    persistent: bool = False,
 ) -> str | None:
-    adapter_identity = _model_adapter_cache_identity(model_adapter)
+    adapter_identity = _model_adapter_cache_identity(
+        model_adapter, persistent=persistent
+    )
     if adapter_identity is None or activation.evidence is None:
         return None
     embedding_identity = (
-        _embedding_client_cache_identity(embedding_client)
+        _embedding_client_cache_identity(embedding_client, persistent=persistent)
         if embedding_client is not None
         else {
             "provider": activation.embedding_provider,
@@ -4207,7 +4376,7 @@ def _provider_cache_key(
         "embedding": embedding_identity,
         "verifier": adapter_identity,
     }
-    return _salted_digest(payload)
+    return (_stable_digest if persistent else _salted_digest)(payload)
 
 
 def _cached_provider_state(key: str | None) -> _HybridSharedState | None:
@@ -4348,6 +4517,12 @@ def create_hybrid_candidate_provider(
         return _provider_initialization_failure(
             "candidate_contract_invalid", strict=strict
         )
+    hot_store = (
+        get_memory_hot_store(workspace_path)
+        if workspace_path is not None
+        and os.environ.get("MINI_CODE_MEMORY_REDIS_URL", "").strip()
+        else None
+    )
     embedding_client = None
     if activation.embedding_provider == "qwen":
         factory = (
@@ -4384,6 +4559,17 @@ def create_hybrid_candidate_provider(
             workspace_path=workspace_path,
             embedding_client=embedding_client,
         )
+        hot_cache_identity = (
+            _provider_cache_key(
+                activation=activation,
+                model_adapter=model_adapter,
+                workspace_path=workspace_path,
+                embedding_client=embedding_client,
+                persistent=True,
+            )
+            if hot_store is not None
+            else None
+        )
         cached_state = _cached_provider_state(cache_key)
         if cached_state is not None:
             return HybridRuntimeProvider(
@@ -4398,6 +4584,8 @@ def create_hybrid_candidate_provider(
                 embedding_provider=activation.embedding_provider,
                 shared_state=cached_state,
                 provider_cache_reused=True,
+                hot_store=hot_store,
+                hot_cache_identity=hot_cache_identity,
             )
         encoder: EmbeddingEncoder = OpenAICompatibleEmbeddingEncoder(
             embedding_client,
@@ -4418,6 +4606,17 @@ def create_hybrid_candidate_provider(
             workspace_path=workspace_path,
             embedding_client=None,
         )
+        hot_cache_identity = (
+            _provider_cache_key(
+                activation=activation,
+                model_adapter=model_adapter,
+                workspace_path=workspace_path,
+                embedding_client=None,
+                persistent=True,
+            )
+            if hot_store is not None
+            else None
+        )
         cached_state = _cached_provider_state(cache_key)
         if cached_state is not None:
             return HybridRuntimeProvider(
@@ -4432,6 +4631,8 @@ def create_hybrid_candidate_provider(
                 embedding_provider=activation.embedding_provider,
                 shared_state=cached_state,
                 provider_cache_reused=True,
+                hot_store=hot_store,
+                hot_cache_identity=hot_cache_identity,
             )
         encoder = LocalE5Encoder(activation.model_path, evidence["model"])
     shared_state = _HybridSharedState(encoder)
@@ -4446,6 +4647,8 @@ def create_hybrid_candidate_provider(
         max_model_calls=max_model_calls,
         embedding_provider=activation.embedding_provider,
         shared_state=shared_state,
+        hot_store=hot_store,
+        hot_cache_identity=hot_cache_identity,
     )
     _remember_provider_state(cache_key, shared_state)
     return provider

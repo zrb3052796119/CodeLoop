@@ -1159,6 +1159,7 @@ def emit_memory_result_safely(
     result: object | None,
     *,
     provenance_batch: object | None = None,
+    draft_rendered_ids: tuple[str, ...] = (),
 ) -> None:
     """Observe one final Memory result without executing Memory code again."""
     if sink is None:
@@ -1169,6 +1170,10 @@ def emit_memory_result_safely(
     if provenance_batch is not None:
         record_memory_provenance_safely(sink, provenance_batch)
     if result is None:
+        if draft_rendered_ids:
+            _record_rendered_memory_ids_safely(
+                sink, None, draft_rendered_ids=draft_rendered_ids
+            )
         return
     try:
         retrieved, rendered = project_memory_result_events(result)
@@ -1180,10 +1185,17 @@ def emit_memory_result_safely(
         return
     emit_event_safely(sink, "memory.retrieved", payload=retrieved)
     emit_event_safely(sink, "memory.rendered", payload=rendered)
-    _record_rendered_memory_ids_safely(sink, result)
+    _record_rendered_memory_ids_safely(
+        sink, result, draft_rendered_ids=draft_rendered_ids
+    )
 
 
-def _record_rendered_memory_ids_safely(sink: object, result: object) -> None:
+def _record_rendered_memory_ids_safely(
+    sink: object,
+    result: object | None,
+    *,
+    draft_rendered_ids: tuple[str, ...] = (),
+) -> None:
     """Best-effort, content-free bridge from a Memory result to a sink that
     can bind rendered entry IDs to this Run for later corroborated feedback.
     Silently does nothing for sinks (e.g. test doubles) without this seam.
@@ -1201,13 +1213,19 @@ def _record_rendered_memory_ids_safely(sink: object, result: object) -> None:
     recorder = getattr(sink, "record_rendered_memory_ids", None)
     if not callable(recorder):
         return
-    rendered_ids = getattr(result, "rendered_ids", None)
+    rendered_ids = getattr(result, "rendered_ids", ())
     if not isinstance(rendered_ids, (list, tuple)) or not all(
         isinstance(entry_id, str) for entry_id in rendered_ids
     ):
         return
+    # Drafts reached the prompt but have no durable authority version. Keep
+    # their attribution in the ID ledger without inventing feedback proofs.
+    if not isinstance(draft_rendered_ids, (list, tuple)) or not all(
+        isinstance(entry_id, str) for entry_id in draft_rendered_ids
+    ):
+        draft_rendered_ids = ()
     try:
-        recorder(list(rendered_ids))
+        recorder(list(dict.fromkeys((*rendered_ids, *draft_rendered_ids))))
     except Exception:  # noqa: BLE001 - rendered-id observation is optional
         try:
             _logger.warning("Memory rendered-id observation unavailable.")
