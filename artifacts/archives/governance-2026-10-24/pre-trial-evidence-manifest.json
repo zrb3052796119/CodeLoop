@@ -1,0 +1,1841 @@
+{
+  "schemaVersion": 1,
+  "description": "Recoverable pre-trial untracked experiment outputs; directly cited files and runtime/test inputs remain at original paths. Original failures and bytes are preserved, not replaced by successful reruns.",
+  "archive": "artifacts/archives/governance-2026-10-24/pre-trial-evidence.tar.gz",
+  "files": {
+    "artifacts/memory-deposition-six-forms-2026-10-22/compaction-baseline/comparison-report.json": {
+      "sha256": "fb218bea38fbd860a4da5b9ee9100fde69525bcb2c8ff31ab7d1374c85b009d3",
+      "bytes": 3079
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/compaction-baseline/comparison-report.md": {
+      "sha256": "9ff6ae9f4a43f0504024b2dc4cc44d2b2f11bb43ba275bfce30a30caf86670b6",
+      "bytes": 1680
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/compaction-baseline/redis-direct-timing.json": {
+      "sha256": "80e7fffd9dc4006aef1696ce133217a37bb01120474ab9e66b82f6a131ac74ed",
+      "bytes": 617
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/compaction-baseline/redis-runtime-inspection.json": {
+      "sha256": "aeeabdd9d0454bfc59cdce0da51405eb1e218e41077cfe00813150a495bb3a24",
+      "bytes": 878
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/compaction-baseline/regression-classification.json": {
+      "sha256": "ac7fa0a432f52446098705bf56fbddff662ebf20df78a56b30aa17729cad5c25",
+      "bytes": 6253
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/compaction-baseline/regression-classification.md": {
+      "sha256": "ec13cff575bd760974051203bb709f1f1706f842efedcb09886666f8db5fcfd1",
+      "bytes": 1881
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/compaction-baseline/run_isolated.py": {
+      "sha256": "d320b17883e4a05f3fdad73f49907a718ad19a57d614400c661f6d0dad080b60",
+      "bytes": 770
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/compaction-baseline/snapshot-identity.json": {
+      "sha256": "27ea4ea13000af3c155b4e57da8e705068314f15d054c5f5d5b0eed2b6b0d4aa",
+      "bytes": 1239
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/analyze_live_audit.py": {
+      "sha256": "2b859a8c7604e21d46ac9f4cfdb963e4fccd140e39ac3e86b44b869e9decfcd0",
+      "bytes": 11647
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/blocked.json": {
+      "sha256": "09ea4d2a8586b3d05bac2ffe14f0b061f6006457519e343df7041758cec6b2a4",
+      "bytes": 1041
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/execution-authorization.json": {
+      "sha256": "d4b0e73b1da75cccae8f7c45a67f3d68da5129d4643af9467c966421c86a773a",
+      "bytes": 510
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/recurrence-regression/buggy-source-identity.json": {
+      "sha256": "7ddaffa10b1d244afc498ac6f488d7d4e56d576a53cb993ea1afa1df99695e8d",
+      "bytes": 586
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/recurrence-regression/fixed-source-identity.json": {
+      "sha256": "18e6fdae9d22c11669de9c22f862121eb42f553b5c28e4bc79424845aa4115b0",
+      "bytes": 419
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/recurrence-regression/memory.py.before-fix": {
+      "sha256": "f4e907d4e5e3039e0b54288d31587b91e916d65225f41e5d876f51b54a067ef2",
+      "bytes": 412146
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/recurrence-regression/memory_pipeline.py.before-fix": {
+      "sha256": "bad7059a001a0998cab76919d46a3f33f5817271322e70fd5831fd3ad1f13d08",
+      "bytes": 189380
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/recurrence-regression/proof.json": {
+      "sha256": "d601b436ec6b3c53d9d7cd87eb2588c99b40166189d26f1d5e981b062d59b73e",
+      "bytes": 9371
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/recurrence-regression/retry-proof.json": {
+      "sha256": "57c3871d9440cf2b6a437b683deda8c254266f6aa34ecd21f22bb016f2564305",
+      "bytes": 9294
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/recurrence-regression/review.md": {
+      "sha256": "24fc8dcbd39ccfeabdd4d4c2ce6d626902c0ce0f27f5bbf8b6b8556bf9d471ea",
+      "bytes": 1152
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/replay_live_traces.py": {
+      "sha256": "c48350467fbe429d0538f8a60f87a3ded203cb417871c9ae967093f9f4303d0c",
+      "bytes": 8651
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/fixture-home/.mini-code/cybernetic_supervisor.json": {
+      "sha256": "dd69e932ac128791c0383c87389eb294b1df2951ad8dc044e26a37b90b8a6685",
+      "bytes": 2408
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/index.json": {
+      "sha256": "cfa44f272c86adfe1ba86216d31c4c144dbfddf43069f82d9b71c42ed8a4cb4e",
+      "bytes": 301
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2b4ec405f7e644e38c4c2731b13081f4/curator_receipt.json": {
+      "sha256": "d836a535179fdd21e748792a84218115e0e3b971fe9b21445217e40f428638bf",
+      "bytes": 149
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2b4ec405f7e644e38c4c2731b13081f4/events.ndjson": {
+      "sha256": "284deb4ff0596d6a48af3e7a67d9f809b1fc605735bd5fe5e47088bdd298c958",
+      "bytes": 6585
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2b4ec405f7e644e38c4c2731b13081f4/memory_rendered.json": {
+      "sha256": "7036200ab2a27efa18e9d57b495bb2fc3e1c613385ffd0e8a1c41dfcf30c0290",
+      "bytes": 108
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2b4ec405f7e644e38c4c2731b13081f4/memory_rendered_versions.json": {
+      "sha256": "d3134b55bb45e8f5e7e66a9779f976d924cf40b4d464c843b83eae90413f0495",
+      "bytes": 576
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2b4ec405f7e644e38c4c2731b13081f4/memory_written.json": {
+      "sha256": "d25cdbdde3121dd3ccd31e825a00e468e528da985e88eaff30ef2e17822ad61b",
+      "bytes": 72
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2b4ec405f7e644e38c4c2731b13081f4/memory_written_versions.json": {
+      "sha256": "ad4114370b4bc516efd899a173d9f43dd5d9f5f393d6f5c0d8fed75798f1671a",
+      "bytes": 533
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2b4ec405f7e644e38c4c2731b13081f4/metadata.json": {
+      "sha256": "9aa869e86236dabf207878aecc7c0f57555eedbdb4fc2d8731fc882fcb08bd07",
+      "bytes": 564
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2e5d1cbcbfaf4c6496cdfdcb809b7b41/curator_receipt.json": {
+      "sha256": "af67624b2de901f85a8a60f1dc235f60a112ff2cf74f449b89883aa118e1b33d",
+      "bytes": 149
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2e5d1cbcbfaf4c6496cdfdcb809b7b41/events.ndjson": {
+      "sha256": "e51bdcf4449d6227c8d40c8bfea10f091d907f565fe45815ac0f4fdcf35a6a86",
+      "bytes": 19385
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2e5d1cbcbfaf4c6496cdfdcb809b7b41/memory_rendered.json": {
+      "sha256": "c0e94264d6d5b6f9834373b431689b2f48b9d892629cd34e33cde5a8e957fd24",
+      "bytes": 72
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2e5d1cbcbfaf4c6496cdfdcb809b7b41/memory_rendered_versions.json": {
+      "sha256": "5463d5460c2cfd480e550a4ebd49cafb66b63f808408538bb50694a77bd80c0f",
+      "bytes": 582
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2e5d1cbcbfaf4c6496cdfdcb809b7b41/memory_written.json": {
+      "sha256": "b7ea81a09a5aa7ab82bf3e109a421fc93927a192446b7373f4dbd952e566bad0",
+      "bytes": 189
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2e5d1cbcbfaf4c6496cdfdcb809b7b41/memory_written_versions.json": {
+      "sha256": "3396877e478b1406c133c76ee91166dd1004094fa3bac84b3c6d0f29bea3f646",
+      "bytes": 1265
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_2e5d1cbcbfaf4c6496cdfdcb809b7b41/metadata.json": {
+      "sha256": "17c5b8afd7aa79d08c4fc99025f6f7f8976d4319aeededfeeb38cbeba39c9d41",
+      "bytes": 536
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_7b2c0b52fd694af89c7a6c745224eb96/curator_receipt.json": {
+      "sha256": "4e13a5de6a22a2754c872ff598313ef19300af104556a9e3b5590a70ffdb11d9",
+      "bytes": 149
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_7b2c0b52fd694af89c7a6c745224eb96/events.ndjson": {
+      "sha256": "2d3751432629b039debe42c7ac27c457a09b9c4fc2553729f0d818c8d2ed5df2",
+      "bytes": 14220
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_7b2c0b52fd694af89c7a6c745224eb96/memory_written.json": {
+      "sha256": "c0e94264d6d5b6f9834373b431689b2f48b9d892629cd34e33cde5a8e957fd24",
+      "bytes": 72
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_7b2c0b52fd694af89c7a6c745224eb96/memory_written_versions.json": {
+      "sha256": "7850e7a1c1067dd0d5d735dd8718f3109e08264a47b2c4d9c5bf65cf8b45e4a2",
+      "bytes": 533
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_7b2c0b52fd694af89c7a6c745224eb96/metadata.json": {
+      "sha256": "944b3dcf84a6fb3060952c595577a7d43b63a47351eeb4852a8e60eafdf09b26",
+      "bytes": 578
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_809090249268401ea29595018a686b65/curator_receipt.json": {
+      "sha256": "8eeb5da8f2b87967e6885077b92b7ac80428698e7dc818e62a9aebe047f044be",
+      "bytes": 149
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_809090249268401ea29595018a686b65/events.ndjson": {
+      "sha256": "9953f8089666f3c3071754bda1e7dcdbe7a2dc4b030dd8203fa7bb191874426d",
+      "bytes": 15171
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_809090249268401ea29595018a686b65/memory_rendered.json": {
+      "sha256": "86b586b8f46ae885a8ac51f0634373c5526156e45229756b78a1494ff5047671",
+      "bytes": 111
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_809090249268401ea29595018a686b65/memory_rendered_versions.json": {
+      "sha256": "4884b734969cb466dc9af83b88dd67e19b3af33ff58f89c4da48ebf0ebe824b8",
+      "bytes": 582
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_809090249268401ea29595018a686b65/metadata.json": {
+      "sha256": "f018f6fc5de60644f72114c3939418457d21d6810443b1d16c2340febada747b",
+      "bytes": 561
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_c20df36bc9dd4c0db8c805433249d2a3/curator_receipt.json": {
+      "sha256": "ca34cd8e11decbc1d4d179f738a4293e0ce94941c72df97993eb1510f074f83e",
+      "bytes": 149
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_c20df36bc9dd4c0db8c805433249d2a3/events.ndjson": {
+      "sha256": "d5d9a99fc8c69e913a6533c2e9196d577a2293b6dd7b00172bf44120058d35ab",
+      "bytes": 23911
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_c20df36bc9dd4c0db8c805433249d2a3/memory_rendered.json": {
+      "sha256": "d25cdbdde3121dd3ccd31e825a00e468e528da985e88eaff30ef2e17822ad61b",
+      "bytes": 72
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_c20df36bc9dd4c0db8c805433249d2a3/memory_written.json": {
+      "sha256": "b6939fe5a97055b09986cabbadc093803db031ea4ab819378f898196dae97b60",
+      "bytes": 150
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_c20df36bc9dd4c0db8c805433249d2a3/memory_written_versions.json": {
+      "sha256": "477c158d0d3f6f3fecdd4ccbc3c1bcb039e346f676545078274b73233cc2d869",
+      "bytes": 1021
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/journal-home/dashboard/workspaces/ws_8bb5285dc07c5e06/runs/run_c20df36bc9dd4c0db8c805433249d2a3/metadata.json": {
+      "sha256": "b041d26a0e3aae036bc9199384e53f5a74baaa085bdc7d23e49e4fd5437b8a3b",
+      "bytes": 564
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/memory-home-inject/memory/MEMORY.md": {
+      "sha256": "817eca1834250eef52d33986516be08f21483f051eb945a30133dab7bf0055a9",
+      "bytes": 189
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/memory-home-inject/memory/approval_audit.json": {
+      "sha256": "5390bda535fc965db6f06fc9614ced080388ecbe56e82ee2a268b390e52707e3",
+      "bytes": 1168
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/memory-home-inject/memory/authority-blobs-v1/d34bf34d0a69598dd565b298a5a90edfd048564c920d301f9983f4fa58c2563b.json": {
+      "sha256": "d34bf34d0a69598dd565b298a5a90edfd048564c920d301f9983f4fa58c2563b",
+      "bytes": 502
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/memory-home-inject/memory/memory.json": {
+      "sha256": "857cdf7c987ee0742f6fab23f39f65193f504407f5abebe7b0aa38f21a97d965",
+      "bytes": 4360
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/runtime-data/permissions.json": {
+      "sha256": "72a20e125d6df06cf9273f61daf2ee50f67d089e994dcb709ca95ad62ff6f431",
+      "bytes": 402
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/.conversation-turn-state.lock": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/.curator-delivery.lock": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/.curator-execution.lock": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/.curator-schedule.lock": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/MEMORY.md": {
+      "sha256": "c7f25360d652595a3b1e046e6adcd61a05239356e55c22cb0ea17664e50d9bb6",
+      "bytes": 780
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/approval_audit.json": {
+      "sha256": "1e6e35067eb9775f099217e026f93e0ff920fe35f384f4988e9b4e79b38a3cd4",
+      "bytes": 21523
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/authority-blobs-v1/273aff4e095c3698003d4d6bf10f951a2cb5f0895b9c235d4da6fbfe2b73b290.json": {
+      "sha256": "273aff4e095c3698003d4d6bf10f951a2cb5f0895b9c235d4da6fbfe2b73b290",
+      "bytes": 912
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/authority-blobs-v1/a6543946f39c4fff19f929bfb0b5c69f7782b98f8f08be98b473e0d1e4173fb5.json": {
+      "sha256": "a6543946f39c4fff19f929bfb0b5c69f7782b98f8f08be98b473e0d1e4173fb5",
+      "bytes": 488
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/authority-blobs-v1/d972567a4e5b18232775445aeb4f48799623b5470b9770aeeb7bd38ef350f302.json": {
+      "sha256": "d972567a4e5b18232775445aeb4f48799623b5470b9770aeeb7bd38ef350f302",
+      "bytes": 488
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/authority-blobs-v1/e363bcbca414c994028a913e0691832d915d46892b241a2ac42bde312a8c0d52.json": {
+      "sha256": "e363bcbca414c994028a913e0691832d915d46892b241a2ac42bde312a8c0d52",
+      "bytes": 491
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/authority-blobs-v1/ec46958ca8775ba3eb5e5532fa9db1236f567633b90ad1db867c543d3e765963.json": {
+      "sha256": "ec46958ca8775ba3eb5e5532fa9db1236f567633b90ad1db867c543d3e765963",
+      "bytes": 1118
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/curator_schedule.json": {
+      "sha256": "832c8315e86200a1ce30a3e1bad20b451fdd6010dba054dedb0ba2ef0879657f",
+      "bytes": 570
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/memory.json": {
+      "sha256": "f238f141cc9ff44accf18a383e2450582f1761f3f01196885709a0e356d84717",
+      "bytes": 129345
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/.mini-code-memory/pipeline_state.json": {
+      "sha256": "026cdd794239330230f4ca3f8b30435ceb576a853eaf8b9b1633f4287567259d",
+      "bytes": 122
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/AGENTS.md": {
+      "sha256": "03d66870042ee11502e44a8161be5e40f2a8b48d6f6292bf9958482ac3818a72",
+      "bytes": 274
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/policy.md": {
+      "sha256": "4e74f21e91d4294b90434f15f6103f24e986bffc5f4d5488c87f43756ff3ecb4",
+      "bytes": 132
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/requirements.txt": {
+      "sha256": "5e001466b9dac8aea97b90a9fe6a13d696c875ceca9aae7a5722c2f9665e2404",
+      "bytes": 12
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/src/app.py": {
+      "sha256": "2d9b0d0893fd6108780125cad18ea15070a557720e9f403f05e3f88540ae422d",
+      "bytes": 39
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/live/workspaces/yieldtest/tools/check.sh": {
+      "sha256": "4a01665c194c6ab692f0f9f546243188a7f87c57b80247a41c3399423e9e4564",
+      "bytes": 120
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/notes.md": {
+      "sha256": "4a25f913e34f0cff80ba0decdae5a984723bed2bc08a95705673b0ca06c25bbb",
+      "bytes": 4433
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/task_plan.md": {
+      "sha256": "81e41c0c76e9f6c7e0a8484aebfcb36c366ebb898abb33e214a05c83ad296574",
+      "bytes": 2675
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/test-signal/initial-blocked-review.md": {
+      "sha256": "c39539a9930a951ed0f75cd9425141d7f9ca03823e6163ffa85cf0338438c4b7",
+      "bytes": 1435
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/test-signal/initial-blocked-strict-guard-bypass.json": {
+      "sha256": "14a80bee34af5264883a59cf8c524728ec9ef1648fe06cdb4fca961f976b4be2",
+      "bytes": 412
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/test-signal/initial-blocked-test-signal.json": {
+      "sha256": "8620bd83c94f89b7ea40b21127af9fe129cf13442bccf5426994cd28e73cb886",
+      "bytes": 3264
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/test-signal/probe-plan.json": {
+      "sha256": "355145e3a0d20bd7b367550c02b8f9e7dc12df3a36e6c689e9b91403f4f70579",
+      "bytes": 1335
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/test-signal/production-hashes-after.json": {
+      "sha256": "23982d82cc4dbd4794992fdb0b296890e25805eca44c89cfece4080e811340cf",
+      "bytes": 428
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/test-signal/production-hashes-before.json": {
+      "sha256": "23982d82cc4dbd4794992fdb0b296890e25805eca44c89cfece4080e811340cf",
+      "bytes": 428
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/test-signal/report-validation.txt": {
+      "sha256": "e04f6c9070c640748688f7560c688ce8976fd11b87b3d8fe8d7a65407bf03630",
+      "bytes": 28
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/test-signal/snapshot-identity.json": {
+      "sha256": "99d1d58ae88775710f27bcd89613b0145e35ea2e2122c61e1bf7588a1050110e",
+      "bytes": 214
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/test-signal/source-tests-hash-verification.json": {
+      "sha256": "3f0cad76c8e7dbec28945449ec7db59ae5042b6936ae91671aab0ddeee9ec12d",
+      "bytes": 841
+    },
+    "artifacts/memory-deposition-six-forms-2026-10-22/test-signal/stack-detection.json": {
+      "sha256": "55cf87e69752bfbfbc61bef24bb4bed2f53ed9c61b6cbd8bb2a383b4c44a0de7",
+      "bytes": 520599
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/candidate-pack-v1/offline-proof.json": {
+      "sha256": "a5c319a17bdb7c7f2f1b223b216bbcfd626e946821c89df8e73706ac0079b832",
+      "bytes": 11401
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/candidate-pack-v1/source-manifest.json": {
+      "sha256": "21f6c76f51b5296f03e95363488a5a775fc1fd0c8d4af761fde8273ab505bb1e",
+      "bytes": 34952
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/candidate-pack-v2/source-manifest.json": {
+      "sha256": "12021dd5f64a1e135ef041b53ad13ee5029682a317d6a19dde7ff60d8920595d",
+      "bytes": 34717
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/candidate-pack-v3/offline-proof.json": {
+      "sha256": "526696593eff67a4137ae5ddc1d7cf027238371a16952b16d0160f3eba52cebd",
+      "bytes": 13634
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/candidate-pack-v3/source-manifest.json": {
+      "sha256": "13bb662063d02be21e60b1aab46c63a03d4d7ec9fc3c5ad19ba658dbd0e17d8b",
+      "bytes": 34717
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/counterexample-proof-v2/gen2-read-context.json": {
+      "sha256": "8c00e460c52a71009a5e598e19e903dc9375b976c64ee1d14965b7a1069aadf8",
+      "bytes": 4256
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/counterexample-proof-v2/gen2-registry-lifetime.json": {
+      "sha256": "cf93a0e6d9e31974b0eb1731029503a835ff00ac4638a2e5526a9707f9b6b93c",
+      "bytes": 2546
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/counterexample-proof-v2/gen2-summary-budget.json": {
+      "sha256": "98130273040405482c5fe55e00a7ac81d5f85c3ca06faa66fdbd44fb48edcc0b",
+      "bytes": 3919
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/counterexample-proof/gen2-read-context.json": {
+      "sha256": "ef417d8acf0a16c36d07e813340e8e6921223bf1cb76e0f61226f6a6973dc074",
+      "bytes": 2002
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/counterexample-proof/gen2-registry-lifetime.json": {
+      "sha256": "27704c8d97bb7a58d3005488fd878650af4ac044ca1f2a3891830b6bfe1de328",
+      "bytes": 2546
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/counterexample-proof/gen2-summary-budget.json": {
+      "sha256": "bd3e85d89ef83fc931f8bbef8cc42d2a61e085471fd22ec35fe5f5ae9a1e4f97",
+      "bytes": 3919
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/historical-harness-failures.txt": {
+      "sha256": "61e203bbaaa087d5982990e23ff7bac6f3af40cf856b28d1a85c324e7667aab0",
+      "bytes": 9854
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/offline-integration-v1/analysis-plan.md": {
+      "sha256": "d6ff98866a91a00caf0078c0285d51dc1feeaed87373e1d52f3344ce09014f6b",
+      "bytes": 7750
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/offline-integration-v1/materials/offline-proof.json": {
+      "sha256": "2004761911b374cbe6b9ff6f3a5d65f80ce59fd2f84ddfb8d43ffb676d537f16",
+      "bytes": 13634
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/offline-integration-v1/materials/source-manifest.json": {
+      "sha256": "12021dd5f64a1e135ef041b53ad13ee5029682a317d6a19dde7ff60d8920595d",
+      "bytes": 34717
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/read-context-proof-v1/offline-proof.json": {
+      "sha256": "07617952a600d5b39d7ed6727e435971652b2c4c8b96a530a2545850febf907e",
+      "bytes": 2947
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/read-context-proof-v1/source-manifest.json": {
+      "sha256": "af099dcb24c8534d8b0b77304321398b75fa2bd7f35fa51f5b344ce2622a5212",
+      "bytes": 29576
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/registration-materials/candidate-history.md": {
+      "sha256": "090555a286bd66617c60bfe46d7010c6c557a3d1fca7ceb424fb078d86ee1ef1",
+      "bytes": 13866
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/registration-materials/counterexample-proof/gen2-read-context.json": {
+      "sha256": "8c00e460c52a71009a5e598e19e903dc9375b976c64ee1d14965b7a1069aadf8",
+      "bytes": 4256
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/registration-materials/counterexample-proof/gen2-registry-lifetime.json": {
+      "sha256": "cf93a0e6d9e31974b0eb1731029503a835ff00ac4638a2e5526a9707f9b6b93c",
+      "bytes": 2546
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/registration-materials/counterexample-proof/gen2-summary-budget.json": {
+      "sha256": "98130273040405482c5fe55e00a7ac81d5f85c3ca06faa66fdbd44fb48edcc0b",
+      "bytes": 3919
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/registration-materials/final-local-tests.txt": {
+      "sha256": "c192982c45f7137bdf221069a6967b61aff76f5d2a016a87f2f3e340dd01d9e8",
+      "bytes": 99
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/registration-materials/overlap-review.md": {
+      "sha256": "607c9a49c7d3a693e57fd0cf0a4d8e2006b35f22e526254ae226ff53ae4715ae",
+      "bytes": 8034
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/registration-materials/prepare_multi_agent_gen2_tasks.py": {
+      "sha256": "343980766223712ffb2018d49f116628ec80c6b975dcf981583077e423e88263",
+      "bytes": 6656
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/run/analysis-plan.md": {
+      "sha256": "d6ff98866a91a00caf0078c0285d51dc1feeaed87373e1d52f3344ce09014f6b",
+      "bytes": 7750
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/run/materials/candidate-history.md": {
+      "sha256": "090555a286bd66617c60bfe46d7010c6c557a3d1fca7ceb424fb078d86ee1ef1",
+      "bytes": 13866
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/run/materials/counterexample-proof/gen2-read-context.json": {
+      "sha256": "8c00e460c52a71009a5e598e19e903dc9375b976c64ee1d14965b7a1069aadf8",
+      "bytes": 4256
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/run/materials/counterexample-proof/gen2-registry-lifetime.json": {
+      "sha256": "cf93a0e6d9e31974b0eb1731029503a835ff00ac4638a2e5526a9707f9b6b93c",
+      "bytes": 2546
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/run/materials/counterexample-proof/gen2-summary-budget.json": {
+      "sha256": "98130273040405482c5fe55e00a7ac81d5f85c3ca06faa66fdbd44fb48edcc0b",
+      "bytes": 3919
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/run/materials/final-local-tests.txt": {
+      "sha256": "c192982c45f7137bdf221069a6967b61aff76f5d2a016a87f2f3e340dd01d9e8",
+      "bytes": 99
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/run/materials/offline-proof.json": {
+      "sha256": "2004761911b374cbe6b9ff6f3a5d65f80ce59fd2f84ddfb8d43ffb676d537f16",
+      "bytes": 13634
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/run/materials/overlap-review.md": {
+      "sha256": "607c9a49c7d3a693e57fd0cf0a4d8e2006b35f22e526254ae226ff53ae4715ae",
+      "bytes": 8034
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/run/materials/prepare_multi_agent_gen2_tasks.py": {
+      "sha256": "343980766223712ffb2018d49f116628ec80c6b975dcf981583077e423e88263",
+      "bytes": 6656
+    },
+    "artifacts/multi-agent-gen2-2026-10-23/run/materials/source-manifest.json": {
+      "sha256": "12021dd5f64a1e135ef041b53ad13ee5029682a317d6a19dde7ff60d8920595d",
+      "bytes": 34717
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/admission-integration.txt": {
+      "sha256": "814010864f7e578f59e27ec0e46146e9df5fa28694f719f8795fe2fb8a376d3e",
+      "bytes": 745
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/closure-regression.txt": {
+      "sha256": "5818c58567bc7909ac46de15895b03f09e2e42d121b8ac815e3889d0710c0939",
+      "bytes": 1833
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/finalization-regression.txt": {
+      "sha256": "6a4432c9f51b4f02e9ceab8a00b57770eb3eff6f7b6ad3462d9cb5acfbda12b1",
+      "bytes": 99
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/initial-integration-tests.txt": {
+      "sha256": "016fee736cabf66b55360a138c94d86a075e7a237f33def68429c2f0a3ab4a6f",
+      "bytes": 35622
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/integration-recheck.txt": {
+      "sha256": "ea36edd92635c48ed98b8334443717644cea5614bbb29f3f438677b3089f46d0",
+      "bytes": 10943
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/notes.md": {
+      "sha256": "28240abe3ed615b33e53aa54fd3e9d0b18dff90efc29a3275c571ff9088f2dbe",
+      "bytes": 306
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/regression-files.txt": {
+      "sha256": "7737a6b82a1aa8e038a8b8e1182d79b8c6c076f8ce75669edb5753f7029c69ac",
+      "bytes": 3673
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/reviewer-prefix-current.txt": {
+      "sha256": "d410ac0d1937b6444cd39177c605d5b2e72ed7291906ce25ac8aae6f1c054c51",
+      "bytes": 1444
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/root-regression.txt": {
+      "sha256": "1b0174c0f4d4ab6593b5a3a3030d22b52d5eafaf7e3dbe36cde2a50e6bbea27e",
+      "bytes": 100
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/route-admission-lease-final.txt": {
+      "sha256": "d8b074fd59081e00c92c98619825ae86547e3daeea2d4d409563ea5eacbbf2b3",
+      "bytes": 1946
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/route-budget-followup.txt": {
+      "sha256": "5618c8bfb4a6bd5ec1d029b01a6e1eb3a9074113b3204726eef409291f99994f",
+      "bytes": 179
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/route-final-summary.md": {
+      "sha256": "7e672120afc299a5028787f3a99558704e199ca044dc465a7f832a90a204a94b",
+      "bytes": 2048
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/route-final-v6.txt": {
+      "sha256": "364c584fb1f986a9062cb00e8767a1db0c61a5de76aa3bcc1adf6ace84727baa",
+      "bytes": 431
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/route-followup-fixtures.txt": {
+      "sha256": "29e8ec7dbdf93a1c9e207e4b03545c1eb3238456ae31f5cf1f80b8b4a2c46393",
+      "bytes": 100
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/route-last-guard-check.txt": {
+      "sha256": "b37f1ef3250b8e0238593fdf0beabaea46a4c95961e89f7cd13d368a0866b223",
+      "bytes": 99
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/route-last-independent-review.txt": {
+      "sha256": "13e4770c4ad959f4e8cff2616c40af7507df645a1b6c5f89d8d7e872e91cc485",
+      "bytes": 179
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/route-risk-final.txt": {
+      "sha256": "c0660fe76a7abd5ef41a99964bd6a03ad149ec019d1d6e8d52bc54122cc78399",
+      "bytes": 180
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/task_plan.md": {
+      "sha256": "699d53f5dd4486cdc43127fbaacced751a221960f702784a13915a71e772a034",
+      "bytes": 2255
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/timeout-entry-regression.txt": {
+      "sha256": "59ea6f8eb4e141f490878e494b119f777d7c5476667d4b06dcdc154c68bdde46",
+      "bytes": 1085
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/transport-final-summary.md": {
+      "sha256": "36afd5b5ce78d77977530eee46041ef1c226597d7d02eaec2e840c2cdf38e016",
+      "bytes": 2277
+    },
+    "artifacts/multi-agent-practicality-2026-10-22/verified-source-hashes.json": {
+      "sha256": "4368c9c1eb9af50bc8bd2a2206bf32c5cc48cdab6e0c1a07cdcb277a43529a6a",
+      "bytes": 1998
+    },
+    "artifacts/multi-agent-route-review-2026-10-22/dead-abstraction-removal.md": {
+      "sha256": "e7402ed3636e4cd5995c6deae7d7f7272d69f1fbf20bd5d3c7fc527b15899037",
+      "bytes": 2223
+    },
+    "artifacts/multi-agent-route-review-2026-10-22/notes.md": {
+      "sha256": "f8219041e23f6675a1ba693b607060d7095d8b70f5ecdff3f48fb00ca8fa7d14",
+      "bytes": 1476
+    },
+    "artifacts/multi-agent-route-review-2026-10-22/task_plan.md": {
+      "sha256": "9b0fef527d1eb81972372dc82c05ef7d4e9fbe424dcf1b1a4eeb7fdf932df64a",
+      "bytes": 953
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/materials/notes.md": {
+      "sha256": "c5339718b6fce357417b5bd0b3484d06fe6f56a8dbec19490904a544d471ec60",
+      "bytes": 1381
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/materials/pack-v1/offline-proof.json": {
+      "sha256": "a52fde3b4d1e6a0f99033a8812c201d66e1b99f841be7fb23d4daed52d06daad",
+      "bytes": 47489
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/materials/pack-v1/reference-fixes.json": {
+      "sha256": "d860091e151b38e4966a1d373fda3bf443ac0d228983847a22a1025a93d2a7a9",
+      "bytes": 7484
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/materials/pack-v1/source-manifest.json": {
+      "sha256": "015ac0b73133663c974a7b078edbf48c6f352e8f7f8fa1a29b9509b7cef2ced9",
+      "bytes": 7314
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/materials/pack-v2/offline-proof.json": {
+      "sha256": "1347e74fc83b2c9dea5bd23592285e3129e75ecab332b9958544103145957bb4",
+      "bytes": 47469
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/materials/pack-v2/reference-fixes.json": {
+      "sha256": "d860091e151b38e4966a1d373fda3bf443ac0d228983847a22a1025a93d2a7a9",
+      "bytes": 7484
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/materials/pack-v2/source-manifest.json": {
+      "sha256": "6c4bc170fa358e08972515b6db37ccdefec6966efcfa1db02fadf150aa336690",
+      "bytes": 7314
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/materials/package-review.md": {
+      "sha256": "dc2d9f1aea2ac8b32c99fa8f5dde40e5a360a83390cf415eb4f96da0e1e69a00",
+      "bytes": 2209
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/materials/task_plan.md": {
+      "sha256": "8a92fba843711f398403e99bc2321adf1fed5f750eb7adc5f2914c0196e7f7a5",
+      "bytes": 1465
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/progress-agent_loop.diff": {
+      "sha256": "9ef0f8575fd7bad18c03952435412b82a2a35a9d6f17a82d4827221d361bd084",
+      "bytes": 2281
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/progress-before/actual-loop-no-task.json": {
+      "sha256": "ab58b0f40a81135497a8f369e32a0c030c52581cb4341e1c360c65fca4d421bd",
+      "bytes": 3435
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/progress-before/agent_loop.py": {
+      "sha256": "978aaba198cea97265046a47091279e6b356bd36d96b5361159f6bbd3c8cdec3",
+      "bytes": 352531
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/progress-before/coding_progress.py": {
+      "sha256": "a57b94c88405a5d4c70c1b2cd3865c901f4c504c888a567ac6fcd466c5c0f49f",
+      "bytes": 10150
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/progress-coding_progress.diff": {
+      "sha256": "2492e35e496969b69af0e363d69a5ec4e9e36a04359f48e32e630e0006fa8293",
+      "bytes": 2467
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/progress-expanded-regression-initial.txt": {
+      "sha256": "115f0c530182f1e052a9be7d3acd927041c44600ff12769c35da23c5797f2798",
+      "bytes": 10131
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/r2-budget-view-before/agent_budget.py": {
+      "sha256": "5a12af9fcaa6ea994c6c80509abc306448e0153e7a05b0ed3870d5294ac25693",
+      "bytes": 40079
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/r2-budget-view-before/completion-review-validation.md": {
+      "sha256": "eddbd2a771fa352a06b823efc5dafac405e9a811c16c2bbc22161f41325886b2",
+      "bytes": 2708
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/r2-budget-view-before/completion_review_limits.py": {
+      "sha256": "a8ef35ef3a9412b5e0fc1152322fb32cf0c40915c9e4cd0eb3fbc58a0e0bea58",
+      "bytes": 4740
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/r2-budget-view-before/snapshot.json": {
+      "sha256": "36d84b4c59bbbc5f9281413228db0aa7f1bd9fd683ad04e9d19b014bb0019ea6",
+      "bytes": 283
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/r2-budget-view-before/validation.md": {
+      "sha256": "cf3c3bf78ff3d9061e29bc7931fe70c78c56ac62bda593006dc57bccfe131aea",
+      "bytes": 1915
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/r2-budget-view-before/workflow_runner.py": {
+      "sha256": "1be7f06c1a60bf60db361d1c165fffe4a432439e195fbb2496f19c3d1195531b",
+      "bytes": 273729
+    },
+    "artifacts/multi-agent-trigger-2026-10-23/r2-review.md": {
+      "sha256": "1678d0218b0054583cb1249502cc7cd8f3edbd3202e2e043f0eabf56c66fd50f",
+      "bytes": 12487
+    },
+    "artifacts/native-review-acceptance-2026-10-23/behavior-evidence-check.txt": {
+      "sha256": "b62252d10b1a425676f555d5607822f8da76a2cf8f8364ea5586761b71c5d0a9",
+      "bytes": 98
+    },
+    "artifacts/native-review-acceptance-2026-10-23/domain-collection.txt": {
+      "sha256": "ccbbf5b84e336a7cf3d6adbc16710e6a8a1206fd8caec6a2ccfa5bbf5aa1c184",
+      "bytes": 84344
+    },
+    "artifacts/native-review-acceptance-2026-10-23/exact-host-extra-diagnostic.txt": {
+      "sha256": "39a7cfc46d0c88d9c7f49ec1213c959f7584ed7f345a139a2918eae04d6de9f2",
+      "bytes": 2297
+    },
+    "artifacts/native-review-acceptance-2026-10-23/extra-failure-one.txt": {
+      "sha256": "ef0d99cfcc1a1f7adc375b1658b69a54c4e0ee197c54d8472f2d700887b15494",
+      "bytes": 8576
+    },
+    "artifacts/native-review-acceptance-2026-10-23/registration-commit-paths.json": {
+      "sha256": "1ef97f54d7dc90ff8195f3aba061dfcf9d95dce174aa1e71de96fa7379aabb0f",
+      "bytes": 3599
+    },
+    "artifacts/native-review-acceptance-2026-10-23/result-commit-paths.json": {
+      "sha256": "7252e5e81bf36b6c36c2c91c2ffb7deef4bb24ba5f505111c66b32f0a4e7f89a",
+      "bytes": 1250
+    },
+    "artifacts/native-review-acceptance-2026-10-23/result-commit.json": {
+      "sha256": "208c0eb863fa6d9e7c34879a5deca2e87d0e12b8d14a6ce744bf7d94f5c325aa",
+      "bytes": 1491
+    },
+    "artifacts/native-review-acceptance-2026-10-23/root-baseline-process.json": {
+      "sha256": "d2972d32fd8c21632c2bc6b2dd625b1caba43ae55d032fc361e76f9ee3471364",
+      "bytes": 2543
+    },
+    "artifacts/native-review-acceptance-2026-10-23/root-extra-failures.json": {
+      "sha256": "a9c18f6cc651875b471a13f42245a831a3595141ea920c97bdfee93354aa198e",
+      "bytes": 2559
+    },
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/offline-tests.txt": {
+      "sha256": "47035ba857d924689725578537bf70be89472d89dc4081b17458575f90ab6823",
+      "bytes": 99
+    },
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/overlay-manifest.json": {
+      "sha256": "43d5eab878fd4b98e096b73f34e7de9f2209fdcd72ce1ab58fab125fd66d511c",
+      "bytes": 561
+    },
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/prepared-registration/analysis-plan.md": {
+      "sha256": "77e8fc5d78347526d949117459870321eca7864d713518d391f4e45b811b5938",
+      "bytes": 3174
+    },
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/prepared-registration/materials/offline-proof.json": {
+      "sha256": "53a83462de415e3a132aacedb344cbda4a25b6e358e51741610dde4d55e0424b",
+      "bytes": 12664
+    },
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/prepared-registration/materials/original-trigger/manifest.json": {
+      "sha256": "a740668dd53ca4ce15b1f07156ae498ee335b2c8873c5ff5b5b344d83b1d91ab",
+      "bytes": 13279
+    },
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/prepared-registration/materials/original-trigger/offline-proof.json": {
+      "sha256": "f9d72889f97194e15c91d97b3009f8142cc3bbc33a0f88ac28a6ece5e5ed757f",
+      "bytes": 49913
+    },
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/prepared-registration/materials/original-trigger/reference-fixes.json": {
+      "sha256": "bde7f50709f870088ceb9ea47577eb72f07b2b9b68f8a66c37f7fe7458d6353f",
+      "bytes": 7521
+    },
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/prepared-registration/materials/original-trigger/source-manifest.json": {
+      "sha256": "115e67fa0c530a3bb8d874943ae528cb49f8beffd304906542b8361fea4d0788",
+      "bytes": 7314
+    },
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/prepared-registration/materials/reference-fixes.json": {
+      "sha256": "9dca109e4f945a1109d1c7baca5fce14f316c7e3dde2fd05b1cf9c6d498e60c7",
+      "bytes": 2500
+    },
+    "artifacts/native-review-acceptance-2026-10-23/validation-materials/prepared-registration/materials/source-manifest.json": {
+      "sha256": "e45d0d82329ca4d8493548bae31178185f0d546a6f4075b4ec847dd61942139b",
+      "bytes": 2400
+    },
+    "artifacts/native-review-economics-2026-10-23/evaluation-preservation.json": {
+      "sha256": "04dfc4b00cf3e01c4e2e692c40118074be7d3449fe4f6ad8ed654ab7e9c2d457",
+      "bytes": 282
+    },
+    "artifacts/native-review-economics-2026-10-23/final-regression-files.txt": {
+      "sha256": "7250a4ac0a6d6224aa5b3dfd1b4338f12f841853b827584ed92ff4ea487c2afd",
+      "bytes": 1077
+    },
+    "artifacts/native-review-economics-2026-10-23/final-verification.json": {
+      "sha256": "ac016b9c5ad7d6e52008d0c282420e49acb021d0b63c3a4300351b39bae61c16",
+      "bytes": 447
+    },
+    "artifacts/native-review-economics-2026-10-23/implementation-receipt.json": {
+      "sha256": "908de2ea3a9d6718f2708cadd86bbe2dd876b317a95bbd653bf875cee4dfd047",
+      "bytes": 1997
+    },
+    "artifacts/native-review-economics-2026-10-23/implementation-report.md": {
+      "sha256": "7fc288462f050f23e87405cd9d81ee288ad94ef4c93b3dc95255629c4c7cf90d",
+      "bytes": 4059
+    },
+    "artifacts/native-review-economics-2026-10-23/implementation.patch": {
+      "sha256": "a037a0f925ff9dd8275f6693ba22a22bb11199a8a10e3f29cd3a2f974be705ad",
+      "bytes": 128046
+    },
+    "artifacts/native-review-economics-2026-10-23/new-regression-collection.txt": {
+      "sha256": "91a1e24d26fe372fc9dae8e8516635d316d51f0476f7f544799882254eb0baaf",
+      "bytes": 11134
+    },
+    "artifacts/native-review-economics-2026-10-23/notes.md": {
+      "sha256": "052a4d389976f84b01ea4d19d9c6c918b0f654b291115b9a061782bc7424eb3b",
+      "bytes": 5492
+    },
+    "artifacts/native-review-economics-2026-10-23/patch-provenance.json": {
+      "sha256": "eeb06551a0ef14def244a6347722c6a1244600902df592a879d5d3d9c07712a0",
+      "bytes": 5730
+    },
+    "artifacts/native-review-economics-2026-10-23/r1/before-snapshot.json": {
+      "sha256": "9b6dc2f6d450df9bcbe1402cd02da39f06a03114b85c614f35452f3c5fc1ffba",
+      "bytes": 701
+    },
+    "artifacts/native-review-economics-2026-10-23/r1/before/minicode/completion_coverage_inspection.py": {
+      "sha256": "3c89254e780a12c351c20ab37172cbb5d71249a428044d9ee8fe2c0112470281",
+      "bytes": 22508
+    },
+    "artifacts/native-review-economics-2026-10-23/r1/before/minicode/implementation_completion_review.py": {
+      "sha256": "b19775d19d9a958fa181927ca337bbcbd3a80ce940060334a14da5312ea78351",
+      "bytes": 129806
+    },
+    "artifacts/native-review-economics-2026-10-23/r1/counterexample-run.txt": {
+      "sha256": "73e6d55583ee4eaa5a5b73407b0dc4f93a0bbe97826c1e13d03863fbc42ae5b8",
+      "bytes": 9342
+    },
+    "artifacts/native-review-economics-2026-10-23/r1/counterexample.json": {
+      "sha256": "f414b4be04be4edd27fae3c49faf08193be39961d4c028f71a0345faec1c8d48",
+      "bytes": 9327
+    },
+    "artifacts/native-review-economics-2026-10-23/r1/independent-review.md": {
+      "sha256": "6e70a060452daa86ef141dfbb33dd7480cd7183d5cf1360cf7aac3d95f88d8d7",
+      "bytes": 2943
+    },
+    "artifacts/native-review-economics-2026-10-23/r1/preexisting-failure-baseline.txt": {
+      "sha256": "986ea2697b999b5338112669340c94c5048e96f5ef39d0fc5affd09f6a55c01d",
+      "bytes": 2148
+    },
+    "artifacts/native-review-economics-2026-10-23/r1/related-regression.txt": {
+      "sha256": "6fc01c537c8d483e196137105dc42b0670be1700b011800d0bf822ba13a1087f",
+      "bytes": 2301
+    },
+    "artifacts/native-review-economics-2026-10-23/r1/report.md": {
+      "sha256": "e53f5b307e85f6623d7253b4f022c303162fbd0a621f8638396bfa93cea73308",
+      "bytes": 3066
+    },
+    "artifacts/native-review-economics-2026-10-23/r1/verification-receipt.json": {
+      "sha256": "924d4595d9efcba4bc39391c4f0139ec48e2ba94521f4f6094b3e40b9d1e2d60",
+      "bytes": 2047
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-before/minicode/agent_loop.py": {
+      "sha256": "66d5bd19284963ec7d0b024f0beeacc5f63c2ea66200ac3ac19169351d78a827",
+      "bytes": 353885
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-before/minicode/completion_coverage_audit.py": {
+      "sha256": "74388fd72a955dd28033e0b82262f7755f38b913f533eb66e7fda142ca657774",
+      "bytes": 75216
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-before/minicode/completion_probe_migration.py": {
+      "sha256": "52eb3834ecca655a67b33d3759bd9a7f4c6e225694a2fdecc6f58ff413fbdcd9",
+      "bytes": 33830
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-before/minicode/implementation_completion_review.py": {
+      "sha256": "5b0f13ac5e845981f94b804e98495bb409c00158365a34e3ccf286c4762a4894",
+      "bytes": 130331
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-before/minicode/probe_failure_adjudication.py": {
+      "sha256": "4f5cbc8dcc781c1a6db1c00cf290df1b2eb8059ae9bbe65c8df2cf7316852932",
+      "bytes": 23429
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-before/minicode/tooling.py": {
+      "sha256": "1224e607d4a6de4e3b2df98725809a19fef6601097626dd51f7b6e145fd7dba5",
+      "bytes": 59720
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-before/snapshot.json": {
+      "sha256": "30061b33dba6b9545be428821e7b439fe212fbfdda96768d70ad8f0a23a70962",
+      "bytes": 837
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-before/tests/test_completion_failure_adjudication_resume.py": {
+      "sha256": "351a0135a5bb1eb703760a5dfe25bc1c0dbb902644773017d9ffefae7c0bb1ba",
+      "bytes": 15614
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-independent-review.md": {
+      "sha256": "d7b33362cba736c7950f8072cd598e7e2db9da802adf420c21aa4e1d516ac453",
+      "bytes": 5638
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-integration-review.md": {
+      "sha256": "9da26edb9f539135fc7ad93c44b15c6971565d04c70289a0e5e2542018934e83",
+      "bytes": 9572
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-integration/initial-cross-phase-failure.txt": {
+      "sha256": "55192e9a138dba0f8835741e122b7729eef90a7d2401f6509f78e5abd545d374",
+      "bytes": 2562
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-integration/related-regression.txt": {
+      "sha256": "47b8403cb8ee28f1b5d353cc8d97ba29d06936e68433ba73c69fe3d8603a4650",
+      "bytes": 366
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-integration/report.md": {
+      "sha256": "588248e8c4c9c59e62f3e26b2840ed4bdce8d5eaaa4c907ef053c542f0e2d4a5",
+      "bytes": 3298
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-integration/verification-receipt.json": {
+      "sha256": "564a9415f39b11cb33c6c42e3e1e0ad9e215c67034dc8150c2b0ade1f00635b7",
+      "bytes": 1118
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-integration/zero-time-entry.txt": {
+      "sha256": "fd4a0f78c751ab3ec82aadee44b4cb64247a8f9de39ce2b64560221e2c2de821",
+      "bytes": 297
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-native-regression.txt": {
+      "sha256": "06a0e23f9716073edaf2d674c5f1e36489f1d2b03946a444c957fb5b88a363d6",
+      "bytes": 180
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-retries/before-snapshot.json": {
+      "sha256": "b9951d460d96579fb05d0d21f551524cc305e3c5c5f63280d9f7f7c603c1c45c",
+      "bytes": 433
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-retries/before/minicode/agent_loop.py": {
+      "sha256": "85a0cd49eca519adc7ce165cba6709b5031acf1b478e8e0c6b7a25e36a2d8851",
+      "bytes": 353386
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-retries/before/minicode/anthropic_adapter.py": {
+      "sha256": "79972d6fc26d478203d35aed7a9735f473dfbfc184f2653871911f4aa455aafe",
+      "bytes": 52610
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-retries/counterexample-run.txt": {
+      "sha256": "259f4224b3cd9ca27c762d9c841996cf770e39c32c14a26debca83d0c0b2d7fe",
+      "bytes": 9363
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-retries/counterexample.json": {
+      "sha256": "31a86583e5d70b2aa84631a88f9811b73d08d7ed8e52ddfd83779a8f05254063",
+      "bytes": 9348
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-retries/related-regression.txt": {
+      "sha256": "199301089391507d6565c6d65ae719d81330f7f379d166a32d252a25af6ab657",
+      "bytes": 473
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-retries/report.md": {
+      "sha256": "7bb1caf70060156422514fa20e54dc92db81f0182ca74e96321398ef500292b2",
+      "bytes": 2913
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-retries/retry-boundary.patch": {
+      "sha256": "dfdc854f393bb8d051cb5e5accab00877d138eff87c89557405a192acce3839e",
+      "bytes": 2609
+    },
+    "artifacts/native-review-economics-2026-10-23/r2-retries/verification-receipt.json": {
+      "sha256": "1d62d8dec89b796d13a361ae5d0ca5ccb6c86335f685ab5f160b8ed9467a8ba6",
+      "bytes": 1710
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/before-budget-result-methods.json": {
+      "sha256": "21be6c8189d4ef98a06ce22fe8a0d66fb87272b3413254ae8cdcc509d7192908",
+      "bytes": 7522
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/budget-result-focused.txt": {
+      "sha256": "820f32910e6ca898f6736892844d2bfacb3afe9afb8d026d6cfa8244a95d5ac7",
+      "bytes": 100
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/budget-result-preexisting-baseline.json": {
+      "sha256": "2445db6f0953d2abfcc7d1ebb8e67cf64cc696d85a5ee7797f116d74494465d9",
+      "bytes": 548
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/budget-result-preexisting-failures.txt": {
+      "sha256": "0ebfd8da5f35014a0f1034a7f3c9a4f6bfb115e41786f5d16ad7857dbfb63e1c",
+      "bytes": 5172
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/budget-result-regression.txt": {
+      "sha256": "a836524dfe07708de68e3d7161b058329622891cfd5e5673c81aa80aee31f6f5",
+      "bytes": 5193
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/budget-result-report.md": {
+      "sha256": "73fe207c07d86bb2f94695ead02f8faea23961fdacad18e6cc7261ced913874d",
+      "bytes": 3072
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/strict-resume-current-full.json": {
+      "sha256": "23213ab477cf4d4bbc08280be0949374c31207dba9862a4ad2a20d916ff681e2",
+      "bytes": 219
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/strict-resume-current-full.txt": {
+      "sha256": "07e03b714d10ca8c27a57414c1fdc1537a460fcedf9804a16f9cc9bf20bfc684",
+      "bytes": 98
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/strict-resume-head-local-telemetry.json": {
+      "sha256": "f32c7e953ff0b5ed67da7c9fc8dcc99f8818be96f7cb04aa028f1c99b661c284",
+      "bytes": 408
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/strict-resume-head-local-telemetry.txt": {
+      "sha256": "2db7bc0315dcd84cd11db078623ac9733fd5f05b3c599774488d1d8f8348e713",
+      "bytes": 98
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/strict-resume-head.json": {
+      "sha256": "15ff39569ef4f402a523d48ff3f5de92b082b5328fb06452463cdca78ef77f96",
+      "bytes": 273
+    },
+    "artifacts/native-review-economics-2026-10-23/r2/strict-resume-head.txt": {
+      "sha256": "97920c6242bf0f54156c5d0910ede8f0c0b398c710ebcebf0b9b8f6999f6d43a",
+      "bytes": 5649
+    },
+    "artifacts/native-review-economics-2026-10-23/r3-review.md": {
+      "sha256": "a80d12b94a9b35debc0132f1f37897bf1bc9c70480a638c50ff52cabd3116e2e",
+      "bytes": 9039
+    },
+    "artifacts/native-review-economics-2026-10-23/strict-resume-final.txt": {
+      "sha256": "9c1b7f82a013debf9d1944144ce461fd066b4bd50009920bd020a5bd9aa6ba5e",
+      "bytes": 98
+    },
+    "artifacts/native-review-economics-2026-10-23/task_plan.md": {
+      "sha256": "ededf4d11adb83091e24a12fd30a78970d9cb23fe29c94042efbdea7a0c0acb0",
+      "bytes": 1754
+    },
+    "artifacts/native-review-legs-2026-10-23/before/agent_loop.py": {
+      "sha256": "59fc797e85183ac53a827ce5134b53a3bc09c238b8cf7caea9b045841340fabb",
+      "bytes": 358215
+    },
+    "artifacts/native-review-legs-2026-10-23/before/completion_feedback_view.py": {
+      "sha256": "5395d0dbffc0b7233d29a08f75686966ad460788a69336b432da0f22a43bece8",
+      "bytes": 5908
+    },
+    "artifacts/native-review-legs-2026-10-23/before/implementation_completion_review.py": {
+      "sha256": "25e97fb424ee50143caf2b21dac64e6beacab3873f1ffbd13fc8c9efe5fa267c",
+      "bytes": 137960
+    },
+    "artifacts/native-review-legs-2026-10-23/final-regression.txt": {
+      "sha256": "90e1bd4ddcd9443dc5e3dc40778a961574e7dfce049bc00977b04d4b53851956",
+      "bytes": 100
+    },
+    "artifacts/native-review-legs-2026-10-23/focused-tests.txt": {
+      "sha256": "95f62aaf9284965d42c114462a948f5e0c7bfc1c07bccb5e6a907504b2f66e5d",
+      "bytes": 942
+    },
+    "artifacts/native-review-legs-2026-10-23/implementation.patch": {
+      "sha256": "d95948d9e03f7bd0f0a57dccb0df3f14c3e79a324e94871c07504496a37e5c3e",
+      "bytes": 8830
+    },
+    "artifacts/native-review-legs-2026-10-23/notes.md": {
+      "sha256": "558d53c23b67bc7a280e0d45bc34cc6838933c75a9b05f99f28639e6eed2aa64",
+      "bytes": 1462
+    },
+    "artifacts/native-review-legs-2026-10-23/report.md": {
+      "sha256": "33b8ec8a9020c3f6f52bdad131fd254c733f07e3904d4bd471a58e2f13ca8a69",
+      "bytes": 1855
+    },
+    "artifacts/native-review-legs-2026-10-23/source-hashes.json": {
+      "sha256": "e485e103ead4fb51c7493869ee88077359670e8650c50e9b5840ad11abe79535",
+      "bytes": 603
+    },
+    "artifacts/native-review-legs-2026-10-23/targeted-regression.txt": {
+      "sha256": "3fdb282e234b7767506246a12a4bec837976ccdf9e58fb693eb8479e0b33e7d4",
+      "bytes": 100
+    },
+    "artifacts/native-review-legs-2026-10-23/task_plan.md": {
+      "sha256": "13adeb3f9e20194f9e6f53f66f76e0dae1f3a5b87a357cd06869e869f7ea5947",
+      "bytes": 739
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/analysis/01-outcomes.png": {
+      "sha256": "3b00458d394d19bd27b629236b20419058ef35c73fe7a18b3ec64d76a6446294",
+      "bytes": 68621
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/analysis/01-outcomes.svg": {
+      "sha256": "6608955dd1a401075083d555fd24a0d2e7cc64436dc34cab66b57cb0e7fa4f31",
+      "bytes": 49827
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/analysis/02-input-resources.png": {
+      "sha256": "1aff1f5b06fea0d2cbf7e4c39f9626aca124ee7836e81509a98c22c8ecedd586",
+      "bytes": 65573
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/analysis/02-input-resources.svg": {
+      "sha256": "61f3e2b564b69c6ebff4182e41ab90c799ef8a5567d602309326432cab720a42",
+      "bytes": 38777
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/analysis/analysis-report.md": {
+      "sha256": "32b0821636a844e8784a477a42c9eb42eef75f5e80cabe802ff922b1de0109bd",
+      "bytes": 3303
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/analysis/figure-catalog.md": {
+      "sha256": "42f3866123cf05dec76458f65c9049bcfeaae58ef3436cb99210f8c17a279c8a",
+      "bytes": 600
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/analysis/figure-data.json": {
+      "sha256": "495e63334082f204d45cf4dfc0a5b04a7e8435ea7bc2c69b494d197a92d7f0a3",
+      "bytes": 31388
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/analysis/metrics.json": {
+      "sha256": "0a95fc3e8d5723cde4a3f44f8e165401395f2e0cc2b839a2c7b0c98f0f88c177",
+      "bytes": 31831
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/analysis/stats-appendix.md": {
+      "sha256": "201317541652c5a33e9394b4634a66c03a473b7f18c65fefa6d08822e7bf1770",
+      "bytes": 1336
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/analysis/trial-scores.json": {
+      "sha256": "7b9044d3cd94827dfa5a3a022929710e8056914e13fecd2fbc864315ce86692a",
+      "bytes": 1589930
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/audit-fault-injection.json": {
+      "sha256": "381763169d3228c3383794cd967369a0b2c19fbd36e26b33299c3122dce67101",
+      "bytes": 4850
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/audit-report.md": {
+      "sha256": "351caab2c142f3b2622d7621e0fca0f361f1027bd3e36a9fbd8bfdb8d2672da2",
+      "bytes": 126
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/audit.json": {
+      "sha256": "4388eb1c7f0b5db85b09f231eec966c89d99d1ef8a619b37d20a17b033396b9a",
+      "bytes": 59588
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/cases.json": {
+      "sha256": "069fa872b01a501738a95c93c7a6ca06cbf785a99958b076039ad2402654e308",
+      "bytes": 36506
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/category-summary.json": {
+      "sha256": "c75eee3259bcc094fd9fc0ffb048a991e2f8530ba23d2b5d1993753d455507b0",
+      "bytes": 700
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/cause-classification.json": {
+      "sha256": "d2cc9b72b49fb46b7522cca691fe75d30e50ac6fd459aba2645d7e325ef870e3",
+      "bytes": 8086
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/cause-classification.md": {
+      "sha256": "685af9aef739a14f4aded83512b02b4cbfb0e1484f3078663924714bb7b9281a",
+      "bytes": 4492
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/discovery-review.json": {
+      "sha256": "7a219564a2ef4d872ed066d70dd1e7e89944c63cd832c7f6a28293f1d5f79487",
+      "bytes": 126528
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/discovery-review.md": {
+      "sha256": "3611a61ee83eaaf4b4afa30af0d10f0dee51541e5eb471302e501b5a9b64124d",
+      "bytes": 6826
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/dispatch.json": {
+      "sha256": "67ce7ceeab7ac4509d72fa6f1075d7b8ba58ff582e20a94ae2591d295719d78f",
+      "bytes": 124822
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/final-results-review.md": {
+      "sha256": "b9bc492b06deff77b22aaa503c0c504985fc7e8d99e1a9cee180bd8288e1c569",
+      "bytes": 7922
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/frozen-inputs.json": {
+      "sha256": "5060d46a3185a8676205ca5c32d6112e5246b4a2a932394d31db5af693bd0197",
+      "bytes": 159202
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/historical-trace-inventory.json": {
+      "sha256": "e3f9b381f6b83edd2944734eaa3e5e9dd30b1d93e4f4f295486558f112760f07",
+      "bytes": 40387
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/implemented-prompt.diff": {
+      "sha256": "5fd7c072af5cc87080914aef2a9e2ceacebf4ade8c0563042a7f9dba24026377",
+      "bytes": 2467
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/import-provenance.json": {
+      "sha256": "c0631fea9efbff6d176c5eb680c37630dd727932984087ecbf83559d4ca05fff",
+      "bytes": 55414
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/independent-result-review.json": {
+      "sha256": "2f5f9445f11a45bd93c34bb780a57d78ce7075b4d3b382c30e93eb48df125071",
+      "bytes": 71779
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C01-after-C-r1.json": {
+      "sha256": "6f78191daa092516b2c7ae4cd6c76fcf4b96d560cd4f8625df5b8dd3fde0dc17",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C01-after-C-r2.json": {
+      "sha256": "46dd383154bdfedfa6c4dfa3c26bcf4682eb089f302afa420870a7ec2b3655e4",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C01-after-C-r3.json": {
+      "sha256": "330da3809661878dd3ceeaf4d3cb48426e17552ada7be52b10f7436a89fe18f8",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C01-before-C-r1.json": {
+      "sha256": "17e090efe074250c3780f3461939832cb13db32c6c13809ed1cda651063630cb",
+      "bytes": 354
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C01-before-C-r2.json": {
+      "sha256": "60d5961d4f4fd4a242b108f4bf195e32c52dd12d4ac8ed1aa3e108926a14a928",
+      "bytes": 354
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C01-before-C-r3.json": {
+      "sha256": "99586378d08fd072924f3962a591a641987a54e70cab9107dde6d00e479821e5",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C02-after-C-r1.json": {
+      "sha256": "6825cb55724f5e527b819aaf004650200a1b0583159f6d7d88e68d42d645209b",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C02-after-C-r2.json": {
+      "sha256": "4baca5dbc0ce42bde760be62fd396ff6ef6243b93dda62beebbe0b2252d6ab65",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C02-after-C-r3.json": {
+      "sha256": "651c10c9c44bb6d1a9215e1409c4f23775787d583e4cd1354c50c01f365d32ee",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C02-before-C-r1.json": {
+      "sha256": "db1cbada3cba4a9f0791164bd6574f9352a4d34b9fb27a1e9810e08b53307a5a",
+      "bytes": 354
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C02-before-C-r2.json": {
+      "sha256": "406c7cb88d06fc4e57c05321a83110b660378332909276cd2e8ea4a0e3d4bef3",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C02-before-C-r3.json": {
+      "sha256": "d96b941cfd0faf58ab9528d93029ad5470fa1bf9ec93bb582168fbf3bd7c6973",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C03-after-C-r1.json": {
+      "sha256": "7af0f1fa6eb1c7e301ce496c454d7fec78a6b483721dbbbab644884862e39167",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C03-after-C-r2.json": {
+      "sha256": "69bd5ddab8575abc5339be76060c18bd9eed9b0e1c5681d793b66312062a3a43",
+      "bytes": 349
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C03-after-C-r3.json": {
+      "sha256": "8859722a5f051b623a83439734f227f0ed65c3b70b5b88f3e05a2f9d69b23547",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C03-before-C-r1.json": {
+      "sha256": "284eddaf447acf258cb906f03563d19fcb0e9bc7aadd1c10624a6ec65010f2a1",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C03-before-C-r2.json": {
+      "sha256": "f3fff216edea531fbb88edae6b1a759a0824ebd8ae206b66af819429b5c1b92d",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C03-before-C-r3.json": {
+      "sha256": "2543363d1f0160cfdb846488dafd51f5a36858b5e9b3ca0866284b1d490f09df",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C04-after-C-r1.json": {
+      "sha256": "1c9c5b59673df0c477a89c12a2dad5358494773c97fcc44952dc23a11e766691",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C04-after-C-r2.json": {
+      "sha256": "4353714c588b75fbb48b1307a9ad242abcbfccdc8bca75c6dcc824623abed6ea",
+      "bytes": 350
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C04-after-C-r3.json": {
+      "sha256": "13dbf04ae089486ea8bb9c3683e8cfc35ba27ea6f55f0a49bc59206443ba5c23",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C04-before-C-r1.json": {
+      "sha256": "3336a6c175343191c2530c7f1c6299c531c81495cda479629eda6218d860bd65",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C04-before-C-r2.json": {
+      "sha256": "4252869d999b95c18cc3b2f345bf40b644dcf5dd4e2f4187c74d0a82292da8de",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/C04-before-C-r3.json": {
+      "sha256": "05d17a359c0c860b3c7da9d6af646be860573f3de38dd2a03512dac083891272",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N01-after-C-r1.json": {
+      "sha256": "d614d78359b6b1eb5196f7bb64e43d60d278ccd90762d2f5cc58e92b9129cdfc",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N01-after-C-r2.json": {
+      "sha256": "c2cef351934eaa435b153f1fa36cb2ba1e103435d184f9c19fff244b3be4f2d4",
+      "bytes": 349
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N01-after-C-r3.json": {
+      "sha256": "cd0951519134fb1880b356a119e25d723a6bdb7ea3061f8292655e8aeca9a199",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N01-before-C-r1.json": {
+      "sha256": "f13e6efde7365f62d8b81eb6431030105ace04702e2072b804d3b64a263a08fc",
+      "bytes": 354
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N01-before-C-r2.json": {
+      "sha256": "274d33b1d74443836cd4ae09995d6875a0355c4ee4cb21ea13606bf64e83b73a",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N01-before-C-r3.json": {
+      "sha256": "404c73cdca2d52930c87b88cf5517745ba6c5eb371997f6ed3985bdbed7291db",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N02-after-C-r1.json": {
+      "sha256": "0d69114a6e6e6349b50c112940cc7b0cd7398e1fb008aee35a66776b45abe5d1",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N02-after-C-r2.json": {
+      "sha256": "fec0f998d6973b5908976bf7c9477ac58b37b09295facd0a0a158e030b91f49d",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N02-after-C-r3.json": {
+      "sha256": "b2e11ea1c6fa1841d92f3eb1a7f5cf0fa6c5905037ef46f86f7a7e8ea53c1760",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N02-before-C-r1.json": {
+      "sha256": "2ac94f5d3de0967ed404a273216938cb87b9029f9fb2498b90a05d2d4a5090ee",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N02-before-C-r2.json": {
+      "sha256": "8eca4b3f9e2f3c4c5b7e53558ab1e6bf67c4e8ff6c6b860c30ed058432ecc056",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N02-before-C-r3.json": {
+      "sha256": "4ab2ee95db669324df7a3f494f6c1723d7e26f29441a0951f97789d7b41bd737",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N03-after-C-r1.json": {
+      "sha256": "e15a6da02b829e40ec2a4a3db5e81ce7219d8cd53a5f9334e89d538715faff52",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N03-after-C-r2.json": {
+      "sha256": "236eca3b32e1fe7530a00eab75fc3df31bbfe9a7c4a2880819928eaa4da367d4",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N03-after-C-r3.json": {
+      "sha256": "74b016133909310f84a97b6f3d7f2f11743d8806a263aabb9e59d8380ed0f882",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N03-before-C-r1.json": {
+      "sha256": "289051a256716ade32b1ab309561488b02ecd6d2002413ce67e6b7f48de5ee28",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N03-before-C-r2.json": {
+      "sha256": "b74b3b4d4c615f87bbcf336539ab663d08536acca42a681b17f2dc280f3fba29",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N03-before-C-r3.json": {
+      "sha256": "b5b339a83efccfbc577d63c9d9edf55978c352af3daeba4b17d94c4ee799ab6d",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N04-after-C-r1.json": {
+      "sha256": "0461890f5387846c4e9caa5be6d531bcbd94f1d229b72326dd560d8133b45e60",
+      "bytes": 349
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N04-after-C-r2.json": {
+      "sha256": "af64938bd7074cbf792657e4a6d0755b40eb25a4a58071fc0a44dcc83354e828",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N04-after-C-r3.json": {
+      "sha256": "ee800ee64e62dc59041bf1871b8453e713ba490209c76412220a052a3e196850",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N04-before-C-r1.json": {
+      "sha256": "71645f50fc00eb3147dd4a19ae343a6b51fa31e184bb4e65cf1d6c0214d64800",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N04-before-C-r2.json": {
+      "sha256": "cecc2bcc5db4ebeef43b22eef7333f4caca3f4eb469231021230a36fd24e0475",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N04-before-C-r3.json": {
+      "sha256": "6c214a57cfb84e930c0f7c60a6cac3d022b94144c2f2b233ec41a25d7b174a47",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N05-after-C-r1.json": {
+      "sha256": "350def4e3d8c9665d37581df20547e41cd4af158fd77109ac821b91dba140e63",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N05-after-C-r2.json": {
+      "sha256": "ac2cb208eb5163e09e3ae50220b517a4bdc93602cc935e12d6b1f8124803b053",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N05-after-C-r3.json": {
+      "sha256": "bf3feaf528972705c882deb3e4f6c1075c5a1e08db065de6dac3d7952b1ede47",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N05-before-C-r1.json": {
+      "sha256": "81baffe2ecd7023be2be130f67aec2f553e0fca6e0e4ce7c8612b94c24167304",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N05-before-C-r2.json": {
+      "sha256": "7def3a9c5665e59084483dfbd09bf1f06a5624dd008777c4132506bce0acb30c",
+      "bytes": 354
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N05-before-C-r3.json": {
+      "sha256": "fe47ef9cfcfb33dde6a4b04199c2b3e068230967819ce6fa5fa089f9c356fa6c",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N06-after-C-r1.json": {
+      "sha256": "3a99c8125ed76948cd408ea2b7b13b384a0d6f00e4af2668d11f7492ac1957dc",
+      "bytes": 350
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N06-after-C-r2.json": {
+      "sha256": "ba94b328fcead944d73165709eb45c4a4e5f3d790ef190fff86aebd8a0a66532",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N06-after-C-r3.json": {
+      "sha256": "31ec84244566384c2a89ed59c64f721d57521a52c84cce4b2d1f229fe4a9b870",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N06-before-C-r1.json": {
+      "sha256": "c65cb155531dddfced44565d11667efab4db7ca55d322ac966abbeeb083b4a74",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N06-before-C-r2.json": {
+      "sha256": "2b648240842e36973f8c769d1e6f07d6f533d4598c8a46f76c9839abaa3cdb8a",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N06-before-C-r3.json": {
+      "sha256": "7d026eed504850fc7aafb004d7dc97b7565c47956eb2cfd6884d3c43397dd700",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N07-after-C-r1.json": {
+      "sha256": "126df9e9050520199f19585a12e1fc061305e21b49d33794260a6e8651387b3c",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N07-after-C-r2.json": {
+      "sha256": "338341362c2632058c272385e151d4c8f2501f0e81269f4554466df7f9759cc8",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N07-after-C-r3.json": {
+      "sha256": "ae35c47e9818cb7cbfbd0f876f05b33c171d2faee3ca7b0d1dbef08bdd697504",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N07-before-C-r1.json": {
+      "sha256": "60db85032ece03de49714c91212a7eccde901ee9e197cd0cb59048a8ff5043db",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N07-before-C-r2.json": {
+      "sha256": "5887235aafc0817d64d11ab62be463a3f5cdb6ac4a4c1408bd3b263c3b482015",
+      "bytes": 354
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N07-before-C-r3.json": {
+      "sha256": "2f8d60185b1c9843d8e1d2c039d1c97d06b142f19ff206a0cd5e13041b3567bb",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N08-after-C-r1.json": {
+      "sha256": "783fc2dcadd04ce257c4e7888f1d261dfb0981d9080e3fac6c4c14096eca9b8c",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N08-after-C-r2.json": {
+      "sha256": "9458997e7976933e44366d6a7c92b595e881c150d487bd7416136995132466a1",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N08-after-C-r3.json": {
+      "sha256": "77f6ff1e328d485ed54a3aef7254f8a5e04ed610976110aa6b23dfed8bb8c9cf",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N08-before-C-r1.json": {
+      "sha256": "02357c01d14f18cd2ea15028b41aa68ca98c31b25441b7fa3666703840b0cb34",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N08-before-C-r2.json": {
+      "sha256": "d568e539120173cdfdad542ea1b7e6cfb76cd00ada169e786a548053d551c1d8",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/N08-before-C-r3.json": {
+      "sha256": "f4127010ebe6269939f94f8d312dad7189df15db3ef7e088330ed2cd73f9ceae",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R01-after-C-r1.json": {
+      "sha256": "0951e795828f21d53534e809e2c16e11f24e2cda200d78c214aea65d27b8f9f7",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R01-after-C-r2.json": {
+      "sha256": "3c4b593ff0272e8743025eea723ff067d4aee9b1db914c3c639209cd3ce88dd5",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R01-after-C-r3.json": {
+      "sha256": "f8aed2269402fec73274cef86b8152060e92e5089b32f1c75629950afc6061e0",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R01-before-C-r1.json": {
+      "sha256": "f1408ab88e65ec8ca44e0a6cf953f2e5d09a612999898779191da96d919f351c",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R01-before-C-r2.json": {
+      "sha256": "21275c348c890ef486e96cfc6d55f7d70e61a945e84751428b536d8b0a368483",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R01-before-C-r3.json": {
+      "sha256": "6a2182bf9ec8262e761965d839a9503a9eebf4857a08ab2aa382ef7d899ddcf4",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R02-after-C-r1.json": {
+      "sha256": "fb37f99996d06e2258d57d3aa49016598fdaa76baa85e813a6b37a5b1dd3b1dd",
+      "bytes": 349
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R02-after-C-r2.json": {
+      "sha256": "de23a50b04c9a2ae6b4e280e3d70364d5b129a1403b2f1b7c49e0fa01e03b309",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R02-after-C-r3.json": {
+      "sha256": "3f73b15dc73ab804ba45a6e2d6b938521bfffe05feb44b2d657b18048cebf065",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R02-before-C-r1.json": {
+      "sha256": "80f629e9e65496cc667e8285f4f301f4cbe76c580180c2845ea47cd11915f00d",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R02-before-C-r2.json": {
+      "sha256": "f743db90dfe382b2eebda0ada537bcdc241376fa948b9ac275567055362c9c29",
+      "bytes": 354
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R02-before-C-r3.json": {
+      "sha256": "34dfbf1961944f9f3b06d584b0c52a0ba5163eedad0fc123cd8d539e7dba7d20",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R03-after-C-r1.json": {
+      "sha256": "4a5a12f614ee7ae22d8df0e6dfebba165f8ba2f09c57923cd845c53403d59ff2",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R03-after-C-r2.json": {
+      "sha256": "fa3974bac37dca3ab158bfef0b467ae778b0bbbf1f2ec6f18000ca69db8cb55f",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R03-after-C-r3.json": {
+      "sha256": "8ccc9b17dfdac987fdae884132fdade8ba311c3e9b5bf3eb746281cabf6f83d4",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R03-before-C-r1.json": {
+      "sha256": "0f33fa5cf9fe132de7581aaee0e246276ff1bce590249e6eca7ea93522404272",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R03-before-C-r2.json": {
+      "sha256": "793aa187787abdb2b14f4c540131e6a7df04a7d46bfd19234ddadcda44f56e68",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R03-before-C-r3.json": {
+      "sha256": "ee2be799db81de490d941338802f8ec8e4ac4093ee92c82e0469f02f9e893ebb",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R04-after-C-r1.json": {
+      "sha256": "56325c2db77ffd396b1357ba6b661f4373124c5116b1041b99fb3423f7bc598e",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R04-after-C-r2.json": {
+      "sha256": "b0dadff175f135062b67bd92d6c0b02d5ff1daf5e1e6c28e8c4105c80ce4a934",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R04-after-C-r3.json": {
+      "sha256": "9ecf46dd8b5facea19c9c90c4521110b1ebe3912d12c304728ba6fcd981012b4",
+      "bytes": 349
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R04-before-C-r1.json": {
+      "sha256": "fde997252080b08716ada3693115f3b01cb81412c19baff8291e1f3ffb966383",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R04-before-C-r2.json": {
+      "sha256": "7a528e9f57c0e3d3ba669bd32655058461e40fb3868cd73b6b20c20aca97c42f",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/R04-before-C-r3.json": {
+      "sha256": "8290dcc26368f4c5894bc2f2afaa4488ccddd4601d7b1132997081c254de4dcb",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X01-after-C-r1.json": {
+      "sha256": "4fd7967b41f7df4ae67bc33affc06d2dfbf0ec682faf30979f8da58fcd8ccfe6",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X01-after-C-r2.json": {
+      "sha256": "7fcf0dea2078f80232622ab6ad9e532313b9c006984c0371b8f594d90eea2e5d",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X01-after-C-r3.json": {
+      "sha256": "9be3c0863ebf86ec7a01a327d66980c7fc11c5f30052dacf629a4fb1c4e47113",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X01-before-C-r1.json": {
+      "sha256": "ef47175acc8f39d235cdec6a1cc3f7fed31980c6c43802a320ad49d6fd5b383c",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X01-before-C-r2.json": {
+      "sha256": "91d8097d8aa44268a544dfb774af9620a99488d80a62f8ccf93527719dda59d4",
+      "bytes": 354
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X01-before-C-r3.json": {
+      "sha256": "5f89bb7b444bbff17c342020db33bdac0807d44cbe929e024bad53289eda20c9",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X02-after-C-r1.json": {
+      "sha256": "b6441d42f6fb9320910f51851b540c6b4566f817fa88c41b9115bb713c0d0a37",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X02-after-C-r2.json": {
+      "sha256": "4dc600b43120f5aa11003f892786b200cc3d5b3ea2df43b5a7951b83ae0fd040",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X02-after-C-r3.json": {
+      "sha256": "0c66a39d298ae6e94b4a1b7b353a48cc933defa487eb63d973ae32b103093d32",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X02-before-C-r1.json": {
+      "sha256": "50a01985b5495ca58729120c65aefee8f782ee178487fadd6173f1a1b31b2533",
+      "bytes": 354
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X02-before-C-r2.json": {
+      "sha256": "889afcfef2edf0e18fe43687ce2f9285d0e7322e3f328177d2bd4cd41a3db042",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X02-before-C-r3.json": {
+      "sha256": "1d3e1f10dede65ddd0038ad7ffad16dc90b0cd58d5c3297bea6295dd84678354",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X03-after-C-r1.json": {
+      "sha256": "8d65c635de3e4c054bb97e0a8547414f59f403723b0c504e3dd097ec27e53d3b",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X03-after-C-r2.json": {
+      "sha256": "501cef572faa2b5651e0981b0991aecdc7ef09b00df2c74056522aae461b76e5",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X03-after-C-r3.json": {
+      "sha256": "785fddd770daac047cd994cdb265b796617bcda30219c9ba1ebbb63943853684",
+      "bytes": 350
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X03-before-C-r1.json": {
+      "sha256": "bbf48a1561f66f87d6c0676bab5ca0b3174bc3c7276d186fc4dfe6125492717e",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X03-before-C-r2.json": {
+      "sha256": "37956a5365d4e02ce9c44571ea0f035b9f9c2904d34d32cddac9ec2f4fad5812",
+      "bytes": 354
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X03-before-C-r3.json": {
+      "sha256": "e32487a8ebbbefbb949a5264ccc233ae2ed2bec68eb7fcd2ba8bf2475f3f0b8f",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X04-after-C-r1.json": {
+      "sha256": "93e90cac77e8e28f9c289b7bbb7a717d432a3bfe24ae67aed8676d3744ca863b",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X04-after-C-r2.json": {
+      "sha256": "64714807144618a7ead96c3d2f2dbe8c0988a296c7b4482744fd66199dc26dc8",
+      "bytes": 351
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X04-after-C-r3.json": {
+      "sha256": "2d903344ccf2ad9866c26e822865617fec41978f2c3d312d265b166d9e95f0aa",
+      "bytes": 350
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X04-before-C-r1.json": {
+      "sha256": "15e7eee4efc2e945dd65be16b2016c229791187ec28d04473e2ad4698393c498",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X04-before-C-r2.json": {
+      "sha256": "f941f8b67fe96f8c1a204188de46fd5182bd2f3e827eea0444d93ccb9081cc4f",
+      "bytes": 353
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/launches/X04-before-C-r3.json": {
+      "sha256": "fe46e11f3fd7675862aa515f3dee7ee80a7d2368ca260443729c4354f3c5b215",
+      "bytes": 352
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/necessity-review.json": {
+      "sha256": "b54d93f1d2dbc54d7f1e553d3d0fddea28b92b9fbd5b05fa6ddea99456db2aa7",
+      "bytes": 77409
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/necessity-review.md": {
+      "sha256": "0cd2335bc9fb3aea23a98cf047a9ecb6d5f1194040a118e7c658746b6f9be867",
+      "bytes": 7627
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/new-trace-review.json": {
+      "sha256": "953744d1972cad4da16f16cdcec4c273e46db296c311cd568dcb73312591bea5",
+      "bytes": 585430
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/new-trace-review.md": {
+      "sha256": "a742cbd4d5fc26f2178dec2b77b1bfecb7f2b3eef0eb1cdb588c880666f5e2bf",
+      "bytes": 11085
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/old-new-trace.json": {
+      "sha256": "989eaf4c01229bdb9df419d90c9e3ecb1714ef436a78e57200e3ead39db3e0ee",
+      "bytes": 2098
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/paired-protocol.json": {
+      "sha256": "2297f0af00b021a2f7a253564bf078c556129fe48490c4cf774fb203ad62d48c",
+      "bytes": 3548
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/pre-task-source.patch": {
+      "sha256": "3997c169e2a882eb593e3aae0821fa261f22bac5e4db2475758d16eb6ac187f9",
+      "bytes": 14848
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/preservation-audit.json": {
+      "sha256": "f3c90beebcc0cd3e2219754c32751930662c09d573480fc25223a33d19f7fee3",
+      "bytes": 164
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/proof-roots.json": {
+      "sha256": "88f98429ad2fc886098ec8f06db3f60cf1d2aa9d526daaf2536b3e00dba75543",
+      "bytes": 460
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/protocol-after.json": {
+      "sha256": "c82fadf2cd87351085eee5d8a894e4c709089a701562f8805cdc6302c28db045",
+      "bytes": 3272
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/protocol-before.json": {
+      "sha256": "429a19292154bfa1f5e6f72e4628391b52fef9df1bfec1d651684c6762622ac7",
+      "bytes": 3274
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/report-zh.md": {
+      "sha256": "a9da8c2d13f2eee02f5d5d13038439be03c627364946e9269448c80693c10405",
+      "bytes": 9425
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/results-manifest.json": {
+      "sha256": "ab63537f9536e059b9e9d2806f419f7554fa846362f52266d367b5d133be2ca9",
+      "bytes": 279063
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/runtime-cleanup.json": {
+      "sha256": "a9a255b8a455516abb6e342abece66a6f9289532bfc082a056743222a936e974",
+      "bytes": 119
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/runtime-public.json": {
+      "sha256": "b7c02e69f4a32a35509bf754e9aaaa27a7d074fb2ebcabc71dedaa32244c61fa",
+      "bytes": 622
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/schedule.json": {
+      "sha256": "8f48775732d91e609be9d16ab745e1fc1a25d7f8a7410b332db5cc48d24489b2",
+      "bytes": 87625
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/source-manifest-after.json": {
+      "sha256": "08c26f4228e2b2767aeeb8175116ec7087f0b2242fe0a1d859713352f82bd6c1",
+      "bytes": 34741
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/source-manifest-before.json": {
+      "sha256": "3c36445a07f1f57fab7b8d2df739968eb8c49c82dbbded25a2e382680ddbf12f",
+      "bytes": 34742
+    },
+    "artifacts/skill-model-routing-diagnosis-2026-10-21/verification.json": {
+      "sha256": "9d59270953160486b4fe4b54090de0c3ac5ed1ef2d3334eb1af8a2166a3846e0",
+      "bytes": 680
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis-review.md": {
+      "sha256": "5d0ea575a2812e52f788315fac96ea6a5913aad4b3472376479b0ee7f7f04117",
+      "bytes": 13444
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/01-outcomes.png": {
+      "sha256": "35162a6f52b7edf2075c29d4ff0bef1284da3d6f3df9d21d7a79b599b44910fe",
+      "bytes": 60092
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/01-outcomes.svg": {
+      "sha256": "ff4c35c6240f52a270f2e8b8969727568349307498d711d6d64e79d41ffe3517",
+      "bytes": 25762
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/02-paired-differences.png": {
+      "sha256": "a3e27ffb59e376431306c723c02667bdfbb86fe2e46ff28f0e829f55e78c6104",
+      "bytes": 45407
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/02-paired-differences.svg": {
+      "sha256": "fd32a84936239076a3bf5a92c1cbbf680e7c5cfaa3f20e4f675ec70892896474",
+      "bytes": 14154
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/03-resources.png": {
+      "sha256": "0964693188ea96654554a3af91c37e00750b42e04732bc8abcfd07242efe6cdd",
+      "bytes": 108156
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/03-resources.svg": {
+      "sha256": "64fcac9e9f19af057b955b23eabd7cf3b33a6a14773398237e1bea36d7217a5e",
+      "bytes": 44574
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/04-token-accounting.png": {
+      "sha256": "fad0da2afe3de6d5873319c7971e0ebff576c3a1b457f2d9e287f9937ea45f42",
+      "bytes": 57642
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/04-token-accounting.svg": {
+      "sha256": "fac9258988d507a07d6053b89ecfa6fc96e0849e84523594cd9a855478a1b059",
+      "bytes": 23534
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/05-case-repeat-matrix.png": {
+      "sha256": "4f5f04de3f8b12ca9cc2c599d4111d08a803435a30491e5c115aabe123799f17",
+      "bytes": 179076
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/05-case-repeat-matrix.svg": {
+      "sha256": "ed528080096c5ad04f0aa8f0807a5ba4939863697ac05396c67cd1357faae736",
+      "bytes": 34142
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/analysis-report.md": {
+      "sha256": "a14d099ed1c8d5a1f5bab4b00d3ae7ffb56dffc1cdeea2e265f2209ac10cf332",
+      "bytes": 9251
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/figure-catalog.md": {
+      "sha256": "6364d7f8e06c3de0835e7ce636fae386dabc12def4a8fc68f95acb562728675d",
+      "bytes": 1851
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/figure-data.json": {
+      "sha256": "46a500b45787aeb9e164baf454757710a4fbf01b56127600be43a24836a579a4",
+      "bytes": 444452
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/metrics.json": {
+      "sha256": "86e5cd87286192ffde9f829710502cbc6b124143ceabd043a287f5b2a1f45bf9",
+      "bytes": 401024
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/stats-appendix.md": {
+      "sha256": "0be23fc03b3a73154e0a31deea30dca19f1b5137576beed24261161f84300aa3",
+      "bytes": 4078
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/analysis/trial-scores.json": {
+      "sha256": "9547c9f11859d7440e31f0ef7106216b3dcf00a9b82e9c5413b06065fd08bd40",
+      "bytes": 2443257
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/audit-report.md": {
+      "sha256": "2ea80ec2b97d301d34c7566fe41b1427bbfda772f8189a5ba53b4b8a046a02c0",
+      "bytes": 1631
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/audit.json": {
+      "sha256": "51e02eeb4b7ee511f1d3a4049de9037c2752f74e0946f87cc9f757c9b47747d6",
+      "bytes": 78639
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/cases.json": {
+      "sha256": "069fa872b01a501738a95c93c7a6ca06cbf785a99958b076039ad2402654e308",
+      "bytes": 36506
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/dataset-notes.md": {
+      "sha256": "cfd6bc89444444042bd1e169bb39fe0101a4364bc4a81bdae472b3f1058554be",
+      "bytes": 7948
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/dispatch.json": {
+      "sha256": "0c3e699d0f260eb6d7256f5bbb8d7763cf32de810ce6ac3ff2a06b2989284b02",
+      "bytes": 107871
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/fixture-validation.json": {
+      "sha256": "1f46b772067c7540ceeb0a6d760a7faf154cd039bc584af31d83e5fa25cb0f19",
+      "bytes": 568
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/frozen-inputs.json": {
+      "sha256": "b9619e9a6825ae483f8b5bdd409320d0c4ed85598f88119780fd8065ef1f6c01",
+      "bytes": 75196
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/harness-manifest.json": {
+      "sha256": "bd163ac1a749aa98ef6703e349a638aaa906e21048ba5fe62b1f84d67a472c51",
+      "bytes": 1004
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/independent-counts.json": {
+      "sha256": "743f281aaac630308946d747be0605ab27a87758dd139c388087869097c7e4ee",
+      "bytes": 1319
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/independent-format-diagnosis.json": {
+      "sha256": "efc8295933eb6a0ce130321eab1596eac7fd595c90a5bfabd2e0fc6f43bd6f3b",
+      "bytes": 433
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/independent-score-review.json": {
+      "sha256": "22e348132e03fd0a28a88a9c3df4b6b93e7a6771a2d5e96ad4f890caca01ef72",
+      "bytes": 93155
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/protocol-review.md": {
+      "sha256": "344329c2c6ac8aac10c9338ea44112b0a74c501f62417102c78da3e55dd77466",
+      "bytes": 9443
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/protocol.json": {
+      "sha256": "1f5fdb9b7fbae0611ab246a16cba0900f01901c5cf090fa41c966136843e12ec",
+      "bytes": 3372
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/report-zh.md": {
+      "sha256": "22f654cc9ef7e3fea8facbaa8306936193ebcbd2bf7d9d47e1507363abf98231",
+      "bytes": 8493
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/results-manifest.json": {
+      "sha256": "191f0407d60eeeb3a77dd8134c98ca54271aaf5d268136723a1038c4a322901e",
+      "bytes": 43947
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/runtime-public.json": {
+      "sha256": "36b0e631c218a5189b342bba9a05bf2eafab5712b60e655d0edde7f8f1ae4877",
+      "bytes": 564
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/runtime-versions.json": {
+      "sha256": "3c17346702b23b2a011a6cdf7d4f10afddb0562443c96ab9c3775118a843d855",
+      "bytes": 1636
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/schedule.json": {
+      "sha256": "b5503f965160999b88ee584b2e2b89eb17fd29acdc37ca8f1fff9481f082151e",
+      "bytes": 31164
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/source-manifest.json": {
+      "sha256": "53b28fa766bfa6bf5f7568b21264f1331bcfb251a0f2227284419f77493e75bb",
+      "bytes": 34782
+    },
+    "artifacts/skill-routing-three-arm-2026-10-21/working-tree-source.patch": {
+      "sha256": "4398be0b004637254d2ece4a625c9eff6833b9cd5deb6a4e9bbc284bcbd0e758",
+      "bytes": 8820
+    }
+  },
+  "archiveSha256": "ddeed444b7a665f09f8e4268d5ee9bafa97d2df3443f402873c7393ce89f1bd7",
+  "archiveBytes": 2174653
+}

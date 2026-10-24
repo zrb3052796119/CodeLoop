@@ -59,3 +59,34 @@ Inspection covered direct references in production, scripts, tests, documentatio
 ## Validation
 
 The restore tests recover all four files without using Git, compare Phase 4 files with the unchanged historical manifest, preserve the failed semantic evaluation, reject corrupted compressed data, preflight existing-file conflicts, and reject path/symlink escapes. The source JSONs were compared byte-for-byte with commit `88ec62d0ca7d8b6b090c31fda1835642d7e0e603` before archiving.
+
+
+## Pre-trial local experiment outputs
+
+A further 458 previously untracked intermediate files (13,250,931 bytes) are
+preserved in [pre-trial-evidence.tar.gz](../artifacts/archives/governance-2026-10-24/pre-trial-evidence.tar.gz)
+(2,174,653 bytes). The [per-file manifest](../artifacts/archives/governance-2026-10-24/pre-trial-evidence-manifest.json)
+records each original path, size and SHA-256, plus the archive hash. Every member
+was read back and checked before the loose originals were moved to local recovery
+storage. No failed run was replaced or discarded. The archive includes the
+remaining intermediate outputs from the practicality, gen-2 and native-review
+experiments whose documents cite those directories broadly.
+
+The 86 directly referenced evidence files and required inputs are retained at
+original paths; their [inventory](../artifacts/governance-trial-2026-10-24/retained-pre-trial-evidence.json)
+is separate from this archive. This keeps normal tests and explicit document
+references readable. Raw pytest logs retain their original whitespace.
+
+To inspect the archived intermediates, verify the archive SHA-256 against its
+manifest and extract into a new empty directory, preserving repository-relative
+paths. The JSON-report restore helper above applies only to the original four
+reports, not this tar archive:
+
+```sh
+mkdir /tmp/codeloop-pre-trial-export
+tar -xzf artifacts/archives/governance-2026-10-24/pre-trial-evidence.tar.gz -C /tmp/codeloop-pre-trial-export
+```
+
+Recovery needs no model calls or network access. Compare recovered file hashes
+with the manifest before using them in historical replay; do not overwrite newer
+outputs at the old paths.
