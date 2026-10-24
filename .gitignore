@@ -108,6 +108,8 @@ out.txt
 /artifacts/**/private/
 /artifacts/**/frozen-code.zip
 /artifacts/**/tasks.json
+# Frozen input read by test_multi_agent_trigger_audit, not a disposable run.
+!/artifacts/multi-agent-trigger-2026-10-23/materials/pack-v3/tasks.json
 /artifacts/**/native-evidence-*/
 /artifacts/**/native-pending-roundtrip/
 /artifacts/**/generic-scale-fixture/
