@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "kind": "phase0_complete_randomized_acceptance",
+  "status": "passed_with_eight_declared_skips_three_warnings_main_not_merged",
+  "createdAtUtc": "2026-10-24T16:19:08.048957+00:00",
+  "sourceCommit": "9f9369421486f018c837f84d21bd727aed6ab326",
+  "sourceArchiveSha256": "7e497a3ac5022f9fa1f9b8b6f15981d04f8c3f4ace644ab9eefd9600aae764d5",
+  "sourceCheckoutKind": "local shared-object clone, detached exact HEAD",
+  "seed": 20261024,
+  "command": [
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+    "-m",
+    "pytest",
+    "tests",
+    "-vv",
+    "-ra",
+    "--tb=short",
+    "--randomly-seed=20261024",
+    "--junitxml=/private/tmp/codeloop-governance-20261024/final-candidate-results.xml"
+  ],
+  "environment": {
+    "platform": "macOS",
+    "python": "3.12.8",
+    "pytest": "9.1.1",
+    "pytestRandomly": "4.1.0",
+    "customDiagnosticPlugins": false,
+    "isolatedHome": true,
+    "inheritedMiniCodeConfigurationRemoved": true,
+    "apiCallsAuthorizedForThisRun": false
+  },
+  "startedAt": "2026-10-24T23:16:53.215103+08:00",
+  "finishedAt": "2026-10-25T00:10:47.626483+08:00",
+  "result": {
+    "passed": 14923,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 8,
+    "warnings": 3,
+    "exitCode": 0
+  },
+  "counting": {
+    "collectedTestItems": 14927,
+    "collectionSkippedModules": 4,
+    "runtimeSkippedTests": 4,
+    "junitTestcaseEntries": 14931,
+    "explanation": "14927 collected items = 14923 passed + 4 runtime skips. JUnit adds 4 collection-skip entries, yielding 14931 entries and 8 total skips."
+  },
+  "durationsSeconds": {
+    "pytestSummary": 3231.54,
+    "outerProcess": 3234.4113800525665,
+    "junitSuite": 3230.704,
+    "sumTestcaseTimes": 3200.459
+  },
+  "skips": [
+    {
+      "id": "::tests.test_implementation_progress_analysis",
+      "kind": "skipped",
+      "message": "collection skipped",
+      "detail": "('/private/tmp/codeloop-governance-20261024/final-candidate-9f9369421486/tests/test_implementation_progress_analysis.py', 11, \"Skipped: could not import 'numpy': No module named 'numpy'\")"
+    },
+    {
+      "id": "::tests.test_implementation_regression_analysis",
+      "kind": "skipped",
+      "message": "collection skipped",
+      "detail": "('/private/tmp/codeloop-governance-20261024/final-candidate-9f9369421486/tests/test_implementation_regression_analysis.py', 11, \"Skipped: could not import 'numpy': No module named 'numpy'\")"
+    },
+    {
+      "id": "::tests.test_single_vs_multi_analysis",
+      "kind": "skipped",
+      "message": "collection skipped",
+      "detail": "('/private/tmp/codeloop-governance-20261024/final-candidate-9f9369421486/tests/test_single_vs_multi_analysis.py', 15, 'Skipped: Optional experiment-analysis dependency')"
+    },
+    {
+      "id": "::tests.test_three_arm_analysis",
+      "kind": "skipped",
+      "message": "collection skipped",
+      "detail": "('/private/tmp/codeloop-governance-20261024/final-candidate-9f9369421486/tests/test_three_arm_analysis.py', 15, 'Skipped: Optional analysis dependency')"
+    },
+    {
+      "id": "tests.test_evaluation_header_timeout::test_verified_https_slow_headers_keep_hostname_and_certificate_checks[tls]",
+      "kind": "skipped",
+      "message": "ephemeral local TLS certificate fixture",
+      "detail": "/private/tmp/codeloop-governance-20261024/final-candidate-9f9369421486/tests/test_evaluation_header_timeout.py:154: ephemeral local TLS certificate fixture"
+    },
+    {
+      "id": "tests.test_evaluation_header_timeout::test_untrusted_https_certificate_is_still_rejected[tls]",
+      "kind": "skipped",
+      "message": "ephemeral local TLS certificate fixture",
+      "detail": "/private/tmp/codeloop-governance-20261024/final-candidate-9f9369421486/tests/test_evaluation_header_timeout.py:168: ephemeral local TLS certificate fixture"
+    },
+    {
+      "id": "tests.test_integration.TestLiveAPI::test_simple_question",
+      "kind": "skipped",
+      "message": "ANTHROPIC_API_KEY not set — skipping live API test",
+      "detail": "/private/tmp/codeloop-governance-20261024/final-candidate-9f9369421486/tests/test_integration.py:737: ANTHROPIC_API_KEY not set — skipping live API test"
+    },
+    {
+      "id": "tests.test_integration.TestLiveAPI::test_tool_use_via_api",
+      "kind": "skipped",
+      "message": "ANTHROPIC_API_KEY not set — skipping live API test",
+      "detail": "/private/tmp/codeloop-governance-20261024/final-candidate-9f9369421486/tests/test_integration.py:768: ANTHROPIC_API_KEY not set — skipping live API test"
+    }
+  ],
+  "warnings": [
+    {
+      "test": "tests/test_memory_curator_schedule.py::test_forked_child_does_not_clean_up_an_inherited_transaction_fd",
+      "location": "/private/tmp/codeloop-governance-20261024/final-candidate-9f9369421486/tests/test_memory_curator_schedule.py:985",
+      "category": "DeprecationWarning",
+      "message": "This process (pid=97403) is multi-threaded, use of fork() may lead to deadlocks in the child."
+    },
+    {
+      "test": "tests/test_memory_curator_schedule.py::test_forked_child_cannot_inherit_nested_scheduler_lock_authority",
+      "location": "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/popen_fork.py:66",
+      "category": "DeprecationWarning",
+      "message": "This process (pid=97403) is multi-threaded, use of fork() may lead to deadlocks in the child."
+    },
+    {
+      "test": "tests/test_memory_lock_sharding_red.py::test_forked_manager_cannot_publish_inherited_dirty_project_snapshot",
+      "location": "/private/tmp/codeloop-governance-20261024/final-candidate-9f9369421486/tests/test_memory_lock_sharding_red.py:869",
+      "category": "DeprecationWarning",
+      "message": "This process (pid=97403) is multi-threaded, use of fork() may lead to deadlocks in the child."
+    }
+  ],
+  "archive": {
+    "path": "acceptance.tar.gz",
+    "bytes": 596106,
+    "sha256": "03a818305047f25c09639adb133267a259877e27297a4aa481b3dabb2415ab99"
+  },
+  "memberCount": 5,
+  "uncompressedMemberBytes": 4425019,
+  "files": [
+    {
+      "path": "evidence/final-candidate-pytest.log",
+      "bytes": 2009054,
+      "sha256": "77308a4d16a3df3645c6a96f6d267206d44bc3a7cb57cfbc0b6f3cfcf21e34b1"
+    },
+    {
+      "path": "evidence/final-candidate-results.xml",
+      "bytes": 2401405,
+      "sha256": "6c86542fe216b471ac48cb10b54b63b5584063ad396fc1e07ff4920bc9187acd"
+    },
+    {
+      "path": "evidence/final-candidate-run-meta.json",
+      "bytes": 825,
+      "sha256": "8547e2f2b51de98b9b4fd70718732d6bb9b669fd21063211e99155669024a9a5"
+    },
+    {
+      "path": "evidence/final-candidate-summary.json",
+      "bytes": 11505,
+      "sha256": "b7a6531b7fc7a3b0aaa9f8cba5028afa4faba003ec6c7e16bcb26ad7914e1de7"
+    },
+    {
+      "path": "evidence/run_final_candidate.py",
+      "bytes": 2230,
+      "sha256": "3f9a35d2a148381183b0b26a9f961e2b236ea350a5df2b23f8b453ca5e6c9a81"
+    }
+  ],
+  "verification": {
+    "allMembersRestoredAndByteCompared": true,
+    "originalsStableAcrossCapture": true,
+    "sourceTreesIncluded": false,
+    "runWrapperIncludedAsEvidenceOnly": true
+  },
+  "claimBoundary": "This exact P0 commit completed one seeded full suite with declared skips. It does not certify pending P1/P3 candidates, merge main, prove wheel import origin, or represent Phase2 model trials."
+}

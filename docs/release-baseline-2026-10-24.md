@@ -1,6 +1,6 @@
 # CodeLoop 治理基线 — 2026-10-24
 
-**当前状态：验收进行中，尚未满足合入 main 的条件。** 分组修复通过不等于当前全部源码通过随机顺序全量测试。
+**当前状态：P0 冻结提交 `9f936942` 的完整随机验收通过，main 尚未合入。** 本轮为 14,923 passed / 8 skipped / 0 failed / 0 errors，另有 3 条警告；跳过范围见下文。后续 P1/P3 合并候选仍在全量运行，已有一项未关闭失败，本记录不将其视为通过。Phase 2 已冻结，模型 API 调用为零，等待本机全量进程退出后运行。
 
 ## 可复现环境
 
@@ -9,7 +9,41 @@
 - 全量诊断随机种子：`20261024`；禁止 `-x`。CI 使用 `github.run_number`，每个 OS/Python 矩阵任务打印并保存相同种子和 JUnit XML。
 - 测试在不可变源码副本中运行；使用独立 HOME，剥离继承的 `MINI_CODE_*` 配置。HTTP 测试允许本机 loopback；不借用真实模型凭证。
 - 原始日志、XML、关键反例和初始/诊断源码哈希已整理为仓库内的[Phase 0 诊断证据包](../artifacts/governance-trial-2026-10-24/phase0-diagnostics/README.md)，逐文件与压缩包 SHA-256 见该目录的 `manifest.json`。源码副本和初始 WIP 原件仍保留在本机；证据包不重复收录源码树。
-- 最终候选完整随机验收尚未开始；下列通过结果属于各自记录的源码和检查范围，不代表最终候选全绿。最终提交、完整套件时长和 XML 待验收后记录。
+- P0 完整验收的原始日志、XML、运行元数据、汇总及运行包装脚本另存于 [P0 完整验收证据包](../artifacts/governance-trial-2026-10-24/phase0-acceptance-9f936942/README.md)。旧诊断包保持原字节，未用通过结果替换失败证据。
+
+## P0 完整随机验收
+
+| 项目 | 记录 |
+| --- | --- |
+| 源码 | `9f9369421486f018c837f84d21bd727aed6ab326`，干净源码的独立本地 clone，detached HEAD |
+| 源码归档 SHA-256 | `7e497a3ac5022f9fa1f9b8b6f15981d04f8c3f4ace644ab9eefd9600aae764d5` |
+| 时间（Asia/Shanghai） | 2026-10-24 23:16:53.215103 → 2026-10-25 00:10:47.626483 |
+| 执行 | `python -m pytest tests -vv -ra --tb=short --randomly-seed=20261024 --junitxml=…`；无自定义逐用例诊断插件，完整 argv 保存在 manifest |
+| 结果 | 14,923 passed / 8 skipped / 0 failed / 0 errors / 3 warnings，退出码 0 |
+| 耗时 | pytest 汇总 3231.54 秒（53 分 51.54 秒）；外层进程 3234.411 秒；JUnit suite 3230.704 秒，计时边界不同 |
+
+收集输出为 **14,927 items / 4 skipped**：14,927 个实际用例 = 14,923 通过 + 4 个运行时跳过。JUnit 另为 4 个收集阶段跳过的模块生成条目，因此 XML 是 **14,931 条 testcase / 8 skipped**。这不是多跑或漏跑 4 个用例，也不能推断未收集模块包含多少测试。
+
+8 项跳过逐项保留如下；未将跳过项计为通过。
+
+| 阶段 | 节点（均在 `tests/` 下） | 原因 |
+| --- | --- | --- |
+| 收集 | `test_implementation_progress_analysis.py:11` | 无 `numpy`，`could not import 'numpy': No module named 'numpy'` |
+| 收集 | `test_implementation_regression_analysis.py:11` | 同上 |
+| 收集 | `test_single_vs_multi_analysis.py:15` | `Optional experiment-analysis dependency`；该处 `numpy` importorskip |
+| 收集 | `test_three_arm_analysis.py:15` | `Optional analysis dependency`；该处 `numpy` importorskip |
+| 运行 | `test_evaluation_header_timeout.py::test_verified_https_slow_headers_keep_hostname_and_certificate_checks[tls]` | `ephemeral local TLS certificate fixture` |
+| 运行 | `test_evaluation_header_timeout.py::test_untrusted_https_certificate_is_still_rejected[tls]` | `ephemeral local TLS certificate fixture` |
+| 运行 | `test_integration.py::TestLiveAPI::test_simple_question` | `ANTHROPIC_API_KEY not set — skipping live API test` |
+| 运行 | `test_integration.py::TestLiveAPI::test_tool_use_via_api` | 同上 |
+
+3 条警告均为 Python 3.12 的 `DeprecationWarning`：多线程进程调用 `fork()` 可能使子进程死锁。触发它们的测试均通过，但警告仍保留：
+
+- `tests/test_memory_curator_schedule.py::test_forked_child_does_not_clean_up_an_inherited_transaction_fd`，位置为该文件第 985 行。
+- `tests/test_memory_curator_schedule.py::test_forked_child_cannot_inherit_nested_scheduler_lock_authority`，位置为标准库 `multiprocessing/popen_fork.py:66`。
+- `tests/test_memory_lock_sharding_red.py::test_forked_manager_cannot_publish_inherited_dirty_project_snapshot`，位置为该文件第 869 行。
+
+该结果只证明上述源码、环境和种子下的 P0 完整套件通过（包含声明的跳过），不能证明生产任务能力或其他平台同样通过。P1/P3 合并候选 `eb17c62a5510` 的全量运行与未关闭失败另行处理。既有 CI 安装/导入 smoke 不能证明导入来源是新构建的 wheel；模块来源检查正在复核，本记录不将其作为 wheel 来源验收证据。
 
 ## 已验证项目
 
@@ -38,9 +72,9 @@
 | R2 | `cb327c3796b0d34fb3235a15fec6f1988f072adf` | 收集 14,849 items / 4 skipped；完成 5355 passed / 58 failed 后，诊断日志插件被禁止文件访问的测试拦截并中断（1809 秒）；不是全量结果 |
 | R2 未完成节点诊断续跑 | 同一 R2 源码哈希 | 9271 passed / 139 failed / 8 skipped / 22 errors / 5413 deselected；pytest 2382.44 秒，外层进程 2385.16 秒；不是完整套件验收 |
 
-R2 的局部事件日志、完整原始错误及续跑 XML 均保留在证据包内。续跑按第一次已完成的 call 节点排除，改变了同一进程中的前导测试集合；两次数字不能拼接成一次完整套件结果。最终候选必须从头运行，且不加载该逐用例文件日志插件。
+R2 的局部事件日志、完整原始错误及续跑 XML 均保留在诊断证据包内。续跑按第一次已完成的 call 节点排除，改变了同一进程中的前导测试集合；两次数字不能拼接成一次完整套件结果。上述 P0 验收已从头运行，且未加载该逐用例文件日志插件。
 
-这些诊断提交位于本机临时副本。R2 启动后新增的修复不能倒填到 R2 的源码身份；完成修复后必须对最终候选重新验收。
+这些诊断提交位于本机临时副本。R2 启动后新增的修复不能倒填到 R2 的源码身份；修复后的 P0 完整验收使用独立记录的 `9f936942`。
 
 原报告的 `14,522 passed / 359 failed / 22 errors` 没有取得对应源码和原始日志。本轮已用冻结源码和最小前导顺序证明三个独立污染源：
 
@@ -52,8 +86,8 @@ R2 的局部事件日志、完整原始错误及续跑 XML 均保留在证据包
 
 这些证据解释已复现的失败族，不能外推原报告全部 workflow 失败。其余诊断分为真实生产缺陷、fixture 契约漂移、测试环境限制和诊断工具失效；原始红日志、无效基线尝试及每组范围均保留。真实缺陷包括 MCP SSE 错误路径的未定义变量、阶段输出预算漏算工具 schema、v6 失败诊断后的 Analyst→Reviewer 审计绑定、checkpoint 把准备耗时误作执行证据，以及历史 verifier-only 提交授权和多轮修复后的长 trace 投影错误。fixture 迁移则显式选择 bounded/full 模式或 Analyst/Reviewer 路由，并提供当前要求的真实独立检查及分页证据，不据此宣称生产修复。todo 测试中同文件共享默认列表的污染也已用局部 monkeypatch 隔离，不与上述跨文件最小前导证明混为一谈。
 
-Phase 2 的 [16 个历史任务准备包](../artifacts/governance-trial-2026-10-24/phase2-preparation/README.md)和 runner 适配已提交；92 项历史 oracle 检查与 114 项 runner 离线回归已完成。尚未冻结实付运行，也没有调用模型 API；仍等待最终绿基线。
+Phase 2 的 [16 个历史任务准备包](../artifacts/governance-trial-2026-10-24/phase2-preparation/README.md)和 runner 适配已提交；92 项历史 oracle 检查与 114 项 runner 离线回归已完成。P0 已通过，Phase 2 已在同一 `9f936942` 源码冻结 32 个 cell，manifest SHA-256 为 `987f7cf31627ca85f18cdf2a270dae3918c5bf6cacac68cf02053dd767da91be`。角色轮数显式配置为 12/8/15，不能称为当前默认值；首次因默认值误认而失败的 freeze 未生成 manifest、未调用 API。当前模型 API 调用为零、结果为零，等待本机全量进程退出后运行；详见[正式任务预注册与冻结记录](real-task-comparison-2026-10-24.md)。本 P0 证据包不混入 Phase 2 证据。
 
 ## 反馈回路建议
 
-本轮先记录成本，不新增 gate。开发时用变更相关单测（秒级）和有明确边界的集成回归（分钟级）；PR/合并候选保留随机全量。历史实测约 34 分钟只作参考，本轮实际时长以最终 XML/运行元数据为准。后续拆档应由实际测试耗时和隔离依赖决定，不能凭文件名把慢测试整体豁免。
+本轮先记录成本，不新增 gate。开发时用变更相关单测（秒级）和有明确边界的集成回归（分钟级）；PR/合并候选保留随机全量。本轮 P0 实测 pytest 53 分 51.54 秒，外层 53 分 54.411 秒；历史约 34 分钟不能代替此次成本。后续拆档应由实际测试耗时和隔离依赖决定，不能凭文件名把慢测试整体豁免。

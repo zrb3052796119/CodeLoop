@@ -1,10 +1,10 @@
 # CodeLoop 真实历史任务比较预注册（2026-10-24）
 
-状态：**任务与现有 runner 的离线准备完成；尚未调用模型**。先完成治理 Phase0 的基线核验，再冻结执行适配器与运行时。本文不设新的扩张 gate，不修改既有历史证据。模型按用户授权使用当前配置的 `custom / glm-5.3-flash`，沿用现有凭证与端点；API 支出不设上限。
+状态：**Phase 0 基线已通过；32 个试次的任务、适配器和运行时已冻结，尚未调用模型**。冻结源码为 `9f9369421486f018c837f84d21bd727aed6ab326`；正式执行等待本机全量测试退出，避免资源竞争污染延迟指标。本文不设新的扩张 gate，不修改既有历史证据。模型按用户授权使用当前配置的 `custom / glm-5.3-flash`，沿用现有凭证与端点；API 支出不设上限。
 
 ## 问题与样本
 
-比较相同模型下，单 agent 和当前有界多 agent 在真实工程任务上的成功率、token/物理调用开销、墙钟时间与人工介入。这里的“真实”指任务来自本仓库实际 Git 变更，提示由研究者根据变更重建，**不是原始用户会话的逐字记录**。没有访问或发布个人会话内容。
+比较相同模型下，单 agent 和显式有界多 agent 在真实工程任务上的成功率、token/物理调用开销、墙钟时间与人工介入。这里的“真实”指任务来自本仓库实际 Git 变更，提示由研究者根据变更重建，**不是原始用户会话的逐字记录**。没有访问或发布个人会话内容。
 
 纳入16题：只读诊断5、修改7、重构4。修改/重构从对应提交的真实父版本开始，不注入人工缺陷；只读题查看变更后版本，并解释其实际行为。验收取该提交已有测试的相关新增/修改检查，固定测试字节和选择器。每题记录完整基线/参考 SHA、源码逐文件 SHA、提交时间、提示、允许修改范围、私有 oracle SHA、离线验证日志。
 
@@ -41,9 +41,11 @@
 
 ## 冻结运行条件
 
-16题 × 2组 × 1次，共32个 trial。使用 seed20261024 打乱题序，题内交替 single/auto 与 auto/single，串行运行。`single` 禁用 task 工具；`auto` 允许当前有界自动委派。主角色与子角色同为 GLM5.3 Flash，禁用异构模型路由；两组 profile/skills/记忆均为空，禁用 MCP 和网络工具。
+16题 × 2组 × 1次，共32个 trial。使用 seed20261024 打乱题序，题内交替 single/auto 与 auto/single，串行运行。`single` 禁用 task 工具；`auto` 允许显式有界自动委派。主角色与子角色同为 GLM5.3 Flash，禁用异构模型路由；两组 profile/skills/记忆均为空，禁用 MCP 和网络工具。
 
-运行时固定 temperature0、modelMaxRetries0、maxOutputTokens8192、共享1800秒任务期限、连接30秒/空闲120秒/请求300秒；子角色 explore12/plan8/general15轮，最大深度2。token、模型调用数和货币预算均为 `null`（无限额），不得悄悄继承历史 runner 的40调用/50万token/$5限制。180秒独立裁判时间不计入 agent 墙钟。
+运行时固定 temperature0、modelMaxRetries0、maxOutputTokens8192、共享1800秒任务期限、连接30秒/空闲120秒/请求300秒；子角色显式设置 explore12/plan8/general15轮，最大深度2。token、模型调用数和货币预算均为 `null`（无限额），不得悄悄继承历史 runner 的40调用/50万token/$5限制。180秒独立裁判时间不计入 agent 墙钟。
+
+冻结前首次校验拒绝了未显式配置的角色上限：`resolve_max_turns` 对缺失配置返回 `None`，而非 `AGENT_TYPES` 中遗留的12/8/15。此次使用预注册的12/8/15显式环境配置后冻结成功；未改题目、验收、顺序或预注册上限，首次 provider 调用仍未发生。因此本实验比较的是上述受控 bounded 条件，不能称为未配置产品默认档位的实测。
 
 成本主指标是 provider 报告的输入/输出/cache token 与实际物理请求数。自定义端点收费未知，货币成本保持 `null`，不用旧模型价推算。未知 usage 不计零；失败、超时、无 usage 与委派失败全部保留。记录实际子角色执行及宿主接收交付，不能把一次 task 请求当作有效协作。
 
@@ -64,10 +66,12 @@
 .venv-acceptance/bin/python artifacts/governance-trial-2026-10-24/phase2-preparation/rebuild.py --output /private/tmp/codeloop-governance-20261024/phase2-portable
 ```
 
-Phase0 通过后，在支持进程枚举的宿主执行以下两步；第一步冻结当时源码和路由，第二步才会调用已授权模型：
+以下为重建实验时的冻结和执行命令；当前目录已完成冻结，不得覆盖已有 manifest。第一步显式指定预注册角色上限，第二步调用已授权模型：
 
 ```sh
-.venv-acceptance/bin/python scripts/run_three_arm_real.py freeze --output /private/tmp/codeloop-governance-20261024/phase2-portable/execution
+env MINI_CODE_SUBAGENT_EXPLORE_MAX_TURNS=12 \
+  MINI_CODE_SUBAGENT_PLAN_MAX_TURNS=8 MINI_CODE_SUBAGENT_GENERAL_MAX_TURNS=15 \
+  .venv-acceptance/bin/python scripts/run_three_arm_real.py freeze --output /private/tmp/codeloop-governance-20261024/phase2-portable/execution
 .venv-acceptance/bin/python scripts/run_three_arm_real.py run --output /private/tmp/codeloop-governance-20261024/phase2-portable/execution
 ```
 
