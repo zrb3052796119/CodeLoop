@@ -1,0 +1,38 @@
+{
+  "reviewer": "root",
+  "atUtc": "2026-10-24T19:13:57.958645+00:00",
+  "status": "GO_for_freeze",
+  "registrationSha256": "eaa9645d3a2a39649d1e80c28ae3db39fc3c9bab89f8586e12515378babee5b2",
+  "taskSha256": "7464fc17a4725efaecac103a0d0b6a65d7442ffbbab61687037716592707d933",
+  "allowedManifestChanges": [
+    "studyId",
+    "status",
+    "amendment",
+    "cases/*/promptSha256"
+  ],
+  "allOtherManifestDataEqual": true,
+  "allPromptsMatchReviewedAppendices": true,
+  "preparedTaskObjectEqualsCandidateAfterDirectoryRelocation": true,
+  "relocations": [
+    {
+      "case": "read-router",
+      "directoryLiterals": 2
+    },
+    {
+      "case": "read-deadline",
+      "directoryLiterals": 2
+    },
+    {
+      "case": "read-atomic-replace",
+      "directoryLiterals": 2
+    },
+    {
+      "case": "read-closing-reminder",
+      "directoryLiterals": 2
+    }
+  ],
+  "supportFilesByteCompared": 999,
+  "frozenPythonFilesByteCompared": 329,
+  "zeroPriorFreezeAndTrialArtifacts": true,
+  "limits": "Static independent source/material comparison; original proofs retained, no model/oracle/test execution."
+}

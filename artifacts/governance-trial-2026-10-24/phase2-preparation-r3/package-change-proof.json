@@ -1,0 +1,43 @@
+{
+  "status": "pass",
+  "originalFileCount": 138,
+  "newFileCount": 138,
+  "changedFiles": [
+    "README.md",
+    "SHA256SUMS.json",
+    "cases/read-atomic-replace/prompt.txt",
+    "cases/read-closing-reminder/prompt.txt",
+    "cases/read-deadline/prompt.txt",
+    "cases/read-image-boundaries/prompt.txt",
+    "cases/read-router/prompt.txt",
+    "cases/refactor-finalization/prompt.txt",
+    "cases/refactor-frozen-change/prompt.txt",
+    "cases/refactor-workflow-runner/prompt.txt",
+    "cases/refactor-workspace/prompt.txt",
+    "cases/write-cache-fallback/prompt.txt",
+    "cases/write-cache-tip/prompt.txt",
+    "cases/write-profile-contracts/prompt.txt",
+    "cases/write-profile-dispatch/prompt.txt",
+    "cases/write-profile-parser/prompt.txt",
+    "cases/write-todo-isolation/prompt.txt",
+    "cases/write-user-profiles/prompt.txt",
+    "manifest.json"
+  ],
+  "allowedManifestChanges": [
+    "studyId",
+    "status",
+    "amendment",
+    "cases[*].promptSha256"
+  ],
+  "allOtherManifestValuesEqual": true,
+  "candidateTaskSha256": "1c2e5aea11580aeb47acd2734dce996d86aac48f13f8847c3408cbec3a744095",
+  "newManifest": {
+    "path": "/private/tmp/codeloop-governance-20261024/phase2-r3/portable/manifest.json",
+    "sha256": "eaa9645d3a2a39649d1e80c28ae3db39fc3c9bab89f8586e12515378babee5b2",
+    "bytes": 85796
+  },
+  "sourceIdentityBefore": {
+    "productionSha256": "13151ca1031c9ec8b4ffec4fa23b43509946018a61fa8a01445aad65af4bccd8",
+    "harnessSha256": "15898623cbc94e6a313cee6032bd008dc691ac0fac8739711405d32d4044a4ef"
+  }
+}

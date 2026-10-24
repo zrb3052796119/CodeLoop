@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "draftRevision": 3,
+  "status": "review-ready draft; not registered or applied",
+  "sourceTasksSha256": "1e134e338af2b19b78a54ded0ecf0bdcccdfc3c45803cf3c60bab5dc960e8cd5",
+  "sourceManifestSha256": "32dacc257169eff53026a3b8e1663ed68b62ceae1adac118589073921d47d332",
+  "applicationRule": "For each matching case id, verify the original prompt SHA, then append exactly two newline characters (U+000A U+000A), followed by appendices[case_id]. Keep every oracle_source byte unchanged. This document does not execute that application.",
+  "expectedOriginalPromptSha256": {
+    "read-router": "334b222b985ba4b6f86ff83800f5d7abb91776a72512738e918f3072a36f76a4",
+    "read-deadline": "61df964eee7b10a00c6830b6f559543af2d2172f1918749bb82593d9ab0bc758",
+    "read-atomic-replace": "bc03e4a7f5dfd7b6df9b7367e4d878c0c22de6175248ad71e3c1c6ec432c70d1",
+    "read-closing-reminder": "a9f339262be2f0e1fb4fd793695763b7f595ae6acb0d57123a652f18f8bc80fc",
+    "read-image-boundaries": "4e5495bde05b8827dc4016f477606d276aae18562c90080cfbc964d2b9adf0f5",
+    "write-cache-tip": "5757ab8004bef4ae44430dbbd963ee888ac6be04464ce086dc8a57db0b205f37",
+    "write-cache-fallback": "bd5d1640fdbfbfa808e44c5202ccfe9bdf9969f7c5e99b112b39028452f80527",
+    "write-todo-isolation": "bc01e3bd45231f74579ac0a387cf9974290a7d1a27d4c49dbf7bca9d46e2228c",
+    "write-user-profiles": "0bf34b85d218c7ff3c1a0f18ad777cb67cbb9b6e671c5c00d9084c725f2222e3",
+    "write-profile-parser": "276528617b615e5e55767e304ca985a16719b1c117d60f9d55434a61f62f8bbe",
+    "write-profile-dispatch": "f2364a52e0fde5dfc1473817f098af3dedccc9325b72fa5c05688a807a6ad17b",
+    "write-profile-contracts": "53cf0c78b4caa1a9a0db0cb560964fc16b4bc020cc040e729d8fa4483d9a6a53",
+    "refactor-finalization": "8b87b8360b372938efbf12b00732244fe0b1a9c32a81e83baceb90ad2e5c547d",
+    "refactor-workflow-runner": "e3924c0b8eb74720f1af5fa8c200330c2cb5053e8cd2159ac297a601768c84bd",
+    "refactor-frozen-change": "47dbb26b4edc9793a9e4f5aa45d1870119bbd5b24608285811a99048a8a6fec7",
+    "refactor-workspace": "3690a2516386685a1d44ef9d7eba001376a6b8f53cc8ffc701dda88c4c60d1ea"
+  },
+  "expectedUnchangedOracleSha256": {
+    "read-router": "ce1628ab204d4d3917d9387893c3698f1c77621a1da96095f85246618b428b69",
+    "read-deadline": "7b2d94baaacf8596675cca07d8416a33cfaa17b57c7e74f90c433240d7148a69",
+    "read-atomic-replace": "b26fabd09fe6d55805d48f4bba24c10ceb55077a283268fe40be92d8b9a6df64",
+    "read-closing-reminder": "3581c36866d3f496c94d12739dd3cfd4e8ecf2f70f282bf0bc472a9ef31a082e",
+    "read-image-boundaries": "803a5257f42ebb33af996abdbe27411d0213150cb58bf99dbd0bc28a8482a587",
+    "write-cache-tip": "6e52da4ad8b986779549d1eb837ec1b3700b6e76f9879589a071011a56c87f3f",
+    "write-cache-fallback": "e968384902b6cca43255cfb3a23d75ddf6ea42187b7e8d679b9b8826462ba12a",
+    "write-todo-isolation": "2bf2c732505629d812d78ad055fc037631e95d7ce316e3d8a1c37cb126325e04",
+    "write-user-profiles": "d7d783a1af6603a2c127d22c05742a98594ab2fcf665462991c666fe4bb9d874",
+    "write-profile-parser": "159390c3a01c188600a7e903117287c7e3d87889a55465414f2e6f88ccbadc10",
+    "write-profile-dispatch": "faf9152eda72b84466cab60eb89df1131d5b3c5ba40812ca55a9ad2125588805",
+    "write-profile-contracts": "b6de1ddffd23aef66ca60d7d77c60abccc29a4ba05d62c5b79981bf539bc0875",
+    "refactor-finalization": "586388769e2291a0796a1432fb04497a24a877a4fa7a8489cf994028211ccd72",
+    "refactor-workflow-runner": "e287f3eb9eb844aff38c885662921d6795684578517aad4320945903c59afb5d",
+    "refactor-frozen-change": "a09fc5e9b8b1606f463cfc312bdc4b53542ba8a175375c37c3e77c7c70f5022e",
+    "refactor-workspace": "3285b85219efd28f917227d7e74bc0cbbb5c78571ebec3090b9d3fbffda9d515"
+  },
+  "appendices": {
+    "read-router": "Public maintenance-task contract (historical interface compatibility)\n\n最终响应只提交一个JSON对象，不添加前言、解释段落或独立代码块。保留题目给出的facts键和编码；probe_source是完整pytest模块的字符串，evidence是至少两个不同位置的{path,line,quote}记录。行号从1开始，quote须与该行精确匹配，并位于诊断实际调用的相关函数体内。场景数量按pytest收集后的独立testcase计算（参数化展开计数），不是按assert语句数量计算。下面列明入口的最小实际调用次数；允许通过公开上层入口间接调用。不得mock被检查的核心逻辑以伪造覆盖。当前源码上的全部case须通过，不得skip/xfail、导入/收集错误或真实联网；要求历史对照的题目，同一模块必须在历史实现上产生断言失败，单纯导入/收集错误不算。事实值、预期数值及探针实现由你根据当前源码判断，契约不提供答案。\n诊断观测约定：用于上述调用次数及函数体evidence覆盖的核心实现调用，必须发生在运行pytest的主线程；计数器只在该线程安装sys.setprofile，不追踪工作线程。外围网络/模型mock可使用其他线程，但不能把全部计数目标移到线程池后仍要求该主线程观测器计数。probe_source在语法树上至少含一个Python assert语句；仅用pytest.raises而没有assert不符合此提交格式。每个当前/历史副本的诊断子进程分别最多70秒；这不增加整个外部验收阶段的已有时间上限。\n本题最低独立pytest testcase数量：5。必须实际调用：minicode/agent_router.py:route_task至少5次；minicode/smart_router.py:route_and_switch至少1次。允许的证据path：minicode/agent_router.py, minicode/smart_router.py。",
+    "read-deadline": "Public maintenance-task contract (historical interface compatibility)\n\n最终响应只提交一个JSON对象，不添加前言、解释段落或独立代码块。保留题目给出的facts键和编码；probe_source是完整pytest模块的字符串，evidence是至少两个不同位置的{path,line,quote}记录。行号从1开始，quote须与该行精确匹配，并位于诊断实际调用的相关函数体内。场景数量按pytest收集后的独立testcase计算（参数化展开计数），不是按assert语句数量计算。下面列明入口的最小实际调用次数；允许通过公开上层入口间接调用。不得mock被检查的核心逻辑以伪造覆盖。当前源码上的全部case须通过，不得skip/xfail、导入/收集错误或真实联网；要求历史对照的题目，同一模块必须在历史实现上产生断言失败，单纯导入/收集错误不算。事实值、预期数值及探针实现由你根据当前源码判断，契约不提供答案。\n诊断观测约定：用于上述调用次数及函数体evidence覆盖的核心实现调用，必须发生在运行pytest的主线程；计数器只在该线程安装sys.setprofile，不追踪工作线程。外围网络/模型mock可使用其他线程，但不能把全部计数目标移到线程池后仍要求该主线程观测器计数。probe_source在语法树上至少含一个Python assert语句；仅用pytest.raises而没有assert不符合此提交格式。每个当前/历史副本的诊断子进程分别最多70秒；这不增加整个外部验收阶段的已有时间上限。\n本题最低独立pytest testcase数量：2。必须实际调用：minicode/model_call_control.py:bounded_request_timeout至少3次。允许的证据path：minicode/model_call_control.py。",
+    "read-atomic-replace": "Public maintenance-task contract (historical interface compatibility)\n\n最终响应只提交一个JSON对象，不添加前言、解释段落或独立代码块。保留题目给出的facts键和编码；probe_source是完整pytest模块的字符串，evidence是至少两个不同位置的{path,line,quote}记录。行号从1开始，quote须与该行精确匹配，并位于诊断实际调用的相关函数体内。场景数量按pytest收集后的独立testcase计算（参数化展开计数），不是按assert语句数量计算。下面列明入口的最小实际调用次数；允许通过公开上层入口间接调用。不得mock被检查的核心逻辑以伪造覆盖。当前源码上的全部case须通过，不得skip/xfail、导入/收集错误或真实联网；要求历史对照的题目，同一模块必须在历史实现上产生断言失败，单纯导入/收集错误不算。事实值、预期数值及探针实现由你根据当前源码判断，契约不提供答案。\n诊断观测约定：用于上述调用次数及函数体evidence覆盖的核心实现调用，必须发生在运行pytest的主线程；计数器只在该线程安装sys.setprofile，不追踪工作线程。外围网络/模型mock可使用其他线程，但不能把全部计数目标移到线程池后仍要求该主线程观测器计数。probe_source在语法树上至少含一个Python assert语句；仅用pytest.raises而没有assert不符合此提交格式。每个当前/历史副本的诊断子进程分别最多70秒；这不增加整个外部验收阶段的已有时间上限。\n本题最低独立pytest testcase数量：1。必须实际调用：minicode/conversation_turn_store.py:_write至少1次。允许的证据path：minicode/conversation_turn_store.py, minicode/deletion_store.py。",
+    "read-closing-reminder": "Public maintenance-task contract (historical interface compatibility)\n\n最终响应只提交一个JSON对象，不添加前言、解释段落或独立代码块。保留题目给出的facts键和编码；probe_source是完整pytest模块的字符串，evidence是至少两个不同位置的{path,line,quote}记录。行号从1开始，quote须与该行精确匹配，并位于诊断实际调用的相关函数体内。场景数量按pytest收集后的独立testcase计算（参数化展开计数），不是按assert语句数量计算。下面列明入口的最小实际调用次数；允许通过公开上层入口间接调用。不得mock被检查的核心逻辑以伪造覆盖。当前源码上的全部case须通过，不得skip/xfail、导入/收集错误或真实联网；要求历史对照的题目，同一模块必须在历史实现上产生断言失败，单纯导入/收集错误不算。事实值、预期数值及探针实现由你根据当前源码判断，契约不提供答案。\n诊断观测约定：用于上述调用次数及函数体evidence覆盖的核心实现调用，必须发生在运行pytest的主线程；计数器只在该线程安装sys.setprofile，不追踪工作线程。外围网络/模型mock可使用其他线程，但不能把全部计数目标移到线程池后仍要求该主线程观测器计数。probe_source在语法树上至少含一个Python assert语句；仅用pytest.raises而没有assert不符合此提交格式。每个当前/历史副本的诊断子进程分别最多70秒；这不增加整个外部验收阶段的已有时间上限。\n本题最低独立pytest testcase数量：5。必须实际调用：minicode/tools/task.py:_run至少5次。允许的证据path：minicode/tools/task.py。",
+    "read-image-boundaries": "Public maintenance-task contract (historical interface compatibility)\n\n最终响应只提交一个JSON对象，不添加前言、解释段落或独立代码块。保留题目给出的facts键和编码；probe_source是完整pytest模块的字符串，evidence是至少两个不同位置的{path,line,quote}记录。行号从1开始，quote须与该行精确匹配，并位于诊断实际调用的相关函数体内。场景数量按pytest收集后的独立testcase计算（参数化展开计数），不是按assert语句数量计算。下面列明入口的最小实际调用次数；允许通过公开上层入口间接调用。不得mock被检查的核心逻辑以伪造覆盖。当前源码上的全部case须通过，不得skip/xfail、导入/收集错误或真实联网；要求历史对照的题目，同一模块必须在历史实现上产生断言失败，单纯导入/收集错误不算。事实值、预期数值及探针实现由你根据当前源码判断，契约不提供答案。\n诊断观测约定：用于上述调用次数及函数体evidence覆盖的核心实现调用，必须发生在运行pytest的主线程；计数器只在该线程安装sys.setprofile，不追踪工作线程。外围网络/模型mock可使用其他线程，但不能把全部计数目标移到线程池后仍要求该主线程观测器计数。probe_source在语法树上至少含一个Python assert语句；仅用pytest.raises而没有assert不符合此提交格式。每个当前/历史副本的诊断子进程分别最多70秒；这不增加整个外部验收阶段的已有时间上限。\n本题最低独立pytest testcase数量：7。必须实际调用：minicode/tools/inspect_image.py:_run至少7次。允许的证据path：minicode/tools/inspect_image.py。 本题不使用不存在的前功能实现作为历史反例。必须从真实inspect_image返回结果中观察以下八类事件，不能仅在测试文字中描述：网络URL拒绝（network_url_rejected）、不支持的扩展名拒绝（unsupported_image_extension）、伪装图片内容拒绝（not_an_image）、超大小图片拒绝（image_too_large）、未配置任何视觉模型、已配置视觉模型但无凭证、已有模型与凭证但地址不是HTTPS，以及成功的仅visual角色路由。后三个配置拒绝事件使用工具现有vision_model_unconfigured结果，分别在下述原始runtime状态下观察；保留工具真实ok/输出，不伪造结果。\n配置观测直接读取调用时context._runtime，不使用规范化后的有效配置：hasModel由visionModel或字典subagentModels中的visual真值确定；hasKey由subagentApiKey真值确定；httpsRoute按字符串subagentBaseUrl.startswith(\"https://\")确定。缺模型场景要求hasModel为false；缺凭证场景要求hasModel为true且hasKey为false；非HTTPS场景要求hasModel、hasKey均为true且httpsRoute为false。成功visual-only场景要求subagentModels是字典且visual为真，同时visionModel为空，并观察真实成功结果；请求本身必须mock为离线。可以使用无效占位凭证，不能提供或读取真实秘密。八类事件需要分别观测，但原有数值下限保持至少7个独立pytest testcase、_run至少7次；一个case可以包含多次真实工具调用。",
+    "write-cache-tip": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\n保留 minicode.anthropic_adapter.AnthropicModelAdapter 与 _to_anthropic_messages 现有签名。缓存标记采用既有请求格式 cache_control: {type: \"ephemeral\"}；此前系统/工具标记以及原有退避路径保持兼容。新增会话标记只占最后一条消息的最后一个content块，适用于工具结果块；剔除标记元数据后，既有消息前缀的内容结构须保持相同。不要更改调用者传入的消息或缓存的工具schema。",
+    "write-cache-fallback": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\n在现有 AnthropicModelAdapter 构造与 next 调用契约内实现功能。运行时配置键是 promptCache：布尔false禁用；环境变量是 MINI_CODE_PROMPT_CACHE：字符串\"0\"禁用。任一禁用条件生效时，请求不得携带cache_control；均未禁用时启用缓存。系统与最后一个工具块的标记形状为 {\"cache_control\":{\"type\":\"ephemeral\"}}，空系统继续允许原来的空字符串/None/空列表表示。缓存相关HTTP 400的现有退避路径只重试一次，并去掉请求内缓存标记；保留其他transport语义。把provider输入/输出与cache creation/read计数映射到现有usage字段（包括cache_read_tokens、cache_creation_tokens和source），保留初始实现对缺失用量子字段与source的既有处理语义。除此处明定的禁用值之外，若支持额外配置别名，不能改变上述行为。",
+    "write-todo-isolation": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\nToolContext需要兼容关键字 _todo_state: dict | None = None。非None时，它是此context的todo状态容器，结构为{\"tasks\": list[现有todo记录], \"counter\": int}；调用者可持有该字典并观察更新，不能把写入只放到无关的新容器。不同context传入的不同容器互不共享；同一context的后续todo_write按既有替换语义更新。未提供该容器（None）时保留既有模块级_tasks/counter兼容路径。每个agent loop显式分配自己的容器。保留todo_write_tool和现有todo输入/输出记录结构；READ_ONLY_TOOL_WHITELIST及explore/plan允许集、child registry都应包含todo_write。字段名是兼容需求，内部状态管理算法不指定。",
+    "write-user-profiles": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\n保留已有profile条目、校验和返回结构。扩展两个现有入口：load_agent_profiles(project_root: str | Path, *, user_root: str | Path | None = None) -> tuple[dict[str, dict], list[str]]；resolve_agent_types(project_root: str | Path, *, user_root: str | Path | None = None) -> dict[str, dict]。user_root省略或为None时使用Path.home()；其配置目录也是 .mini-code/agents。项目与用户目录不同名合并，同名项目优先，built-in名称保持权威。加载错误须携带来源和文件名，用户错误采用可识别前缀user:<filename>，项目错误采用project:<filename>。不得把用户目录访问要求理解为可读取实验隔离HOME之外的个人资料；测试通过显式user_root或受控Path.home完成。",
+    "write-profile-parser": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\n新增 minicode.subagent_profiles 模块并导出以下四名：AGENT_NAME_RE、RESERVED_AGENT_NAMES、load_agent_profiles、resolve_agent_types。AGENT_NAME_RE提供fullmatch；名称为2至32个ASCII字符，首字母a-z，其余a-z/0-9/连字符。RESERVED_AGENT_NAMES是包含现有explore、plan、general、workflow的只读集合。\n入口签名：load_agent_profiles(project_root: str | Path) -> tuple[dict[str, dict], list[str]]；resolve_agent_types(project_root: str | Path) -> dict[str, dict]。加载结果以profile slug为键。条目保留description: str、system_prompt: str、allowed_tools: frozenset[str]、max_turns: int、source: \"project-profile\"，与既有agent type消费结构兼容。resolve入口把合法条目与现有AGENT_TYPES合并并保留built-in条目。\n输入位置是<project_root>/.mini-code/agents/*.md；其他扩展名忽略。frontmatter使用独立---首尾界定和key: value行，仅允许且要求name、description、max_turns、allowed_tools四键，重复/缺失/未知键都拒绝该文件。name遵守上述slug规则；description非空且最多400字符；max_turns为1至200的十进制整数；allowed_tools是非空、以逗号/空白分隔的现有READ_ONLY_TOOL_WHITELIST子集。正文去首尾空白后非空，作为system_prompt。每个非法文件产生带文件名的错误，不能静默收窄非法tools或turns；错误应能识别非法工具名。缺目录返回空字典与空错误列表。允许缓存，但修改文件mtime/内容后必须重新反映profile名称变化。以上边界来自本研究其他冻结初始版本已公开的profile接口，仅公布数据契约，不提供解析器或缓存实现。",
+    "write-profile-dispatch": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\n继续使用当前task_tool.run/_run/_validate，以及已公开load_agent_profiles/resolve_agent_types入口。自定义profile通过agent_type字段选择；现有profile提供的system_prompt、allowed_tools、max_turns传递到child执行。保留task模块的run_agent_turn可替换执行边界。非法slug由_validate以ValueError拒绝；未知类型的工具结果需包含请求的名称、可用类型和profile加载错误文件名。保留_call_is_concurrency_safe(input_data)与_capability_for(input_data)接口，合法custom只读类型的能力与并发分类须可观察，不能扩展general的写权限。",
+    "write-profile-contracts": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\n沿用初始源码中 project_subagent_result、resolve_subagent_model_route、project_subagent_event 的现有签名、返回键和异常类型。自定义名称采用已经公开的profile slug规则，不能只放宽为任意非空字符串。没有custom专属路由时继承父模型配置；存在显式配置时使用既有路由机制。结果与观测仍携带既有agentType、contractStatus/结果状态和计数字段，保留非法名称的ValueError边界。无需另造新导出函数或改变记录schema。",
+    "refactor-finalization": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\n新增 minicode.workflow_finalization，并保留以下兼容入口（下划线名称仍是本次维护任务的测试接口）：_PhaseResultSnapshot.from_result(result: ToolResult)、_WorkflowFinalizationSnapshot.capture(**capture_fields)、_WorkflowFinalizationSnapshot(**snapshot_fields)、_WorkflowFinalizationPorts(checkpoint=..., persist_audit=..., observe=...)、finalize_workflow(snapshot, ports)。\n_PhaseResultSnapshot.from_result只接受具体ToolResult类型，不能接受其子类；类型不符以TypeError拒绝。Workflow快照须为dataclass，使dataclasses.fields(snapshot)可枚举其构造字段；字段读取和直接重建应使用脱离原可变输入的值。capture_fields名单见本附录的字段表；必须包含initial_finalization_status与commit_error_text。commit_error_text只接受str或None，不能保存Exception对象；非法类型以TypeError拒绝。initial_finalization_status只允许completed、cancelled_after_commit、timed_out、timed_out_after_commit、projection_failed五个字符串；非法值以ValueError拒绝。\nPorts只提供checkpoint()、persist_audit(audit)、observe(observation)三个明确能力；保留未提交阶段持久化audit触发的TurnCancellationRequested身份并向调用者传播，不能转成普通失败或吞掉。finalize_workflow负责输出与已有runner相同的最终结果语义。上述状态集合沿用既有workflow契约；执行中状态不是可接受的初始finalization状态。\n\ncapture输入字段契约：\n- description、subagent_id、contract_mode：既有描述、身份和契约模式字符串。\n- started_at：既有开始时间数值。\n- profile、dispatch_plan、scheduler_outcome：现有scheduler对应类型对象，capture须脱离可变执行能力。\n- transitions、artifacts、explore_results：现有对应序列，快照不得共享可变容器。\n- plan_result、execute_result、review_result：对应ToolResult或None，遵守具体类型边界。\n- analyst_report、execution_artifact、verification_result、typed_review：现有对应文档/可选值，保持schema并进行脱离。\n- approval_request_id：str或None；commit_ready_status：现有状态字符串；commit_error_text：str或None；production_audit_required：bool。\n- initial_finalization_status：completed、cancelled_after_commit、timed_out、timed_out_after_commit或projection_failed。",
+    "refactor-workflow-runner": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\n新模块 minicode.workflow_runner 的__all__精确为(\"run_workflow\",)。入口签名为run_workflow(input_data, context, *, depth, subagent_id, run_subagent)，顺序与keyword-only边界如列。task模块保留一个同名run_workflow绑定作为dispatch seam；调用时传入当时task模块的_run引用，因此替换该运行器会在下一次dispatch生效。\nworkflow_runner不能反向import minicode.tools.task。完成抽取后tools.task不能直接import以下workflow执行模块：minicode.central_scheduler、minicode.deterministic_verifier、minicode.scheduler_artifacts、minicode.scheduler_audit、minicode.scheduler_trace、minicode.workflow_workspace。此处是公开的模块依赖边界；内部调用组织与业务算法不指定。保留原task_tool入口、返回语义与深度/subagent身份传递。",
+    "refactor-frozen-change": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\n在 minicode.workflow_workspace 保留 WorkflowWorkspaceTransaction、WorkflowIsolationError，新增导出 FrozenWorkflowChange。transaction.freeze(*, allowed_paths) -> FrozenWorkflowChange是唯一签发入口；直接FrozenWorkflowChange()须TypeError拒绝。保留transaction.cwd/workspace_root/base_digest/close()和原有父提交状态属性。\nFrozenWorkflowChange提供patch_digest: str、change_set_document: dict、diff_artifact_document: dict、verification_workspace(*, retain_git_metadata=False)上下文管理器，以及promote(*, approved_patch_digest: str)。change_set_document沿用既有文档键workspaceRef/baseDigest/patchDigest/files，其中workspaceRef固定为\"isolated://workflow\"，files使用现有path/action结构；两类document每次交付为脱离内部权威的副本。原transaction的change_set/frozen_diff_artifact/verification_workspace/commit不再暴露为第二条变更权威通道。批准摘要、父状态与原事务兼容约束仍按原任务执行。\n可审计错误类别保持WorkflowIsolationError；稳定错误文本见error contract表。本题明确测试既有历史接口兼容，不是自由选择架构的设计题。以下观测/故障注入seam属于必须保留的兼容面：frozen._frozen_workspace_root是可定位冻结副本的Path；事务保留原有_git_args/_git_environment/_run_checked/_trusted_git_root/_baseline，并保留_copytree_with_checkpoints(self, source, destination, **kwargs)注入边界。workspace模块必须保留可替换的tempfile模块绑定；冻结副本通过tempfile.mkdtemp(prefix=\"frozen-workspace-\", ...)分配，promotion元数据通过tempfile.TemporaryDirectory(prefix=\"promotion-git-\", ...)分配。调用者能够在这些边界注入分配/复制失败，并通过上述路径定位副本以验证篡改后的拒绝/恢复行为。验收不更换；这里只公开其现有兼容要求，不提供复制、摘要、Git隔离、验证或promotion算法。\n故障注入的调用协议也属于本题的历史兼容面：通过_copytree_with_checkpoints复制冻结副本时，destination必须是所分配临时目录的子路径，使destination.parent.name.startswith(\"frozen-workspace-\")成立，而不是直接复制到分配根目录。该边界注入的既有WorkflowIsolationError须保持异常类型与原文本向外传播；不要把它统一改写为分配错误，OSError仍按前述错误契约处理。执行真实父仓库promotion时，继续经过事务原有_run_checked边界：参数序列包含apply且不含--check，并显式传入use_operation_guard=False；预检查不能替代该真实应用调用。这样允许现有验收在真实应用后注入父状态破坏，随后依既有公开行为检查最终父状态。该约定描述观测边界，不提供Git操作或恢复算法。\n\n稳定错误文本（允许附带上下文，但须保留辨识片段）：\n- created by WorkflowWorkspaceTransaction.freeze\n- workflow change set was already frozen\n- trusted Git metadata changed after initialization\n- workflow frozen snapshot could not be created\n- workflow patch digest changed after verification\n- workflow parent state differs after promotion\n- workflow promotion metadata could not be created\n- workflow frozen change owner is unavailable",
+    "refactor-workspace": "Public maintenance-task contract (historical interface compatibility)\n\n保留原题行为目标、授权路径、禁止事项与回归要求。下面的名称、签名、数据表示和错误接口是兼容契约，不是建议实现。新增模块可以自行选择内部算法，但不得用等价而不同名的接口替代下列被调用的入口。所有运行时/模型/网络效果必须在离线回归中隔离。交付回归必须位于 tests/test_eval_regression.py，且至少包含一个可收集、正常执行的 pytest case；不能以skip/xfail或收集错误作为验证成功。验收会在交付副本上运行，既有源文件与新测试均受授权范围约束。\n\n新模块 minicode.workflow_workspace 导出WorkflowWorkspaceTransaction与WorkflowIsolationError；minicode.task_deadline导出TaskDeadlineExceeded。tools.task保留_WorkflowWorkspaceTransaction、_WorkflowIsolationError、_TaskDeadlineExceeded，分别是三个新导出类型的同一对象，不是包装子类。TaskDeadlineExceeded(timeout_seconds: float)保留timeout_seconds属性与既有异常文本格式“sub-agent deadline exceeded after {timeout_seconds:g}s”。workspace模块不得import minicode.tools.task。只移动责任和共享类型，保留原事务入口/异常与行为语义。"
+  },
+  "appendixSha256": {
+    "read-router": "6507c28a3a05eb2614b598c5ba618fd453c701e3d1f2f4a06dda28c0e7815559",
+    "read-deadline": "6cb131730bcd0682ae8b52d6ab4dfb31ca41106ab2d9294076ef15e0e7c12767",
+    "read-atomic-replace": "970ac95651222e3361d21b24dc5e7d0f47e4ddbfbc0583b6081a3a285d52f7db",
+    "read-closing-reminder": "d88a151d5c9d09b0bd757624f9c0979ac1ff722695381af527ef3ab2d2ac806b",
+    "read-image-boundaries": "eb5406d9df69adec2ce7cee635dfbab5f0cd323f7707cff99b105da9f27b78a8",
+    "write-cache-tip": "24493723a0c6a70ae477a60bd90ecf87a62b44912a4c26f2b313bf6cf45364b5",
+    "write-cache-fallback": "d22c8a49af8a378471a6b6c2465aa9ef12872f7c193fbee8e5788338c3ba021a",
+    "write-todo-isolation": "db485098e589929988030b1a823d47ed09b4662dac4bb03062fa3b7ca84ea308",
+    "write-user-profiles": "ab20e880491378b1ac55fd6980908f498005bbefa4b0da2e44cf06858ad29461",
+    "write-profile-parser": "d8457e47aeb5a734b9452d682999a133d0b1fe134907fe07eed0cd792a813bdb",
+    "write-profile-dispatch": "032e9c7de61c1214fee0a3bccc20945fab30b30f92516bf3ea180db019fce9aa",
+    "write-profile-contracts": "0440d0100fdfb0f220702d494eb710e2743727294ebf8170ce99f5254566fc66",
+    "refactor-finalization": "b297cee7c1a57825205abb410a3ff4422f8a8d59ff6fe9d7c6ae90fb64b1082e",
+    "refactor-workflow-runner": "5ae01a043b0cb19bf1ba6aa14258d15e26c855e5a193ab3510271baac997faa1",
+    "refactor-frozen-change": "431e0d2ff264b9931242eeacec1eccb9d0c35060cb238bc47b0f374ee460be8e",
+    "refactor-workspace": "3a5789755c48699fa5601dc9e87526e0b353a2c8c12477231245c1f9c64717e4"
+  },
+  "proposedAppendedPromptSha256": {
+    "read-router": "4ec7d976f67b9dee97524223ca7ab7adefc4a40001c2eefac300ebdc7b0b8c2c",
+    "read-deadline": "9e35f2474b342ba8f7b693c5bf66c593fc2e771fd0d9f31eb5f75ba5541f566e",
+    "read-atomic-replace": "7d0699638cbf0e4f71a1de08bd446198bbd912e8e1277b8dcd03db0e5cde9aaf",
+    "read-closing-reminder": "60a7ba4402df50ecb4c2a32a86692298b8db6d32c93f4adc428d67c6a17ab65d",
+    "read-image-boundaries": "d50761b7dbc6744126d859f59b95b169993e800bc4ef83647e8c19cba7dda328",
+    "write-cache-tip": "bea40e6c4609e45b0f8b341014e5fe5dae2cda8396917aca7c0ed7357e518102",
+    "write-cache-fallback": "0d1b2ea02221716b5794bb8cf05a05e84df63ef3eb55e7511f87c565aa58092e",
+    "write-todo-isolation": "557e9e31b4f0a1dedbded2d5614c9def3e666c5758641f2602751d2b4cab0bd4",
+    "write-user-profiles": "818327d2415f970ce253b51be568e07149e238d7fef046e43e1751d73edb2cbb",
+    "write-profile-parser": "279144d548623fe86739b2752e0c9dc4c8ab06373a61a61b2d7f60ad5d243273",
+    "write-profile-dispatch": "0477edf416dedce87704c62d0d44a0a9e57e340aa2d3cd6daf102babeaa7b06b",
+    "write-profile-contracts": "33de698660a3db2a9c563434938821dacfebd23d846837ccb37259b764bbc4fa",
+    "refactor-finalization": "b7603904840458c93a6c7918198d0b40c408e7729c63bd285f6d8d712b324ef2",
+    "refactor-workflow-runner": "ab09b69fe2012314dd0c7662ffff700d9b0442cd62a3dfdab174688d4a96578e",
+    "refactor-frozen-change": "67ffc8f364bc96bf91fb27d8a46e039604f3b70e76ff8913498aed40ea35d994",
+    "refactor-workspace": "126bbce90cd72782f4941f9c156b9daca62ed344298fccf3d70c1fee41dff34e"
+  },
+  "scope": "All 16 appendix values are standalone prompt text. Reference implementations, correct read-task fact values and historical source/commit paths are excluded from appended text. Scope and disclosure metadata are not model task instructions.",
+  "provenance": {
+    "finalizationEnum": {
+      "allowedInitialFinalizationStatuses": [
+        "cancelled_after_commit",
+        "completed",
+        "projection_failed",
+        "timed_out",
+        "timed_out_after_commit"
+      ],
+      "referenceCommit": "56d8cd85a14a22355bc2a981eaa479b0542ebb3f",
+      "referenceFile": "minicode/workflow_finalization.py",
+      "sourceSha256": "5d23b0e966806b648c36170e55eb449bef433739bd24c4bb66e07ed62d71c911",
+      "startLine": 150,
+      "endLine": 157,
+      "inventoryHashVerified": true
+    },
+    "frozenChangeCompatibility": {
+      "choice": "Publish the existing observation/fault-injection seams as historical-interface compatibility requirements.",
+      "oracleChange": "none; preserve exact frozen oracle_source bytes",
+      "scope": "This case measures historical API compatibility plus its behavioral safety contract, not open architectural design."
+    }
+  },
+  "reviewHistory": {
+    "revision2AppendicesSha256": "e567ead856ed1ea54cc4a777a36c365fe2ad4b09461295f387a2325ff26a7349",
+    "addressedFindingIds": [
+      "ICR-1",
+      "ICR-2",
+      "ICR-3",
+      "ICR-4"
+    ],
+    "independentRecheck": "pending"
+  }
+}

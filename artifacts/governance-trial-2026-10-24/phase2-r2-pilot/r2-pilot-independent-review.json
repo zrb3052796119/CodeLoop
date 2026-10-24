@@ -1,0 +1,44 @@
+{
+  "decision": "No blocking finding in package integrity or disposition wording",
+  "reviewer": "evidence_audit; independent of package assembly; previously authored study preparation/reporting/stop tooling, so this is not an independent experimental-design or model-performance audit",
+  "scope": "Read-only archive inspection and independent safe restoration/hash checks; no model, oracle, reporter or test execution; no original package edits",
+  "archiveSha256": "24582a9f46e7042c93c4e3bec5e225dfff6c4eccc8bc258fc52f7addf84b0b90",
+  "archiveBytes": 2687216,
+  "membersVerified": 142,
+  "rawBytesVerified": 4853339,
+  "originalIndexedMembersComparedToSources": 134,
+  "privateRetainedFilesHashOnlyCompared": 24,
+  "transportDerivedProjectionsFieldCompared": 5,
+  "deliverySourceFiles": 13,
+  "scheduledCompletedInterruptedUnstarted": [
+    32,
+    5,
+    1,
+    26
+  ],
+  "completedModelCalls": 116,
+  "completedTokens": 4046418,
+  "completedDurationSeconds": 3497.470533792046,
+  "partialStartedRequests": 14,
+  "partialProviderUsageCalls": 13,
+  "partialKnownTokensLowerBound": 268879,
+  "totalKnownTokenLowerBound": 4315297,
+  "totalCostUsd": null,
+  "stopHumanDecisionObserved": null,
+  "findings": [],
+  "checks": [
+    "142 unique regular relative members; no links, absolute names, traversal or duplicate names; every restored byte length and SHA matches manifest",
+    "5 original trial rows and results exactly match intervention-01 before hashes and current retained originals; rows identical to results array",
+    "Frozen runtime ZIP SHA equals manifest and original, ZIP CRC verified for all 330 members; no source archive replacement",
+    "13 delivered source files and interrupted deletion index retained; no sixth trial row",
+    "Partial usage remains lower-bound/null final tokens/cost/process status; stop is design_validity_stop with orchestratorStopEvents=1, no HardTimeout conversion",
+    "Actual wrapper -9 and 4089.5356s retained; later human confirmation at19:03:21UTC separate from stop at19:01:55UTC; no backdating",
+    "5 transport projections match source fields and are labeled derived; response/reasoning/toolCalls excluded from projections; 24 private-original hash/size entries match retained bytes; raw provider transcripts/SQLite absent from public payload",
+    "Outer README explains preserved pre-execution stop README; one-page report retains incomplete comparison, unknown money and human events; all 3 Markdown links resolve"
+  ],
+  "limits": [
+    "Not an independent rerun or approval of original experimental design, oracle fairness, agent performance, secret absence or remote provider billing",
+    "No claim that known token lower bound captures server-side work after interruption",
+    "Original final response.txt and generated delivery source are intentionally included; these differ from excluded raw provider reasoning/transcripts"
+  ]
+}

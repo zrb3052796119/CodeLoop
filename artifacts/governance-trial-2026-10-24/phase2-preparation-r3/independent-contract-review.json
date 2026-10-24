@@ -1,0 +1,240 @@
+{
+  "status": "GO_for_static_contract_review_ICR_1_through_4_closed",
+  "notExecutionAuthorization": true,
+  "reviewedV3Sha256": {
+    "public-contract-amendment-draft.md": "cbd13e4e908ac4bd33a4e81aa17e9da43510a97458bfc9a5199990f3c18ba7ba",
+    "public-contract-amendment-draft.json": "5f2bc5e4a595ffc50193f866d5a8831a5bc4bea9c51937c8e14bd1448003ea12",
+    "public-task-appendices.json": "3be39861adf8bcc147459578e28948cf259f931dad01e96f8cc90bb3ebccc09f"
+  },
+  "sourceTasksSha256": "1e134e338af2b19b78a54ded0ecf0bdcccdfc3c45803cf3c60bab5dc960e8cd5",
+  "sourceManifestSha256": "32dacc257169eff53026a3b8e1663ed68b62ceae1adac118589073921d47d332",
+  "method": "Read-only comparison of the v3 revised text and all standalone appendix identities to previously inspected frozen oracles/public initial files. Recomputed all 16 prompt/oracle/appendix/proposed-appended-prompt hashes. No oracle, test suite, model, or live trial executed.",
+  "closures": [
+    {
+      "id": "ICR-1",
+      "status": "closed",
+      "markdownLines": [
+        80,
+        81
+      ],
+      "reason": "Eight distinct image result events are explicitly listed, including unsupported_image_extension. Raw runtime predicates for hasModel/hasKey/httpsRoute/visualOnly are disclosed; seven testcases remains a minimum rather than an implied seven-event limit."
+    },
+    {
+      "id": "ICR-2",
+      "status": "closed",
+      "markdownLines": [
+        218,
+        219
+      ],
+      "reason": "Copy destination must be a child of frozen-workspace-*; injected WorkflowIsolationError type/text propagates; actual apply goes through original _run_checked with no --check and explicit use_operation_guard=False. Names, call shape and error observation are now stated together."
+    },
+    {
+      "id": "ICR-3",
+      "status": "closed",
+      "markdownLines": [
+        31,
+        43,
+        55,
+        67,
+        79
+      ],
+      "reason": "All five read appendices state pytest-main-thread-only counted execution, Python assert syntax requirement, and separate 70-second current/historical child limits without enlarging outer evaluation budget."
+    },
+    {
+      "id": "ICR-4",
+      "status": "closed",
+      "markdownLines": [
+        105
+      ],
+      "reason": "The added no-zero missing-usage behavior was removed. The revised text preserves existing missing subfield and source semantics."
+    }
+  ],
+  "unchangedV2History": {
+    "public-contract-independent-review.md": {
+      "sha256": "28e35305f29dd8c8a346ba777823269617773dfd4d0f193dc98af4fffa2d8693",
+      "archivedCopyByteEqual": true
+    },
+    "public-contract-independent-review.json": {
+      "sha256": "e8c70c3428a2f6400e1e27aa4d2bfb625a2118d156cb8f3482caa3a73eb3cc40",
+      "archivedCopyByteEqual": true
+    }
+  },
+  "caseChecks": [
+    {
+      "case": "read-router",
+      "originalPromptSha256": "334b222b985ba4b6f86ff83800f5d7abb91776a72512738e918f3072a36f76a4",
+      "originalOracleSha256": "ce1628ab204d4d3917d9387893c3698f1c77621a1da96095f85246618b428b69",
+      "appendixSha256": "6507c28a3a05eb2614b598c5ba618fd453c701e3d1f2f4a06dda28c0e7815559",
+      "proposedAppendedPromptSha256": "4ec7d976f67b9dee97524223ca7ab7adefc4a40001c2eefac300ebdc7b0b8c2c",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": true
+    },
+    {
+      "case": "read-deadline",
+      "originalPromptSha256": "61df964eee7b10a00c6830b6f559543af2d2172f1918749bb82593d9ab0bc758",
+      "originalOracleSha256": "7b2d94baaacf8596675cca07d8416a33cfaa17b57c7e74f90c433240d7148a69",
+      "appendixSha256": "6cb131730bcd0682ae8b52d6ab4dfb31ca41106ab2d9294076ef15e0e7c12767",
+      "proposedAppendedPromptSha256": "9e35f2474b342ba8f7b693c5bf66c593fc2e771fd0d9f31eb5f75ba5541f566e",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": true
+    },
+    {
+      "case": "read-atomic-replace",
+      "originalPromptSha256": "bc03e4a7f5dfd7b6df9b7367e4d878c0c22de6175248ad71e3c1c6ec432c70d1",
+      "originalOracleSha256": "b26fabd09fe6d55805d48f4bba24c10ceb55077a283268fe40be92d8b9a6df64",
+      "appendixSha256": "970ac95651222e3361d21b24dc5e7d0f47e4ddbfbc0583b6081a3a285d52f7db",
+      "proposedAppendedPromptSha256": "7d0699638cbf0e4f71a1de08bd446198bbd912e8e1277b8dcd03db0e5cde9aaf",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": true
+    },
+    {
+      "case": "read-closing-reminder",
+      "originalPromptSha256": "a9f339262be2f0e1fb4fd793695763b7f595ae6acb0d57123a652f18f8bc80fc",
+      "originalOracleSha256": "3581c36866d3f496c94d12739dd3cfd4e8ecf2f70f282bf0bc472a9ef31a082e",
+      "appendixSha256": "d88a151d5c9d09b0bd757624f9c0979ac1ff722695381af527ef3ab2d2ac806b",
+      "proposedAppendedPromptSha256": "60a7ba4402df50ecb4c2a32a86692298b8db6d32c93f4adc428d67c6a17ab65d",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": true
+    },
+    {
+      "case": "read-image-boundaries",
+      "originalPromptSha256": "4e5495bde05b8827dc4016f477606d276aae18562c90080cfbc964d2b9adf0f5",
+      "originalOracleSha256": "803a5257f42ebb33af996abdbe27411d0213150cb58bf99dbd0bc28a8482a587",
+      "appendixSha256": "eb5406d9df69adec2ce7cee635dfbab5f0cd323f7707cff99b105da9f27b78a8",
+      "proposedAppendedPromptSha256": "d50761b7dbc6744126d859f59b95b169993e800bc4ef83647e8c19cba7dda328",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": true
+    },
+    {
+      "case": "write-cache-tip",
+      "originalPromptSha256": "5757ab8004bef4ae44430dbbd963ee888ac6be04464ce086dc8a57db0b205f37",
+      "originalOracleSha256": "6e52da4ad8b986779549d1eb837ec1b3700b6e76f9879589a071011a56c87f3f",
+      "appendixSha256": "24493723a0c6a70ae477a60bd90ecf87a62b44912a4c26f2b313bf6cf45364b5",
+      "proposedAppendedPromptSha256": "bea40e6c4609e45b0f8b341014e5fe5dae2cda8396917aca7c0ed7357e518102",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": false
+    },
+    {
+      "case": "write-cache-fallback",
+      "originalPromptSha256": "bd5d1640fdbfbfa808e44c5202ccfe9bdf9969f7c5e99b112b39028452f80527",
+      "originalOracleSha256": "e968384902b6cca43255cfb3a23d75ddf6ea42187b7e8d679b9b8826462ba12a",
+      "appendixSha256": "d22c8a49af8a378471a6b6c2465aa9ef12872f7c193fbee8e5788338c3ba021a",
+      "proposedAppendedPromptSha256": "0d1b2ea02221716b5794bb8cf05a05e84df63ef3eb55e7511f87c565aa58092e",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": true
+    },
+    {
+      "case": "write-todo-isolation",
+      "originalPromptSha256": "bc01e3bd45231f74579ac0a387cf9974290a7d1a27d4c49dbf7bca9d46e2228c",
+      "originalOracleSha256": "2bf2c732505629d812d78ad055fc037631e95d7ce316e3d8a1c37cb126325e04",
+      "appendixSha256": "db485098e589929988030b1a823d47ed09b4662dac4bb03062fa3b7ca84ea308",
+      "proposedAppendedPromptSha256": "557e9e31b4f0a1dedbded2d5614c9def3e666c5758641f2602751d2b4cab0bd4",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": false
+    },
+    {
+      "case": "write-user-profiles",
+      "originalPromptSha256": "0bf34b85d218c7ff3c1a0f18ad777cb67cbb9b6e671c5c00d9084c725f2222e3",
+      "originalOracleSha256": "d7d783a1af6603a2c127d22c05742a98594ab2fcf665462991c666fe4bb9d874",
+      "appendixSha256": "ab20e880491378b1ac55fd6980908f498005bbefa4b0da2e44cf06858ad29461",
+      "proposedAppendedPromptSha256": "818327d2415f970ce253b51be568e07149e238d7fef046e43e1751d73edb2cbb",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": false
+    },
+    {
+      "case": "write-profile-parser",
+      "originalPromptSha256": "276528617b615e5e55767e304ca985a16719b1c117d60f9d55434a61f62f8bbe",
+      "originalOracleSha256": "159390c3a01c188600a7e903117287c7e3d87889a55465414f2e6f88ccbadc10",
+      "appendixSha256": "d8457e47aeb5a734b9452d682999a133d0b1fe134907fe07eed0cd792a813bdb",
+      "proposedAppendedPromptSha256": "279144d548623fe86739b2752e0c9dc4c8ab06373a61a61b2d7f60ad5d243273",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": false
+    },
+    {
+      "case": "write-profile-dispatch",
+      "originalPromptSha256": "f2364a52e0fde5dfc1473817f098af3dedccc9325b72fa5c05688a807a6ad17b",
+      "originalOracleSha256": "faf9152eda72b84466cab60eb89df1131d5b3c5ba40812ca55a9ad2125588805",
+      "appendixSha256": "032e9c7de61c1214fee0a3bccc20945fab30b30f92516bf3ea180db019fce9aa",
+      "proposedAppendedPromptSha256": "0477edf416dedce87704c62d0d44a0a9e57e340aa2d3cd6daf102babeaa7b06b",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": false
+    },
+    {
+      "case": "write-profile-contracts",
+      "originalPromptSha256": "53cf0c78b4caa1a9a0db0cb560964fc16b4bc020cc040e729d8fa4483d9a6a53",
+      "originalOracleSha256": "b6de1ddffd23aef66ca60d7d77c60abccc29a4ba05d62c5b79981bf539bc0875",
+      "appendixSha256": "0440d0100fdfb0f220702d494eb710e2743727294ebf8170ce99f5254566fc66",
+      "proposedAppendedPromptSha256": "33de698660a3db2a9c563434938821dacfebd23d846837ccb37259b764bbc4fa",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": false
+    },
+    {
+      "case": "refactor-finalization",
+      "originalPromptSha256": "8b87b8360b372938efbf12b00732244fe0b1a9c32a81e83baceb90ad2e5c547d",
+      "originalOracleSha256": "586388769e2291a0796a1432fb04497a24a877a4fa7a8489cf994028211ccd72",
+      "appendixSha256": "b297cee7c1a57825205abb410a3ff4422f8a8d59ff6fe9d7c6ae90fb64b1082e",
+      "proposedAppendedPromptSha256": "b7603904840458c93a6c7918198d0b40c408e7729c63bd285f6d8d712b324ef2",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": false
+    },
+    {
+      "case": "refactor-workflow-runner",
+      "originalPromptSha256": "e3924c0b8eb74720f1af5fa8c200330c2cb5053e8cd2159ac297a601768c84bd",
+      "originalOracleSha256": "e287f3eb9eb844aff38c885662921d6795684578517aad4320945903c59afb5d",
+      "appendixSha256": "5ae01a043b0cb19bf1ba6aa14258d15e26c855e5a193ab3510271baac997faa1",
+      "proposedAppendedPromptSha256": "ab09b69fe2012314dd0c7662ffff700d9b0442cd62a3dfdab174688d4a96578e",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": false
+    },
+    {
+      "case": "refactor-frozen-change",
+      "originalPromptSha256": "47dbb26b4edc9793a9e4f5aa45d1870119bbd5b24608285811a99048a8a6fec7",
+      "originalOracleSha256": "a09fc5e9b8b1606f463cfc312bdc4b53542ba8a175375c37c3e77c7c70f5022e",
+      "appendixSha256": "431e0d2ff264b9931242eeacec1eccb9d0c35060cb238bc47b0f374ee460be8e",
+      "proposedAppendedPromptSha256": "67ffc8f364bc96bf91fb27d8a46e039604f3b70e76ff8913498aed40ea35d994",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": true
+    },
+    {
+      "case": "refactor-workspace",
+      "originalPromptSha256": "3690a2516386685a1d44ef9d7eba001376a6b8f53cc8ffc701dda88c4c60d1ea",
+      "originalOracleSha256": "3285b85219efd28f917227d7e74bc0cbbb5c78571ebec3090b9d3fbffda9d515",
+      "appendixSha256": "3a5789755c48699fa5601dc9e87526e0b353a2c8c12477231245c1f9c64717e4",
+      "proposedAppendedPromptSha256": "126bbce90cd72782f4941f9c156b9daca62ed344298fccf3d70c1fee41dff34e",
+      "rowContainedInStandalone": true,
+      "standaloneContainedInMarkdown": true,
+      "changedFromV2": false
+    }
+  ],
+  "changedAppendixCount": 7,
+  "unchangedAppendixCount": 9,
+  "newBlockingFindingsInRevisedText": [],
+  "operations": {
+    "oracleExecutions": 0,
+    "modelCalls": 0,
+    "modelOutputsRead": 0,
+    "trialWrites": 0,
+    "frozenOrRepositoryWrites": 0,
+    "draftWrites": 0
+  },
+  "limits": [
+    "GO is limited to the identified static contract findings; it is not a new trial approval or a claim that all possible implementations satisfy the oracle.",
+    "Current r2 results remain as observed and are not rescored by the specification change.",
+    "Task/oracle mechanics validation and a new common freeze identity still belong before a separately authorized new experiment."
+  ]
+}

@@ -1,0 +1,262 @@
+{
+  "status": "pass_static_equivalence_no_freeze_no_execution",
+  "tasks": {
+    "path": "/private/tmp/codeloop-governance-20261024/phase2-r3/prepared/execution/tasks.json",
+    "sha256": "7464fc17a4725efaecac103a0d0b6a65d7442ffbbab61687037716592707d933",
+    "bytes": 104186505
+  },
+  "registration": {
+    "path": "/private/tmp/codeloop-governance-20261024/phase2-r3/portable/manifest.json",
+    "sha256": "eaa9645d3a2a39649d1e80c28ae3db39fc3c9bab89f8586e12515378babee5b2",
+    "bytes": 85796
+  },
+  "candidate": {
+    "path": "/private/tmp/codeloop-governance-20261024/phase2-analysis/prospective-r3-inputs/tasks.json",
+    "sha256": "1c2e5aea11580aeb47acd2734dce996d86aac48f13f8847c3408cbec3a744095",
+    "bytes": 104186505
+  },
+  "sourceR2FrozenManifest": {
+    "path": "/private/tmp/codeloop-governance-20261024/phase2-analysis/prospective-r3-inputs/source-r2/manifest.json",
+    "sha256": "32dacc257169eff53026a3b8e1663ed68b62ceae1adac118589073921d47d332",
+    "bytes": 6615
+  },
+  "promptCount": 16,
+  "scheduledCells": 32,
+  "allPreparedTaskFieldsEqualCandidateAfterExplicitOracleLiteralRelocation": true,
+  "oracleCasesRelocated": 4,
+  "oracleLiteralOccurrencesRelocated": 8,
+  "oracleSupportFilesCheckedByteForByte": 999,
+  "sourceR2FrozenRuntimeFilesCheckedByteForByte": 329,
+  "normalizedExpandedDesignEqualsR2": true,
+  "historical114SourceBindings": [
+    {
+      "path": "scripts/run_three_arm_real.py",
+      "historicalSha256": "54e988bfb005fd82225a24dca4801655518b5de1af01f803deced0c19be23b3e",
+      "currentSha256": "54e988bfb005fd82225a24dca4801655518b5de1af01f803deced0c19be23b3e",
+      "sameBytes": true
+    },
+    {
+      "path": "scripts/implementation_judge.py",
+      "historicalSha256": "8c5c2ba0ea13bb13ad473ab7c9635046cde64c9c79cb122c3fed04164713b1e2",
+      "currentSha256": "8c5c2ba0ea13bb13ad473ab7c9635046cde64c9c79cb122c3fed04164713b1e2",
+      "sameBytes": true
+    },
+    {
+      "path": "tests/test_three_arm_live_harness.py",
+      "historicalSha256": "c5360ce34707020bc92bc4482021871669b2082a5801ee6b5ba6c677afeb99c0",
+      "currentSha256": "c5360ce34707020bc92bc4482021871669b2082a5801ee6b5ba6c677afeb99c0",
+      "sameBytes": true
+    }
+  ],
+  "analysisPlan": {
+    "path": "/private/tmp/codeloop-governance-20261024/phase2-r3/prepared/execution/analysis-plan.md",
+    "sha256": "22f6215fcdaa7969f59677d9f7122a51ac5178698c5efb6fc104f7217ffb0813",
+    "bytes": 9978
+  },
+  "caseChecks": [
+    {
+      "id": "read-router",
+      "promptSha256": "4ec7d976f67b9dee97524223ca7ab7adefc4a40001c2eefac300ebdc7b0b8c2c",
+      "publicSourceFiles": 316,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "367519912c55587ea0f3a1753f575a9215323d6e6b4688c7b8795686aeb6adab",
+      "candidateOracleSha256": "ce1628ab204d4d3917d9387893c3698f1c77621a1da96095f85246618b428b69",
+      "normalizedOracleSha256": "ce1628ab204d4d3917d9387893c3698f1c77621a1da96095f85246618b428b69",
+      "literalReplacements": [
+        {
+          "fromLiteral": "'/private/tmp/codeloop-governance-20261024/phase2-r3/prepared/execution/oracle-support/read-router/0'",
+          "toLiteral": "'/private/tmp/codeloop-governance-20261024/phase2-portable/execution-r2/oracle-support/read-router/0'",
+          "occurrences": 2
+        }
+      ],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "read-deadline",
+      "promptSha256": "9e35f2474b342ba8f7b693c5bf66c593fc2e771fd0d9f31eb5f75ba5541f566e",
+      "publicSourceFiles": 208,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "7e89c6e62bde370efa131de8780b7f0cba761de616abffe58edb39bcd53e9c35",
+      "candidateOracleSha256": "7b2d94baaacf8596675cca07d8416a33cfaa17b57c7e74f90c433240d7148a69",
+      "normalizedOracleSha256": "7b2d94baaacf8596675cca07d8416a33cfaa17b57c7e74f90c433240d7148a69",
+      "literalReplacements": [
+        {
+          "fromLiteral": "'/private/tmp/codeloop-governance-20261024/phase2-r3/prepared/execution/oracle-support/read-deadline/0'",
+          "toLiteral": "'/private/tmp/codeloop-governance-20261024/phase2-portable/execution-r2/oracle-support/read-deadline/0'",
+          "occurrences": 2
+        }
+      ],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "read-atomic-replace",
+      "promptSha256": "7d0699638cbf0e4f71a1de08bd446198bbd912e8e1277b8dcd03db0e5cde9aaf",
+      "publicSourceFiles": 208,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "9ad4b3a9ad6e3f61c54edf5918251fffdb72bfd6e9b0775e2a98fa0a62945922",
+      "candidateOracleSha256": "b26fabd09fe6d55805d48f4bba24c10ceb55077a283268fe40be92d8b9a6df64",
+      "normalizedOracleSha256": "b26fabd09fe6d55805d48f4bba24c10ceb55077a283268fe40be92d8b9a6df64",
+      "literalReplacements": [
+        {
+          "fromLiteral": "'/private/tmp/codeloop-governance-20261024/phase2-r3/prepared/execution/oracle-support/read-atomic-replace/0'",
+          "toLiteral": "'/private/tmp/codeloop-governance-20261024/phase2-portable/execution-r2/oracle-support/read-atomic-replace/0'",
+          "occurrences": 2
+        }
+      ],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "read-closing-reminder",
+      "promptSha256": "60a7ba4402df50ecb4c2a32a86692298b8db6d32c93f4adc428d67c6a17ab65d",
+      "publicSourceFiles": 267,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "2b98b9d70101cbc6879ce8d9174442a0eb05b5a6d9faff3ce3077fbfb7d0918c",
+      "candidateOracleSha256": "3581c36866d3f496c94d12739dd3cfd4e8ecf2f70f282bf0bc472a9ef31a082e",
+      "normalizedOracleSha256": "3581c36866d3f496c94d12739dd3cfd4e8ecf2f70f282bf0bc472a9ef31a082e",
+      "literalReplacements": [
+        {
+          "fromLiteral": "'/private/tmp/codeloop-governance-20261024/phase2-r3/prepared/execution/oracle-support/read-closing-reminder/0'",
+          "toLiteral": "'/private/tmp/codeloop-governance-20261024/phase2-portable/execution-r2/oracle-support/read-closing-reminder/0'",
+          "occurrences": 2
+        }
+      ],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "read-image-boundaries",
+      "promptSha256": "d50761b7dbc6744126d859f59b95b169993e800bc4ef83647e8c19cba7dda328",
+      "publicSourceFiles": 268,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "803a5257f42ebb33af996abdbe27411d0213150cb58bf99dbd0bc28a8482a587",
+      "candidateOracleSha256": "803a5257f42ebb33af996abdbe27411d0213150cb58bf99dbd0bc28a8482a587",
+      "normalizedOracleSha256": "803a5257f42ebb33af996abdbe27411d0213150cb58bf99dbd0bc28a8482a587",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "write-cache-tip",
+      "promptSha256": "bea40e6c4609e45b0f8b341014e5fe5dae2cda8396917aca7c0ed7357e518102",
+      "publicSourceFiles": 267,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "6e52da4ad8b986779549d1eb837ec1b3700b6e76f9879589a071011a56c87f3f",
+      "candidateOracleSha256": "6e52da4ad8b986779549d1eb837ec1b3700b6e76f9879589a071011a56c87f3f",
+      "normalizedOracleSha256": "6e52da4ad8b986779549d1eb837ec1b3700b6e76f9879589a071011a56c87f3f",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "write-cache-fallback",
+      "promptSha256": "0d1b2ea02221716b5794bb8cf05a05e84df63ef3eb55e7511f87c565aa58092e",
+      "publicSourceFiles": 267,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "e968384902b6cca43255cfb3a23d75ddf6ea42187b7e8d679b9b8826462ba12a",
+      "candidateOracleSha256": "e968384902b6cca43255cfb3a23d75ddf6ea42187b7e8d679b9b8826462ba12a",
+      "normalizedOracleSha256": "e968384902b6cca43255cfb3a23d75ddf6ea42187b7e8d679b9b8826462ba12a",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "write-todo-isolation",
+      "promptSha256": "557e9e31b4f0a1dedbded2d5614c9def3e666c5758641f2602751d2b4cab0bd4",
+      "publicSourceFiles": 267,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "2bf2c732505629d812d78ad055fc037631e95d7ce316e3d8a1c37cb126325e04",
+      "candidateOracleSha256": "2bf2c732505629d812d78ad055fc037631e95d7ce316e3d8a1c37cb126325e04",
+      "normalizedOracleSha256": "2bf2c732505629d812d78ad055fc037631e95d7ce316e3d8a1c37cb126325e04",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "write-user-profiles",
+      "promptSha256": "818327d2415f970ce253b51be568e07149e238d7fef046e43e1751d73edb2cbb",
+      "publicSourceFiles": 267,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "d7d783a1af6603a2c127d22c05742a98594ab2fcf665462991c666fe4bb9d874",
+      "candidateOracleSha256": "d7d783a1af6603a2c127d22c05742a98594ab2fcf665462991c666fe4bb9d874",
+      "normalizedOracleSha256": "d7d783a1af6603a2c127d22c05742a98594ab2fcf665462991c666fe4bb9d874",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "write-profile-parser",
+      "promptSha256": "279144d548623fe86739b2752e0c9dc4c8ab06373a61a61b2d7f60ad5d243273",
+      "publicSourceFiles": 266,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "159390c3a01c188600a7e903117287c7e3d87889a55465414f2e6f88ccbadc10",
+      "candidateOracleSha256": "159390c3a01c188600a7e903117287c7e3d87889a55465414f2e6f88ccbadc10",
+      "normalizedOracleSha256": "159390c3a01c188600a7e903117287c7e3d87889a55465414f2e6f88ccbadc10",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "write-profile-dispatch",
+      "promptSha256": "0477edf416dedce87704c62d0d44a0a9e57e340aa2d3cd6daf102babeaa7b06b",
+      "publicSourceFiles": 267,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "faf9152eda72b84466cab60eb89df1131d5b3c5ba40812ca55a9ad2125588805",
+      "candidateOracleSha256": "faf9152eda72b84466cab60eb89df1131d5b3c5ba40812ca55a9ad2125588805",
+      "normalizedOracleSha256": "faf9152eda72b84466cab60eb89df1131d5b3c5ba40812ca55a9ad2125588805",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "write-profile-contracts",
+      "promptSha256": "33de698660a3db2a9c563434938821dacfebd23d846837ccb37259b764bbc4fa",
+      "publicSourceFiles": 267,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "b6de1ddffd23aef66ca60d7d77c60abccc29a4ba05d62c5b79981bf539bc0875",
+      "candidateOracleSha256": "b6de1ddffd23aef66ca60d7d77c60abccc29a4ba05d62c5b79981bf539bc0875",
+      "normalizedOracleSha256": "b6de1ddffd23aef66ca60d7d77c60abccc29a4ba05d62c5b79981bf539bc0875",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "refactor-finalization",
+      "promptSha256": "b7603904840458c93a6c7918198d0b40c408e7729c63bd285f6d8d712b324ef2",
+      "publicSourceFiles": 225,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "586388769e2291a0796a1432fb04497a24a877a4fa7a8489cf994028211ccd72",
+      "candidateOracleSha256": "586388769e2291a0796a1432fb04497a24a877a4fa7a8489cf994028211ccd72",
+      "normalizedOracleSha256": "586388769e2291a0796a1432fb04497a24a877a4fa7a8489cf994028211ccd72",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "refactor-workflow-runner",
+      "promptSha256": "ab09b69fe2012314dd0c7662ffff700d9b0442cd62a3dfdab174688d4a96578e",
+      "publicSourceFiles": 223,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "e287f3eb9eb844aff38c885662921d6795684578517aad4320945903c59afb5d",
+      "candidateOracleSha256": "e287f3eb9eb844aff38c885662921d6795684578517aad4320945903c59afb5d",
+      "normalizedOracleSha256": "e287f3eb9eb844aff38c885662921d6795684578517aad4320945903c59afb5d",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "refactor-frozen-change",
+      "promptSha256": "67ffc8f364bc96bf91fb27d8a46e039604f3b70e76ff8913498aed40ea35d994",
+      "publicSourceFiles": 223,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "a09fc5e9b8b1606f463cfc312bdc4b53542ba8a175375c37c3e77c7c70f5022e",
+      "candidateOracleSha256": "a09fc5e9b8b1606f463cfc312bdc4b53542ba8a175375c37c3e77c7c70f5022e",
+      "normalizedOracleSha256": "a09fc5e9b8b1606f463cfc312bdc4b53542ba8a175375c37c3e77c7c70f5022e",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    },
+    {
+      "id": "refactor-workspace",
+      "promptSha256": "126bbce90cd72782f4941f9c156b9daca62ed344298fccf3d70c1fee41dff34e",
+      "publicSourceFiles": 221,
+      "allNonOracleCaseFieldsMatchReviewedCandidate": true,
+      "preparedOracleSha256": "3285b85219efd28f917227d7e74bc0cbbb5c78571ebec3090b9d3fbffda9d515",
+      "candidateOracleSha256": "3285b85219efd28f917227d7e74bc0cbbb5c78571ebec3090b9d3fbffda9d515",
+      "normalizedOracleSha256": "3285b85219efd28f917227d7e74bc0cbbb5c78571ebec3090b9d3fbffda9d515",
+      "literalReplacements": [],
+      "expandedOracleMatchesOriginalAfterLiteralRelocation": true
+    }
+  ],
+  "newOracleExecutions": 0,
+  "newModelCalls": 0,
+  "formalFreezePerformed": false,
+  "note": "92/114 are historical receipts, not counters for this static invocation. No new live result is inferred."
+}
