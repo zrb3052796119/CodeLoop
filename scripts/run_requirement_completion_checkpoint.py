@@ -1543,12 +1543,15 @@ def bootstrap_terminal_evidence(predecessor: Path, document: dict, execution: di
         raise ValueError('bootstrap public checks are missing')
     for actual, expected in zip(evidence, spec.checks):
         proof = actual.get('evidence', {})
+        # Preparing an unavailable sandbox can take time without executing a command.
+        duration_ms = proof.get('durationMs')
         if (actual.get('checkId') != expected.check_id or actual.get('argv') != list(expected.argv)
                 or actual.get('status') != 'inconclusive' or actual.get('patchDigest') != document['candidateDigest']
                 or proof.get('checkId') != expected.check_id or proof.get('kind') != expected.kind
                 or proof.get('argv') != list(expected.argv) or proof.get('status') != 'inconclusive'
                 or proof.get('failureReason') != 'host_sandbox_unavailable'
-                or proof.get('exitCode') is not None or proof.get('durationMs') != 0
+                or proof.get('exitCode') is not None
+                or type(duration_ms) is not int or duration_ms < 0
                 or any(proof.get(k, {}).get('byteCount') != 0 or proof.get(k, {}).get('preview') != ''
                     or proof.get(k, {}).get('previewBase64') != '' for k in ('stdout', 'stderr'))):
             raise ValueError('bootstrap public verification actually ran or has another failure')

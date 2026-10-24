@@ -2,6 +2,7 @@
 from copy import deepcopy
 from dataclasses import asdict
 import json
+from itertools import count
 from pathlib import Path
 import socket
 import sys
@@ -21,7 +22,7 @@ from scripts import run_requirement_completion_checkpoint as runner
 from scripts.evaluation_transport import SharedLedger, TransportConfig
 from scripts.three_arm_processes import _Process
 from test_requirement_completion_checkpoint import cloned_script_tree, write
-from test_requirement_completion_revalidation import approved, audit_step, packet, seal, submit  # noqa: F401
+from test_requirement_completion_revalidation import approved, audit_step, inspection_step, packet, seal, submit  # noqa: F401
 
 
 @pytest.fixture(autouse=True)
@@ -51,8 +52,10 @@ def bootstrap(approved, tmp_path, monkeypatch):  # noqa: F811
         max_output_tokens=131072, connect_timeout_seconds=30, idle_timeout_seconds=600, request_timeout_seconds=None)
     ledger = SharedLedger(config)
     write(root / 'transport-config.json', asdict(config))
+    preparation_clock = count(step=0.01)
     monkeypatch.setattr(workflow, '_deterministic_verifier_for_context',
         lambda *_a, **_k: DeterministicVerifier(sandbox_backend=None,
+            clock=lambda: next(preparation_clock),
             explicit_trusted_executables={'python3': sys.executable}))
     before_commands = len(commands)
     messages = json.loads((failed / 'private/parent-context.json').read_bytes())
@@ -81,6 +84,11 @@ def bootstrap(approved, tmp_path, monkeypatch):  # noqa: F811
             max_steps=None, enable_work_chain=False, enable_implementation_phases=False, defer_curator_maintenance=True)
     assert model.calls == 1 and len(commands) == before_commands
     document = json.loads((root / 'implementation-checkpoint.json').read_bytes())
+    feedback = json.loads(document['completionFeedback']['content'].split('\nCompletion evidence:\n', 1)[1])
+    proofs = [check['evidence'] for check in feedback['checks']['checks']]
+    assert proofs and all(proof['durationMs'] > 0 for proof in proofs)
+    assert all(proof['failureReason'] == 'host_sandbox_unavailable'
+               and proof['exitCode'] is None for proof in proofs)
     assert document['attempt'] == original['attempt'] + 1
     assert document['reviewState']['evidenceDirectory'] is None
     cleanup = {'rootPid': 900001, 'cleanupComplete': False,
@@ -137,7 +145,7 @@ def test_bootstrap_append_only_attestation_native_resume_and_real_checks(bootstr
         lambda *_a, **_k: DeterministicVerifier(sandbox_backend=Sandbox(),
             explicit_trusted_executables={'python3': sys.executable}))
     initial_count = len(commands)
-    roles, captures = [], []
+    roles, captures, dispatches = [], [], []
 
     class ResumedModel:
         model_id = 'local-bootstrap-mechanism'
@@ -148,9 +156,14 @@ def test_bootstrap_append_only_attestation_native_resume_and_real_checks(bootstr
             if self.calls > 12:
                 raise KeyboardInterrupt('local scripted adapter exceeded its expected native protocol')
             names = set(kwargs['tools_override'].list_all())
+            dispatches.append((names, len(commands)))
             if not roles:
                 assert 'completion_review_submit' in names and 'write_file' not in names
                 assert len(commands) == initial_count + 3
+            inspection = inspection_step(actual, kwargs['tools_override'])
+            if inspection is not None:
+                roles.append('inspection')
+                return inspection
             if 'completion_coverage_audit_submit' in names:
                 roles.append('audit')
                 return audit_step(actual)
@@ -170,7 +183,33 @@ def test_bootstrap_append_only_attestation_native_resume_and_real_checks(bootstr
     assert captures[-1][0]['executorId'] == document['executorId']
     assert captures[-1][0]['attempt'] > document['attempt']
     assert captures[-1][0]['reviewState']['reviews'][-1]['status'] == 'approved'
+    assert 'completion_review_submit' in dispatches[0][0] and 'write_file' not in dispatches[0][0]
+    assert dispatches[0][1] == initial_count + 3
+    assert roles == ['review', 'inspection', 'inspection', 'audit', 'audit', 'audit', 'parent']
     assert (workspace / 'example.py').read_bytes() == candidate
+
+
+def test_bootstrap_rejects_invalid_duration_or_executed_check_evidence(bootstrap):
+    failed, root, _workspace, document, spec, _commands, _tools = bootstrap
+    messages = json.loads((root / 'implementation-checkpoint-messages.json').read_bytes())
+    execution = json.loads((root / 'execution.json').read_bytes())
+    # Real unexecuted receipts can include positive host preparation time.
+    runner.bootstrap_terminal_evidence(failed, document, execution, messages, spec)
+    for field, value in [('durationMs', -1), ('durationMs', False), ('durationMs', '0'),
+                         ('durationMs', None), ('durationMs', 0.1), ('exitCode', 0),
+                         ('status', 'passed'), ('failureReason', None), ('checkId', 'unbound'),
+                         ('stdout', {'byteCount': 1, 'preview': 'x', 'previewBase64': 'eA=='}),
+                         ('stderr', {'byteCount': 1, 'preview': 'x', 'previewBase64': 'eA=='})]:
+        tampered = deepcopy(document)
+        previous = tampered['completionFeedback']
+        prefix, encoded = previous['content'].split('\nCompletion evidence:\n', 1)
+        receipt = json.loads(encoded)
+        receipt['checks']['checks'][0]['evidence'][field] = value
+        replacement = {**previous, 'content': prefix + '\nCompletion evidence:\n' + json.dumps(receipt)}
+        tampered['completionFeedback'] = replacement
+        bound_messages = [replacement if message == previous else message for message in messages]
+        with pytest.raises(ValueError, match='public verification actually ran or has another failure'):
+            runner.bootstrap_terminal_evidence(failed, tampered, execution, bound_messages, spec)
 
 
 @pytest.mark.parametrize('failure', ['scan', 'pid', 'group', 'reused_pid', 'candidate', 'context', 'approval', 'receipt'])

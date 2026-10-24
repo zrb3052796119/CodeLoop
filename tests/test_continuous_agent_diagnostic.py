@@ -37,7 +37,8 @@ def test_unlimited_transport_keeps_complete_usage_and_request_output_cap(tmp_pat
     captured = []
 
     def response(request, *, timeout):
-        captured.append((json.loads(request.data), timeout))
+        captured.append((json.loads(request.data), timeout,
+                         request._minicode_connect_timeout_seconds))
         usage = {**USAGE, "prompt_tokens": 700000, "total_tokens": 700008}
         return ScriptedResponse([event({**TEXT, "usage": usage}), DONE])
 
@@ -54,7 +55,13 @@ def test_unlimited_transport_keeps_complete_usage_and_request_output_cap(tmp_pat
     assert snapshot["started"] == snapshot["completed"] == 2
     assert snapshot["chargedTokens"] == 1400016 and snapshot["usageComplete"]
     assert snapshot["admissionRejectedCount"] == 0
-    assert all(body["max_tokens"] == 8192 and timeout <= 30 for body, timeout in captured)
+    assert len(captured) == 2
+    assert all(body["max_tokens"] == 8192 for body, _timeout, _connect in captured)
+    # urllib's timeout also covers response headers; the physical connect/TLS
+    # bound is separate host metadata and must retain its smaller limit.
+    assert all(timeout == cfg.idle_timeout_seconds == 60
+               and connect == cfg.connect_timeout_seconds == 30
+               for _body, timeout, connect in captured)
     assert all(299 < row["requestDeadlineEpoch"] - row["startedEpoch"] <= 300
                for row in snapshot["requests"])
     assert SharedLedger(cfg).snapshot()["chargedTokens"] == 1400016
