@@ -133,3 +133,10 @@ out.txt
 
 # Local secrets — copy from .env.example
 .env
+
+# Archived reports: exact bytes are retained in artifacts/archives/governance-2026-10-24/.
+# Restoring these generated working copies must not duplicate them in Git.
+/artifacts/memory-retrieval-semantic-gap-evaluation.json
+/artifacts/intent-optimization-phase4-2026-09-07/offline-all-baseline.json
+/artifacts/intent-optimization-phase4-2026-09-07/offline-all-final.json
+/artifacts/intent-optimization-phase4-2026-09-07/offline-delivery.json

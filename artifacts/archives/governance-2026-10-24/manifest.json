@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "archived_on": "2026-10-24",
+  "scope": "Generated reports only. Original bytes remain offline-recoverable; accepted fixtures and runtime/replay inputs are retained.",
+  "entries": [
+    {
+      "original_path": "artifacts/memory-retrieval-semantic-gap-evaluation.json",
+      "original_bytes": 3066920,
+      "original_sha256": "501eddb674ef42407eeba92785d19689f3829d9365a6bf49535b65ceb1266f4b",
+      "archive_path": "artifacts/archives/governance-2026-10-24/501eddb674ef42407eeba92785d19689f3829d9365a6bf49535b65ceb1266f4b.json.gz",
+      "archive_bytes": 98460,
+      "archive_sha256": "446cf057bd788e2cb63a6d88b056908bdf9ca43fcccd028dfe8a9987923c03cb",
+      "encoding": "gzip",
+      "source_commit": "88ec62d0ca7d8b6b090c31fda1835642d7e0e603",
+      "source_git_blob": "a76ff697975d19ac552ea43cfb9b828bd2c0960b",
+      "summary": {
+        "evaluation_passed": false,
+        "case_count": 108,
+        "synthetic_data": true,
+        "remote_call_count": 0
+      },
+      "reason": "Current references found are default CLI OUTPUT and historical notes/transcripts, not CI input. Preserve hash and historical archive before any move."
+    },
+    {
+      "original_path": "artifacts/intent-optimization-phase4-2026-09-07/offline-delivery.json",
+      "original_bytes": 2268793,
+      "original_sha256": "2fa5b59eca83c8634ee42404cbb9548ba260100d5c8a96f661e3bd05ac2a8390",
+      "archive_path": "artifacts/archives/governance-2026-10-24/2fa5b59eca83c8634ee42404cbb9548ba260100d5c8a96f661e3bd05ac2a8390.json.gz",
+      "archive_bytes": 92202,
+      "archive_sha256": "b28c49be38e1fe45d1533a5c55a0a8b6ad71012c3eec8fc4469d86e04e42e3d6",
+      "encoding": "gzip",
+      "source_commit": "88ec62d0ca7d8b6b090c31fda1835642d7e0e603",
+      "source_git_blob": "6e758b1182528d3f921a415d6af1402a7404a953",
+      "summary": {
+        "row_count": 230,
+        "source_file_hash_count": 258
+      },
+      "reason": "SHA bound in phase4 manifest and results-review; no current minicode/scripts/tests literal consumer found. Archive bundle with manifests intact, not a loose deletion."
+    },
+    {
+      "original_path": "artifacts/intent-optimization-phase4-2026-09-07/offline-all-final.json",
+      "original_bytes": 2264068,
+      "original_sha256": "3690ad6c97318339d9bf1042ab95edbafa5bf0051567d50f4518c2e3c3586f3f",
+      "archive_path": "artifacts/archives/governance-2026-10-24/3690ad6c97318339d9bf1042ab95edbafa5bf0051567d50f4518c2e3c3586f3f.json.gz",
+      "archive_bytes": 92105,
+      "archive_sha256": "f0a192cac85eb6667cc772b724af75770367d32d774399ba5623bd0ce70a6507",
+      "encoding": "gzip",
+      "source_commit": "88ec62d0ca7d8b6b090c31fda1835642d7e0e603",
+      "source_git_blob": "2c99f055b9b65593caf6fe576df7a63672c531a9",
+      "summary": {
+        "row_count": 230,
+        "source_file_hash_count": 258
+      },
+      "reason": "SHA bound in phase4 manifest and results-review; no current minicode/scripts/tests literal consumer found. Archive bundle with manifests intact, not a loose deletion."
+    },
+    {
+      "original_path": "artifacts/intent-optimization-phase4-2026-09-07/offline-all-baseline.json",
+      "original_bytes": 2254757,
+      "original_sha256": "12ae85a38190ccd7363974dfb52d79f47a4c7bfb1a4d0daa9cb12809fb2fd361",
+      "archive_path": "artifacts/archives/governance-2026-10-24/12ae85a38190ccd7363974dfb52d79f47a4c7bfb1a4d0daa9cb12809fb2fd361.json.gz",
+      "archive_bytes": 92042,
+      "archive_sha256": "8a3aa813ee7e6ffdffdcbc29ce81d18eda789fd33aaf8fc580fc5e5192807ba4",
+      "encoding": "gzip",
+      "source_commit": "88ec62d0ca7d8b6b090c31fda1835642d7e0e603",
+      "source_git_blob": "8bfa5da6df5020dc9453e12384a1de03ceaddfbb",
+      "summary": {
+        "row_count": 230,
+        "source_file_hash_count": 258
+      },
+      "reason": "SHA bound in phase4 manifest and results-review; no current minicode/scripts/tests literal consumer found. Archive bundle with manifests intact, not a loose deletion."
+    }
+  ],
+  "retained_large_json": [
+    {
+      "path": "artifacts/memory-retrieval-hybrid-offline.json",
+      "bytes": 18058648,
+      "sha256": "1b2c1fea40fc2651f9e6674dbca1e1958af3681bd2fc30daba2ec6ed9d031fab",
+      "dependency_note": "Read and schema/assertion checked by tests/test_memory_retrieval_hybrid_evaluator.py:203,216; CLI default output."
+    },
+    {
+      "path": "artifacts/memory-retrieval-hybrid-config.json",
+      "bytes": 7872717,
+      "sha256": "bc95e02f3a6cd6bd69942ea5ad74efd8edbf58e3e78ef67faf30aa52c0b6c83c",
+      "dependency_note": "Read by local evaluation default; SHA bound in hybrid-offline report and docs; not a runtime dependency."
+    },
+    {
+      "path": "artifacts/multi-agent-gen2-2026-10-23/run-v2/tasks.json",
+      "bytes": 7599345,
+      "sha256": "4c7ea0bbfa2d809a0e90b4978ed30332df489436e8eee28c7b13723d5c91b737",
+      "dependency_note": "Generic gen2 auditor requires tasks.json via registrationFiles (scripts/audit_multi_agent_gen2.py:101); SHA pinned in run-v2/manifest.json and source-manifest. Whole experiment pack must remain replayable."
+    },
+    {
+      "path": "artifacts/memory-retrieval-semantic-gap-baseline-v2.json",
+      "bytes": 3074311,
+      "sha256": "4f1bb69ce1f79a3a91253c7a11078c0668fd25999d29dd39f8fef96b7687333f",
+      "dependency_note": "Accepted evaluator artifact hash; tests read; default quality-v3 analysis baseline."
+    },
+    {
+      "path": "artifacts/memory-retrieval-semantic-gap-v2-candidate.json",
+      "bytes": 3074017,
+      "sha256": "7c68c5e1d767c748a57b12e3972f43d64d11593d3e428a0a91f70234320b291f",
+      "dependency_note": "Candidate evaluator artifact hash; tests read the immutable original."
+    },
+    {
+      "path": "artifacts/memory-retrieval-semantic-gap-baseline.json",
+      "bytes": 3033592,
+      "sha256": "5629d6cfc5d2573d37a348ff08909706fdc6a8ad65082b86e3cb0005de1fdd3b",
+      "dependency_note": "Accepted v1 SHA pins in semantic and hybrid evaluators; direct tests and many historical references."
+    },
+    {
+      "path": "artifacts/memory-retrieval-phase2a.json",
+      "bytes": 2374133,
+      "sha256": "2f488120e4016d9fafb275cd2b22b7e978ddf8f4039b990aeff1724e00759327",
+      "dependency_note": "PHASE2A_FROZEN_HASHES in evaluator and tests; phase2b consumes it."
+    },
+    {
+      "path": "artifacts/skill-selection-model-vs-routed-2026-09-08/live-paired/skill-embeddings.json",
+      "bytes": 1140270,
+      "sha256": "9fa8872acf11ee3e45ff1c64ab27c2d25e0bfb9491a641481e8dfe6caded75e8",
+      "dependency_note": "SHA bound in live-paired/settings.json. Historical paired_evaluator.py:158-170 copies and fingerprints this cache; retain as part of reproducible experiment archive."
+    }
+  ],
+  "totals": {
+    "original_bytes": 9854538,
+    "compressed_bytes": 374809,
+    "retained_bytes": 46227033
+  }
+}
