@@ -2,7 +2,7 @@
 
 **当前状态：P0 冻结提交 `9f936942` 的本机完整随机验收通过，已合入并推送 main；Phase 1 go 仍待最终验收。** P0 为 14,923 passed / 8 skipped / 0 failed / 0 errors / 3 warnings。首次 P1/P3 候选 `eb17c62a` 全量已结束，14,932 passed / 1 failed / 8 skipped / 3 warnings；后续定向修复不能替代最终组合候选全量或原生 Windows CI。Phase 2 已冻结，模型 API 调用和结果均为零。
 
-main 与开发分支已于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档/证据提交序列的生产及测试字节与通过的 `9f936942` 相同。其后 Phase 2 冻结记录 `ab17ca7e` / `ea31eed2` 已推送开发分支。文档更新前组合候选为 `2630661f`，包含后续 P1/P3 与定向修复，尚不能宣称它已全量通过或合入 main。
+main 与开发分支已于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档/证据提交序列的生产及测试字节与通过的 `9f936942` 相同。其后 Phase 2 冻结记录 `ab17ca7e` / `ea31eed2` 已推送开发分支。当前发布候选为 `3cadcb75`，本机全量与原生 CI 进行中，已知本机 v40 closure 失败；后续跟进修正尚未提交发布，Phase 1 go 未成立。
 
 ## 可复现环境
 
@@ -61,7 +61,11 @@ main 与开发分支已于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档
 
 原 CI run `40111546762` 的 Windows 3.11/3.12 job 确认是既存 `_publish_portable` 的 WinError 32，故障文件在初始 `88ec62d0`、`9f936942`、P0 main 字节相同。同一 run 的 Ubuntu Python 3.11.17 与 macOS Python 3.11.9 内部错误均来自既有 `test_run_command_lifecycle.py:246` 全局猴补 `os.name="nt"`：`run_command.py:288` 的 `Path(command).name` 选择不支持的 WindowsPath，随后 pytest 报告/退出也崩溃。Ubuntu 原 JUnit 4934 tests / 0 failures / 1 internal error / 7 skipped；旧 fixture 已在真实 Python 3.11.15 复现。`7b8157e7` 修复只使用测试模块局部 `os`/`sys`/`subprocess` 代理，生产字节不变；Python 3.11/3.12 各 124 项相关通过，最终同字节目标测试在 exact P0 1 passed，2 个合成坏 flags/session 反例仍正常断言失败。[fixture 修复和原始 CI 证据](../artifacts/governance-trial-2026-10-24/run-command-fixture-proofs/README.md)已归档，不将其归为生产 bug。上述定向结果不代替**组合候选最终全量与修复后的原生 Windows CI**；这两项仍待完成，Phase 1 go 尚未成立。
 
-修复后候选已另行通过 `compileall minicode tests`（缓存写入临时目录），以及全部 `minicode`、wheel checker 和 4 个相关测试文件的 Ruff `E,F --ignore=E501`。检查结果和 10 文件 SHA 保存在本机 `phase1-repaired-static-checks.json`；这些静态检查不替代待运行的最终完整套件。
+封存候选 `3cadcb7584526b41af7cc928d6c58d5bb19d8ea5` 的本机完整随机套件仍在运行，已知 v40 closure 失败；[草稿 PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) 的原生 [CI run `40114448888`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40114448888) 同样运行中。以下跟进修正尚未提交发布，不能用于覆盖该封存候选的失败或宣称 Phase 1 go。
+
+旧 CI `40111546762` 的 Ubuntu 3.12 完整结果为 14,911 passed / 2 failed / 18 skipped；两项失败分别源于 fixture 依赖目录枚举顺序、在真实 outer Future 完成前过早发出信号。修正仅调整测试前提，相关 60 项（seed `20261024`）与 124 项（seed `42`）通过，但范围有重叠、不相加。另将已审查的 Windows publisher 生产改动补入未冻结 v41 的精确 staged source 声明：相同最终测试旧声明 15 failed / 19 passed，新声明 34 passed，相关 179 项通过；40 份历史 pin 字节不变，不激活 v41。原始失败、独立审查及边界见[跟进证据包](../artifacts/governance-trial-2026-10-24/ci-followup-proofs/README.md)。
+
+修复后候选已另行通过 `compileall minicode tests`（缓存写入临时目录），以及全部 `minicode`、wheel checker 和 4 个相关测试文件的 Ruff `E,F --ignore=E501`。检查结果和 10 文件 SHA 保存在本机 `phase1-repaired-static-checks.json`；这些静态检查不替代尚未通过的最终完整套件，也不覆盖随后新增的测试/声明修改。
 
 ## 已验证项目
 
