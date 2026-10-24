@@ -55,6 +55,8 @@
 
 16个 prepared oracle 已通过现有宿主裁判的调用接口和进程清理；只读 oracle 的5组有效/错误事实/仅答案/硬编码断言/xfail反例也已检查。两组生命周期测试使用真实运行时、适配器、分派与transport，把HTTP替换为离线SSE，验证同模型子角色、无限预算、token/调用记账及只读工作区不变。宿主须允许进程枚举；普通沙箱的 `ps` 限制会使既有guardian判清理未完成，不能绕过该检查。上述均为离线软件验证，不是32个正式模型 trial 的结果。
 
+首次调用前的实际 manifest 与冻结记录已保存到[冻结记录](../artifacts/governance-trial-2026-10-24/phase2-freeze/README.md)。
+
 ## 可复现材料与限制
 
 可提交材料位于 `artifacts/governance-trial-2026-10-24/phase2-preparation/`：`manifest.json` 记录16题、32个 cell、提交/源码树及验收 SHA；`cases/*` 保存提示、私有 oracle、参考差分和父版本/参考版本证明；`SHA256SUMS.json` 固定材料字节。源码只存 Git 引用、Python 文件清单摘要和文件数，不复制16份完整源码。`rebuild.py` 仅验证与解包材料，调用现有 runner 的 `prepare`，没有模型调用或冻结功能。重建需要保留相应 Git 历史；浅克隆/无 Git 归档须先取得这些已知对象。

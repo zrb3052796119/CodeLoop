@@ -1,0 +1,41 @@
+{
+  "sourceHead": "9f9369421486f018c837f84d21bd727aed6ab326",
+  "freezeCreatedAt": "2026-10-24T16:21:38.283104+00:00",
+  "manifestSha256": "987f7cf31627ca85f18cdf2a270dae3918c5bf6cacac68cf02053dd767da91be",
+  "productionSha256": "13151ca1031c9ec8b4ffec4fa23b43509946018a61fa8a01445aad65af4bccd8",
+  "harnessSha256": "cf67177d024cb46d2966047f057941a2afe2bbc8d8c27e2678a764a397ed9e71",
+  "roleTurnLimits": {
+    "explore": 12,
+    "plan": 8,
+    "general": 15
+  },
+  "limits": {
+    "maxTokens": null,
+    "maxModelCalls": null,
+    "maxCostUsd": null,
+    "wallSeconds": 1800,
+    "requestTimeoutSeconds": 300,
+    "idleTimeoutSeconds": 120,
+    "connectTimeoutSeconds": 30,
+    "maxOutputTokens": 8192
+  },
+  "model": "glm-5.3-flash",
+  "scheduleCells": 32,
+  "existingTrialResults": 0,
+  "initialFreezeAttempt": {
+    "result": "rejected before manifest creation and before provider calls",
+    "error": "registered role limits differ from current production defaults",
+    "effectiveRoleLimits": {
+      "explore": null,
+      "plan": null,
+      "general": null
+    },
+    "reason": "Missing settings have no role turn ceiling; legacy AGENT_TYPES numbers are not effective defaults."
+  },
+  "successfulFreezeEnvironment": {
+    "MINI_CODE_SUBAGENT_EXPLORE_MAX_TURNS": "12",
+    "MINI_CODE_SUBAGENT_PLAN_MAX_TURNS": "8",
+    "MINI_CODE_SUBAGENT_GENERAL_MAX_TURNS": "15"
+  },
+  "note": "No task, oracle, order or pre-registered bound changed. Explicit settings realize the registered bounded condition. No model invocation in freeze."
+}
