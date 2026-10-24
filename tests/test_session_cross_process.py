@@ -187,6 +187,7 @@ def _join(process: multiprocessing.Process) -> None:
 
 def test_two_processes_saving_different_sessions_retain_both_index_entries(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A controlled index rendezvous exposes a lost update without timing races."""
     data_dir = tmp_path / "data"
@@ -252,7 +253,12 @@ def test_two_processes_saving_different_sessions_retain_both_index_entries(
     assert set(index) == session_ids
     assert all((data_dir / "sessions" / f"{session_id}.json").exists() for session_id in session_ids)
 
-    _configure_session_storage(str(data_dir))
+    # Child processes own their module globals; the parent must restore its
+    # process-wide storage paths when this test finishes.
+    from minicode import session as session_module
+
+    monkeypatch.setattr(session_module, "MINI_CODE_DIR", data_dir)
+    monkeypatch.setattr(session_module, "SESSIONS_DIR", data_dir / "sessions")
     from minicode.session import list_sessions
 
     assert {item.session_id for item in list_sessions()} == session_ids
