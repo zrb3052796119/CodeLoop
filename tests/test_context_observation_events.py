@@ -786,3 +786,66 @@ def test_unimplemented_memory_and_skill_signals_do_not_fake_actuation() -> None:
     assert result == 9
     assert budget.flush_calls == 0
     assert not hasattr(scheduler, "_pending_skill_update")
+
+
+@pytest.mark.parametrize("kind", ["cybernetic", "compactor"])
+@pytest.mark.parametrize("interrupt_event", ["context.compacted", "recovery.completed"])
+@pytest.mark.parametrize("failure_type", [KeyboardInterrupt, SystemExit])
+def test_recovery_rebinds_canonical_context_before_interruptible_observation(
+    kind: str,
+    interrupt_event: str,
+    failure_type: type[BaseException],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    """Interrupted success observation cannot restore the pre-recovery list."""
+    failure = failure_type("interrupted recovery observation")
+    original = [{"role": "system", "content": "uncompressed context"}]
+    compacted = [{"role": "system", "content": "successfully recovered context"}]
+    result = CompactionResult(success=True, strategy=CompactStrategy.REACTIVE,
+        trigger=CompactTrigger.REACTIVE, messages=compacted, tokens_freed=100)
+    manager = ContextManager(model="default")
+    recovery_inputs = []
+
+    def recover(_self, messages, _error):
+        recovery_inputs.append(messages)
+        return (compacted, result) if kind == "cybernetic" else result
+
+    monkeypatch.setattr(agent_loop_module.ContextCompactor, "process_request",
+        lambda _self, messages, **_kwargs: CompactionResult(success=False,
+            strategy=CompactStrategy.FULL, trigger=CompactTrigger.AUTO, messages=messages))
+    if kind == "cybernetic":
+        monkeypatch.setattr(agent_loop_module.ContextCyberneticsOrchestrator,
+            "try_reactive_recover", recover)
+    else:
+        monkeypatch.setattr(agent_loop_module, "ContextCyberneticsOrchestrator",
+            lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(agent_loop_module.ContextCompactor, "reactive_recover", recover)
+
+    class InterruptingSink(RecordingSink):
+        def emit(self, event_type, *, step=None, payload=None):
+            super().emit(event_type, step=step, payload=payload)
+            if event_type == interrupt_event:
+                raise failure
+
+    sink = InterruptingSink()
+    model = ScriptedModel([RuntimeError("prompt too long")])
+    with pytest.raises(failure_type) as caught:
+        run_agent_turn(model=model, tools=ToolRegistry([]), messages=original,
+            cwd=str(tmp_path), context_manager=manager, event_sink=sink, max_steps=3)
+
+    assert caught.value is failure
+    assert model.calls == 1 and len(recovery_inputs) == 1
+    assert manager.messages == compacted
+    assert manager.messages is not recovery_inputs[0]
+    assert recovery_inputs[0] == original
+    expected = ["model.started", "model.failed", "recovery.started", "context.compacted"]
+    if interrupt_event == "recovery.completed":
+        expected.append("recovery.completed")
+    assert [name for name, _step, _payload in sink.events] == [*expected, "task.outcome"]
+    context_id = sink.events[2][2]["contextOperationId"]
+    assert sink.events[3][2]["contextOperationId"] == context_id
+    assert sink.events[3][2]["path"] == f"reactive_{kind}"
+    if interrupt_event == "recovery.completed":
+        assert sink.events[4][2]["contextOperationId"] == context_id
+        assert sink.events[4][2]["outcome"] == "recovered"

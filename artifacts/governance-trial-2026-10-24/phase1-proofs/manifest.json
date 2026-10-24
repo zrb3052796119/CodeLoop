@@ -1,0 +1,173 @@
+{
+  "baseline": "9f9369421486f018c837f84d21bd727aed6ab326",
+  "stage": "focused verification before full-suite candidate acceptance",
+  "archive": "proofs.tar.gz",
+  "archiveSha256": "916ecdc7509ff03237a1c452e8ddbb955a3b7af4f36b434167df3f25c44666d7",
+  "archiveBytes": 89679,
+  "rawBytes": 433790,
+  "entries": [
+    {
+      "path": "implementation/after-final-identical-tests.log",
+      "bytes": 286,
+      "sha256": "f3a827fe8cc10a90f5fbc64d8538056dafb7ce91a3ba345c93eca894cd714e20"
+    },
+    {
+      "path": "implementation/after-final-tests.log",
+      "bytes": 528,
+      "sha256": "d55decf9b6582cd65b60bfac472f9127613a648fe29d88a0f4311612c79b2d7f"
+    },
+    {
+      "path": "implementation/agent_loop.before-review-fix.py",
+      "bytes": 359644,
+      "sha256": "903fc5609b2c8969d052679e5b65a073ca2b368ca2e1965ec13a46a7708f0ba7"
+    },
+    {
+      "path": "implementation/before-final-tests.log",
+      "bytes": 280,
+      "sha256": "f478b1ea9418fe7dea4681ce931baf7420bf3919d449dff83d3265935c1605cf"
+    },
+    {
+      "path": "implementation/final-fault-injection.log",
+      "bytes": 7331,
+      "sha256": "db2a8b06ef91cbe70f48da7aa2c48d421e100fdac5a025e78f6e01b62c657e78"
+    },
+    {
+      "path": "implementation/fix_recovery_binding.py",
+      "bytes": 4438,
+      "sha256": "2b7fc6f81c1cbf7b796b4cfe140200488e770b20ac0970fff72c36843184be7b"
+    },
+    {
+      "path": "implementation/implementation-report.json",
+      "bytes": 6313,
+      "sha256": "decd72bfd3fc2d18406d2889020cbcf6d0a5e8a8511a26fa94175828930ca1f5"
+    },
+    {
+      "path": "implementation/introduced-interrupt-before-fix.log",
+      "bytes": 30511,
+      "sha256": "81e6001790265840365bbe2b29559c5656f703013ffeb2671857ab3c3639437b"
+    },
+    {
+      "path": "implementation/run_tests.py",
+      "bytes": 1115,
+      "sha256": "245f76e6da60187fe8cb29ded42b709400344293873e7f53daaa497afbd3d428"
+    },
+    {
+      "path": "review/ast-equivalence.json",
+      "bytes": 357,
+      "sha256": "f184abfe498d0f3c67e9e1ff4f549255b344fba61a238f59976a81ee975d253e"
+    },
+    {
+      "path": "review/import-proof-after-fix.json",
+      "bytes": 467,
+      "sha256": "c0227c3064b5b93131fb0d71a98e69a207d61599835d0f34940d0aad9459fa38"
+    },
+    {
+      "path": "review/import-proof.json",
+      "bytes": 467,
+      "sha256": "3daa6354b5c0110b8b0d2a4c529c74e5c9807cb50cd59643372ed157b5b28975"
+    },
+    {
+      "path": "review/independent-after-fix.log",
+      "bytes": 99,
+      "sha256": "a39335f832fcd71ff2ec02bc02063be00bcfab53fad5388929e6ae3380127f75"
+    },
+    {
+      "path": "review/independent-code-review.md",
+      "bytes": 6131,
+      "sha256": "ef8efd23650c65640aa96b577cfdedf5d1006a996953763ed2238970221a029e"
+    },
+    {
+      "path": "review/independent-targeted.log",
+      "bytes": 99,
+      "sha256": "47031283fdb75c115ec283990cb86a009253b93b2b2bd209f299d2d2aff13582"
+    },
+    {
+      "path": "review/measurements-after-fix.json",
+      "bytes": 521,
+      "sha256": "aefb25991880ba9adeaf0a8053cdf09a0f852c2483ccfe9a3e8c9c93bc92295e"
+    },
+    {
+      "path": "review/reactive-interrupt-after-final.log",
+      "bytes": 422,
+      "sha256": "c7e35f3c2346c14c2f4ebf4432f321c26dcf77003978aab46760f11dbeb520a1"
+    },
+    {
+      "path": "review/reactive-interrupt-after-fix.log",
+      "bytes": 427,
+      "sha256": "a5fe4c70c393d035200201b7d1f1ccedaff087989d1811ead2532769a63237f0"
+    },
+    {
+      "path": "review/reactive-interrupt-before-final.log",
+      "bytes": 405,
+      "sha256": "bac191b6b3cb980959bf36af014100860d95cc7a94ef697d870089e500d6519d"
+    },
+    {
+      "path": "review/reactive_interrupt_probe.py",
+      "bytes": 2463,
+      "sha256": "e45ec5ef6738ee46b4e042ba9f9fa17c9228611ef1b3f6eeaeda8e2176ef8013"
+    },
+    {
+      "path": "review/review_import_guard.py",
+      "bytes": 646,
+      "sha256": "fb4b447e2792bfc38ecd13de491c2656a72815751329e9dfb8525bb01acf16bd"
+    },
+    {
+      "path": "review/run_review.py",
+      "bytes": 949,
+      "sha256": "7e0bb3ac1f7fe7e8af8c680c1062859bdadc4c0b19cb33b5050500a0b8c0149c"
+    },
+    {
+      "path": "sessions/after-api-imports.json",
+      "bytes": 702,
+      "sha256": "d5fc6103a48c3212bc0fdb48ece46dfcb158f5fa30055a0b38d135a9f2bbf82b"
+    },
+    {
+      "path": "sessions/after-api.log",
+      "bytes": 99,
+      "sha256": "1757ba09517343bcddae745df5f6dc0628d6eed79b6930c4e730723070d2eb06"
+    },
+    {
+      "path": "sessions/before.log",
+      "bytes": 1394,
+      "sha256": "a9c06fa63d7a338a068a9e587197474e8127054b2d974a3e6f4183e6e749af9c"
+    },
+    {
+      "path": "sessions/identity-before-fixed-imports.json",
+      "bytes": 702,
+      "sha256": "59aaa9339e93f33a9179918ca4b06d680623f4a04e1b0b047cf4248080fe00dd"
+    },
+    {
+      "path": "sessions/identity-before-fixed.log",
+      "bytes": 98,
+      "sha256": "70211483dfd2e5cd2e64a895b775c66fdb5dd664a051c6e4c97344ef1f5334eb"
+    },
+    {
+      "path": "sessions/phase1_session_import_guard.py",
+      "bytes": 654,
+      "sha256": "e4e799c74504b9140f81382818ebbbd37fc9ea038004bcad841045c50591c2f1"
+    },
+    {
+      "path": "sessions/report.json",
+      "bytes": 4072,
+      "sha256": "105e750a36ca4a3b94a0dbec1e5ec456fe13ae318f1fa991e617c4a8bd34d410"
+    },
+    {
+      "path": "sessions/report.md",
+      "bytes": 1062,
+      "sha256": "eddf2178d99740905fc6b8c08aed2558ce1d3f507daa9c980c2d9744974c1ae5"
+    },
+    {
+      "path": "sessions/run_focused.py",
+      "bytes": 1108,
+      "sha256": "24bc8aa8fcf530f3fb0a1f9d292034599ad4c32f0aec4dea679aee1858187a97"
+    }
+  ],
+  "notes": [
+    "Before and after 95-test runs use identical final test bytes.",
+    "The 8 failing interrupt cases describe a defect introduced during this refactor, not a historical baseline bug.",
+    "Synthetic stale-feedback fault is a test-strength check, not a historical bug.",
+    "Source code for the original baseline is available at the recorded Git commit; only the uncommitted rejected extraction snapshot is included.",
+    "Intermediate absolute paths and precommit flags in original reports are retained as historical records.",
+    "A full randomized suite is still required; focused tests are not a waiver."
+  ]
+}

@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import re
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, Protocol
@@ -36,6 +36,7 @@ class ToolTerminationReason(str, Enum):
 if TYPE_CHECKING:
     from minicode.mcp_current_state import McpCurrentStateRegistry
     from minicode.run_events import AgentEventSink, SkillUsageTracker
+    from minicode.subagent_sessions import SubagentSessionStore
 
 
 # ---------------------------------------------------------------------------
@@ -922,7 +923,7 @@ class ToolContext:
     # so the model can resume one via continue_subagent_id instead of
     # paying for a fresh exploration. Absence disables continuation
     # fail-closed.
-    _subagent_sessions: Any | None = field(
+    _subagent_sessions: SubagentSessionStore | None = field(
         default=None,
         repr=False,
         compare=False,
@@ -936,6 +937,17 @@ class ToolContext:
         repr=False,
         compare=False,
     )
+
+    @property
+    def subagent_sessions(self) -> SubagentSessionStore | None:
+        """The turn-owned continuation store; None disables continuation."""
+        return self._subagent_sessions
+
+    def with_subagent_sessions(
+        self, store: SubagentSessionStore | None,
+    ) -> ToolContext:
+        """Bind sessions on a shallow replacement, retaining other capabilities."""
+        return replace(self, _subagent_sessions=store)
 
 
 Validator = Callable[[Any], Any]
