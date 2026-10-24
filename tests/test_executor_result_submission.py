@@ -159,7 +159,8 @@ def test_real_task_loop_submits_once_then_workflow_freezes_verifies_and_writes_b
     monkeypatch.setattr(subagent_model_routing, "create_subagent_model_adapter", lambda *_a, **_k:model)
     monkeypatch.setattr(DeterministicVerifier, "run", lambda _self, **request:_verification_result(request))
     result = task_module.task_tool.run({
-        "description": "real bounded child loop", "prompt": "Update allowed.txt.",
+        "description": "real bounded child loop",
+        "prompt": "Update allowed.txt. Please review the changes.",
         "agent_type": "workflow", "workflow_request": _request(risk="low", complex=False),
     }, ToolContext(cwd=str(tmp_path), _runtime={"model":"fixture"},
         _agent_budget=AgentTurnBudget(max_model_calls=40, max_total_tokens=500000),
@@ -462,7 +463,9 @@ def test_submission_does_not_bypass_frozen_workspace_or_verifier(
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(DeterministicVerifier, "run", verifier)
     result = _run(
-        tmp_path, _request(risk="low", complex=False), monkeypatch, commit_audit_waived=True
+        tmp_path, _request(risk="low", complex=False), monkeypatch,
+        commit_audit_waived=True,
+        prompt="Update allowed.txt. Please review the changes.",
     )
     assert receipts and all(receipt._implementation_submitted for receipt in receipts)
     assert result.ok is (failure == "success"), result.output
@@ -516,7 +519,8 @@ def test_frozen_analyst_handoff_skips_duplicate_executor_analysis(
         lambda _self, **request: _verification_result(request),
     )
     result = _run(
-        tmp_path, _request(complex=True), monkeypatch, commit_audit_waived=True
+        tmp_path, _request(complex=True), monkeypatch, commit_audit_waived=True,
+        prompt="Analyze first, then update allowed.txt. Please review the changes.",
     )
     assert result.ok, result.output
     assert roles == ["analyst", "executor", "reviewer"]
