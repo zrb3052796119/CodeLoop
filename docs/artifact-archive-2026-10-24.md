@@ -39,22 +39,30 @@ The three Phase 4 reports remain members of their original evidence bundle. Its 
 
 `scripts/evaluate_memory_retrieval_semantic_gap.py` still writes new generated output to its established `artifacts/memory-retrieval-semantic-gap-evaluation.json` path. That output is distinct from the accepted baseline and from this archived historical report; restoration refuses to overwrite a newer generated output.
 
-## Explicit retained exceptions
+## Pinned test and replay inputs
 
-The other eight JSON files above 1,000,000 bytes remain in place (**46,227,033 bytes**). Removing them would break current tests, frozen certification/replay input, or a digest-bound historical evaluator. This change does not weaken those contracts.
+The eight inputs previously retained in place have a separate [manifest](../artifacts/archives/governance-pinned-inputs-2026-10-24/manifest.json) and complete gzip copies. Their **46,227,033 original bytes** become **3,088,342 compressed bytes**, saving **43,138,691 bytes** before the small manifest/docs. Compression uses level 9, mtime 0 and an empty filename for deterministic bytes. The older archive manifest retains its historical retention decision; this manifest records the subsequent migration.
 
-| Retained path | Bytes | Dependency |
+Before quality checks, pytest, or historical replay, restore the eight originals in each fresh checkout/source export:
+
+```sh
+python scripts/restore_archived_artifacts.py --manifest artifacts/archives/governance-pinned-inputs-2026-10-24/manifest.json --restore
+```
+
+CI performs this step before quality checks and pytest. The existing consumers still read ordinary files at their original paths; they do not read gzip transparently. Recovered originals are ignored, and every historical source/evaluator/input pin remains unchanged. Omit `--restore` for read-only validation; add `--output-root /tmp/codeloop-input-export` for external export. External export alone does not satisfy consumers with fixed repository paths.
+
+| Original filename (link downloads gzip; restore before use) | Bytes | Dependency |
 | --- | ---: | --- |
-| [memory-retrieval-hybrid-offline.json](../artifacts/memory-retrieval-hybrid-offline.json) | 18,058,648 | Read and schema/assertion checked by tests/test_memory_retrieval_hybrid_evaluator.py:203,216; CLI default output. |
-| [memory-retrieval-hybrid-config.json](../artifacts/memory-retrieval-hybrid-config.json) | 7,872,717 | Read by local evaluation default; SHA bound in hybrid-offline report and docs; not a runtime dependency. |
-| [tasks.json](../artifacts/multi-agent-gen2-2026-10-23/run-v2/tasks.json) | 7,599,345 | Generic gen2 auditor requires tasks.json via registrationFiles (scripts/audit_multi_agent_gen2.py:101); SHA pinned in run-v2/manifest.json and source-manifest. Whole experiment pack must remain replayable. |
-| [memory-retrieval-semantic-gap-baseline-v2.json](../artifacts/memory-retrieval-semantic-gap-baseline-v2.json) | 3,074,311 | Accepted evaluator artifact hash; tests read; default quality-v3 analysis baseline. |
-| [memory-retrieval-semantic-gap-v2-candidate.json](../artifacts/memory-retrieval-semantic-gap-v2-candidate.json) | 3,074,017 | Candidate evaluator artifact hash; tests read the immutable original. |
-| [memory-retrieval-semantic-gap-baseline.json](../artifacts/memory-retrieval-semantic-gap-baseline.json) | 3,033,592 | Accepted v1 SHA pins in semantic and hybrid evaluators; direct tests and many historical references. |
-| [memory-retrieval-phase2a.json](../artifacts/memory-retrieval-phase2a.json) | 2,374,133 | PHASE2A_FROZEN_HASHES in evaluator and tests; phase2b consumes it. |
-| [skill-embeddings.json](../artifacts/skill-selection-model-vs-routed-2026-09-08/live-paired/skill-embeddings.json) | 1,140,270 | SHA bound in live-paired/settings.json. Historical paired_evaluator.py:158-170 copies and fingerprints this cache; retain as part of reproducible experiment archive. |
+| [memory-retrieval-hybrid-offline.json](../artifacts/archives/governance-pinned-inputs-2026-10-24/1b2c1fea40fc2651f9e6674dbca1e1958af3681bd2fc30daba2ec6ed9d031fab.json.gz) | 18,058,648 | Read and schema/assertion checked by tests/test_memory_retrieval_hybrid_evaluator.py:203,216; CLI default output. |
+| [memory-retrieval-hybrid-config.json](../artifacts/archives/governance-pinned-inputs-2026-10-24/bc95e02f3a6cd6bd69942ea5ad74efd8edbf58e3e78ef67faf30aa52c0b6c83c.json.gz) | 7,872,717 | Read by local evaluation default; SHA bound in hybrid-offline report and docs; not a runtime dependency. |
+| [tasks.json](../artifacts/archives/governance-pinned-inputs-2026-10-24/4c7ea0bbfa2d809a0e90b4978ed30332df489436e8eee28c7b13723d5c91b737.json.gz) | 7,599,345 | Generic gen2 auditor requires tasks.json via registrationFiles (scripts/audit_multi_agent_gen2.py:101); SHA pinned in run-v2/manifest.json and source-manifest. Whole experiment pack must remain replayable. |
+| [memory-retrieval-semantic-gap-baseline-v2.json](../artifacts/archives/governance-pinned-inputs-2026-10-24/4f1bb69ce1f79a3a91253c7a11078c0668fd25999d29dd39f8fef96b7687333f.json.gz) | 3,074,311 | Accepted evaluator artifact hash; tests read; default quality-v3 analysis baseline. |
+| [memory-retrieval-semantic-gap-v2-candidate.json](../artifacts/archives/governance-pinned-inputs-2026-10-24/7c68c5e1d767c748a57b12e3972f43d64d11593d3e428a0a91f70234320b291f.json.gz) | 3,074,017 | Candidate evaluator artifact hash; tests read the immutable original. |
+| [memory-retrieval-semantic-gap-baseline.json](../artifacts/archives/governance-pinned-inputs-2026-10-24/5629d6cfc5d2573d37a348ff08909706fdc6a8ad65082b86e3cb0005de1fdd3b.json.gz) | 3,033,592 | Accepted v1 SHA pins in semantic and hybrid evaluators; direct tests and many historical references. |
+| [memory-retrieval-phase2a.json](../artifacts/archives/governance-pinned-inputs-2026-10-24/2f488120e4016d9fafb275cd2b22b7e978ddf8f4039b990aeff1724e00759327.json.gz) | 2,374,133 | PHASE2A_FROZEN_HASHES in evaluator and tests; phase2b consumes it. |
+| [skill-embeddings.json](../artifacts/archives/governance-pinned-inputs-2026-10-24/9fa8872acf11ee3e45ff1c64ab27c2d25e0bfb9491a641481e8dfe6caded75e8.json.gz) | 1,140,270 | SHA bound in live-paired/settings.json. Historical paired_evaluator.py:158-170 copies and fingerprints this cache; retain as part of reproducible experiment archive. |
 
-Inspection covered direct references in production, scripts, tests, documentation and the relevant historical evidence bundles. It cannot prove the absence of arbitrary dynamic consumers; recovery at the original paths is provided for that reason. The manifest preserves this decision per file.
+The original semantic/hybrid failures and candidate/accepted distinctions are preserved. Restoration checks compressed and original hashes/sizes, refuses a differing existing file, and needs no Git history, LFS, network or model. Historical replay of the four reports above needs its separate default-manifest restore command as well. Checkout/source archives become smaller; normal test/replay workspaces regain the original disk footprint after recovery, and existing Git history/full-clone cost is unchanged.
 
 ## Validation
 
@@ -79,8 +87,8 @@ references readable. Raw pytest logs retain their original whitespace.
 
 To inspect the archived intermediates, verify the archive SHA-256 against its
 manifest and extract into a new empty directory, preserving repository-relative
-paths. The JSON-report restore helper above applies only to the original four
-reports, not this tar archive:
+paths. The JSON restore helper above handles the four reports and eight pinned inputs
+through their separate manifests, not this tar archive:
 
 ```sh
 mkdir /tmp/codeloop-pre-trial-export
