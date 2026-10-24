@@ -5,6 +5,7 @@ import json
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -30,6 +31,26 @@ def redis_client(monkeypatch):
     constructor = Mock(return_value=client)
     monkeypatch.setattr(redis.Redis, "from_url", constructor)
     return client, constructor
+
+
+@pytest.fixture
+def completion_waits(monkeypatch):
+    """Observe production wait requests while retaining real timeout behavior."""
+    waits = []
+
+    class ObservedCompletion(threading.Event):
+        def wait(self, timeout=None):
+            budget = hot._turn_budget.get()
+            assert budget is not None
+            assert timeout is not None and 0 <= timeout <= budget.remaining
+            assert timeout <= hot._WAIT_BUDGET_SECONDS
+            waits.append(timeout)
+            return super().wait(timeout)
+
+    monkeypatch.setattr(hot, "threading", SimpleNamespace(
+        Event=ObservedCompletion, Thread=threading.Thread, Lock=threading.Lock,
+    ))
+    return waits
 
 
 def test_disabled_store_never_imports_redis_or_starts_a_thread(monkeypatch):
@@ -350,61 +371,67 @@ def test_malformed_draft_rows_do_not_hide_valid_siblings_or_fuse(redis_client):
     assert store.available
 
 
-def test_connection_wait_is_bounded_and_late_ping_cannot_issue_command(monkeypatch):
+def test_connection_wait_is_bounded_and_late_ping_cannot_issue_command(monkeypatch, completion_waits):
     release = threading.Event()
     entered = threading.Event()
+    finished = threading.Event()
     client = Mock()
     store = MemoryHotStore("redis://localhost/0")
 
     def connect(_deadline):
         entered.set()
-        release.wait(2)
+        assert release.wait(2), "test did not release the blocked worker"
+        finished.set()
         return client
 
     connecting = Mock(side_effect=connect)
     monkeypatch.setattr(store, "_connect", connecting)
-    started = time.monotonic()
     try:
         assert store.get_adjudication("key") is None
-        assert time.monotonic() - started < 0.2
-        assert entered.is_set()
+        assert len(completion_waits) == 1
+        assert entered.is_set() and not finished.is_set()
+        assert not release.is_set()
         assert not store.available
         assert store.get_adjudication("again") is None
         connecting.assert_called_once()
         client.get.assert_not_called()
     finally:
         release.set()
-    assert store._operation_lock.acquire(timeout=1)
-    store._operation_lock.release()
+        assert store._operation_lock.acquire(timeout=1)
+        store._operation_lock.release()
+    assert finished.is_set()
     client.get.assert_not_called()
 
 
-def test_late_client_construction_never_pings_after_timeout(redis_client, monkeypatch):
+def test_late_client_construction_never_pings_after_timeout(redis_client, monkeypatch, completion_waits):
     client, constructor = redis_client
     release = threading.Event()
     entered = threading.Event()
+    finished = threading.Event()
     ping = Mock(wraps=client.ping)
     monkeypatch.setattr(client, "ping", ping)
 
     def construct(*_args, **_kwargs):
         entered.set()
-        release.wait(2)
+        assert release.wait(2), "test did not release the blocked worker"
+        finished.set()
         return client
 
     constructor.side_effect = construct
     store = MemoryHotStore("redis://localhost/0")
-    started = time.monotonic()
     try:
         assert store.get_adjudication("key") is None
-        assert time.monotonic() - started < 0.2
-        assert entered.is_set()
+        assert len(completion_waits) == 1
+        assert entered.is_set() and not finished.is_set()
+        assert not release.is_set()
         assert not store.available
         assert store.get_adjudication("again") is None
         constructor.assert_called_once()
     finally:
         release.set()
-    assert store._operation_lock.acquire(timeout=1)
-    store._operation_lock.release()
+        assert store._operation_lock.acquire(timeout=1)
+        store._operation_lock.release()
+    assert finished.is_set()
     ping.assert_not_called()
 
 
@@ -431,25 +458,75 @@ def test_late_redis_import_never_constructs_client_after_timeout(redis_client, m
 
 
 def test_nested_budget_caps_cumulative_wait_across_multiple_commands(monkeypatch):
-    store = MemoryHotStore("redis://localhost/0")
+    # Controlled operation time isolates budget arithmetic from OS wakeup jitter.
+    # Workers, their locks, and the blocked third operation remain real.
+    now = [0.0]
     calls = []
+    waits = []
+    completions = []
+    third_entered = threading.Event()
+    release_third = threading.Event()
+
+    class ControlledCompletion(threading.Event):
+        def __init__(self):
+            super().__init__()
+            completions.append(self)
+            self.ordinal = len(completions)
+
+        def wait(self, timeout=None):
+            budget = hot._turn_budget.get()
+            assert budget is not None
+            assert timeout is not None and 0 <= timeout <= budget.remaining
+            waits.append(timeout)
+            if self.ordinal == 3:
+                assert third_entered.wait(1), "third operation did not start"
+                assert not self.is_set()
+                assert timeout == pytest.approx(0.040)
+                now[0] += timeout
+                return False
+            # A liveness watchdog only; the requested timeout and virtual
+            # operation time, not this watchdog, determine the budget assertion.
+            return super().wait(1)
+
+    monkeypatch.setattr(hot, "time", SimpleNamespace(monotonic=lambda: now[0]))
+    monkeypatch.setattr(hot, "threading", SimpleNamespace(
+        Event=ControlledCompletion, Thread=threading.Thread, Lock=threading.Lock,
+    ))
+    store = MemoryHotStore("redis://localhost/0")
 
     def get(key):
         calls.append(key)
-        time.sleep(0.075)
+        if len(calls) <= 2:
+            now[0] += 0.075
+        else:
+            third_entered.set()
+            assert release_third.wait(2), "test did not release the late result"
         return json.dumps({"ok": True})
 
     monkeypatch.setattr(store, "_connect", lambda _deadline: Mock(get=get))
-    started = time.monotonic()
-    with store.budget():
-        assert store.get_adjudication("one") == {"ok": True}
+    try:
         with store.budget():
-            assert store.get_adjudication("two") == {"ok": True}
-        assert store.get_adjudication("three") is None
-        assert store.get_adjudication("four") is None
-    assert time.monotonic() - started < 0.2
-    assert len(calls) == 3
-    assert not store.available
+            shared = hot._turn_budget.get()
+            assert shared.remaining == pytest.approx(0.190)
+            assert store.get_adjudication("one") == {"ok": True}
+            assert shared.remaining == pytest.approx(0.115)
+            with store.budget():
+                assert hot._turn_budget.get() is shared
+                assert store.get_adjudication("two") == {"ok": True}
+                assert shared.remaining == pytest.approx(0.040)
+            assert hot._turn_budget.get() is shared
+            assert store.get_adjudication("three") is None
+            assert shared.remaining == pytest.approx(0.0)
+            assert not store.available
+            assert store.get_adjudication("four") is None
+            assert len(completions) == len(calls) == 3
+        assert len(waits) == 3
+        assert now[0] == pytest.approx(0.190)
+    finally:
+        release_third.set()
+        assert store._operation_lock.acquire(timeout=1)
+        store._operation_lock.release()
+    assert len(calls) == 3 and not store.available
 
 
 def test_begin_turn_keeps_wait_allowance_across_contexts_but_not_llm_time(monkeypatch):

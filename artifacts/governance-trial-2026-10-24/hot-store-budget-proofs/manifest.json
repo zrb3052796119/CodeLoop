@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-24T16:25:48.282025+00:00",
+  "baseline": "9f9369421486f018c837f84d21bd727aed6ab326",
+  "candidateBeforeFixtureRepair": "eb17c62a5510b6746c5fc677618303c9b83b96e6",
+  "classification": "Correction of wall-time contract and tests; production logic unchanged. Synthetic faults demonstrate test strength, not a historical production-bug proof.",
+  "originalFullSuiteDetailedTrace": "pending at packaging; original failure retained and not relabeled by focused passes",
+  "archive": "proofs.tar.gz",
+  "archiveSha256": "cb4ce4b018843e5a55a7d21f713c75316f6679c3e414436e6fa5b39586c632d5",
+  "archiveBytes": 35663,
+  "rawBytes": 165968,
+  "entryCount": 55,
+  "entries": [
+    {
+      "path": "diagnosis/baseline-instrumented-import.json",
+      "bytes": 196,
+      "sha256": "dda50c715530d939bab7371e8229b48f2dc0ecd546cd52da04b88bab3c979563"
+    },
+    {
+      "path": "diagnosis/baseline-instrumented-meta.json",
+      "bytes": 661,
+      "sha256": "99a03e789a6104bbc2fb1bafa1722c87654e5a3b9156a1a6ad67c8c0f249c191"
+    },
+    {
+      "path": "diagnosis/baseline-instrumented-timing.json",
+      "bytes": 1323,
+      "sha256": "b44fe9d444c337112b984af1d56dc424f5b61ddcaf05d80086fd758e95b5f4bc"
+    },
+    {
+      "path": "diagnosis/baseline-instrumented.log",
+      "bytes": 2904,
+      "sha256": "52b8ae463de1abaf227ef06d23d03e5ce9dbf47053f036248a6f0dc484c556a1"
+    },
+    {
+      "path": "diagnosis/baseline-node-import.json",
+      "bytes": 196,
+      "sha256": "dda50c715530d939bab7371e8229b48f2dc0ecd546cd52da04b88bab3c979563"
+    },
+    {
+      "path": "diagnosis/baseline-node-meta.json",
+      "bytes": 653,
+      "sha256": "0c22737b28c7e9d1785f39075a5659c1227524064f2ae597c603bc1d66210838"
+    },
+    {
+      "path": "diagnosis/baseline-node.log",
+      "bytes": 2897,
+      "sha256": "dc3f8c93a9ed87984fa9a2e70bd88ab81a36fafa5b07b4bc0b882868da29f5c9"
+    },
+    {
+      "path": "diagnosis/candidate-file-import.json",
+      "bytes": 197,
+      "sha256": "488264f2cb301b161385e801ff0fbc2727f647b3324eff25d668ec6191fcc73b"
+    },
+    {
+      "path": "diagnosis/candidate-file-meta.json",
+      "bytes": 589,
+      "sha256": "fc8698f7776ed98588df2e059ace2efffcd76dd717c6c9a42f5b5d9a88989c64"
+    },
+    {
+      "path": "diagnosis/candidate-file.log",
+      "bytes": 10555,
+      "sha256": "7645291ae92bcf5b89cf3410155f6606fd4bc8ee6a6ee09631f97d2944ddf9be"
+    },
+    {
+      "path": "diagnosis/candidate-instrumented-import.json",
+      "bytes": 197,
+      "sha256": "488264f2cb301b161385e801ff0fbc2727f647b3324eff25d668ec6191fcc73b"
+    },
+    {
+      "path": "diagnosis/candidate-instrumented-meta.json",
+      "bytes": 664,
+      "sha256": "80ea786918fc45abd5e3f742cc1dc29e44887b4ed29367518d1e96be027ed91b"
+    },
+    {
+      "path": "diagnosis/candidate-instrumented-timing.json",
+      "bytes": 1319,
+      "sha256": "39b17b7d8a5cef830a6e345bb171491c3a1266112ca4c6141bfc291dad5ce29b"
+    },
+    {
+      "path": "diagnosis/candidate-instrumented.log",
+      "bytes": 703,
+      "sha256": "6f7c8571d387de3010f30acc21882303c7fb49f5566789e99bfcd5f0e12b1adf"
+    },
+    {
+      "path": "diagnosis/candidate-node-import.json",
+      "bytes": 197,
+      "sha256": "488264f2cb301b161385e801ff0fbc2727f647b3324eff25d668ec6191fcc73b"
+    },
+    {
+      "path": "diagnosis/candidate-node-meta.json",
+      "bytes": 655,
+      "sha256": "97bbaaac7a1dd19909d9ce662d4f42fe419043bc692709fbef1cd97db6b230f5"
+    },
+    {
+      "path": "diagnosis/candidate-node.log",
+      "bytes": 703,
+      "sha256": "a6724e8e1442f22726eaf335568b8d9f711d50e85b8564d2f9fb1275ff3bb463"
+    },
+    {
+      "path": "diagnosis/diagnosis.md",
+      "bytes": 4236,
+      "sha256": "d64faabcfdbd31b28fb2510aa2242928d541831bdfd8ddca613bca58102386db"
+    },
+    {
+      "path": "diagnosis/repair-plan.md",
+      "bytes": 5875,
+      "sha256": "ec8af7722ab1459e06334d5c975a1c205e703dad48787fc4d5bff1ab8a535e40"
+    },
+    {
+      "path": "diagnosis/source-comparison.json",
+      "bytes": 2913,
+      "sha256": "ce9823b65d2a6e8d05a932cd20e39236ce96ad0a42c9bddadf6686a65c4c9bdd"
+    },
+    {
+      "path": "diagnostic-harness/hot_diag_plugin.py",
+      "bytes": 2580,
+      "sha256": "bd194cfe371ee83b286ed3c44c4d42bacaf7c68da3822570dd34a91f571296d3"
+    },
+    {
+      "path": "diagnostic-harness/run_isolated.py",
+      "bytes": 1335,
+      "sha256": "dc2bf5338f1b9f5252b9aa15bd69a3651ce938a9f40422e55eb0f151050e7e17"
+    },
+    {
+      "path": "faults/full-wait.patch",
+      "bytes": 468,
+      "sha256": "014dd20c1fc222ef1124f5b3d2522096defaa229b10eeb1106bd361c08365350"
+    },
+    {
+      "path": "faults/late-command.patch",
+      "bytes": 469,
+      "sha256": "84f4e9f684e4f66aef7ff5070688652e054421c813cad9fa87ac9e761bcc741a"
+    },
+    {
+      "path": "faults/reset-nested.patch",
+      "bytes": 317,
+      "sha256": "2683b0aec6d692d8e1114500dd0df0c5cdc1b30cd87ed213d6841a306fa3a175"
+    },
+    {
+      "path": "final/final-baseline-import.json",
+      "bytes": 215,
+      "sha256": "d02c95b48fb50a1c368f2159f03bfab09508058be74f629b1fcabf59fa722450"
+    },
+    {
+      "path": "final/final-baseline-meta.json",
+      "bytes": 874,
+      "sha256": "d31902ad21bd910a4d7051f53b4b18b76530c9c25bdf790f454d5ad6a28232a7"
+    },
+    {
+      "path": "final/final-baseline.log",
+      "bytes": 937,
+      "sha256": "3542defc91f302c0bc5842ea39f33901dcc87582f4132650997568e2b1f035b3"
+    },
+    {
+      "path": "final/final-fixed-import.json",
+      "bytes": 212,
+      "sha256": "39998fbab823d9e54ffac115d448bbcdcb2c9083fc235517ef2debf382955042"
+    },
+    {
+      "path": "final/final-fixed-meta.json",
+      "bytes": 868,
+      "sha256": "0fa83537873aac04000e5e29ab85b974a130c0d4f752db1031b8cee0d0b9db73"
+    },
+    {
+      "path": "final/final-fixed.log",
+      "bytes": 934,
+      "sha256": "9be4df572da23cbcd29b5cdbc1650bd3aeafb53b83e55cbbdceed4fccdf963f2"
+    },
+    {
+      "path": "final/final-full-wait-import.json",
+      "bytes": 216,
+      "sha256": "ddd79a8209eeb8685241321d4f9bbb676fcddeec7f7e36016aed6b4c77164345"
+    },
+    {
+      "path": "final/final-full-wait-meta.json",
+      "bytes": 876,
+      "sha256": "cfd0e3223f7f7ea6634aaad9b49663b0b63ea8be93fabd78bcf37b8ffca5a96a"
+    },
+    {
+      "path": "final/final-full-wait.log",
+      "bytes": 9877,
+      "sha256": "161aa98a0b3148525a8021f94f48b36b9c228c4e1e17e3534eb595434d938292"
+    },
+    {
+      "path": "final/final-implementation-report.json",
+      "bytes": 2510,
+      "sha256": "468b3fd48f6417c7f87a895a1cdca7621afe587a251f08c91d3f6d6cc18df60e"
+    },
+    {
+      "path": "final/final-implementation-report.md",
+      "bytes": 2977,
+      "sha256": "e77fea456158892309f8aa05c75ebb338c4149f8e6eabb6933d2918bf6e50035"
+    },
+    {
+      "path": "final/final-late-command-import.json",
+      "bytes": 219,
+      "sha256": "b04048132537559f3266e56673b1d79bee4b3ab5538c282d18606685c537b224"
+    },
+    {
+      "path": "final/final-late-command-meta.json",
+      "bytes": 883,
+      "sha256": "6b8de4be9e07f1c220ebbc60809a8edee723bcce0d5cb0b604bbe8c81c6eeff1"
+    },
+    {
+      "path": "final/final-late-command.log",
+      "bytes": 4434,
+      "sha256": "b8c676e7215952a4469358e499b6ed49eb0983319f5c11f32cf3e83ef1ef0c68"
+    },
+    {
+      "path": "final/final-owned-diff.patch",
+      "bytes": 9888,
+      "sha256": "ce924183014a430ae78b76671c7289a73d1cf6093223ce4a015cbfc1ea53b4f2"
+    },
+    {
+      "path": "final/final-proof-sources.json",
+      "bytes": 1967,
+      "sha256": "642668c0cb2ba1b4fdb2a668ed109878460e44e46cdb5f6db9e08e55a84a88a2"
+    },
+    {
+      "path": "final/final-reset-nested-import.json",
+      "bytes": 219,
+      "sha256": "02035b7c73162d7ab2a5ba2796091588d97849c19a9c519c21eb564453d27232"
+    },
+    {
+      "path": "final/final-reset-nested-meta.json",
+      "bytes": 882,
+      "sha256": "5140b4cdc3c6749bbc8e364de87070b2df1c825f401ff7947591360deaba35e8"
+    },
+    {
+      "path": "final/final-reset-nested.log",
+      "bytes": 4865,
+      "sha256": "38ea8650893cb395948f2d4509367d0c68df724b58b4c37364c490d2c85f3a40"
+    },
+    {
+      "path": "final/managed-final-related-import.json",
+      "bytes": 209,
+      "sha256": "4b8dd6ad102112a61e60a88609e18a5f4f97fdeecbb0ab83230d75edcb47cade"
+    },
+    {
+      "path": "final/managed-final-related-meta.json",
+      "bytes": 695,
+      "sha256": "857bd9f21de223fc74be6d541e750d31917a1fb17383579adbd251f122579fa8"
+    },
+    {
+      "path": "final/managed-final-related.log",
+      "bytes": 45910,
+      "sha256": "97cc25676598d36ade542005145138e393abab9317329dd7377f0871709e468c"
+    },
+    {
+      "path": "final/managed-final-ruff.log",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "final/tests/test_memory_hot_store.py",
+      "bytes": 22779,
+      "sha256": "bfabf364f440601ee190c9145f4be7527e701b8d81d8f24c39388ef5b92f6046"
+    },
+    {
+      "path": "independent-review/independent-cleanup-proof.json",
+      "bytes": 1405,
+      "sha256": "a737c1a0ad3a31a5767dff3a4f69017f5316696e3ad39fc4faf4559118b5595d"
+    },
+    {
+      "path": "independent-review/independent-review.md",
+      "bytes": 2674,
+      "sha256": "f79a8fc84d50607d2d006bb575dbc6b4992f3142b50bf75b76b26bff60b1b8ef"
+    },
+    {
+      "path": "independent-review/independent_cleanup_probe.py",
+      "bytes": 2882,
+      "sha256": "b088e26b20376ce1d8faffb659ac7b09cc6425123fc1a848a7a071a17a85a0a4"
+    },
+    {
+      "path": "original-full-runs/final-candidate-run-meta.json",
+      "bytes": 825,
+      "sha256": "8547e2f2b51de98b9b4fd70718732d6bb9b669fd21063211e99155669024a9a5"
+    },
+    {
+      "path": "original-full-runs/phase1-candidate-run-meta.json",
+      "bytes": 1277,
+      "sha256": "f7451edd921b9ab68228a3bc4d39902a3caa6a84d56fcaba76261124d1bc74cc"
+    },
+    {
+      "path": "original-full-runs/progress-observation.json",
+      "bytes": 638,
+      "sha256": "352bda5600f2c4457331bff80b9a8742f87fa665a94f6368bf3aa4fb0b59535f"
+    }
+  ],
+  "independentReview": {
+    "path": "independent-review/independent-review.md",
+    "result": "no blocking findings",
+    "cleanupProbe": "independent-review/independent_cleanup_probe.py",
+    "cleanupProof": "independent-review/independent-cleanup-proof.json",
+    "probeCasesPassed": 3,
+    "scope": "Read-only review and direct exact-test cleanup probe; not a full-suite result or a historical defect claim."
+  }
+}

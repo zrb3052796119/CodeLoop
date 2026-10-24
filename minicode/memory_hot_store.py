@@ -21,8 +21,9 @@ from minicode.memory_path_identity import normalize_path_identity
 
 logger = get_logger("memory_hot_store")
 _T = TypeVar("_T")
-# Leave a little scheduling headroom below the 200 ms turn limit. Socket
-# timeouts alone do not bound DNS, reconnects, or a scan of many Redis keys.
+# Cap cumulative requested Redis waiting; OS scheduling and local processing
+# can extend caller wall time. Socket timeouts alone do not bound DNS,
+# reconnects, or a scan of many Redis keys.
 _WAIT_BUDGET_SECONDS = 0.190
 
 

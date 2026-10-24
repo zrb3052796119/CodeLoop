@@ -499,8 +499,11 @@ sets their TTL in seconds; it follows the deposition TTL when omitted
 Hybrid adjudications are cached for one hour using the frozen authority
 revision, request and protocol/model fingerprints. The in-process LRU remains.
 Redis connection or command errors permanently disable that hot store in the process, and draft
-writes fall back to the existing file path. Redis waiting has a shared 190 ms
-turn allowance, below the 200 ms ceiling. Canonical `memory.json` and blob
+writes fall back to the existing file path. Redis operations share a 190 ms
+turn allowance: each wait requests at most the remaining budget, and elapsed
+wait time is deducted. This replaces the earlier 200 ms total-latency claim;
+thread scheduling and local processing can make caller wall time exceed 200 ms.
+Canonical `memory.json` and blob
 storage remain authoritative; existing drafts and curator file leases stay
 in place. No Redis persistence or data migration is required.
 Invalid local inputs or malformed cached JSON are logged and skipped without
