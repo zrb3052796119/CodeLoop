@@ -604,11 +604,17 @@ V41_CHANGED_FILE_REASONS = {
     "minicode/main.py": "skill_routing_semantic_authority",
     "minicode/mcp.py": "skill_routing_semantic_authority",
     "minicode/memory.py": "hybrid_memory_behavior_closure",
+    # Curation reserves provider-aware input through the shared model-call
+    # transport, which is already part of this staged source closure.
+    "minicode/memory_curator_agent.py": "persistent_memory_lifecycle_authority",
     "minicode/memory_injector.py": "hybrid_memory_behavior_closure",
     "minicode/memory_lexical_policy.py": "hybrid_memory_behavior_closure",
     "minicode/memory_pipeline.py": "hybrid_memory_behavior_closure",
     "minicode/memory_retrieval.py": "hybrid_memory_behavior_closure",
     "minicode/permissions.py": "multi_agent_workflow_authority",
+    # Rendered Memory attribution and turn-local Skill discovery share this
+    # event boundary with the staged runtime/lifecycle changes above.
+    "minicode/run_events.py": "persistent_memory_lifecycle_authority",
     "minicode/run_journal.py": "persistent_memory_lifecycle_authority",
     "minicode/session.py": "persistent_memory_lifecycle_authority",
     "minicode/tooling.py": "multi_agent_workflow_authority",
@@ -671,6 +677,8 @@ V41_REQUIRED_HYBRID_CLOSURE_FILES = frozenset(
         "minicode/context_compactor.py",
         "minicode/file_review.py",
         "minicode/memory.py",
+        "minicode/memory_curator_agent.py",
+        "minicode/run_events.py",
         "minicode/run_journal.py",
         "minicode/tools/http_utils.py",
         "minicode/tools/network_safety.py",

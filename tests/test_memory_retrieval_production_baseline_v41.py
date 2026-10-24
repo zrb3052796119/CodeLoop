@@ -122,7 +122,9 @@ def test_v41_candidate_closes_the_exact_hybrid_runtime_delta() -> None:
         "minicode/main.py",
         "minicode/mcp.py",
         "minicode/memory.py",
+        "minicode/memory_curator_agent.py",
         "minicode/permissions.py",
+        "minicode/run_events.py",
         "minicode/run_journal.py",
         "minicode/session.py",
         "minicode/tooling.py",
@@ -134,7 +136,7 @@ def test_v41_candidate_closes_the_exact_hybrid_runtime_delta() -> None:
         "minicode/tui/input_handler.py",
     }
     assert EXPECTED_V41_ADDED_FILES == EXPECTED_ADDED
-    assert len(EXPECTED_V41_CHANGED_FILES) == 23
+    assert len(EXPECTED_V41_CHANGED_FILES) == 25
     assert len(EXPECTED_ADDED) == 26
     assert V41_REQUIRED_HYBRID_CLOSURE_FILES == (
         EXPECTED_V41_CHANGED_FILES | EXPECTED_V41_ADDED_FILES
@@ -155,6 +157,14 @@ def test_v41_reasons_separate_behavior_transport_and_evaluator() -> None:
     assert (
         V41_CHANGED_FILE_REASONS["minicode/mcp.py"]
         == "skill_routing_semantic_authority"
+    )
+    assert (
+        V41_CHANGED_FILE_REASONS["minicode/memory_curator_agent.py"]
+        == "persistent_memory_lifecycle_authority"
+    )
+    assert (
+        V41_CHANGED_FILE_REASONS["minicode/run_events.py"]
+        == "persistent_memory_lifecycle_authority"
     )
     assert set(V41_CHANGED_FILE_REASONS.values()) == {
         "hybrid_memory_behavior_closure",
@@ -241,6 +251,9 @@ def test_staged_v41_candidate_is_read_only_and_v40_stays_active(
     assert ACTIVE_PRODUCTION_RETRIEVAL_HASHES == PRODUCTION_RETRIEVAL_HASHES_V40
     assert PRODUCTION_RETRIEVAL_HASHES_V41 == {}
     assert verify_active_baseline()["activeBaselineId"] == BASELINE_V40_ID
+    # A complete staged candidate is not a promoted source baseline.
+    assert verify_active_baseline(project_root=tmp_path)["matches"] is False
+    assert select_active_production_hashes("v41", project_root=tmp_path) == {}
     assert verify_manifest_version("v41", project_root=tmp_path) == {
         "version": "v41",
         "baselineId": BASELINE_V41_ID,
@@ -250,9 +263,15 @@ def test_staged_v41_candidate_is_read_only_and_v40_stays_active(
     }
 
 
-def test_v41_candidate_rejects_an_unlisted_v40_change(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "relative",
+    ["minicode/conversation_turn_store.py", "minicode/memory_store.py"],
+)
+def test_v41_candidate_rejects_an_unlisted_v40_change(
+    tmp_path: Path, relative: str,
+) -> None:
     _copy_staged_tree(tmp_path)
-    target = tmp_path / "minicode/conversation_turn_store.py"
+    target = tmp_path / relative
     target.write_bytes(target.read_bytes() + b"\n# unexpected v41 change\n")
 
     with pytest.raises(
