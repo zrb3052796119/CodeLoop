@@ -1122,6 +1122,8 @@ def test_batch_mutations_are_blocked_in_plan_mode(
 
 
 def test_core_tool_registry_does_not_import_utility_modules(tmp_path: Path) -> None:
+    import subprocess
+
     utility_modules = [
         "minicode.tools.archive_utils",
         "minicode.tools.crypto_utils",
@@ -1132,12 +1134,23 @@ def test_core_tool_registry_does_not_import_utility_modules(tmp_path: Path) -> N
         "minicode.tools.regex_utils",
         "minicode.tools.text_utils",
     ]
-    for module_name in utility_modules:
-        sys.modules.pop(module_name, None)
-
-    create_default_tool_registry(str(tmp_path), runtime={"toolProfile": "core"})
-
-    assert all(module_name not in sys.modules for module_name in utility_modules)
+    # A fresh interpreter observes lazy imports without invalidating module
+    # identities already held by other tests and their monkeypatch targets.
+    program = """
+import sys
+from minicode.tools import create_default_tool_registry
+utility_modules = sys.argv[2:]
+for name in utility_modules:
+    sys.modules.pop(name, None)
+registry = create_default_tool_registry(sys.argv[1], runtime={"toolProfile": "core"})
+assert {"read_file", "write_file"} <= {tool.name for tool in registry.list()}
+assert all(name not in sys.modules for name in utility_modules)
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", program, str(tmp_path), *utility_modules],
+        cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=20,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_subprocess_environment_strips_credentials(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -47,7 +47,8 @@ def test_none_request_deadline_survives_real_adapter_and_stream(tmp_path, monkey
     observed = []
 
     def http(request, *, timeout):
-        observed.append((json.loads(request.data), timeout))
+        observed.append((json.loads(request.data), timeout,
+                         request._minicode_connect_timeout_seconds))
         return ScriptedResponse(
             [b": heartbeat\n\n"] * 5 + [event({**TEXT, "usage": USAGE}), DONE],
             delay=0.02,
@@ -64,7 +65,9 @@ def test_none_request_deadline_survives_real_adapter_and_stream(tmp_path, monkey
     assert result.content == "hello" and snapshot["usageComplete"]
     assert snapshot["requests"][0]["requestDeadlineEpoch"] is None
     assert snapshot["requests"][0]["seconds"] > 0.1
-    assert observed[0][0]["max_tokens"] == 131072 and observed[0][1] == 30
+    assert len(observed) == 1 and observed[0][0]["max_tokens"] == 131072
+    assert observed[0][1] == cfg.idle_timeout_seconds == 60
+    assert observed[0][2] == cfg.connect_timeout_seconds == 30
 
 
 @pytest.mark.parametrize("guard", ["idle", "caller", "cancel"])
