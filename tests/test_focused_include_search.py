@@ -1,4 +1,4 @@
-"""A named include stays a single permitted file at the actual tool boundary."""
+"""Bounded implementation searches stay focused at the actual tool boundary."""
 from pathlib import Path
 
 import pytest
@@ -12,7 +12,8 @@ from minicode.tools.read_file import read_file_tool
 from minicode.types import AgentStep, ModelAdapter
 
 
-def _execute(tmp_path, include, *, directory='tests', permissions=None, expect_found=False):
+def _execute(tmp_path, include, *, directory='tests', permissions=None, expect_found=False,
+             bounded=True):
     folder = tmp_path / 'tests'
     folder.mkdir(exist_ok=True)
     (folder / 'target.py').write_text('def public_fixture():\n    return 123\n')
@@ -26,14 +27,16 @@ def _execute(tmp_path, include, *, directory='tests', permissions=None, expect_f
             self.calls += 1
             if self.calls == 1:
                 return AgentStep(type='tool_calls', calls=[{'id':'search','toolName':'grep_files',
-                    'input':{'path':directory,'include':include,'pattern':'fixture|duplicate','context_lines':1}}])
+                    'input':{'path':directory,'include':include,
+                             'pattern':'fixture|duplicate|outside_secret','context_lines':1}}])
             if self.calls == 2:
                 result = next(m for m in messages if m.get('role') == 'tool_result' and m.get('toolUseId') == 'search')
                 captured.append(result)
                 if expect_found and not result.get('isError'):
                     return AgentStep(type='tool_calls', calls=[{'id':'read','toolName':'read_file',
                         'input':{'path':'tests/target.py','start_line':1,'end_line':2}}])
-                return AgentStep(type='assistant',kind='final',content='Search refused; no write was made.')
+                summary = 'Search refused' if result.get('isError') else 'Search completed'
+                return AgentStep(type='assistant',kind='final',content=summary + '; no write was made.')
             result = next(m for m in messages if m.get('role') == 'tool_result' and m.get('toolUseId') == 'read')
             captured.append(result)
             assert not result.get('isError') and 'return 123' in result['content']
@@ -43,7 +46,8 @@ def _execute(tmp_path, include, *, directory='tests', permissions=None, expect_f
     messages = run_agent_turn(model=model, tools=registry,
         messages=[{'role':'user','content':'Inspect the named public fixture in tests/target.py.'}],
         cwd=str(tmp_path), permissions=permissions, implementation_task=True,
-        implementation_analysis_complete=True, enable_work_chain=False, max_steps=6)
+        implementation_analysis_complete=True, bounded_implementation_phases=bounded,
+        enable_work_chain=False, max_steps=6)
     if expect_found:
         assert not captured[0].get('isError'), captured[0]['content']
         assert 'public_fixture' in captured[0]['content']
@@ -97,3 +101,35 @@ def test_exact_include_symlink_cannot_escape_workspace(tmp_path):
     results, _ = _execute(tmp_path, 'alias.py')
     assert results[0].get('isError')
     assert 'outside_secret' not in results[0]['content']
+
+
+def test_continuous_search_preserves_recursive_include_semantics(tmp_path):
+    results, _ = _execute(tmp_path, 'target.py', bounded=False)
+    assert not results[0].get('isError')
+    assert 'public_fixture' in results[0]['content']
+    assert 'private_duplicate' in results[0]['content']
+    assert '2 file(s)' in results[0]['content']
+
+
+@pytest.mark.parametrize('restriction', ['permission', 'symlink'])
+def test_continuous_search_filters_unreadable_descendants(tmp_path, restriction):
+    permissions = None
+    if restriction == 'permission':
+        class Permissions:
+            def ensure_path_access(self, target, intent):
+                if Path(target).name == 'target.py':
+                    raise PermissionDeniedError('test target is outside read authority',
+                                                code='test_scope_denied')
+        permissions = Permissions()
+        include = 'target.py'
+    else:
+        outside = tmp_path.parent / (tmp_path.name + '_outside.py')
+        outside.write_text('def outside_secret(): return 999\n')
+        (tmp_path / 'tests').mkdir()
+        (tmp_path / 'tests' / 'alias.py').symlink_to(outside)
+        include = 'alias.py'
+    results, _ = _execute(tmp_path, include, permissions=permissions, bounded=False)
+    # A permitted directory scan omits inaccessible descendants. An empty
+    # match set is a successful search, unlike a rejected bounded request.
+    assert not results[0].get('isError')
+    assert results[0]['content'] == 'No matches found.'
