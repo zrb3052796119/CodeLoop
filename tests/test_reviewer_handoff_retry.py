@@ -140,7 +140,7 @@ def test_host_rejected_native_verdict_corrects_in_same_loop_past_soft_limit(tmp_
         tmp_path, monkeypatch, behavior=behavior)
     assert artifact is not None, "Actual native rejection stopped the Reviewer before its correction."
     assert parse_role_result(assignment, json.loads(artifact.content))["verdict"] == "changes_required"
-    assert model.calls == 3 and views == [None, ["review_submit"], ["review_submit"]]
+    assert model.calls == 3 and views == [["read_file", "review_submit"], ["review_submit"], ["review_submit"]]
     assert len(reads) == 1, "Correction must not reopen inspection tools."
     assert any(m.get("toolUseId") == "read-1" for m in history[-1])
     assert any(m.get("toolUseId") == "verdict-2" and m.get("role") == "assistant_tool_call"
@@ -169,7 +169,7 @@ def test_nonsemantic_or_missing_submission_does_not_extend_native_handoff(tmp_pa
     model, views, _history, _admissions, _result, reads, _assignment, artifact, _budget = _exercise(
         tmp_path, monkeypatch, behavior=behavior)
     assert artifact is None
-    assert model.calls == 2 and views == [None, ["review_submit"]]
+    assert model.calls == 2 and views == [["read_file", "review_submit"], ["review_submit"]]
     assert len(reads) == 1
 
 

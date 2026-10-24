@@ -10,9 +10,12 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import threading
 from copy import deepcopy
 from dataclasses import replace
 from types import SimpleNamespace
+
+import pytest
 
 from test_executor_session_continuity import _context, _input, _session
 from test_implementation_finalize_deadline import _submission_tools
@@ -20,7 +23,8 @@ from test_implementation_finalize_deadline import _submission_tools
 from minicode.context_manager import estimate_message_tokens, estimate_tokens
 from minicode.deterministic_verifier import DeterministicVerifier, VerificationCheck
 from minicode.permissions import PermissionManager
-from minicode.tooling import ToolRegistry
+from minicode.reviewer_verification import ReviewerProbeLedger
+from minicode.tooling import ToolRegistry, ToolTerminationReason
 from minicode.tools import task as task_module
 from minicode.tools.edit_file import edit_file_tool
 from minicode.types import AgentStep, ModelUsage
@@ -33,7 +37,9 @@ DOWNSTREAM_FLOOR = 17417
 EFFECTIVE_REMAINING = 41272
 
 
-def _exercise(tmp_path, monkeypatch, *, mode):
+def _exercise(tmp_path, monkeypatch, *, mode, funded_recovery=False):
+    prefix_used = PREFIX_USED - 50000 if funded_recovery else PREFIX_USED
+    effective_remaining = 500000 - DOWNSTREAM_FLOOR - prefix_used
     (tmp_path / "candidate.py").write_text("def value():\n    return 1\n")
     (tmp_path / "test_candidate.py").write_text(
         "from pathlib import Path\n"
@@ -64,13 +70,13 @@ def _exercise(tmp_path, monkeypatch, *, mode):
         evidence.append((Path(kwargs["cwd"]), Path(kwargs["cwd"], "candidate.py").read_text()))
         if len(checks) == 1:
             assert completed.returncode == 1
-            prior = PREFIX_USED - budget.snapshot().used_total_tokens
+            prior = prefix_used - budget.snapshot().used_total_tokens
             assert prior >= 0
             budget.record_model_call(input_tokens=prior)
             assert budget.snapshot().used_model_calls == 23
             assert worker.snapshot().limit_total_tokens == 482583
             assert worker.snapshot().limit_model_calls == 29
-            assert worker.snapshot().limit_total_tokens - worker.snapshot().used_total_tokens == EFFECTIVE_REMAINING
+            assert worker.snapshot().limit_total_tokens - worker.snapshot().used_total_tokens == effective_remaining
         return completed
 
     monkeypatch.setattr(PermissionManager, "ensure_command", lambda *_a, **_k: None)
@@ -87,7 +93,7 @@ def _exercise(tmp_path, monkeypatch, *, mode):
             names = {tool.name for tool in tools.list()}
             observed.append((deepcopy(messages), names))
             number = len(observed)
-            assert number <= (3 if mode == "submit-first" else 2)
+            assert number <= (3 if mode == "submit-first" and funded_recovery else 2)
             if number == 1:
                 calls = [{"id": "initial-check", "toolName": "executor_check", "input": {"check": 1}}]
             elif number == 3:
@@ -139,12 +145,15 @@ def _exercise(tmp_path, monkeypatch, *, mode):
         # digest-bound submit option; it must reach the tool-view assertion,
         # not fail while constructing a newly added capability API.
         runner = _WorkflowRunSession.__new__(_WorkflowRunSession)
+        runner._verification_outputs = None
+        runner._workflow_journal = None
         runner._state = SimpleNamespace(transaction=transaction, context=parent,
             requested_checks=(check,), locked_write_paths=("candidate.py", "test_candidate.py"),
             workflow_request=SimpleNamespace(scope=assignment.scope),
             workflow_id=assignment.workflow_id, task_id=assignment.task_id,
             task_prompt="Correct value and verify the assigned public test.",
-            implementation_check_runs=0, implementation_check_statuses={}, implementation_check_latest={})
+            implementation_check_runs=0, implementation_check_statuses={}, implementation_check_latest={},
+            reviewer_probe_lock=threading.RLock(), reviewer_probes=ReviewerProbeLedger())
         capability = runner._executor_check_capability(assignment)
         owner = object()
         session = _session(owner, transaction.cwd)
@@ -160,7 +169,7 @@ def _exercise(tmp_path, monkeypatch, *, mode):
                     "_executor_check_capability": capability, "_result_key": channel.write_key,
                     "_result_instruction": "Submit through the current native result channel."}
             result = task_module._run(data, replace(context, _subagent_mailbox=channel))
-            assert len(observed) == (3 if mode == "submit-first" else 2), result.output
+            assert len(observed) == (3 if mode == "submit-first" and funded_recovery else 2), result.output
             assert "edit_file" in observed[1][1], (
                 "The last affordable response exposed only submit, losing a checked repair.", bills)
             assert len(models) == 1
@@ -169,7 +178,7 @@ def _exercise(tmp_path, monkeypatch, *, mode):
             artifact = store.read(channel.write_key)
             assert (tmp_path / "candidate.py").read_text() == "def value():\n    return 1\n", "A declaration cannot commit."
             assert all(path != Path(transaction.cwd) and not path.exists() for path, _ in evidence)
-            assert budget.snapshot().used_total_tokens == PREFIX_USED + sum(
+            assert budget.snapshot().used_total_tokens == prefix_used + sum(
                 bill["inputWithSchemas"] + bill["outputEstimate"] for bill in bills[1:])
             assert budget.snapshot().used_model_calls == 22 + len(observed)
             assert budget.snapshot().limit_total_tokens == 500000
@@ -180,15 +189,18 @@ def _exercise(tmp_path, monkeypatch, *, mode):
             assert context._task_deadline_monotonic == deadline
             # Check the admission boundary using the actual local input,
             # without labelling these controlled estimates provider counts.
-            assert bills[1]["requestInputEstimate"] * 2 + 4096 + 2048 > EFFECTIVE_REMAINING
-            assert bills[1]["inputWithSchemas"] + 4096 < EFFECTIVE_REMAINING
+            if not funded_recovery:
+                assert bills[1]["requestInputEstimate"] * 2 + 4096 + 2048 > effective_remaining
+            assert bills[1]["inputWithSchemas"] + 4096 < effective_remaining
             print(json.dumps({"kind": "v27-conditional-handoff-local-proof", "usageSource": "estimated",
-                "mode": mode, "prefixUsed": PREFIX_USED, "effectiveRemaining": EFFECTIVE_REMAINING,
+                "mode": mode, "fundedRecovery": funded_recovery, "prefixUsed": prefix_used, "effectiveRemaining": effective_remaining,
                 "downstreamFloor": DOWNSTREAM_FLOOR, "bills": bills,
                 "remainingAfter": 500000 - budget.snapshot().used_total_tokens}, sort_keys=True))
             return result, artifact, current, checks, session.context_manager.messages
         finally:
             capability.close()
+            if runner._verification_outputs is not None:
+                runner._verification_outputs.close()
             channel.close()
             session.close()
 
@@ -210,10 +222,18 @@ def test_checked_edit_without_native_submit_does_not_complete(tmp_path, monkeypa
     assert not result.ok, result.output
 
 
-def test_submission_before_write_rejects_the_entire_response(tmp_path, monkeypatch):
-    result, artifact, current, checks, messages = _exercise(tmp_path, monkeypatch, mode="submit-first")
+@pytest.mark.parametrize("funded_recovery", [False, True], ids=["historical-budget", "funded-recovery"])
+def test_submission_before_write_rejects_the_entire_response(tmp_path, monkeypatch, funded_recovery):
+    result, artifact, current, checks, messages = _exercise(
+        tmp_path, monkeypatch, mode="submit-first", funded_recovery=funded_recovery)
     assert checks == [1] and "return 1" in current
-    assert json.loads(artifact.content)["status"] == "blocked"
+    if funded_recovery:
+        assert json.loads(artifact.content)["status"] == "blocked"
+    else:
+        # Current real request schemas leave no third declaration in the
+        # frozen prefix. Lack of funds must not publish or apply that batch.
+        assert artifact is None
+        assert result._termination_reason is ToolTerminationReason.BUDGET_EXCEEDED
     assert any(m.get("toolUseId") == "final-submit" and m.get("isError")
                and "implementation_handoff_order" in m.get("content", "") for m in messages)
     assert not any(m.get("role") == "tool_result" and m.get("toolUseId") == "final-edit"
@@ -298,12 +318,15 @@ def test_validator_rejection_invalidates_old_pass_then_same_executor_recovers(tm
     monkeypatch.setattr("minicode.subagent_model_routing.create_subagent_model_adapter", factory)
     with WorkflowWorkspaceTransaction(str(tmp_path), deadline_monotonic=deadline) as transaction:
         runner = _WorkflowRunSession.__new__(_WorkflowRunSession)
+        runner._verification_outputs = None
+        runner._workflow_journal = None
         runner._state = SimpleNamespace(transaction=transaction, context=parent,
             requested_checks=(check,), locked_write_paths=("candidate.py", "test_candidate.py"),
             workflow_request=SimpleNamespace(scope=assignment.scope),
             workflow_id=assignment.workflow_id, task_id=assignment.task_id,
             task_prompt="Correct value and its public regression test.",
-            implementation_check_runs=0, implementation_check_statuses={}, implementation_check_latest={})
+            implementation_check_runs=0, implementation_check_statuses={}, implementation_check_latest={},
+            reviewer_probe_lock=threading.RLock(), reviewer_probes=ReviewerProbeLedger())
         capability = runner._executor_check_capability(assignment)
         owner = object()
         session = _session(owner, transaction.cwd)
@@ -339,5 +362,7 @@ def test_validator_rejection_invalidates_old_pass_then_same_executor_recovers(tm
             assert parent._agent_budget.snapshot().reserved_total_tokens == 0
         finally:
             capability.close()
+            if runner._verification_outputs is not None:
+                runner._verification_outputs.close()
             channel.close()
             session.close()

@@ -77,7 +77,7 @@ def test_native_views_preserve_full_authority_without_receipt_tree_or_source_cre
     authority = json.loads(next(path.read_text() for kind, path in case["saved"]
                                if kind == "coverage-audit-authority"))
     assert authority["probeEvidence"][case["probe"].probe_id] == original
-    assert all('"callId"' not in message.get("content", "") for message in requests[0]["messages"])
+    assert all('"callId"' not in (message.get("content") or "") for message in requests[0]["messages"])
     documents = json.loads(next(path.read_text() for kind, path in case["saved"]
                                if kind == "coverage-audit-evidence-documents"))["documents"]
     assert any(document["documentId"] == selected["currentReceiptDocumentId"]
