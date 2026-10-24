@@ -21,6 +21,7 @@ from minicode.context_compactor import (
     CompactStrategy,
     CompactTrigger,
     ContextCompactor,
+    ToolResultBudgetManager,
 )
 from minicode.context_cybernetics import (
     ContextCyberneticsOrchestrator,
@@ -103,12 +104,14 @@ class _ControlledCompactor:
         self,
         receipt: MemoryPromptReceipt,
         *,
+        workspace: Path,
         in_loop: bool = False,
     ) -> None:
         self.receipt = receipt
         self.auto_compact = _CompactionTrigger(in_loop=in_loop)
         self._context_window = 7_000
-        self._workspace = Path(".")
+        self._workspace = workspace
+        self.tool_budget = ToolResultBudgetManager(workspace=workspace)
         self._estimate = lambda message: len(
             str(message.get("content", ""))
         )
@@ -1080,7 +1083,8 @@ def test_agent_in_loop_guard_rejection_keeps_live_context_memory_free(
     assert result.materialization_state is CompactionMaterializationState.REJECTED
     assert result.effective is False
     assert model.final_input_messages is not None
-    assert context_manager.messages == model.final_input_messages
+    assert context_manager.messages == returned_messages
+    assert returned_messages[-1] == {"role": "assistant", "content": "done"}
     assert returned_messages[:-1] == model.final_input_messages
     assert all(
         "Relevant Durable Memory" not in str(message)
@@ -1280,7 +1284,7 @@ def test_pre_request_compaction_event_and_provenance_share_operation_id(
         authority_revision=manager.prompt_authority_revision(),
         receipt_id="9" * 32,
     )
-    compactor = _ControlledCompactor(receipt)
+    compactor = _ControlledCompactor(receipt, workspace=workspace)
     cybernetics = _PreRequestCybernetics(
         compactor,
         falsey=path == "pre_request_compactor",
@@ -1372,7 +1376,7 @@ def test_in_loop_compaction_event_and_provenance_share_operation_id(
         authority_revision=manager.prompt_authority_revision(),
         receipt_id="a" * 32,
     )
-    compactor = _ControlledCompactor(receipt, in_loop=True)
+    compactor = _ControlledCompactor(receipt, workspace=workspace, in_loop=True)
     # A false-y cached cybernetics double drives the non-cybernetic
     # pre-request branch.  Its first controlled result is ineffective; only
     # the real step-10 high-water branch installs the effective result.
