@@ -162,7 +162,7 @@ def _exercise(tmp_path, monkeypatch, *, second_checks=OMITTED):
             assert self.count <= 2
             if self.count == 1:
                 return response("parent", messages, tools, actions=[{"id": "workflow", "toolName": "task", "input": {
-                    "description": "Update target", "agent_type": "workflow", "prompt": "Change allowed.txt from before to after.",
+                    "description": "Update target", "agent_type": "workflow", "prompt": "Change allowed.txt from before to after and review the resulting change.",
                     "workflow_request": request}}])
             assert receipts and any(m.get("role") == "tool_result" and m.get("toolUseId") == "workflow" for m in messages)
             return response("parent", messages, tools, text=("The workflow change is verified, reviewed and committed."

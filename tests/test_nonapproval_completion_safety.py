@@ -39,7 +39,7 @@ def test_nonapproval_does_not_absorb_identity_schema_or_scope_errors(inventory, 
 
 def test_failed_current_probe_returns_as_feedback_but_cannot_approve(inventory):
     _root, _review, _checks, _context, ids, assess, _calls = inventory
-    submitted_claims = []
+    delivered_decisions = []
 
     def driver(tools, child):
         evidence = tools.execute("review_test", {"purpose": "acceptance", "criterionIds": ids,
@@ -47,15 +47,22 @@ def test_failed_current_probe_returns_as_feedback_but_cannot_approve(inventory):
         receipt = json.loads(evidence.output)
         assert receipt["receipt"]["status"] == "failed"
         rows = [row(identity, "covered", probes=[receipt["probeId"]]) for identity in ids]
-        rejected = submit(tools, child, rows, status="approved")
-        assert not rejected.ok and not rejected._implementation_submitted, rejected.output
-        submitted_claims.extend(rows)
-        accepted = submit(tools, child, rows)
+        accepted = submit(tools, child, rows, status="approved")
+        # A confirmed failure terminates with authoritative repair feedback,
+        # even when the caller attempts to approve it. Tool success denotes
+        # receipt of that negative decision, never coverage approval.
         assert accepted.ok and accepted._implementation_submitted, accepted.output
+        decision = json.loads(accepted.output)
+        assert decision["status"] == "changes_required"
+        assert decision["reason"] == "confirmed_product_gap"
+        delivered_decisions.append(decision)
 
     result = assess(driver)
     assert result["status"] == "changes_required"
-    assert [item["status"] for item in result["requirements"]] == ["unknown", "unknown"]
-    assert [item["claim"] for item in result["coverageDiagnostics"]] == submitted_claims
+    assert result["reason"] == "confirmed_product_gap"
+    assert len(delivered_decisions) == 1
+    assert not any(item.get("status") == "covered" for item in result.get("requirements", []))
+    assert result["failureAdjudications"][0]["verdict"] == "product_gap"
+    assert _calls == ["review_boundary", "adjudication_boundary"]
     assert result["repairProbes"][0]["code"] == PROBE
     assert result["probeReceipts"][0]["receipt"]["status"] == "failed"

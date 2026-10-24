@@ -142,11 +142,11 @@ def test_actual_workflow_preserves_host_budget_reason_and_does_not_suggest_retry
         cwd=str(tmp_path),max_steps=5,enable_work_chain=False,enable_bounded_completion=False)
     assert messages[-1]['content']=='Budget exhausted; no writeback.'
     assert len(delivered)==1
-    assert 'executor_budget_exceeded' in delivered[0], 'budget exhaustion was flattened into execute_phase_failed'
+    assert 'pre_flight_insufficient' in delivered[0], 'the host must reject an unaffordable workflow before dispatch'
+    assert 'execute_phase_failed' not in delivered[0]
     assert 'Please retry' not in delivered[0], 'host budget terminal must not receive generic retry advice'
     assert (tmp_path/'allowed.txt').read_text()=='before'
-    assert quotes and all(inputs>1 and floor>=parent_reserve and inputs+floor>parent_reserve+1
-                          for inputs,floor in quotes)
+    assert quotes == [], "preflight must not attempt a provider reservation"
     snapshot=budget.snapshot()
     assert snapshot.used_total_tokens==500000-parent_reserve-1
     assert snapshot.used_model_calls==0 and snapshot.reserved_total_tokens==0
@@ -172,7 +172,8 @@ def test_phase_handoff_spends_its_existing_tail_without_reserving_second_reply(t
     result=run_agent_turn(model=Parent(),tools=ToolRegistry([write_file_tool]),
         messages=[{'role':'user','content':'Implement this change. '+'x'*16000}],cwd=str(tmp_path),
         runtime={'maxOutputTokens':256},agent_budget=budget,max_steps=5,
-        enable_work_chain=False,enable_bounded_completion=True,implementation_task=True)
+        enable_work_chain=False,enable_bounded_completion=True,implementation_task=True,
+        bounded_implementation_phases=True)
     assert len(requests)==1, (budget.floors, _estimated_context_tokens(result), result[-1])
     assert budget.floors==[256], 'phase handoff is the one final reply; another full closing input would double-reserve it'
     assert result[-1]['content']=='Partial: no implementation was delivered.'

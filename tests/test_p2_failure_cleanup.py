@@ -15,6 +15,7 @@ from minicode.memory_pipeline import MemoryPipeline
 from minicode.project_facts import ProjectFactsStore
 from minicode.tooling import ToolDefinition, ToolRegistry, ToolResult
 from minicode.types import AgentStep
+from minicode.task_outcome import AgentOutcomeCapture
 
 
 def test_failure_settlement_is_exact_and_idempotent() -> None:
@@ -46,8 +47,10 @@ def test_main_agent_provider_failure_releases_reservation(tmp_path: Path) -> Non
             raise ConnectionError("synthetic provider outage")
 
     budget = AgentTurnBudget(max_total_tokens=10_000, max_model_calls=5)
+    outcome = AgentOutcomeCapture()
     output = run_agent_turn(
         model=FailingModel(),
+        outcome_capture=outcome,
         tools=ToolRegistry([]),
         messages=[{"role": "user", "content": "probe"}],
         cwd=str(tmp_path),
@@ -55,7 +58,13 @@ def test_main_agent_provider_failure_releases_reservation(tmp_path: Path) -> Non
         agent_budget=budget,
     )
 
-    assert "Network error" in output[-1]["content"]
+    assert output[-1]["_partial"] is True
+    assert outcome.outcome is not None and outcome.outcome.status == "failed"
+    assert not outcome.outcome.completion_succeeded and not outcome.outcome.goal_achieved
+    assert budget.snapshot().usage_uncertain is True
+    assert budget.snapshot().used_input_tokens > 0
+    assert budget.snapshot().used_output_tokens == 0
+    assert budget.snapshot().used_model_calls > 0
     assert budget.snapshot().reserved_total_tokens == 0
 
 

@@ -151,14 +151,33 @@ def test_public_input_reaches_single_executor_and_independent_verifier(tmp_path,
         if native:
             monkeypatch.setattr('minicode.tools.create_default_tool_registry',lambda *_a,**_k:ToolRegistry([edit_file_tool]))
             monkeypatch.setattr(subagent_model_routing,'create_subagent_model_adapter',model_factory)
-            result=_run(tmp_path,_request(risk="low", complex=False),monkeypatch,commit_audit_waived=True)
+            result=_run(tmp_path,_request(risk="low", complex=False),monkeypatch,commit_audit_waived=True,
+                prompt="Apply the structured request and review the resulting change.")
             assert result.ok,result.output
         else:
+            from minicode.implementation_completion_review import ImplementationCompletionReview
+            from minicode.implementation_execution import implementation_candidate_digest
+            assessments=[]
+            def assess(review, *, checks_receipt, context, **_kwargs):
+                # Isolate semantic coverage from this public-input transport
+                # test; approval still depends on real current-byte checks.
+                digest=implementation_candidate_digest(review.spec,context)
+                checks=checks_receipt.get('checks',[])
+                valid=((Path(context.cwd)/'allowed.txt').read_text()=='after'
+                    and bool(checks) and checks_receipt.get('status')=='passed'
+                    and checks_receipt.get('patchDigest')==digest
+                    and all(c.get('status')=='passed' and c.get('patchDigest')==digest for c in checks)
+                    and bool(fixture_receipts) and all(r['beforeAfterDigestMatched'] for r in fixture_receipts))
+                assessments.append(valid)
+                return {'status':'approved' if valid else 'changes_required','patchDigest':digest,
+                    'findings':[] if valid else ['Missing current source/check/public-input evidence.']}
+            monkeypatch.setattr(ImplementationCompletionReview,'assess',assess)
             result=run_agent_turn(model=Model(),tools=ToolRegistry([edit_file_tool]),messages=[{'role':'user','content':'Fix allowed.txt.'}],
                 cwd=str(tmp_path),implementation_task=True,implementation_spec=ImplementationSpec(('allowed.txt',),
                     (VerificationCheck('public','tests',('pytest','-q','test_public.py'),10),),'Fix allowed.txt'),
                 enable_work_chain=False,max_steps=8)
             assert result[-1]['content']=='Updated and public checks passed.'
+            assert assessments==[True]
     assert len(seen)==2
     assert len(reviewer_seen)==(1 if native else 0)
     assert len(paths)==(2 if native else 1)
