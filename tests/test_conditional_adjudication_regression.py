@@ -107,6 +107,9 @@ def _run_conflict(
         # Use the same explicit host audit waiver as the existing workflow
         # fixture; the real audit projection and parent promotion still run.
         commit_audit_waived=True,
+        # Policy v6 requires explicit analysis/review for this complete,
+        # nonsensitive request to reach the adjudication path under test.
+        prompt="Analyze first. Apply the structured request and review the resulting change.",
     )
     return result, roles, audits
 

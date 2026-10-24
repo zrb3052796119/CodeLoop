@@ -84,15 +84,6 @@ def _exercise(tmp_path, monkeypatch, *, mode):
     deadline = time.monotonic() + 1800
     calls, billed, workers, adapters, commands = [], [], [], [], []
     original_worker = task_module._run
-    original_loop = task_module.run_agent_turn
-
-    def historical_bounded_loop(**kwargs):
-        # The 7,800-token Assignment slice deliberately exercises the old
-        # conditional final response; default continuous execution reserves
-        # its normal 8,192 output allowance and cannot admit this fixture.
-        return original_loop(**(kwargs | {"bounded_implementation_phases": True}))
-
-    monkeypatch.setattr(task_module, "run_agent_turn", historical_bounded_loop)
 
     def run_worker(data, context):
         ledger = context._agent_budget
@@ -102,9 +93,12 @@ def _exercise(tmp_path, monkeypatch, *, mode):
         if context._logical_agent_role == "executor":
             number = 1 + sum(item["role"] == "executor" for item in workers)
             if number == 1:
+                # Admit one real request, then exhaust the existing call
+                # ledger after its rejected declaration. A fixed tiny token
+                # slice can instead reject before any request as schemas grow.
                 context = replace(context, _agent_budget=_WorkerCallBudget(
-                    context._agent_budget, "first_submission_slice", max_calls=30,
-                    preserve_calls=0, max_tokens=7800))
+                    context._agent_budget, "first_submission_slice", max_calls=1,
+                    preserve_calls=0))
             else:
                 assert number in ({2, 3} if review_repair else {2}) and target.read_text() == INITIAL
                 assert (Path(context.cwd) / "candidate.py").read_text() == first_source
@@ -128,6 +122,8 @@ def _exercise(tmp_path, monkeypatch, *, mode):
             result = ToolResult(ok=True, output="Custom worker submitted without a new model call.")
         else:
             result = original_worker(data, context)
+        if context._logical_agent_role == "executor" and number == 1:
+            assert context._agent_budget.admitted_model_calls == 1
         workers[-1]["result"] = {"ok": result.ok, "reason": str(result._termination_reason)}
         return result
 
@@ -280,7 +276,8 @@ def _exercise(tmp_path, monkeypatch, *, mode):
     with observe_run(workspace=tmp_path, source="headless", title="submission feedback continuation",
                      journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir)) as observation:
         result = task_module.task_tool.run({"description": "complete public behavior", "agent_type": "workflow",
-            "prompt": "Strip whitespace and handle None with a public regression test.", "workflow_request": request},
+            "prompt": "Strip whitespace and handle None with a public regression test. Independently review the resulting change.",
+            "workflow_request": request},
             ToolContext(cwd=str(tmp_path), _runtime={"model": "local-fixture"}, _agent_budget=budget,
                 _task_deadline_monotonic=deadline, _event_sink=observation, _central_workflow_v2_enforced=True))
         run_id = observation.run_id

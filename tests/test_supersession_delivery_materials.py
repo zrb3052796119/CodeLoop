@@ -24,8 +24,17 @@ from minicode.workflow_workspace import WorkflowWorkspaceTransaction
 from test_completion_coverage_audit import _case, _native, OBJECTIVE, PROBE
 
 
+def evidence_message(messages):
+    # Reconciliation retains the independent inspection's earlier user packet.
+    # Select the one actual evidence packet, rather than assuming it is first.
+    matches = [m for m in messages if m['role'] == 'user'
+               and '"evidenceIndex"' in m.get('content', '')]
+    assert len(matches) == 1, 'Expected one host-issued reconciliation evidence packet'
+    return matches[0]
+
+
 def packet(body):
-    return next(json.loads(m['content']) for m in body['messages'] if m['role'] == 'user')
+    return json.loads(evidence_message(body['messages'])['content'])
 
 
 def last(body):
@@ -278,9 +287,18 @@ def legacy_pending(case, monkeypatch):
     # compatibility fixture is not claimed to be a historical model run.
     legacy = deepcopy(state)
     legacy.pop('reviewMaterialsRecord')
+    legacy.pop('inspectionRecord')
     legacy['coverageAuditStateVersion'] = 1
     saved = record_document(state['messagesRecord'])
-    initial_message = next(m for m in saved['messages'] if m['role'] == 'user')
+    initial_message = evidence_message(saved['messages'])
+    initial_index = saved['messages'].index(initial_message)
+    # A v1 compatibility fixture predates independent inspection. Preserve the
+    # actual reconciliation pages/draft, but do not label v3 inspection state
+    # or its earlier user packet as historical v1 context.
+    reconciliation_system = deepcopy(saved['messages'][initial_index - 1])
+    assert reconciliation_system['role'] == 'system'
+    reconciliation_system['content'] += '\n=== ORIGINAL REQUIREMENT AUTHORITY ===\n' + OBJECTIVE
+    saved['messages'] = [reconciliation_system, *saved['messages'][initial_index:]]
     initial = json.loads(initial_message['content'])
     initial.pop('supersessionDeliveryContract')
     originals = {row['id']: row['originalObligationDocumentId'] for row in material['supersessions']}
@@ -293,7 +311,7 @@ def legacy_pending(case, monkeypatch):
     return legacy, captured
 
 
-def test_v1_migration_and_second_resume_keep_authority_messages_pages_and_draft(tmp_path, monkeypatch):
+def test_v1_migration_preserves_history_without_granting_new_epoch_delivery_credit(tmp_path, monkeypatch):
     case = fixture(tmp_path, monkeypatch, count=50)
     legacy, captured = legacy_pending(case, monkeypatch)
     before = deepcopy(legacy)
@@ -301,27 +319,37 @@ def test_v1_migration_and_second_resume_keep_authority_messages_pages_and_draft(
     delivered = coverage_delivery_pairs(legacy)
     migrated = []
 
-    def abort(body):
-        marker = '{"coverageAuditContinuation":'
-        content = next(m['content'] for m in body['messages'] if marker in (m.get('content') or ''))
-        envelope = json.JSONDecoder().raw_decode(content[content.index(marker):])[0]['coverageAuditContinuation']
-        contract = envelope['supersessionDeliveryContract']
-        assert contract['migratedFromStateVersion'] == 1
-        assert contract['preservedOriginalAuthorityRef'] == legacy['authorityRecord']['ref']
-        assert envelope['latestUnacceptedDraft']['draftId'] == captured['draftId']
-        raise KeyboardInterrupt('retain the explicitly migrated host contract before new tool delivery')
+    history_pages = []
 
-    native_resume(monkeypatch, case, [abort], 'migration')
+    def read_history_and_abort(body):
+        assert packet(body)['authorityRef'] != legacy['authorityRecord']['ref']
+        page = last(body)
+        if page.get('historicalOnly') is True:
+            assert page['historicalOnly'] is True and page['independentReadCredit'] is False
+            history_pages.append(page['text'])
+            if page['nextOffset'] is None:
+                assert json.loads(''.join(history_pages)) == record_document(legacy['messagesRecord'])
+                raise KeyboardInterrupt('retain the new independent epoch and exact historical context')
+            return 'coverage_audit_history_read', {'section': 'messages', 'offset': page['nextOffset'], 'limit': 16000}
+        return 'coverage_audit_history_read', {'section': 'messages', 'limit': 16000}
+
+    first = native_resume(monkeypatch, case, [read_history_and_abort] * 10, 'migration')
     with pytest.raises(KeyboardInterrupt):
         run(case, state=legacy, sink=lambda value: migrated.append(deepcopy(value)))
     state = migrated[-1]
-    assert legacy == before and state['coverageAuditStateVersion'] == 2
-    assert state['auditId'] == legacy['auditId']
+    assert legacy == before and state['coverageAuditStateVersion'] == 3
+    assert state['auditId'] != legacy['auditId']
+    archived = record_document(state['legacyAuditRecord'])
+    assert archived == legacy
+    assert len(first.inspection_requests) == 2
+    assert record_document(state['inspectionRecord'])['origin'] == 'legacy_new_context'
     for key in ('authorityRecord', 'documentsRecord'):
-        assert state[key] == legacy[key]
-    assert record_document(state['messagesRecord'])['messages'][:len(messages)] == messages
-    assert coverage_delivery_pairs(state) == delivered
-    restored = restore_evidence_documents(state)
+        assert archived[key] == legacy[key]
+    assert record_document(archived['messagesRecord'])['messages'] == messages
+    assert captured['draftId'] in canonical(archived)
+    assert coverage_delivery_pairs(archived) == delivered
+    assert coverage_delivery_pairs(state) == [], 'Historical pages must not grant delivery credit to the new epoch.'
+    restored = restore_evidence_documents(archived)
     assert captured['id'] in restored.missing([captured['id']]), 'One old receipt page is not full delivery.'
     page = restored.read({'cursor': captured['page']['nextCursor']}, deliver=False)
     assert page['offset'] == len(captured['page']['text'])
@@ -329,7 +357,8 @@ def test_v1_migration_and_second_resume_keep_authority_messages_pages_and_draft(
     result = run(case, state=state)
     assert result['status'] == 'approved' and len(calls) < 10
     original_ref = result.get('authorityProvenance', {}).get('originalAuthorityRef', result['authorityRef'])
-    assert original_ref == legacy['authorityRecord']['ref']
+    assert original_ref == state['authorityRecord']['ref']
+    assert result['inspectionVersion'] == 1
 
 
 @pytest.mark.parametrize('change', ['obligation', 'authority'])

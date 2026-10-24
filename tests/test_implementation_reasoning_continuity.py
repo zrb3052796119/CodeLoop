@@ -3,6 +3,9 @@
 The provider boundary is scripted; edits, pytest, native completion gates and
 shared ledger accounting are real. This proves request classification only,
 not that high effort makes a live model's implementation correct.
+
+Legacy phase-specific expectations explicitly select bounded execution. The
+default continuous mode retains the authorized write view and output limit.
 """
 
 from copy import deepcopy
@@ -28,6 +31,7 @@ from minicode.workflow_runner import _WorkerCallBudget
 from test_implementation_finalize_deadline import _submission_tools
 
 
+@pytest.mark.parametrize("bounded", [True, False], ids=["bounded", "continuous-default"])
 @pytest.mark.parametrize("max_steps,repair_tool,efforts", [
     (8, "edit_file", ("low", "high", "max")),
     (3, "edit_file", ("low", "high", "max")),
@@ -36,7 +40,7 @@ from test_implementation_finalize_deadline import _submission_tools
     (3, "edit_file", ("high",)),
 ])
 def test_same_executor_keeps_implementation_effort_through_real_failed_check(
-    tmp_path, max_steps, repair_tool, efforts,
+    tmp_path, max_steps, repair_tool, efforts, bounded,
 ):
     source = tmp_path / "candidate.py"
     test = tmp_path / "test_candidate.py"
@@ -132,21 +136,25 @@ def test_same_executor_keeps_implementation_effort_through_real_failed_check(
             deadline_monotonic=time.monotonic() + 1800,
             implementation_task=True, implementation_analysis_complete=True,
             max_steps=max_steps, agent_depth=1, enable_work_chain=False,
+            **({"bounded_implementation_phases": True} if bounded else {}),
         )
         assert checks == [1, 0]
         assert source.read_text() == "def value():\n    return 2\n"
         assert "assert value() == 2" in test.read_text()
         assert repair_tool in seen[1]["names"]
-        expected = ["high", "high", "low" if max_steps == 3 else "high"]
+        handoff_only = bounded and max_steps == 3
+        expected = ["high", "high", "low" if handoff_only else "high"]
         if not {"low", "high"}.issubset(efforts):
             expected = [None, None, None]
         assert [request["effort"] for request in seen] == expected, (
             "Authorized implementation/repair was downgraded after the first successful edit", seen)
         assert model.supported_reasoning_efforts == efforts
         assert all(request["retries"] == 0 for request in seen)
-        assert [request["cap"] for request in seen] == [8192, 8192, 2048 if max_steps == 3 else 8192]
-        if max_steps == 3:
+        assert [request["cap"] for request in seen] == [8192, 8192, 2048 if handoff_only else 8192]
+        if handoff_only:
             assert seen[-1]["names"] == {"executor_submit"}
+        elif not bounded:
+            assert all(request["names"] == {tool.name for tool in registry.list()} for request in seen)
         artifact = json.loads(store.read(channel.write_key).content)
         assert artifact["status"] == "completed" and artifact["assignmentId"] == assignment.assignment_id
         assert any(message.get("toolUseId") == "deliver" and message.get("role") == "tool_result"
@@ -162,12 +170,13 @@ def test_same_executor_keeps_implementation_effort_through_real_failed_check(
         channel.close()
 
 
+@pytest.mark.parametrize("bounded", [True, False], ids=["bounded", "continuous-default"])
 @pytest.mark.parametrize("analysis_complete,max_steps,expected", [
     (False, 20, ["low"]),
     (True, 3, ["high", "low"]),
 ])
-def test_investigation_and_final_view_without_writes_remain_low(
-    tmp_path, analysis_complete, max_steps, expected,
+def test_investigation_and_final_view_effort_matches_execution_mode(
+    tmp_path, analysis_complete, max_steps, expected, bounded,
 ):
     seen = []
     todo = ToolDefinition(name="todo_write", description="bookkeeping",
@@ -190,9 +199,14 @@ def test_investigation_and_final_view_without_writes_remain_low(
         messages=[{"role": "user", "content": "Correct the source and tests."}],
         cwd=str(tmp_path), implementation_task=True,
         implementation_analysis_complete=analysis_complete,
-        max_steps=max_steps, enable_work_chain=False)
+        max_steps=max_steps, enable_work_chain=False,
+        **({"bounded_implementation_phases": True} if bounded else {}))
+    if not bounded:
+        expected = ["high"] * len(expected)
     assert [effort for effort, _names in seen] == expected
-    if analysis_complete:
+    if analysis_complete and bounded:
         assert seen[-1][1] == {"todo_write"}
-    else:
+    elif bounded:
         assert "edit_file" in seen[0][1], "investigation stays low even if a write is available"
+    else:
+        assert all(names == {"edit_file", "todo_write"} for _effort, names in seen)

@@ -82,6 +82,9 @@ def seed_native_fixture_failure(case, monkeypatch, *, product_gap):
 @pytest.mark.parametrize('stable_evidence', [False, True], ids=['legacy-evidence', 'host-document-cursors'])
 def test_same_owner_corrects_test_then_repairs_only_confirmed_product_gap(
         inventory, monkeypatch, product_gap, stable_evidence):
+    # This protocol-continuation fixture must finish every retained semantic
+    # leg; bounded review stopping behavior has its own allowance tests.
+    monkeypatch.setenv('MINI_CODE_COMPLETION_REVIEW_MODE', 'full')
     case = inventory
     document, messages, old_id = seed_native_fixture_failure(case, monkeypatch, product_gap=product_gap)
     original_result = deepcopy(_result(messages, 'original-read'))
