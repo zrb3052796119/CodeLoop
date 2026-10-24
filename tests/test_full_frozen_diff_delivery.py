@@ -224,7 +224,7 @@ def test_exact_19343_byte_patch_and_18_approved_criteria_reach_durable_commit(tm
     data_dir = tmp_path.parent / (tmp_path.name + "-journal")
     with observe_run(workspace=tmp_path, source="headless", title="complete frozen diff",
                      journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir)) as observation:
-        result = task_module.task_tool.run({"description": "return required value", "prompt": "Return integer 3 and add a regression test.",
+        result = task_module.task_tool.run({"description": "return required value", "prompt": "Return integer 3, add a regression test, and review the resulting change.",
             "agent_type": "workflow", "workflow_request": request}, ToolContext(cwd=str(tmp_path), _runtime={"model": "local-fixture"},
             _agent_budget=AgentTurnBudget(), _event_sink=observation, _central_workflow_v2_enforced=True))
         run_id = observation.run_id
