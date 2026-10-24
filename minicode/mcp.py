@@ -1221,7 +1221,9 @@ class HttpMcpClient(_McpClientMixin):
         if not raw:
             raise RuntimeError(f"MCP {self.server_name}: empty response body.")
         if content_type == "text/event-stream":
-            return self._response_from_sse(raw.decode("utf-8", errors="replace"), expected_id)
+            return self._response_from_sse(
+                raw.decode("utf-8", errors="replace"), expected_id, self.server_name
+            )
         try:
             parsed = json.loads(raw.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError) as error:
@@ -1234,7 +1236,9 @@ class HttpMcpClient(_McpClientMixin):
         return parsed
 
     @staticmethod
-    def _response_from_sse(stream_text: str, expected_id: Any) -> dict[str, Any]:
+    def _response_from_sse(
+        stream_text: str, expected_id: Any, server_name: str
+    ) -> dict[str, Any]:
         """Extract the response for ``expected_id`` from an SSE stream."""
         data_lines: list[str] = []
         for line in stream_text.split("\n"):
@@ -1248,7 +1252,7 @@ class HttpMcpClient(_McpClientMixin):
             if isinstance(message, dict) and message.get("id") == expected_id:
                 return message
         raise RuntimeError(
-            f"MCP {self.server_name}: SSE stream ended without a response "
+            f"MCP {server_name}: SSE stream ended without a response "
             f"for request id {expected_id}."
         )
 
