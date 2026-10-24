@@ -79,6 +79,7 @@ def test_core_tools_publish_complete_capability_metadata(tmp_path) -> None:
         "find_symbols": ("search", "readonly"),
         "find_references": ("search", "readonly"),
         "get_ast_info": ("analysis", "readonly"),
+        "inspect_image": ("analysis", "external"),
         "code_review": ("analysis", "readonly"),
         "file_tree": ("file", "readonly"),
         "diff_viewer": ("code", "readonly"),

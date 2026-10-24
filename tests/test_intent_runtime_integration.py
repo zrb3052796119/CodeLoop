@@ -209,6 +209,8 @@ def test_composition_root_reuses_model_and_turn_controls_for_semantic_intent(
         "skill_page_chars": 4000,
         "skill_intent_hints": False,
         "skill_intent_prefetch": False,
+        "skill_directory_presel": False,
+        "skill_discovery_gate": False,
     }
     assert "purpose" not in intent_call_context
     assert captured["routed_intent"] is parsed_intent

@@ -69,6 +69,9 @@ def packet(messages, marker):
 def api_store(tmp_path, monkeypatch):
     import minicode.workflow_runner as workflow
 
+    # Two complete evidence audits exercise same-owner repair continuity;
+    # their scripted reconciliation exceeds the separate bounded-mode cap.
+    monkeypatch.setenv("MINI_CODE_COMPLETION_REVIEW_MODE", "full")
     commands, events, checkpoints = [], [], []
 
     class Sandbox:

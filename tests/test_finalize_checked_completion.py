@@ -1,8 +1,8 @@
 """Late supported implementation and healthy final streams keep their handoff."""
-from pathlib import Path
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import pytest
 
@@ -11,8 +11,11 @@ from minicode.agent_loop import run_agent_turn
 from minicode.deterministic_verifier import DeterministicVerifier, VerificationCheck
 from minicode.executor_verification import ExecutorCheckCapability
 from minicode.implementation_execution import ImplementationSpec
-from minicode.implementation_phases import ImplementationPhase, ImplementationPhaseController
-from minicode.model_call_control import checkpoint_model_call, bounded_request_timeout
+from minicode.implementation_phases import (
+    ImplementationPhase,
+    ImplementationPhaseController,
+)
+from minicode.model_call_control import bounded_request_timeout, checkpoint_model_call
 from minicode.permissions import PermissionManager
 from minicode.task_outcome import AgentOutcomeCapture
 from minicode.tooling import ToolDefinition, ToolRegistry, ToolResult
@@ -33,9 +36,9 @@ def _assert_local_production():
 def _real_checks(monkeypatch):
     import minicode.workflow_runner as runner
     commands = []
-    def command(_argv, **kwargs):
+    def command(_argv, *, check=False, **kwargs):
         commands.append(Path(kwargs['cwd']))
-        return subprocess.run([sys.executable, '-m', 'pytest', '-q'], **kwargs)
+        return subprocess.run([sys.executable, '-m', 'pytest', '-q'], check=check, **kwargs)
     monkeypatch.setattr(runner, '_deterministic_verifier_for_context',
                         lambda *_a, **_k: DeterministicVerifier(command_runner=command))
     monkeypatch.setattr(PermissionManager, 'ensure_command', lambda *_a, **_k: None)
@@ -45,8 +48,9 @@ def _real_checks(monkeypatch):
 @pytest.mark.parametrize('native', [False, True])
 def test_first_source_edit_in_finalization_gets_real_checks_then_final_handoff(tmp_path, monkeypatch, native):
     _assert_local_production()
-    from minicode import subagent_model_routing
     from test_workflow_v2_structured_routing import _request, _run
+
+    from minicode import subagent_model_routing
     (tmp_path/'allowed.txt').write_text('before')
     (tmp_path/'test_acceptance.py').write_text(
         "from pathlib import Path\ndef test_value(): assert Path('allowed.txt').read_text() == 'after'\n")
@@ -88,9 +92,14 @@ def test_first_source_edit_in_finalization_gets_real_checks_then_final_handoff(t
                     steps=[{'step':1,'status':'completed'}],deviations=[],blockers=[])])
             return AgentStep(type='assistant',kind='final',content='Updated allowed.txt; the public test passed.')
     if native:
-        from minicode.tools import task as task_module
         from test_workflow_v2_structured_routing import _write_reviewer_result
+
+        from minicode.tools import task as task_module
         original_worker = task_module._run
+        original_turn = task_module.run_agent_turn
+        def bounded_turn(**kwargs):
+            return original_turn(**{**kwargs, 'bounded_implementation_phases': True})
+        monkeypatch.setattr(task_module, 'run_agent_turn', bounded_turn)
         reviews = []
         def worker(input_data, context):
             # This case isolates late Executor edits and real host checks.
@@ -107,17 +116,41 @@ def test_first_source_edit_in_finalization_gets_real_checks_then_final_handoff(t
         monkeypatch.setattr(task_module, '_run', worker)
         monkeypatch.setattr('minicode.tools.create_default_tool_registry',lambda *_a,**_k: registry())
         monkeypatch.setattr(subagent_model_routing,'create_subagent_model_adapter',lambda *_a,**_k: Model())
-        result = _run(tmp_path,_request(risk='low',complex=False),monkeypatch,commit_audit_waived=True)
+        result = _run(tmp_path,_request(risk='medium',complex=False),monkeypatch,commit_audit_waived=True,
+            prompt='Apply the structured request and review the resulting change.')
         assert result.ok,result.output
         assert reviews == ['reviewer']
     else:
+        from minicode.implementation_completion_review import (
+            ImplementationCompletionReview,
+        )
+        from minicode.implementation_execution import implementation_candidate_digest
+        assessments = []
+        def assess(review, *, checks_receipt, context, **_kwargs):
+            # Isolate the semantic reviewer while retaining real edits, public
+            # check processes, current-candidate binding and completion gating.
+            digest = implementation_candidate_digest(review.spec, context)
+            checks = checks_receipt.get('checks', [])
+            observed = {
+                'sourceMatches': (Path(context.cwd)/'allowed.txt').read_text() == 'after',
+                'checksPassed': bool(checks) and checks_receipt.get('status') == 'passed'
+                    and all(check.get('status') == 'passed' for check in checks),
+                'digestMatches': bool(digest) and checks_receipt.get('patchDigest') == digest
+                    and all(check.get('patchDigest') == digest for check in checks),
+            }
+            assessments.append(observed)
+            return {'status': 'approved' if all(observed.values()) else 'changes_required',
+                'patchDigest': digest, 'findings': [] if all(observed.values())
+                else ['The requested source change lacks current passing check evidence.']}
+        monkeypatch.setattr(ImplementationCompletionReview, 'assess', assess)
         outcome = AgentOutcomeCapture()
-        messages = run_agent_turn(model=Model(),tools=registry(),messages=[{'role':'user','content':'Fix allowed.txt and run the public test.'}],
+        messages = run_agent_turn(bounded_implementation_phases=True,model=Model(),tools=registry(),messages=[{'role':'user','content':'Fix allowed.txt and run the public test.'}],
             cwd=str(tmp_path),implementation_task=True,implementation_spec=ImplementationSpec(('allowed.txt',),
                 (VerificationCheck('public','tests',('python3','-m','pytest','-q'),20),),'Fix allowed.txt'),
             enable_work_chain=False,max_steps=10,outcome_capture=outcome)
         assert messages[-1]['content'] == 'Updated allowed.txt; the public test passed.'
         assert outcome.outcome.status == 'success'
+        assert assessments == [{'sourceMatches': True, 'checksPassed': True, 'digestMatches': True}]
     assert len(seen) == 3
     assert (tmp_path/'allowed.txt').read_text() == 'after'
     assert len(commands) == (2 if native else 1), 'native promotion still requires an independent Verifier run'
@@ -142,9 +175,10 @@ def test_first_final_edit_requires_live_bound_nonempty_host_checks(tmp_path, mon
                 return AgentStep(type='tool_calls',calls=[_call('read_file','read',path='app.py')])
             assert 'edit_file' not in seen[-1] and 'write_file' not in seen[-1]
             return AgentStep(type='assistant',kind='final',content='No checked edit was made.')
-    run_agent_turn(model=Model(),tools=registry,messages=[{'role':'user','content':'Fix app.py.'}],cwd=str(tmp_path),
+    run_agent_turn(bounded_implementation_phases=True,model=Model(),tools=registry,messages=[{'role':'user','content':'Fix app.py.'}],cwd=str(tmp_path),
         implementation_task=True,enable_work_chain=False,max_steps=3)
     assert len(seen)==2 and (tmp_path/'app.py').read_text()=='value=1\n'
+    assert not {'edit_file', 'write_file'}.intersection(seen[1])
 
 
 def test_healthy_final_stream_can_exceed_45_seconds_and_preserves_handoff(tmp_path,monkeypatch):
@@ -193,7 +227,7 @@ def test_healthy_final_stream_can_exceed_45_seconds_and_preserves_handoff(tmp_pa
         if self.calls==0:self._advance(ImplementationPhase.IMPLEMENT)
         return actual_request(self,snapshot,**kwargs)
     monkeypatch.setattr(ImplementationPhaseController,'request',allocated_read)
-    messages=run_agent_turn(model=Model(),tools=registry,messages=[{'role':'user','content':'Fix app.py.'}],cwd=str(tmp_path),
+    messages=run_agent_turn(bounded_implementation_phases=True,model=Model(),tools=registry,messages=[{'role':'user','content':'Fix app.py.'}],cwd=str(tmp_path),
         implementation_task=True,enable_work_chain=False,max_steps=3,deadline_monotonic=start+600,on_assistant_stream_chunk=chunks.append)
     assert len(observations)==3 and len(chunks)==6
     assert len(checks)==1, 'a healthy 60-second final stream was cut off at the unrelated 45-second cap'
@@ -208,7 +242,7 @@ def test_healthy_final_stream_can_exceed_45_seconds_and_preserves_handoff(tmp_pa
 @pytest.mark.parametrize('remaining',[2,3])
 def test_final_time_allocation_preserves_request_ceiling_and_fixed_handoff(remaining):
     budget=AgentTurnBudget(max_model_calls=24,max_total_tokens=500000)
-    controller=ImplementationPhaseController(snapshot=budget.snapshot(),max_steps=24,now=0,deadline=600,
+    controller=ImplementationPhaseController(bounded=True,snapshot=budget.snapshot(),max_steps=24,now=0,deadline=600,
         allow_test_completion=remaining==3)
     controller._advance(ImplementationPhase.FINALIZE)
     now=141
