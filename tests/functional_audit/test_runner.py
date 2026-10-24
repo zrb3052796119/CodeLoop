@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections import Counter
 from pathlib import Path
 import subprocess
 import sys
@@ -24,6 +25,70 @@ REQUIRED_CAPABILITY_FIELDS = {
     "status",
     "evidence",
     "issues",
+}
+
+
+# Freeze identities, so additions/removals produce an actionable set diff.
+EXPECTED_REGISTERED_TOOLS = {
+    "ask_user",
+    "base64_decode",
+    "base64_encode",
+    "batch_copy",
+    "batch_delete",
+    "batch_move",
+    "browse_skill_directory",
+    "code_review",
+    "csv_create",
+    "csv_parse",
+    "current_time",
+    "diff_viewer",
+    "edit_file",
+    "file_line_count",
+    "file_tree",
+    "find_references",
+    "find_symbols",
+    "get_ast_info",
+    "git",
+    "grep_files",
+    "gzip_compress",
+    "gzip_decompress",
+    "hash",
+    "hmac",
+    "http_request",
+    "inspect_image",
+    "json_format",
+    "json_parse",
+    "line_count",
+    "list_files",
+    "load_skill",
+    "patch_file",
+    "propose_skill",
+    "random_string",
+    "read_file",
+    "regex_replace",
+    "regex_test",
+    "run_command",
+    "search_skills",
+    "subagent_note_list",
+    "subagent_note_read",
+    "subagent_note_write",
+    "tar_create",
+    "tar_extract",
+    "task",
+    "test_runner",
+    "text_dedupe",
+    "text_join",
+    "text_sort",
+    "timestamp_convert",
+    "todo_write",
+    "url_decode",
+    "url_encode",
+    "uuid_generate",
+    "web_fetch",
+    "web_search",
+    "write_file",
+    "zip_create",
+    "zip_extract",
 }
 
 
@@ -66,7 +131,6 @@ def test_default_audit_is_offline_isolated_and_exhaustive(tmp_path: Path) -> Non
     assert payload["audit"]["liveNetwork"] is False
     assert payload["audit"]["isolation"]["home"] == "<isolated-home>"
     assert payload["audit"]["isolation"]["workspace"] == "<isolated-workspace>"
-    assert payload["summary"]["registeredToolCount"] == 58
 
     capabilities = payload["capabilities"]
     capability_ids = [capability["id"] for capability in capabilities]
@@ -76,15 +140,8 @@ def test_default_audit_is_offline_isolated_and_exhaustive(tmp_path: Path) -> Non
         for capability in capabilities
         if capability["category"] == "tool" and capability["registered"]
     }
-    assert {
-        "web_search",
-        "web_fetch",
-        "http_request",
-        "read_file",
-        "run_command",
-        "gzip_compress",
-        "zip_extract",
-    } <= tool_names
+    assert tool_names == EXPECTED_REGISTERED_TOOLS
+    assert payload["summary"]["registeredToolCount"] == len(tool_names)
     assert all(REQUIRED_CAPABILITY_FIELDS <= capability.keys() for capability in capabilities)
     assert all(
         capability["liveTest"] != "pass"
@@ -150,7 +207,18 @@ def test_audit_closes_web_and_archive_findings(
     assert web_search["issues"] == []
     assert "tests/test_web_search.py" in web_search["evidence"]
     assert "tests/test_search_providers.py" in web_search["evidence"]
-    assert payload["summary"]["capabilityCount"] == 193
+    # Keep an independent inventory check for non-tool surfaces as well as
+    # validating that the reported total agrees with the emitted entries.
+    assert Counter(item["category"] for item in payload["capabilities"]) == {
+        "agent": 23,
+        "dashboard": 23,
+        "entrypoint": 65,
+        "mcp": 3,
+        "persistence": 13,
+        "security": 2,
+        "tool": 78,
+    }
+    assert payload["summary"]["capabilityCount"] == len(payload["capabilities"])
     # SEC-002 and SEC-004 are closed by containment and bounded extraction
     # probes/tests; the remaining findings cover unrelated tool metadata/schema.
     assert payload["summary"]["issueCount"] == 2

@@ -9,9 +9,10 @@ import argparse
 import hashlib
 import json
 import posixpath
-from pathlib import Path
 import re
-from typing import Any, Mapping
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any
 
 HERE = Path(__file__).resolve().parent
 DISCOVERY_TOOLS = frozenset({'load_skill', 'browse_skill_directory', 'search_skills'})

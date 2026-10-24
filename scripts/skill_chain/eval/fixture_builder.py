@@ -8,7 +8,6 @@ import hashlib
 import json
 from pathlib import Path
 
-
 SKILLS = {
     "queue/idempotency": ("Design idempotent message consumers and prevent duplicate shipment side effects.", "Delivery boundary", "queue", "Explain why processed-message insertion and shipment_outbox insertion must share one transaction; acknowledge only after commit."),
     "queue/idempotent-consumer-template": ("Use a processed-message table plus transactional outbox for idempotent queue consumers.", "Delivery boundary", "queue", "Explain why processed-message insertion and shipment_outbox insertion must share one transaction; acknowledge only after commit."),

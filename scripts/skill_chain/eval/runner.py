@@ -7,13 +7,12 @@ arbitrary coding-task completion benchmark.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
-from dataclasses import asdict, replace
 import hashlib
 import json
-from pathlib import Path
 import threading
 import time
+from dataclasses import asdict, replace
+from pathlib import Path
 from unittest.mock import patch
 
 from scripts.skill_chain.eval.fixture_builder import SKILLS, build_fixture
@@ -189,7 +188,11 @@ def run_case(*, prompt: str, fixture: str, run_dir: Path, runtime: dict,
     from minicode.permissions import PermissionManager
     from minicode.prompt import build_system_prompt
     from minicode.skill_router import SkillRouter, skill_load_policy_for_routing
-    from minicode.skill_routing_turn import SkillRoutingTurnAdapters, SkillRoutingTurnRequest, route_skill_turn
+    from minicode.skill_routing_turn import (
+        SkillRoutingTurnAdapters,
+        SkillRoutingTurnRequest,
+        route_skill_turn,
+    )
     from minicode.task_outcome import AgentOutcomeCapture
     from minicode.tools import create_default_tool_registry
 
@@ -238,7 +241,7 @@ def run_case(*, prompt: str, fixture: str, run_dir: Path, runtime: dict,
             result['outcome'] = asdict(capture.outcome) if capture.outcome is not None else None
             result['completed'] = bool(capture.outcome and capture.outcome.completion_succeeded and result['final'])
             result['stop_reason'] = 'assistant_completed' if result['completed'] else 'loop_stopped_without_completion'
-    except BaseException as exc:
+    except BaseException as exc:  # noqa: BLE001 - preserve interrupted/failed evaluation evidence
         if isinstance(exc, KeyboardInterrupt):
             result['stop_reason'] = 'interrupted'
         else:

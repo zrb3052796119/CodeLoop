@@ -1,8 +1,8 @@
 """Behavioral checks for the independent read-only live evaluator."""
 from __future__ import annotations
 
-from copy import deepcopy
 import json
+from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
 
@@ -108,7 +108,9 @@ def test_large_catalog_count_and_neighbor_decoys(tmp_path):
 def test_recording_wrapper_caps_next_provider_request_to_remaining_output(tmp_path):
     from minicode.types import AgentStep, ModelUsage
     class Adapter:
-        runtime = {'maxOutputTokens': 1600}
+        def __init__(self):
+            self.runtime = {'maxOutputTokens': 1600}
+
         def next(self, messages, on_stream_chunk=None, store=None):
             assert self.runtime['maxOutputTokens'] == 7
             return AgentStep(type='assistant', content='done', usage=ModelUsage(output_tokens=7))
