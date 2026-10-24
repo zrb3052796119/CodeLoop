@@ -591,8 +591,8 @@ class EvaluationTransport:
                 publish((None, time.monotonic(), error))
 
         worker = threading.Thread(target=read, daemon=True, name="evaluation-stream-reader")
-        worker.start()
         last_byte = time.monotonic()
+        worker.start()
         buffer = b""
         data_lines: list[bytes] = []
         total = 0
@@ -646,13 +646,21 @@ class EvaluationTransport:
                 remaining = self.config.idle_timeout_seconds - (time.monotonic() - last_byte)
                 if deadline_monotonic is not None:
                     remaining = min(remaining, deadline_monotonic - time.monotonic())
-                if remaining <= 0:
-                    checkpoint_model_call(deadline_monotonic=deadline_monotonic)
-                    raise EvaluationIdleTimeout("evaluation stream idle timeout")
                 try:
-                    chunk, observed_at, error = received.get(timeout=min(0.02, remaining))
+                    # Durable event processing may lag behind the reader. Even
+                    # when the consumer's timer has elapsed, inspect bytes that
+                    # are already queued before deciding the stream was idle.
+                    chunk, observed_at, error = received.get(timeout=max(0.0, min(0.02, remaining)))
                 except queue.Empty:
+                    checkpoint_model_call(cancellation_token=cancellation_token, deadline_monotonic=deadline_monotonic)
+                    if time.monotonic() - last_byte >= self.config.idle_timeout_seconds:
+                        raise EvaluationIdleTimeout("evaluation stream idle timeout")
                     continue
+                checkpoint_model_call(cancellation_token=cancellation_token, deadline_monotonic=deadline_monotonic)
+                # Queueing cannot forgive a real receive gap, including a late
+                # EOF/error. Use reader timestamps, never consumer progress.
+                if observed_at - last_byte >= self.config.idle_timeout_seconds:
+                    raise EvaluationIdleTimeout("evaluation stream idle timeout")
                 if error:
                     raise error
                 if not chunk:

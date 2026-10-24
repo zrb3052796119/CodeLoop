@@ -9,6 +9,7 @@ import subprocess
 import sys
 import threading
 import time
+from types import SimpleNamespace
 import urllib.error
 
 import pytest
@@ -131,13 +132,132 @@ def test_missing_partial_usage_stays_unknown_and_reservation_remains(tmp_path, m
     assert snapshot["requests"][0]["chargedTokens"] == snapshot["requests"][0]["reservedTokens"]
 
 
-def test_active_stream_exceeds_old_fixed_timer_but_respects_idle(tmp_path, monkeypatch):
-    response = ScriptedResponse([event(TEXT), b": heartbeat\n\n", event({"usage": USAGE}), DONE], delay=0.03)
-    install_open(monkeypatch, response)
+def queued_stream_during_ledger_update(monkeypatch, schedule):
+    """Use real queue/thread/SQLite, but control receive time and consumer lag."""
+    from minicode import model_call_control
+    from scripts import evaluation_transport as transport_module
+
+    clock = SimpleNamespace(now=time.monotonic())
+    clock.started = clock.now
+    local_time = SimpleNamespace(monotonic=lambda: clock.now, time=time.time, sleep=time.sleep)
+    for module in (transport_module, adapter, model_call_control):
+        monkeypatch.setattr(module, "time", local_time)
+    consumer_held = threading.Event()
+    eof_queued = threading.Event()
+    observed = []
+    original_queue = transport_module.queue
+
+    class ObservedQueue(original_queue.Queue):
+        def put(self, item, *args, **kwargs):
+            super().put(item, *args, **kwargs)
+            observed.append(item)
+            if item[0] == b"" or item[2] is not None:
+                eof_queued.set()
+
+    monkeypatch.setattr(transport_module, "queue", SimpleNamespace(
+        Queue=ObservedQueue, Empty=original_queue.Empty, Full=original_queue.Full,
+    ))
+
+    class ScheduledResponse(ScriptedResponse):
+        def read1(self, _amount):
+            if observed:
+                assert consumer_held.wait(3), "consumer did not enter the first durable event"
+            advance, chunk = next(self.chunks)
+            clock.now += advance
+            if isinstance(chunk, BaseException):
+                raise chunk
+            return chunk
+
+    response = ScheduledResponse(schedule)
+    captured = []
+    install_open(monkeypatch, response, captured)
+    original_update = SharedLedger.update
+
+    def update(ledger, call, values):
+        result = original_update(ledger, call, values)
+        if "firstContentSeconds" in values and not consumer_held.is_set():
+            consumer_held.set()
+            assert eof_queued.wait(3), "reader did not queue the complete scripted stream"
+        return result
+
+    monkeypatch.setattr(SharedLedger, "update", update)
+    return clock, response, captured, observed
+
+
+@pytest.mark.parametrize("done_bytes, eof_gap", [(DONE, 0.03), (DONE, 0.2), (b"data: [DONE]", 0.03)])
+def test_active_stream_exceeds_old_fixed_timer_but_respects_idle(tmp_path, monkeypatch, done_bytes, eof_gap):
+    clock, response, captured, observed = queued_stream_during_ledger_update(monkeypatch, [
+        (0.03, event(TEXT)), (0.03, b": heartbeat\n\n"),
+        (0.03, event({"usage": USAGE})), (0.03, done_bytes), (eof_gap, b""),
+    ])
     with EvaluationTransport(config(tmp_path, idle_timeout_seconds=0.1, request_timeout_seconds=1)) as transport:
         result = adapter.OpenAIModelAdapter(dict(RUNTIME), None).next(MESSAGES)
-        assert result.content == "hello"
-        assert transport.ledger.snapshot()["completed"] == 1
+        snapshot = transport.ledger.snapshot()
+    assert result.content == "hello"
+    assert snapshot["completed"] == len(captured) == 1
+    assert clock.now - clock.started == pytest.approx(0.12 + eof_gap)
+    assert clock.now - clock.started > RUNTIME["modelTimeoutSeconds"]
+    assert [item[0] for item in observed] == [event(TEXT), b": heartbeat\n\n", event({"usage": USAGE}), done_bytes, b""]
+    row = snapshot["requests"][0]
+    assert row["firstByteSeconds"] == pytest.approx(0.03)
+    assert row["lastByteSeconds"] == pytest.approx(0.12)
+    assert row["streamDone"] and snapshot["chargedTokens"] == 28
+    assert response.closed.wait(1)
+
+
+@pytest.mark.parametrize("terminal, gap, error", [
+    (DONE, 0.11, EvaluationIdleTimeout),
+    (b"", 0.11, EvaluationIdleTimeout),
+    (b"", 0.03, EvaluationStreamError),
+    (RuntimeError("reader failed"), 0.03, RuntimeError),
+    (RuntimeError("reader failed"), 0.11, EvaluationIdleTimeout),
+])
+def test_queued_terminal_preserves_real_receive_gap_and_eof_contract(tmp_path, monkeypatch, terminal, gap, error):
+    schedule = [(0.03, event({**TEXT, "usage": USAGE})), (gap, terminal)]
+    if terminal and not isinstance(terminal, BaseException):
+        schedule.append((0.01, b""))
+    _clock, response, captured, observed = queued_stream_during_ledger_update(monkeypatch, schedule)
+    with EvaluationTransport(config(tmp_path, idle_timeout_seconds=0.1, request_timeout_seconds=1)) as transport:
+        with pytest.raises(error) as raised:
+            adapter.OpenAIModelAdapter(dict(RUNTIME), None).next(MESSAGES)
+        snapshot = transport.ledger.snapshot()
+    if error is RuntimeError:
+        assert raised.value is terminal
+    row = snapshot["requests"][0]
+    assert snapshot["failed"] == len(captured) == 1
+    assert row["errorClass"] == error.__name__ and row["errorPhase"] == "stream"
+    assert row["usage"]["output_tokens"] == 8 and not row.get("streamDone")
+    assert [item[0] for item in observed] == [None if isinstance(chunk, BaseException) else chunk for _delay, chunk in schedule]
+    assert response.closed.wait(1)
+
+
+def test_unterminated_done_cannot_use_late_eof_to_bypass_idle(tmp_path, monkeypatch):
+    _clock, response, captured, _observed = queued_stream_during_ledger_update(monkeypatch, [
+        (0.03, event({**TEXT, "usage": USAGE})), (0.03, b"data: [DONE]"), (0.11, b""),
+    ])
+    with EvaluationTransport(config(tmp_path, idle_timeout_seconds=0.1, request_timeout_seconds=1)) as transport:
+        with pytest.raises(EvaluationIdleTimeout):
+            adapter.OpenAIModelAdapter(dict(RUNTIME), None).next(MESSAGES)
+        snapshot = transport.ledger.snapshot()
+    assert snapshot["failed"] == len(captured) == 1
+    assert not snapshot["requests"][0].get("streamDone")
+    assert response.closed.wait(1)
+
+
+def test_absolute_deadline_precedes_already_queued_done_and_idle(tmp_path, monkeypatch):
+    clock, response, captured, observed = queued_stream_during_ledger_update(monkeypatch, [
+        (0.03, event({**TEXT, "usage": USAGE})), (0.03, b": heartbeat\n\n"),
+        (0.03, DONE), (0.03, b""),
+    ])
+    with EvaluationTransport(config(tmp_path, idle_timeout_seconds=0.05, request_timeout_seconds=1)) as transport:
+        with pytest.raises(ModelCallDeadlineExceeded):
+            adapter.OpenAIModelAdapter(dict(RUNTIME), None).next(MESSAGES, deadline_monotonic=clock.started + 0.1)
+        snapshot = transport.ledger.snapshot()
+    row = snapshot["requests"][0]
+    assert snapshot["failed"] == len(captured) == 1
+    assert row["errorClass"] == "ModelCallDeadlineExceeded" and row["errorPhase"] == "stream"
+    assert row["usage"]["output_tokens"] == 8 and not row.get("streamDone")
+    assert len(observed) == 4 and response.closed.wait(1)
 
 
 def test_idle_timeout_keeps_received_usage_and_never_retries(tmp_path, monkeypatch):
