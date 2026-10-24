@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import threading
+from types import SimpleNamespace
 
 import pytest
 
@@ -2117,12 +2118,30 @@ def test_concurrent_finalized_authority_outranks_fatal_signal() -> None:
 
 
 def test_concurrent_finalized_authority_outranks_fatal_without_cancellation(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     authority_finished = threading.Event()
     authority_output = _finalized_authority_output()
+    authority_futures: list[concurrent.futures.Future[ToolResult]] = []
+
+    class CompletionSignalingExecutor(concurrent.futures.ThreadPoolExecutor):
+        def submit(self, function, /, *args, **kwargs):
+            future = super().submit(function, *args, **kwargs)
+            if kwargs.get("call", {}).get("id") == "authority":
+                # The outer invocation must finish, including its post-tool
+                # processing. A signal inside tool.run() does not prove this.
+                assert function is agent_loop_module._execute_single_tool
+                authority_futures.append(future)
+                future.add_done_callback(lambda _future: authority_finished.set())
+            return future
+
+    local_futures = SimpleNamespace(**vars(concurrent.futures))
+    local_futures.ThreadPoolExecutor = CompletionSignalingExecutor
+    monkeypatch.setattr(
+        agent_loop_module, "concurrent", SimpleNamespace(futures=local_futures)
+    )
 
     def finalized(_input, _context):
-        authority_finished.set()
         return ToolResult(
             ok=True,
             output=authority_output,
@@ -2131,6 +2150,9 @@ def test_concurrent_finalized_authority_outranks_fatal_without_cancellation(
 
     def raises_fatal(_input, _context):
         assert authority_finished.wait(5)
+        assert len(authority_futures) == 1
+        assert authority_futures[0].done()
+        assert authority_futures[0].result()._must_deliver
         raise SystemExit("fatal worker signal")
 
     tools = ToolRegistry(
