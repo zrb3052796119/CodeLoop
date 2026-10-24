@@ -1229,6 +1229,7 @@ def _aggregate_capabilities(
     installed: str,
     browser_verified: bool,
     tool_error_leaks_path: bool,
+    ordinary_fact_persisted: bool,
 ) -> list[dict[str, Any]]:
     definitions = [
         ("agent.mock_model", "agent", "MockModel agent turn", ("tui", "headless", "gateway", "dashboard"), ("mock_model", "agent_flow")),
@@ -1270,8 +1271,14 @@ def _aggregate_capabilities(
         if capability_id == "mcp.search":
             status = "unavailable"
             live = "blocked"
+        deterministic = "pass" if tests else "not_tested"
+        truthfulness = "pass" if tests else "partial"
+        evidence = list(tests)
         if capability_id == "memory.conversation_fact":
-            status = "fail"
+            status = "pass" if ordinary_fact_persisted else "fail"
+            deterministic = status
+            truthfulness = status
+            evidence.append(f"ordinary_fact_persisted={str(ordinary_fact_persisted).lower()}")
         safety_verdict = (
             "pass" if tests and category in {"security", "dashboard"} else "partial"
         )
@@ -1288,13 +1295,13 @@ def _aggregate_capabilities(
                 category,
                 name,
                 reachable=reachable,
-                deterministic="pass" if tests else "not_tested",
+                deterministic=deterministic,
                 installed=installed,
                 live=live,
                 safety=safety_verdict,
-                truthfulness="pass" if tests else "partial",
+                truthfulness=truthfulness,
                 status=status,
-                evidence=tests,
+                evidence=evidence,
             )
         )
     capabilities.append(
@@ -1458,20 +1465,14 @@ def _tool_capabilities(
     capabilities: list[dict[str, Any]] = []
     core_names = set(core)
     utility_names = set(full).difference(core)
-    failed_tools = {
-        "file_line_count",
-    }
-    issue_map = {
-        "file_line_count": ["TOOL-002"],
-        "base64_encode": ["TOOL-003"],
-        "hash": ["TOOL-003"],
-        "line_count": ["TOOL-003"],
-        "text_dedupe": ["TOOL-003"],
-        "text_join": ["TOOL-003"],
-        "text_sort": ["TOOL-003"],
-        "url_encode": ["TOOL-003"],
-    }
     for name in sorted(full):
+        contract_issues = []
+        if not required_rejects_empty[name]:
+            contract_issues.append("TOOL-003")
+        if name == "file_line_count" and not (
+            full[name].is_read_only and full[name].is_concurrency_safe
+        ):
+            contract_issues.append("TOOL-002")
         source = source_definitions.get(name, "minicode/tools/__init__.py")
         tests = _matching_test_paths(test_index, name)
         evidence = [
@@ -1492,9 +1493,6 @@ def _tool_capabilities(
         safety = "partial"
         truthfulness = "partial"
         status = "partial" if name in utility_names else "pass"
-        if name in failed_tools:
-            status = "fail"
-            safety = "fail" if name != "web_search" else "partial"
         if name == "read_file":
             # Driven by the live probe, not a hardcoded verdict, so a fix to the
             # Tool shows up here instead of the audit reporting a stale failure.
@@ -1518,7 +1516,13 @@ def _tool_capabilities(
                 ]
             )
         if name == "file_line_count":
-            safety = "partial"
+            evidence.extend([
+                f"is_read_only={str(full[name].is_read_only).lower()}",
+                f"is_concurrency_safe={str(full[name].is_concurrency_safe).lower()}",
+            ])
+            safety = "fail" if "TOOL-002" in contract_issues else "pass"
+            if deterministic == "pass":
+                status = "pass"
         if name == "http_request":
             deterministic = "pass"
             safety = "pass"
@@ -1572,6 +1576,12 @@ def _tool_capabilities(
                     "errors=truthful-content-free-low-cardinality",
                 ]
             )
+        # Observed contract failures take precedence over happy-path evidence
+        # and tool-specific summaries, including newly registered utilities.
+        if contract_issues:
+            status = "fail"
+        if "TOOL-003" in contract_issues:
+            deterministic = "fail"
         live = "not_required"
         if name in {"web_search", "web_fetch", "http_request"}:
             key = {
@@ -1600,7 +1610,7 @@ def _tool_capabilities(
                 truthfulness=truthfulness,
                 status=status,
                 evidence=[*evidence, *tests],
-                issues=issue_map.get(name, []),
+                issues=contract_issues,
             )
         )
     conditional_mcp_names = {
@@ -1709,42 +1719,43 @@ def _build_issues(
                 red_test="Cover the full private IP ranges, IPv6 forms, DNS rebinding and public-to-private redirects.",
             )
         )
-    issues.extend(
-        [
+    metadata = probes["fileLineCountMetadata"]
+    if not (metadata["readOnly"] and metadata["concurrencySafe"]):
+        issues.append(
             _issue(
                 "TOOL-002",
                 "P3",
                 "tool.file_line_count",
                 "A read-only Tool is classified as non-read-only/non-concurrency-safe, reducing truthful scheduling metadata.",
-                "Inspect file_line_count ToolDefinition.is_read_only.",
+                "Inspect file_line_count ToolDefinition.is_read_only and is_concurrency_safe.",
                 "Read-only navigation tools should expose read-only and concurrency-safe metadata.",
-                "file_line_count is absent from the central read-only name set and has no explicit metadata.",
+                f"file_line_count readOnly={metadata['readOnly']}, concurrencySafe={metadata['concurrencySafe']}.",
                 ["minicode/tooling.py", "minicode/tools/file_line_count.py"],
                 environment_dependent=False,
                 recommended_batch="Reliability 1B-2: File/command Tool correctness",
                 red_test="Registry metadata contract must enumerate every Tool's read/write, destructive and concurrency properties.",
-            ),
+            )
+        )
+    missing_required = sorted(name for name, rejects in probes["requiredValidation"].items() if not rejects)
+    if missing_required:
+        issues.append(
             _issue(
                 "TOOL-003",
                 "P2",
-                "tool.base64_encode",
-                "Several full-profile utility validators accept a missing schema-required field as an empty value.",
-                "Call each validator with an empty object for base64_encode, hash, line_count, text_dedupe, text_join, text_sort and url_encode.",
+                f"tool.{missing_required[0]}",
+                "Registered tool validators fail to reject a missing schema-required field with a validation error.",
+                "Call each validator with an empty object for: " + ", ".join(missing_required) + ".",
                 "A field declared required in the Tool schema must be rejected when omitted.",
-                "All seven validators accept the empty object, so runtime behavior diverges from the model-visible schema.",
+                "Empty-object required-field validation failed for: " + ", ".join(missing_required) + ".",
                 [
-                    "minicode/tools/encoding_utils.py",
-                    "minicode/tools/crypto_utils.py",
-                    "minicode/tools/text_utils.py",
                     "scripts/run_functional_audit.py",
+                    *(f"required_validation:{name}=false" for name in missing_required),
                 ],
                 environment_dependent=False,
                 recommended_batch="Reliability 1B-2: File/command Tool correctness",
                 red_test="Table-driven schema/validator conformance must reject every omitted required field and wrong scalar type.",
-            ),
-        ]
-    )
-    assert memory["ordinaryFactPersisted"] is True
+            )
+        )
     assert memory["singleErrorPatternSuppressed"] is True
     assert memory["environmentErrorSuppressed"] is True
     assert memory["verifiedRecoveryPersisted"] is True
@@ -1847,6 +1858,11 @@ def run_audit(args: argparse.Namespace) -> dict[str, Any]:
         "httpFixtureStatus": fixture_status,
         "webContracts": web_contracts,
         "toolErrorLeaksPath": tool_error_leak,
+        "fileLineCountMetadata": {
+            "readOnly": full["file_line_count"].is_read_only,
+            "concurrencySafe": full["file_line_count"].is_concurrency_safe,
+        },
+        "requiredValidation": required,
     }
     installed = "pass" if args.installed_wheel else "not_tested"
     capabilities = _tool_capabilities(
@@ -1876,6 +1892,7 @@ def run_audit(args: argparse.Namespace) -> dict[str, Any]:
             installed=installed,
             browser_verified=args.browser_verified,
             tool_error_leaks_path=tool_error_leak,
+            ordinary_fact_persisted=memory["ordinaryFactPersisted"],
         )
     )
     capabilities.extend(_internal_capabilities(test_index, installed=installed))

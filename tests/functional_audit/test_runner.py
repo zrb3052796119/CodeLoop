@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import os
-from collections import Counter
-from pathlib import Path
 import subprocess
 import sys
+from collections import Counter
+from pathlib import Path
 
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "scripts" / "run_functional_audit.py"
@@ -126,7 +127,9 @@ def _run_audit(tmp_path: Path, *args: str) -> tuple[subprocess.CompletedProcess[
 def test_default_audit_is_offline_isolated_and_exhaustive(tmp_path: Path) -> None:
     completed, payload = _run_audit(tmp_path)
 
-    assert completed.returncode == 1
+    assert completed.returncode == 0, [
+        item for item in payload["capabilities"] if item["status"] == "fail"
+    ]
     assert payload["schemaVersion"] == 1
     assert payload["audit"]["liveNetwork"] is False
     assert payload["audit"]["isolation"]["home"] == "<isolated-home>"
@@ -173,6 +176,8 @@ def test_audit_closes_web_and_archive_findings(
     # now driven by live probes rather than static issue entries, so they must
     # no longer appear as findings.
     assert "TOOL-001" not in issues
+    assert "TOOL-002" not in issues
+    assert "TOOL-003" not in issues
     assert "SEC-005" not in issues
     assert all(issue["recommendedBatch"].startswith("Reliability 1B-") for issue in issues.values())
     http_request = next(
@@ -219,9 +224,8 @@ def test_audit_closes_web_and_archive_findings(
         "tool": 78,
     }
     assert payload["summary"]["capabilityCount"] == len(payload["capabilities"])
-    # SEC-002 and SEC-004 are closed by containment and bounded extraction
-    # probes/tests; the remaining findings cover unrelated tool metadata/schema.
-    assert payload["summary"]["issueCount"] == 2
+    assert payload["summary"]["issueCount"] == 0
+    assert payload["deterministicProbes"]["requiredValidation"] is True
     assert payload["deterministicProbes"]["memory"] == {
         "ordinaryFactPersisted": True,
         "singleErrorPatternSuppressed": True,
@@ -301,3 +305,77 @@ def test_output_is_reproducible_except_for_explicit_run_metadata(tmp_path: Path)
         payload["audit"].pop("generatedAt", None)
         payload["audit"].pop("durationMs", None)
     assert first == second
+
+
+@pytest.mark.parametrize("fault", ["metadata", "required_validator"])
+def test_audit_reports_observed_tool_contract_regressions(tmp_path, monkeypatch, fault):
+    from dataclasses import replace
+
+    from minicode.tooling import ToolMetadata
+    from scripts import run_functional_audit as runner
+
+    original_discover = runner._discover_runtime_tools
+    broken_name = "file_line_count" if fault == "metadata" else "json_format"
+    expected_issue = "TOOL-002" if fault == "metadata" else "TOOL-003"
+
+    def discover(workspace):
+        core, full = original_discover(workspace)
+        original = full[broken_name]
+        if fault == "metadata":
+            broken = replace(original, metadata=ToolMetadata(
+                name=original.name, description=original.description, capabilities=set()))
+        else:
+            # Choose a tool outside the historical seven-validator list. Its
+            # actual empty-object probe must determine both finding and link.
+            def accepts_missing_required(value):
+                return {} if not value else original.validator(value)
+
+            broken = replace(original, validator=accepts_missing_required)
+        full[broken_name] = broken
+        if broken_name in core:
+            core[broken_name] = broken
+        return core, full
+
+    monkeypatch.setattr(runner, "_discover_runtime_tools", discover)
+    output = tmp_path / "audit.json"
+    assert runner.main(["--output", str(output), "--timeout", "8"]) == 1
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert {issue["id"] for issue in payload["issues"]} == {expected_issue}
+    assert payload["issues"][0]["capabilityId"] == f"tool.{broken_name}"
+    capability = next(item for item in payload["capabilities"]
+                      if item["id"] == f"tool.{broken_name}")
+    assert capability["status"] == "fail"
+    assert capability["issues"] == [expected_issue]
+    assert payload["summary"]["registeredToolCount"] == len(EXPECTED_REGISTERED_TOOLS)
+    assert payload["summary"]["capabilityCount"] == 207
+    if fault == "metadata":
+        assert capability["safety"] == "fail"
+        assert "is_read_only=false" in capability["evidence"]
+        assert "is_concurrency_safe=false" in capability["evidence"]
+    else:
+        assert capability["deterministicTest"] == "fail"
+        assert "required_validation=false" in capability["evidence"]
+        assert payload["deterministicProbes"]["requiredValidation"] is False
+
+
+def test_audit_reports_actual_conversation_fact_probe_failure(tmp_path, monkeypatch):
+    from scripts import run_functional_audit as runner
+
+    original_probe = runner._probe_memory_boundaries
+
+    def failed_fact_probe(workspace):
+        return {**original_probe(workspace), "ordinaryFactPersisted": False}
+
+    monkeypatch.setattr(runner, "_probe_memory_boundaries", failed_fact_probe)
+    output = tmp_path / "audit.json"
+    assert runner.main(["--output", str(output), "--timeout", "8"]) == 1
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    capability = next(item for item in payload["capabilities"]
+                      if item["id"] == "memory.conversation_fact")
+    assert capability["status"] == "fail"
+    assert capability["deterministicTest"] == "fail"
+    assert capability["truthfulness"] == "fail"
+    assert "ordinary_fact_persisted=false" in capability["evidence"]
+    assert payload["deterministicProbes"]["memory"]["ordinaryFactPersisted"] is False
+    assert payload["summary"]["statusCounts"]["fail"] == 1
+    assert payload["summary"]["capabilityCount"] == 207
