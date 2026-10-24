@@ -1155,6 +1155,10 @@ class MemoryAuthorityPublisher:
                 raise MemoryStoreConflict(
                     "Memory publication temporary file has the wrong size"
                 )
+            # Windows cannot replace a file while its mkstemp handle is open.
+            # Revalidate the pathname after closing, using the captured identity.
+            os.close(temporary_fd)
+            temporary_fd = None
             temporary_path_state = os.lstat(temporary_path)
             _require_regular_target(temporary_path_state)
             if (
