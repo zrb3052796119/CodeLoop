@@ -1,0 +1,458 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.8, pytest-9.1.1, pluggy-1.6.0 -- /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/zhourunbo/code/coding agent/MiniCode-Python-main
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collecting ... collected 1 item
+
+tests/test_completion_review_evidence_delivery.py::test_current_receipt_view_does_not_mislabel_previous_candidate_evidence FAILED [100%]
+
+=================================== FAILURES ===================================
+___ test_current_receipt_view_does_not_mislabel_previous_candidate_evidence ____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-458/test_current_receipt_view_does0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x105c304a0>
+
+    def test_current_receipt_view_does_not_mislabel_previous_candidate_evidence(tmp_path, monkeypatch):
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch)
+        saved = {}
+    
+        def seed(tools, child, packet):
+            result, evidence = _probe(tools, child, packet, DIAGNOSTIC, purpose="diagnostic")
+            assert not result.ok
+            saved.update(_read_display_original(tools, child, evidence))
+    
+        try:
+            assess(seed)
+            with (tmp_path / "stock.py").open("a") as handle:
+                handle.write("\n# a new candidate\n")
+    
+            def resumed(tools, child, packet):
+                entry = packet["diagnosticObservations"][0]
+                assert entry["status"] is None and entry["latestReceiptRef"] is None
+                assert entry["receiptCount"] == 1
+                current = _read_all(tools, child, saved["probeId"], receiptView="current")
+                assert current["receipts"] == [] and current["historyReceiptCount"] == 1
+                full = _read_all(tools, child, saved["probeId"])
+                assert full["receipts"] == [saved]
+                malformed = tools.execute("review_probe_read", {
+                    "probeId": saved["probeId"], "receiptView": "ignore_failures"}, child)
+                assert not malformed.ok
+    
+>           assert assess(resumed)["status"] == "inconclusive"
+                   ^^^^^^^^^^^^^^^
+
+tests/test_completion_review_evidence_delivery.py:113: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:960: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1852: in _assess_snapshot
+    run_agent_turn(model=model, tools=registry, cwd=str(root), permissions=permissions,
+tests/test_implementation_completion_review.py:130: in review_loop
+    return driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x105c6fd70>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-e27o9tio/verification-5hjz...ons.SchedulerWorkerReadPermissions object at 0x105c6f8c0>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'candidateDigest': 'sha256:41bb125a7a9e6475d12b9b5209aea45d36c6e156d7829971f73003a6bafbebda', 'diagnosticObservations... completion submission.']], 'probePurposes': {'review_probe_3baec5fef79ad254c4c6b717': {'purpose': 'diagnostic'}}, ...}
+
+    def resumed(tools, child, packet):
+        entry = packet["diagnosticObservations"][0]
+        assert entry["status"] is None and entry["latestReceiptRef"] is None
+        assert entry["receiptCount"] == 1
+        current = _read_all(tools, child, saved["probeId"], receiptView="current")
+        assert current["receipts"] == [] and current["historyReceiptCount"] == 1
+        full = _read_all(tools, child, saved["probeId"])
+>       assert full["receipts"] == [saved]
+E       AssertionError: assert [{'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 243, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12', 'status': 'failed', 'stderr': {'byteCount': 0, 'digest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'preview': '', 'previewBase64': '', 'truncated': False}, 'stdout': {'byteCount': 600, 'digest': 'sha256:d1afe0240fae218bfb3bb536ad6bcc84ae2898c3389e0a193074967bdb28717f', 'preview': 'F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________________ test_observe _________________________________\n\n    def test_observe():\n>       assert release(3, 2) == 3\nE       assert 5 == 3\nE        +  where 5 = release(3, 2)\n\n__minicode_review_probe__.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED __minicode_review_probe__.py::test_observe - assert 5 == 3\n +  where 5 = release(3, 2)\n1 failed in 0.04s\n', 'previewBase64': 'RiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSBGQUlMVVJFUyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18gdGVzdF9vYnNlcnZlIF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKICAgIGRlZiB0ZXN0X29ic2VydmUoKToKPiAgICAgICBhc3NlcnQgcmVsZWFzZSgzLCAyKSA9PSAzCkUgICAgICAgYXNzZXJ0IDUgPT0gMwpFICAgICAgICArICB3aGVyZSA1ID0gcmVsZWFzZSgzLCAyKQoKX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTozOiBBc3NlcnRpb25FcnJvcgo9PT09PT09PT09PT09PT09PT09PT09PT09PT0gc2hvcnQgdGVzdCBzdW1tYXJ5IGluZm8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PQpGQUlMRUQgX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTo6dGVzdF9vYnNlcnZlIC0gYXNzZXJ0IDUgPT0gMwogKyAgd2hlcmUgNSA9IHJlbGVhc2UoMywgMikKMSBmYWlsZWQgaW4gMC4wNHMK', 'truncated': False}}, 'executionBinding': {'baseCheck': {'argv': ['python3', '-m', 'pytest', '-q', 'test_public.py'], 'checkId': 'public', 'commandDigest': 'sha256:94c3afca580b0d0798162c308bc0021be2a4133af00820f2db670505906e0aff', 'kind': 'tests', 'timeoutSeconds': 20}, 'bindingVersion': 1, 'derivedCheck': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'kind': 'tests', 'timeoutSeconds': 20}, 'originalTarget': 'test_public.py', 'originalTargetDigest': 'sha256:c0d5ae48d26880ff1b15c6a013094edd2cbeb40b1690af3ba7c50576c973ab67', 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeSourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'probeTarget': '__minicode_review_probe__.py'}, 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'scenario': 'Both inventory operations preserve quantity semantics', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'status': 'failed', 'testReport': {'caseReport': {'cases': [{'failureKind': 'assertion', 'nodeId': '__minicode_review_probe__.py::test_observe', 'outcome': 'failed'}], 'digest': 'sha256:e81021a1aa1aa65db8178acfa495143a88e1f9620165419804afe1cc5d75143f'}, 'collected': 1, 'errors': 0, 'executionReport': {'assertionCount': 1, 'callCount': 2, 'candidateDigest': 'sha256:41bb125a7a9e6475d12b9b5209aea45d36c6e156d7829971f73003a6bafbebda', 'caseCount': 1, 'complete': True, 'displayOnly': True, 'documentRef': 'evidence_d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862', 'originalDigest': 'sha256:d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862', 'readHint': 'completion_evidence_read: filters={} for case index; select caseNodeId, assertionId or consumer for observations; omit filters for the full original.', 'validation': 'valid'}, 'failed': 1, 'passed': 0, 'reportDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'skipped': 0}}, 'receiptRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00004-probe-receipt.json', 'sourceRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00003-probe-source.json'}] == [{'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 243, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12', 'status': 'failed', 'stderr': {'byteCount': 0, 'digest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'preview': '', 'previewBase64': '', 'truncated': False}, 'stdout': {'byteCount': 600, 'digest': 'sha256:d1afe0240fae218bfb3bb536ad6bcc84ae2898c3389e0a193074967bdb28717f', 'preview': 'F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________________ test_observe _________________________________\n\n    def test_observe():\n>       assert release(3, 2) == 3\nE       assert 5 == 3\nE        +  where 5 = release(3, 2)\n\n__minicode_review_probe__.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED __minicode_review_probe__.py::test_observe - assert 5 == 3\n +  where 5 = release(3, 2)\n1 failed in 0.04s\n', 'previewBase64': 'RiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSBGQUlMVVJFUyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18gdGVzdF9vYnNlcnZlIF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKICAgIGRlZiB0ZXN0X29ic2VydmUoKToKPiAgICAgICBhc3NlcnQgcmVsZWFzZSgzLCAyKSA9PSAzCkUgICAgICAgYXNzZXJ0IDUgPT0gMwpFICAgICAgICArICB3aGVyZSA1ID0gcmVsZWFzZSgzLCAyKQoKX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTozOiBBc3NlcnRpb25FcnJvcgo9PT09PT09PT09PT09PT09PT09PT09PT09PT0gc2hvcnQgdGVzdCBzdW1tYXJ5IGluZm8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PQpGQUlMRUQgX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTo6dGVzdF9vYnNlcnZlIC0gYXNzZXJ0IDUgPT0gMwogKyAgd2hlcmUgNSA9IHJlbGVhc2UoMywgMikKMSBmYWlsZWQgaW4gMC4wNHMK', 'truncated': False}}, 'executionBinding': {'baseCheck': {'argv': ['python3', '-m', 'pytest', '-q', 'test_public.py'], 'checkId': 'public', 'commandDigest': 'sha256:94c3afca580b0d0798162c308bc0021be2a4133af00820f2db670505906e0aff', 'kind': 'tests', 'timeoutSeconds': 20}, 'bindingVersion': 1, 'derivedCheck': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'kind': 'tests', 'timeoutSeconds': 20}, 'originalTarget': 'test_public.py', 'originalTargetDigest': 'sha256:c0d5ae48d26880ff1b15c6a013094edd2cbeb40b1690af3ba7c50576c973ab67', 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeSourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'probeTarget': '__minicode_review_probe__.py'}, 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'scenario': 'Both inventory operations preserve quantity semantics', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'status': 'failed', 'testReport': {'caseReport': {'cases': [{'failureKind': 'assertion', 'nodeId': '__minicode_review_probe__.py::test_observe', 'outcome': 'failed'}], 'digest': 'sha256:e81021a1aa1aa65db8178acfa495143a88e1f9620165419804afe1cc5d75143f'}, 'collected': 1, 'errors': 0, 'executionReport': {'cases': [{'assertions': [{'assertionId': 'assert_4ae021f1aae5e51518a86d7c', 'endColumn': 29, 'endLine': 3, 'kind': 'assert', 'path': '__minicode_review_probe__.py', 'raised': True, 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'startColumn': 4, 'startLine': 3}], 'calls': [{'callId': 'call_0106035b46a758a8d00afcee', 'codeDigest': 'sha256:452bb4810d17715bf3739c05b5bcbe1eabed3a3db4fa0a7fc92002fa3bc60f25', 'count': 1, 'firstLine': 2, 'identityVerified': True, 'parentCallId': None, 'path': '__minicode_review_probe__.py', 'qualname': 'test_observe', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2'}, {'callId': 'call_586da04413b5e782723ba4e4', 'codeDigest': 'sha256:9d59e15ae0ac26fa921a6f493f893bb4790104b1624e944763a55b010e270f05', 'count': 1, 'firstLine': 4, 'identityVerified': True, 'parentCallId': 'call_0106035b46a758a8d00afcee', 'path': 'stock.py', 'qualname': 'release', 'sourceDigest': 'sha256:fe6cd14f1d46bc3216c397af67316d0b9cd96bf87227d4803bb55cf8773ddd48'}], 'complete': True, 'limitations': [], 'nodeId': '__minicode_review_probe__.py::test_observe'}], 'digest': 'sha256:a90e6b45177afcb5b38e20d06068b962359b18ffd5be2908f9b24ca6d384b3cb', 'junitDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'version': 1}, 'failed': 1, 'passed': 0, 'reportDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'skipped': 0}}, 'receiptRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00004-probe-receipt.json', 'sourceRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00003-probe-source.json'}]
+E         
+E         At index 0 diff: {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 243, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12', 'status': 'failed', 'stderr': {'byteCount': 0, 'digest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'preview': '', 'previewBase64': '', 'truncated': False}, 'stdout': {'byteCount': 600, 'digest': 'sha256:d1afe0240fae218bfb3bb536ad6bcc84ae2898c3389e0a193074967bdb28717f', 'preview': 'F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________________ test_observe _________________________________\n\n    def test_observe():\n>       assert release(3, 2) == 3\nE       assert 5 == 3\nE        +  where 5 = release(3, 2)\n\n__minicode_review_probe__.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED __minicode_review_probe__.py::test_observe - assert 5 == 3\n +  where 5 = release(3, 2)\n1 failed in 0.04s\n', 'previewBase64': 'RiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSBGQUlMVVJFUyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18gdGVzdF9vYnNlcnZlIF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKICAgIGRlZiB0ZXN0X29ic2VydmUoKToKPiAgICAgICBhc3NlcnQgcmVsZWFzZSgzLCAyKSA9PSAzCkUgICAgICAgYXNzZXJ0IDUgPT0gMwpFICAgICAgICArICB3aGVyZSA1ID0gcmVsZWFzZSgzLCAyKQoKX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTozOiBBc3NlcnRpb25FcnJvcgo9PT09PT09PT09PT09PT09PT09PT09PT09PT0gc2hvcnQgdGVzdCBzdW1tYXJ5IGluZm8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PQpGQUlMRUQgX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTo6dGVzdF9vYnNlcnZlIC0gYXNzZXJ0IDUgPT0gMwogKyAgd2hlcmUgNSA9IHJlbGVhc2UoMywgMikKMSBmYWlsZWQgaW4gMC4wNHMK', 'truncated': False}}, 'executionBinding': {'baseCheck': {'argv': ['python3', '-m', 'pytest', '-q', 'test_public.py'], 'checkId': 'public', 'commandDigest': 'sha256:94c3afca580b0d0798162c308bc0021be2a4133af00820f2db670505906e0aff', 'kind': 'tests', 'timeoutSeconds': 20}, 'bindingVersion': 1, 'derivedCheck': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'kind': 'tests', 'timeoutSeconds': 20}, 'originalTarget': 'test_public.py', 'originalTargetDigest': 'sha256:c0d5ae48d26880ff1b15c6a013094edd2cbeb40b1690af3ba7c50576c973ab67', 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeSourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'probeTarget': '__minicode_review_probe__.py'}, 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'scenario': 'Both inventory operations preserve quantity semantics', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'status': 'failed', 'testReport': {'caseReport': {'cases': [{'failureKind': 'assertion', 'nodeId': '__minicode_review_probe__.py::test_observe', 'outcome': 'failed'}], 'digest': 'sha256:e81021a1aa1aa65db8178acfa495143a88e1f9620165419804afe1cc5d75143f'}, 'collected': 1, 'errors': 0, 'executionReport': {'assertionCount': 1, 'callCount': 2, 'candidateDigest': 'sha256:41bb125a7a9e6475d12b9b5209aea45d36c6e156d7829971f73003a6bafbebda', 'caseCount': 1, 'complete': True, 'displayOnly': True, 'documentRef': 'evidence_d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862', 'originalDigest': 'sha256:d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862', 'readHint': 'completion_evidence_read: filters={} for case index; select caseNodeId, assertionId or consumer for observations; omit filters for the full original.', 'validation': 'valid'}, 'failed': 1, 'passed': 0, 'reportDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'skipped': 0}}, 'receiptRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00004-probe-receipt.json', 'sourceRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00003-probe-source.json'} != {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 243, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12', 'status': 'failed', 'stderr': {'byteCount': 0, 'digest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'preview': '', 'previewBase64': '', 'truncated': False}, 'stdout': {'byteCount': 600, 'digest': 'sha256:d1afe0240fae218bfb3bb536ad6bcc84ae2898c3389e0a193074967bdb28717f', 'preview': 'F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________________ test_observe _________________________________\n\n    def test_observe():\n>       assert release(3, 2) == 3\nE       assert 5 == 3\nE        +  where 5 = release(3, 2)\n\n__minicode_review_probe__.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED __minicode_review_probe__.py::test_observe - assert 5 == 3\n +  where 5 = release(3, 2)\n1 failed in 0.04s\n', 'previewBase64': 'RiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSBGQUlMVVJFUyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18gdGVzdF9vYnNlcnZlIF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKICAgIGRlZiB0ZXN0X29ic2VydmUoKToKPiAgICAgICBhc3NlcnQgcmVsZWFzZSgzLCAyKSA9PSAzCkUgICAgICAgYXNzZXJ0IDUgPT0gMwpFICAgICAgICArICB3aGVyZSA1ID0gcmVsZWFzZSgzLCAyKQoKX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTozOiBBc3NlcnRpb25FcnJvcgo9PT09PT09PT09PT09PT09PT09PT09PT09PT0gc2hvcnQgdGVzdCBzdW1tYXJ5IGluZm8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PQpGQUlMRUQgX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTo6dGVzdF9vYnNlcnZlIC0gYXNzZXJ0IDUgPT0gMwogKyAgd2hlcmUgNSA9IHJlbGVhc2UoMywgMikKMSBmYWlsZWQgaW4gMC4wNHMK', 'truncated': False}}, 'executionBinding': {'baseCheck': {'argv': ['python3', '-m', 'pytest', '-q', 'test_public.py'], 'checkId': 'public', 'commandDigest': 'sha256:94c3afca580b0d0798162c308bc0021be2a4133af00820f2db670505906e0aff', 'kind': 'tests', 'timeoutSeconds': 20}, 'bindingVersion': 1, 'derivedCheck': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'kind': 'tests', 'timeoutSeconds': 20}, 'originalTarget': 'test_public.py', 'originalTargetDigest': 'sha256:c0d5ae48d26880ff1b15c6a013094edd2cbeb40b1690af3ba7c50576c973ab67', 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeSourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'probeTarget': '__minicode_review_probe__.py'}, 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'scenario': 'Both inventory operations preserve quantity semantics', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'status': 'failed', 'testReport': {'caseReport': {'cases': [{'failureKind': 'assertion', 'nodeId': '__minicode_review_probe__.py::test_observe', 'outcome': 'failed'}], 'digest': 'sha256:e81021a1aa1aa65db8178acfa495143a88e1f9620165419804afe1cc5d75143f'}, 'collected': 1, 'errors': 0, 'executionReport': {'cases': [{'assertions': [{'assertionId': 'assert_4ae021f1aae5e51518a86d7c', 'endColumn': 29, 'endLine': 3, 'kind': 'assert', 'path': '__minicode_review_probe__.py', 'raised': True, 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'startColumn': 4, 'startLine': 3}], 'calls': [{'callId': 'call_0106035b46a758a8d00afcee', 'codeDigest': 'sha256:452bb4810d17715bf3739c05b5bcbe1eabed3a3db4fa0a7fc92002fa3bc60f25', 'count': 1, 'firstLine': 2, 'identityVerified': True, 'parentCallId': None, 'path': '__minicode_review_probe__.py', 'qualname': 'test_observe', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2'}, {'callId': 'call_586da04413b5e782723ba4e4', 'codeDigest': 'sha256:9d59e15ae0ac26fa921a6f493f893bb4790104b1624e944763a55b010e270f05', 'count': 1, 'firstLine': 4, 'identityVerified': True, 'parentCallId': 'call_0106035b46a758a8d00afcee', 'path': 'stock.py', 'qualname': 'release', 'sourceDigest': 'sha256:fe6cd14f1d46bc3216c397af67316d0b9cd96bf87227d4803bb55cf8773ddd48'}], 'complete': True, 'limitations': [], 'nodeId': '__minicode_review_probe__.py::test_observe'}], 'digest': 'sha256:a90e6b45177afcb5b38e20d06068b962359b18ffd5be2908f9b24ca6d384b3cb', 'junitDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'version': 1}, 'failed': 1, 'passed': 0, 'reportDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'skipped': 0}}, 'receiptRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00004-probe-receipt.json', 'sourceRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00003-probe-source.json'}
+E         
+E         Full diff:
+E           [
+E               {
+E                   'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320',
+E                   'probeId': 'review_probe_3baec5fef79ad254c4c6b717',
+E                   'receipt': {
+E                       'criterionIds': [
+E                           'req_624a5f97a5c1d9430cf0',
+E                           'req_f9748bf627102258bef0',
+E                       ],
+E                       'evidence': {
+E                           'argv': [
+E                               'python3',
+E                               '-m',
+E                               'pytest',
+E                               '-q',
+E                               '__minicode_review_probe__.py',
+E                           ],
+E                           'checkId': 'public',
+E                           'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0',
+E                           'durationMs': 243,
+E                           'evidenceVersion': 1,
+E                           'exitCode': 1,
+E                           'failureReason': None,
+E                           'kind': 'tests',
+E                           'resolvedExecutable': '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12',
+E                           'status': 'failed',
+E                           'stderr': {
+E                               'byteCount': 0,
+E                               'digest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+E                               'preview': '',
+E                               'previewBase64': '',
+E                               'truncated': False,
+E                           },
+E                           'stdout': {
+E                               'byteCount': 600,
+E                               'digest': 'sha256:d1afe0240fae218bfb3bb536ad6bcc84ae2898c3389e0a193074967bdb28717f',
+E                               'preview': 'F                                                                        '
+E                               '[100%]\n'
+E                               '=================================== FAILURES '
+E                               '===================================\n'
+E                               '_________________________________ test_observe '
+E                               '_________________________________\n'
+E                               '\n'
+E                               '    def test_observe():\n'
+E                               '>       assert release(3, 2) == 3\n'
+E                               'E       assert 5 == 3\n'
+E                               'E        +  where 5 = release(3, 2)\n'
+E                               '\n'
+E                               '__minicode_review_probe__.py:3: AssertionError\n'
+E                               '=========================== short test summary info '
+E                               '============================\n'
+E                               'FAILED __minicode_review_probe__.py::test_observe - '
+E                               'assert 5 == 3\n'
+E                               ' +  where 5 = release(3, 2)\n'
+E                               '1 failed in 0.04s\n',
+E                               'previewBase64': 'RiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSBGQUlMVVJFUyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18gdGVzdF9vYnNlcnZlIF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKICAgIGRlZiB0ZXN0X29ic2VydmUoKToKPiAgICAgICBhc3NlcnQgcmVsZWFzZSgzLCAyKSA9PSAzCkUgICAgICAgYXNzZXJ0IDUgPT0gMwpFICAgICAgICArICB3aGVyZSA1ID0gcmVsZWFzZSgzLCAyKQoKX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTozOiBBc3NlcnRpb25FcnJvcgo9PT09PT09PT09PT09PT09PT09PT09PT09PT0gc2hvcnQgdGVzdCBzdW1tYXJ5IGluZm8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PQpGQUlMRUQgX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTo6dGVzdF9vYnNlcnZlIC0gYXNzZXJ0IDUgPT0gMwogKyAgd2hlcmUgNSA9IHJlbGVhc2UoMywgMikKMSBmYWlsZWQgaW4gMC4wNHMK',
+E                               'truncated': False,
+E                           },
+E                       },
+E                       'executionBinding': {
+E                           'baseCheck': {
+E                               'argv': [
+E                                   'python3',
+E                                   '-m',
+E                                   'pytest',
+E                                   '-q',
+E                                   'test_public.py',
+E                               ],
+E                               'checkId': 'public',
+E                               'commandDigest': 'sha256:94c3afca580b0d0798162c308bc0021be2a4133af00820f2db670505906e0aff',
+E                               'kind': 'tests',
+E                               'timeoutSeconds': 20,
+E                           },
+E                           'bindingVersion': 1,
+E                           'derivedCheck': {
+E                               'argv': [
+E                                   'python3',
+E                                   '-m',
+E                                   'pytest',
+E                                   '-q',
+E                                   '__minicode_review_probe__.py',
+E                               ],
+E                               'checkId': 'public',
+E                               'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0',
+E                               'kind': 'tests',
+E                               'timeoutSeconds': 20,
+E                           },
+E                           'originalTarget': 'test_public.py',
+E                           'originalTargetDigest': 'sha256:c0d5ae48d26880ff1b15c6a013094edd2cbeb40b1690af3ba7c50576c973ab67',
+E                           'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+E                           'probeSourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2',
+E                           'probeTarget': '__minicode_review_probe__.py',
+E                       },
+E                       'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+E                       'probeId': 'review_probe_3baec5fef79ad254c4c6b717',
+E                       'scenario': 'Both inventory operations preserve quantity semantics',
+E                       'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2',
+E                       'status': 'failed',
+E                       'testReport': {
+E                           'caseReport': {
+E                               'cases': [
+E                                   {
+E                                       'failureKind': 'assertion',
+E                                       'nodeId': '__minicode_review_probe__.py::test_observe',
+E                                       'outcome': 'failed',
+E                                   },
+E                               ],
+E                               'digest': 'sha256:e81021a1aa1aa65db8178acfa495143a88e1f9620165419804afe1cc5d75143f',
+E                           },
+E                           'collected': 1,
+E                           'errors': 0,
+E                           'executionReport': {
+E         +                     'assertionCount': 1,
+E         +                     'callCount': 2,
+E         +                     'candidateDigest': 'sha256:41bb125a7a9e6475d12b9b5209aea45d36c6e156d7829971f73003a6bafbebda',
+E         -                     'cases': [
+E         ?                          ^   ^
+E         +                     'caseCount': 1,
+E         ?                          ^^^^^   ^^
+E         -                         {
+E         -                             'assertions': [
+E         -                                 {
+E         -                                     'assertionId': 'assert_4ae021f1aae5e51518a86d7c',
+E         -                                     'endColumn': 29,
+E         -                                     'endLine': 3,
+E         -                                     'kind': 'assert',
+E         -                                     'path': '__minicode_review_probe__.py',
+E         -                                     'raised': True,
+E         -                                     'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2',
+E         -                                     'startColumn': 4,
+E         -                                     'startLine': 3,
+E         -                                 },
+E         -                             ],
+E         -                             'calls': [
+E         -                                 {
+E         -                                     'callId': 'call_0106035b46a758a8d00afcee',
+E         -                                     'codeDigest': 'sha256:452bb4810d17715bf3739c05b5bcbe1eabed3a3db4fa0a7fc92002fa3bc60f25',
+E         -                                     'count': 1,
+E         -                                     'firstLine': 2,
+E         -                                     'identityVerified': True,
+E         -                                     'parentCallId': None,
+E         -                                     'path': '__minicode_review_probe__.py',
+E         -                                     'qualname': 'test_observe',
+E         -                                     'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2',
+E         -                                 },
+E         -                                 {
+E         -                                     'callId': 'call_586da04413b5e782723ba4e4',
+E         -                                     'codeDigest': 'sha256:9d59e15ae0ac26fa921a6f493f893bb4790104b1624e944763a55b010e270f05',
+E         -                                     'count': 1,
+E         -                                     'firstLine': 4,
+E         -                                     'identityVerified': True,
+E         -                                     'parentCallId': 'call_0106035b46a758a8d00afcee',
+E         -                                     'path': 'stock.py',
+E         -                                     'qualname': 'release',
+E         -                                     'sourceDigest': 'sha256:fe6cd14f1d46bc3216c397af67316d0b9cd96bf87227d4803bb55cf8773ddd48',
+E         -                                 },
+E         -                             ],
+E         -                             'complete': True,
+E         ? --------
+E         +                     'complete': True,
+E         -                             'limitations': [],
+E         -                             'nodeId': '__minicode_review_probe__.py::test_observe',
+E         -                         },
+E         -                     ],
+E         -                     'digest': 'sha256:a90e6b45177afcb5b38e20d06068b962359b18ffd5be2908f9b24ca6d384b3cb',
+E         -                     'junitDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104',
+E         +                     'displayOnly': True,
+E         +                     'documentRef': 'evidence_d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862',
+E         +                     'originalDigest': 'sha256:d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862',
+E         +                     'readHint': 'completion_evidence_read: filters={} for case index; '
+E         +                     'select caseNodeId, assertionId or consumer for '
+E         +                     'observations; omit filters for the full original.',
+E         -                     'version': 1,
+E         ?                       ^^^      ^
+E         +                     'validation': 'valid',
+E         ?                       ^^^^^^      ^^^^^^^
+E                           },
+E                           'failed': 1,
+E                           'passed': 0,
+E                           'reportDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104',
+E                           'skipped': 0,
+E                       },
+E                   },
+E                   'receiptRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00004-probe-receipt.json',
+E                   'sourceRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00003-probe-source.json',
+E               },
+E           ]
+
+tests/test_completion_review_evidence_delivery.py:108: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_completion_review_evidence_delivery.py::test_current_receipt_view_does_not_mislabel_previous_candidate_evidence - AssertionError: assert [{'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 243, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12', 'status': 'failed', 'stderr': {'byteCount': 0, 'digest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'preview': '', 'previewBase64': '', 'truncated': False}, 'stdout': {'byteCount': 600, 'digest': 'sha256:d1afe0240fae218bfb3bb536ad6bcc84ae2898c3389e0a193074967bdb28717f', 'preview': 'F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________________ test_observe _________________________________\n\n    def test_observe():\n>       assert release(3, 2) == 3\nE       assert 5 == 3\nE        +  where 5 = release(3, 2)\n\n__minicode_review_probe__.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED __minicode_review_probe__.py::test_observe - assert 5 == 3\n +  where 5 = release(3, 2)\n1 failed in 0.04s\n', 'previewBase64': 'RiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSBGQUlMVVJFUyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18gdGVzdF9vYnNlcnZlIF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKICAgIGRlZiB0ZXN0X29ic2VydmUoKToKPiAgICAgICBhc3NlcnQgcmVsZWFzZSgzLCAyKSA9PSAzCkUgICAgICAgYXNzZXJ0IDUgPT0gMwpFICAgICAgICArICB3aGVyZSA1ID0gcmVsZWFzZSgzLCAyKQoKX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTozOiBBc3NlcnRpb25FcnJvcgo9PT09PT09PT09PT09PT09PT09PT09PT09PT0gc2hvcnQgdGVzdCBzdW1tYXJ5IGluZm8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PQpGQUlMRUQgX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTo6dGVzdF9vYnNlcnZlIC0gYXNzZXJ0IDUgPT0gMwogKyAgd2hlcmUgNSA9IHJlbGVhc2UoMywgMikKMSBmYWlsZWQgaW4gMC4wNHMK', 'truncated': False}}, 'executionBinding': {'baseCheck': {'argv': ['python3', '-m', 'pytest', '-q', 'test_public.py'], 'checkId': 'public', 'commandDigest': 'sha256:94c3afca580b0d0798162c308bc0021be2a4133af00820f2db670505906e0aff', 'kind': 'tests', 'timeoutSeconds': 20}, 'bindingVersion': 1, 'derivedCheck': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'kind': 'tests', 'timeoutSeconds': 20}, 'originalTarget': 'test_public.py', 'originalTargetDigest': 'sha256:c0d5ae48d26880ff1b15c6a013094edd2cbeb40b1690af3ba7c50576c973ab67', 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeSourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'probeTarget': '__minicode_review_probe__.py'}, 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'scenario': 'Both inventory operations preserve quantity semantics', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'status': 'failed', 'testReport': {'caseReport': {'cases': [{'failureKind': 'assertion', 'nodeId': '__minicode_review_probe__.py::test_observe', 'outcome': 'failed'}], 'digest': 'sha256:e81021a1aa1aa65db8178acfa495143a88e1f9620165419804afe1cc5d75143f'}, 'collected': 1, 'errors': 0, 'executionReport': {'assertionCount': 1, 'callCount': 2, 'candidateDigest': 'sha256:41bb125a7a9e6475d12b9b5209aea45d36c6e156d7829971f73003a6bafbebda', 'caseCount': 1, 'complete': True, 'displayOnly': True, 'documentRef': 'evidence_d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862', 'originalDigest': 'sha256:d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862', 'readHint': 'completion_evidence_read: filters={} for case index; select caseNodeId, assertionId or consumer for observations; omit filters for the full original.', 'validation': 'valid'}, 'failed': 1, 'passed': 0, 'reportDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'skipped': 0}}, 'receiptRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00004-probe-receipt.json', 'sourceRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00003-probe-source.json'}] == [{'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 243, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12', 'status': 'failed', 'stderr': {'byteCount': 0, 'digest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'preview': '', 'previewBase64': '', 'truncated': False}, 'stdout': {'byteCount': 600, 'digest': 'sha256:d1afe0240fae218bfb3bb536ad6bcc84ae2898c3389e0a193074967bdb28717f', 'preview': 'F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________________ test_observe _________________________________\n\n    def test_observe():\n>       assert release(3, 2) == 3\nE       assert 5 == 3\nE        +  where 5 = release(3, 2)\n\n__minicode_review_probe__.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED __minicode_review_probe__.py::test_observe - assert 5 == 3\n +  where 5 = release(3, 2)\n1 failed in 0.04s\n', 'previewBase64': 'RiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSBGQUlMVVJFUyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18gdGVzdF9vYnNlcnZlIF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKICAgIGRlZiB0ZXN0X29ic2VydmUoKToKPiAgICAgICBhc3NlcnQgcmVsZWFzZSgzLCAyKSA9PSAzCkUgICAgICAgYXNzZXJ0IDUgPT0gMwpFICAgICAgICArICB3aGVyZSA1ID0gcmVsZWFzZSgzLCAyKQoKX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTozOiBBc3NlcnRpb25FcnJvcgo9PT09PT09PT09PT09PT09PT09PT09PT09PT0gc2hvcnQgdGVzdCBzdW1tYXJ5IGluZm8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PQpGQUlMRUQgX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTo6dGVzdF9vYnNlcnZlIC0gYXNzZXJ0IDUgPT0gMwogKyAgd2hlcmUgNSA9IHJlbGVhc2UoMywgMikKMSBmYWlsZWQgaW4gMC4wNHMK', 'truncated': False}}, 'executionBinding': {'baseCheck': {'argv': ['python3', '-m', 'pytest', '-q', 'test_public.py'], 'checkId': 'public', 'commandDigest': 'sha256:94c3afca580b0d0798162c308bc0021be2a4133af00820f2db670505906e0aff', 'kind': 'tests', 'timeoutSeconds': 20}, 'bindingVersion': 1, 'derivedCheck': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'kind': 'tests', 'timeoutSeconds': 20}, 'originalTarget': 'test_public.py', 'originalTargetDigest': 'sha256:c0d5ae48d26880ff1b15c6a013094edd2cbeb40b1690af3ba7c50576c973ab67', 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeSourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'probeTarget': '__minicode_review_probe__.py'}, 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'scenario': 'Both inventory operations preserve quantity semantics', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'status': 'failed', 'testReport': {'caseReport': {'cases': [{'failureKind': 'assertion', 'nodeId': '__minicode_review_probe__.py::test_observe', 'outcome': 'failed'}], 'digest': 'sha256:e81021a1aa1aa65db8178acfa495143a88e1f9620165419804afe1cc5d75143f'}, 'collected': 1, 'errors': 0, 'executionReport': {'cases': [{'assertions': [{'assertionId': 'assert_4ae021f1aae5e51518a86d7c', 'endColumn': 29, 'endLine': 3, 'kind': 'assert', 'path': '__minicode_review_probe__.py', 'raised': True, 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'startColumn': 4, 'startLine': 3}], 'calls': [{'callId': 'call_0106035b46a758a8d00afcee', 'codeDigest': 'sha256:452bb4810d17715bf3739c05b5bcbe1eabed3a3db4fa0a7fc92002fa3bc60f25', 'count': 1, 'firstLine': 2, 'identityVerified': True, 'parentCallId': None, 'path': '__minicode_review_probe__.py', 'qualname': 'test_observe', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2'}, {'callId': 'call_586da04413b5e782723ba4e4', 'codeDigest': 'sha256:9d59e15ae0ac26fa921a6f493f893bb4790104b1624e944763a55b010e270f05', 'count': 1, 'firstLine': 4, 'identityVerified': True, 'parentCallId': 'call_0106035b46a758a8d00afcee', 'path': 'stock.py', 'qualname': 'release', 'sourceDigest': 'sha256:fe6cd14f1d46bc3216c397af67316d0b9cd96bf87227d4803bb55cf8773ddd48'}], 'complete': True, 'limitations': [], 'nodeId': '__minicode_review_probe__.py::test_observe'}], 'digest': 'sha256:a90e6b45177afcb5b38e20d06068b962359b18ffd5be2908f9b24ca6d384b3cb', 'junitDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'version': 1}, 'failed': 1, 'passed': 0, 'reportDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'skipped': 0}}, 'receiptRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00004-probe-receipt.json', 'sourceRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00003-probe-source.json'}]
+  
+  At index 0 diff: {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 243, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12', 'status': 'failed', 'stderr': {'byteCount': 0, 'digest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'preview': '', 'previewBase64': '', 'truncated': False}, 'stdout': {'byteCount': 600, 'digest': 'sha256:d1afe0240fae218bfb3bb536ad6bcc84ae2898c3389e0a193074967bdb28717f', 'preview': 'F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________________ test_observe _________________________________\n\n    def test_observe():\n>       assert release(3, 2) == 3\nE       assert 5 == 3\nE        +  where 5 = release(3, 2)\n\n__minicode_review_probe__.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED __minicode_review_probe__.py::test_observe - assert 5 == 3\n +  where 5 = release(3, 2)\n1 failed in 0.04s\n', 'previewBase64': 'RiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSBGQUlMVVJFUyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18gdGVzdF9vYnNlcnZlIF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKICAgIGRlZiB0ZXN0X29ic2VydmUoKToKPiAgICAgICBhc3NlcnQgcmVsZWFzZSgzLCAyKSA9PSAzCkUgICAgICAgYXNzZXJ0IDUgPT0gMwpFICAgICAgICArICB3aGVyZSA1ID0gcmVsZWFzZSgzLCAyKQoKX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTozOiBBc3NlcnRpb25FcnJvcgo9PT09PT09PT09PT09PT09PT09PT09PT09PT0gc2hvcnQgdGVzdCBzdW1tYXJ5IGluZm8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PQpGQUlMRUQgX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTo6dGVzdF9vYnNlcnZlIC0gYXNzZXJ0IDUgPT0gMwogKyAgd2hlcmUgNSA9IHJlbGVhc2UoMywgMikKMSBmYWlsZWQgaW4gMC4wNHMK', 'truncated': False}}, 'executionBinding': {'baseCheck': {'argv': ['python3', '-m', 'pytest', '-q', 'test_public.py'], 'checkId': 'public', 'commandDigest': 'sha256:94c3afca580b0d0798162c308bc0021be2a4133af00820f2db670505906e0aff', 'kind': 'tests', 'timeoutSeconds': 20}, 'bindingVersion': 1, 'derivedCheck': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'kind': 'tests', 'timeoutSeconds': 20}, 'originalTarget': 'test_public.py', 'originalTargetDigest': 'sha256:c0d5ae48d26880ff1b15c6a013094edd2cbeb40b1690af3ba7c50576c973ab67', 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeSourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'probeTarget': '__minicode_review_probe__.py'}, 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'scenario': 'Both inventory operations preserve quantity semantics', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'status': 'failed', 'testReport': {'caseReport': {'cases': [{'failureKind': 'assertion', 'nodeId': '__minicode_review_probe__.py::test_observe', 'outcome': 'failed'}], 'digest': 'sha256:e81021a1aa1aa65db8178acfa495143a88e1f9620165419804afe1cc5d75143f'}, 'collected': 1, 'errors': 0, 'executionReport': {'assertionCount': 1, 'callCount': 2, 'candidateDigest': 'sha256:41bb125a7a9e6475d12b9b5209aea45d36c6e156d7829971f73003a6bafbebda', 'caseCount': 1, 'complete': True, 'displayOnly': True, 'documentRef': 'evidence_d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862', 'originalDigest': 'sha256:d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862', 'readHint': 'completion_evidence_read: filters={} for case index; select caseNodeId, assertionId or consumer for observations; omit filters for the full original.', 'validation': 'valid'}, 'failed': 1, 'passed': 0, 'reportDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'skipped': 0}}, 'receiptRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00004-probe-receipt.json', 'sourceRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00003-probe-source.json'} != {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 243, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12', 'status': 'failed', 'stderr': {'byteCount': 0, 'digest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'preview': '', 'previewBase64': '', 'truncated': False}, 'stdout': {'byteCount': 600, 'digest': 'sha256:d1afe0240fae218bfb3bb536ad6bcc84ae2898c3389e0a193074967bdb28717f', 'preview': 'F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________________ test_observe _________________________________\n\n    def test_observe():\n>       assert release(3, 2) == 3\nE       assert 5 == 3\nE        +  where 5 = release(3, 2)\n\n__minicode_review_probe__.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED __minicode_review_probe__.py::test_observe - assert 5 == 3\n +  where 5 = release(3, 2)\n1 failed in 0.04s\n', 'previewBase64': 'RiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSBGQUlMVVJFUyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18gdGVzdF9vYnNlcnZlIF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKICAgIGRlZiB0ZXN0X29ic2VydmUoKToKPiAgICAgICBhc3NlcnQgcmVsZWFzZSgzLCAyKSA9PSAzCkUgICAgICAgYXNzZXJ0IDUgPT0gMwpFICAgICAgICArICB3aGVyZSA1ID0gcmVsZWFzZSgzLCAyKQoKX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTozOiBBc3NlcnRpb25FcnJvcgo9PT09PT09PT09PT09PT09PT09PT09PT09PT0gc2hvcnQgdGVzdCBzdW1tYXJ5IGluZm8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PQpGQUlMRUQgX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTo6dGVzdF9vYnNlcnZlIC0gYXNzZXJ0IDUgPT0gMwogKyAgd2hlcmUgNSA9IHJlbGVhc2UoMywgMikKMSBmYWlsZWQgaW4gMC4wNHMK', 'truncated': False}}, 'executionBinding': {'baseCheck': {'argv': ['python3', '-m', 'pytest', '-q', 'test_public.py'], 'checkId': 'public', 'commandDigest': 'sha256:94c3afca580b0d0798162c308bc0021be2a4133af00820f2db670505906e0aff', 'kind': 'tests', 'timeoutSeconds': 20}, 'bindingVersion': 1, 'derivedCheck': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'kind': 'tests', 'timeoutSeconds': 20}, 'originalTarget': 'test_public.py', 'originalTargetDigest': 'sha256:c0d5ae48d26880ff1b15c6a013094edd2cbeb40b1690af3ba7c50576c973ab67', 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeSourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'probeTarget': '__minicode_review_probe__.py'}, 'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'scenario': 'Both inventory operations preserve quantity semantics', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'status': 'failed', 'testReport': {'caseReport': {'cases': [{'failureKind': 'assertion', 'nodeId': '__minicode_review_probe__.py::test_observe', 'outcome': 'failed'}], 'digest': 'sha256:e81021a1aa1aa65db8178acfa495143a88e1f9620165419804afe1cc5d75143f'}, 'collected': 1, 'errors': 0, 'executionReport': {'cases': [{'assertions': [{'assertionId': 'assert_4ae021f1aae5e51518a86d7c', 'endColumn': 29, 'endLine': 3, 'kind': 'assert', 'path': '__minicode_review_probe__.py', 'raised': True, 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2', 'startColumn': 4, 'startLine': 3}], 'calls': [{'callId': 'call_0106035b46a758a8d00afcee', 'codeDigest': 'sha256:452bb4810d17715bf3739c05b5bcbe1eabed3a3db4fa0a7fc92002fa3bc60f25', 'count': 1, 'firstLine': 2, 'identityVerified': True, 'parentCallId': None, 'path': '__minicode_review_probe__.py', 'qualname': 'test_observe', 'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2'}, {'callId': 'call_586da04413b5e782723ba4e4', 'codeDigest': 'sha256:9d59e15ae0ac26fa921a6f493f893bb4790104b1624e944763a55b010e270f05', 'count': 1, 'firstLine': 4, 'identityVerified': True, 'parentCallId': 'call_0106035b46a758a8d00afcee', 'path': 'stock.py', 'qualname': 'release', 'sourceDigest': 'sha256:fe6cd14f1d46bc3216c397af67316d0b9cd96bf87227d4803bb55cf8773ddd48'}], 'complete': True, 'limitations': [], 'nodeId': '__minicode_review_probe__.py::test_observe'}], 'digest': 'sha256:a90e6b45177afcb5b38e20d06068b962359b18ffd5be2908f9b24ca6d384b3cb', 'junitDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'version': 1}, 'failed': 1, 'passed': 0, 'reportDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104', 'skipped': 0}}, 'receiptRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00004-probe-receipt.json', 'sourceRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00003-probe-source.json'}
+  
+  Full diff:
+    [
+        {
+            'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320',
+            'probeId': 'review_probe_3baec5fef79ad254c4c6b717',
+            'receipt': {
+                'criterionIds': [
+                    'req_624a5f97a5c1d9430cf0',
+                    'req_f9748bf627102258bef0',
+                ],
+                'evidence': {
+                    'argv': [
+                        'python3',
+                        '-m',
+                        'pytest',
+                        '-q',
+                        '__minicode_review_probe__.py',
+                    ],
+                    'checkId': 'public',
+                    'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0',
+                    'durationMs': 243,
+                    'evidenceVersion': 1,
+                    'exitCode': 1,
+                    'failureReason': None,
+                    'kind': 'tests',
+                    'resolvedExecutable': '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12',
+                    'status': 'failed',
+                    'stderr': {
+                        'byteCount': 0,
+                        'digest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+                        'preview': '',
+                        'previewBase64': '',
+                        'truncated': False,
+                    },
+                    'stdout': {
+                        'byteCount': 600,
+                        'digest': 'sha256:d1afe0240fae218bfb3bb536ad6bcc84ae2898c3389e0a193074967bdb28717f',
+                        'preview': 'F                                                                        '
+                        '[100%]\n'
+                        '=================================== FAILURES '
+                        '===================================\n'
+                        '_________________________________ test_observe '
+                        '_________________________________\n'
+                        '\n'
+                        '    def test_observe():\n'
+                        '>       assert release(3, 2) == 3\n'
+                        'E       assert 5 == 3\n'
+                        'E        +  where 5 = release(3, 2)\n'
+                        '\n'
+                        '__minicode_review_probe__.py:3: AssertionError\n'
+                        '=========================== short test summary info '
+                        '============================\n'
+                        'FAILED __minicode_review_probe__.py::test_observe - '
+                        'assert 5 == 3\n'
+                        ' +  where 5 = release(3, 2)\n'
+                        '1 failed in 0.04s\n',
+                        'previewBase64': 'RiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxMDAlXQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSBGQUlMVVJFUyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18gdGVzdF9vYnNlcnZlIF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKICAgIGRlZiB0ZXN0X29ic2VydmUoKToKPiAgICAgICBhc3NlcnQgcmVsZWFzZSgzLCAyKSA9PSAzCkUgICAgICAgYXNzZXJ0IDUgPT0gMwpFICAgICAgICArICB3aGVyZSA1ID0gcmVsZWFzZSgzLCAyKQoKX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTozOiBBc3NlcnRpb25FcnJvcgo9PT09PT09PT09PT09PT09PT09PT09PT09PT0gc2hvcnQgdGVzdCBzdW1tYXJ5IGluZm8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PQpGQUlMRUQgX19taW5pY29kZV9yZXZpZXdfcHJvYmVfXy5weTo6dGVzdF9vYnNlcnZlIC0gYXNzZXJ0IDUgPT0gMwogKyAgd2hlcmUgNSA9IHJlbGVhc2UoMywgMikKMSBmYWlsZWQgaW4gMC4wNHMK',
+                        'truncated': False,
+                    },
+                },
+                'executionBinding': {
+                    'baseCheck': {
+                        'argv': [
+                            'python3',
+                            '-m',
+                            'pytest',
+                            '-q',
+                            'test_public.py',
+                        ],
+                        'checkId': 'public',
+                        'commandDigest': 'sha256:94c3afca580b0d0798162c308bc0021be2a4133af00820f2db670505906e0aff',
+                        'kind': 'tests',
+                        'timeoutSeconds': 20,
+                    },
+                    'bindingVersion': 1,
+                    'derivedCheck': {
+                        'argv': [
+                            'python3',
+                            '-m',
+                            'pytest',
+                            '-q',
+                            '__minicode_review_probe__.py',
+                        ],
+                        'checkId': 'public',
+                        'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0',
+                        'kind': 'tests',
+                        'timeoutSeconds': 20,
+                    },
+                    'originalTarget': 'test_public.py',
+                    'originalTargetDigest': 'sha256:c0d5ae48d26880ff1b15c6a013094edd2cbeb40b1690af3ba7c50576c973ab67',
+                    'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+                    'probeSourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2',
+                    'probeTarget': '__minicode_review_probe__.py',
+                },
+                'patchDigest': 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+                'probeId': 'review_probe_3baec5fef79ad254c4c6b717',
+                'scenario': 'Both inventory operations preserve quantity semantics',
+                'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2',
+                'status': 'failed',
+                'testReport': {
+                    'caseReport': {
+                        'cases': [
+                            {
+                                'failureKind': 'assertion',
+                                'nodeId': '__minicode_review_probe__.py::test_observe',
+                                'outcome': 'failed',
+                            },
+                        ],
+                        'digest': 'sha256:e81021a1aa1aa65db8178acfa495143a88e1f9620165419804afe1cc5d75143f',
+                    },
+                    'collected': 1,
+                    'errors': 0,
+                    'executionReport': {
+  +                     'assertionCount': 1,
+  +                     'callCount': 2,
+  +                     'candidateDigest': 'sha256:41bb125a7a9e6475d12b9b5209aea45d36c6e156d7829971f73003a6bafbebda',
+  -                     'cases': [
+  ?                          ^   ^
+  +                     'caseCount': 1,
+  ?                          ^^^^^   ^^
+  -                         {
+  -                             'assertions': [
+  -                                 {
+  -                                     'assertionId': 'assert_4ae021f1aae5e51518a86d7c',
+  -                                     'endColumn': 29,
+  -                                     'endLine': 3,
+  -                                     'kind': 'assert',
+  -                                     'path': '__minicode_review_probe__.py',
+  -                                     'raised': True,
+  -                                     'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2',
+  -                                     'startColumn': 4,
+  -                                     'startLine': 3,
+  -                                 },
+  -                             ],
+  -                             'calls': [
+  -                                 {
+  -                                     'callId': 'call_0106035b46a758a8d00afcee',
+  -                                     'codeDigest': 'sha256:452bb4810d17715bf3739c05b5bcbe1eabed3a3db4fa0a7fc92002fa3bc60f25',
+  -                                     'count': 1,
+  -                                     'firstLine': 2,
+  -                                     'identityVerified': True,
+  -                                     'parentCallId': None,
+  -                                     'path': '__minicode_review_probe__.py',
+  -                                     'qualname': 'test_observe',
+  -                                     'sourceDigest': 'sha256:1a3638b66399274d16167166ffe322d8e4758a3cdd12559c3274bbe9178d81f2',
+  -                                 },
+  -                                 {
+  -                                     'callId': 'call_586da04413b5e782723ba4e4',
+  -                                     'codeDigest': 'sha256:9d59e15ae0ac26fa921a6f493f893bb4790104b1624e944763a55b010e270f05',
+  -                                     'count': 1,
+  -                                     'firstLine': 4,
+  -                                     'identityVerified': True,
+  -                                     'parentCallId': 'call_0106035b46a758a8d00afcee',
+  -                                     'path': 'stock.py',
+  -                                     'qualname': 'release',
+  -                                     'sourceDigest': 'sha256:fe6cd14f1d46bc3216c397af67316d0b9cd96bf87227d4803bb55cf8773ddd48',
+  -                                 },
+  -                             ],
+  -                             'complete': True,
+  ? --------
+  +                     'complete': True,
+  -                             'limitations': [],
+  -                             'nodeId': '__minicode_review_probe__.py::test_observe',
+  -                         },
+  -                     ],
+  -                     'digest': 'sha256:a90e6b45177afcb5b38e20d06068b962359b18ffd5be2908f9b24ca6d384b3cb',
+  -                     'junitDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104',
+  +                     'displayOnly': True,
+  +                     'documentRef': 'evidence_d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862',
+  +                     'originalDigest': 'sha256:d69ed85729e6aaa01720349b6f47127d6b1eda9d607258cdc94593fe24066862',
+  +                     'readHint': 'completion_evidence_read: filters={} for case index; '
+  +                     'select caseNodeId, assertionId or consumer for '
+  +                     'observations; omit filters for the full original.',
+  -                     'version': 1,
+  ?                       ^^^      ^
+  +                     'validation': 'valid',
+  ?                       ^^^^^^      ^^^^^^^
+                    },
+                    'failed': 1,
+                    'passed': 0,
+                    'reportDigest': 'sha256:f6ea7670f074c7ca6da7cee1d8188904b7800b185c05ea6b75910dd7fad6d104',
+                    'skipped': 0,
+                },
+            },
+            'receiptRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00004-probe-receipt.json',
+            'sourceRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-tgmz2ex8/00003-probe-source.json',
+        },
+    ]
+============================== 1 failed in 2.31s ===============================

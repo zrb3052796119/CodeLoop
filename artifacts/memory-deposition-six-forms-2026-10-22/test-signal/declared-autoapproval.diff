@@ -1,0 +1,11 @@
+--- a/minicode/memory_pipeline.py
++++ b/minicode/memory_pipeline.py
+@@ -3270,7 +3270,7 @@
+                     injectable=deposition_mode() == "inject",
+                 )["metadata"]
+                 metadata["deposition_operation_id"] = operation_id
+-                approval_policy = MemoryApprovalPolicy.USER_REVIEW_REQUIRED
++                approval_policy = MemoryApprovalPolicy.AUTO_APPROVE_VERIFIED
+             metadata["claim_identity"] = {
+                 "claim_id": claim.claim_id,
+                 "semantic_key": claim.semantic_key,

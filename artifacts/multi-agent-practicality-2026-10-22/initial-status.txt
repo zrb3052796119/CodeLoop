@@ -1,0 +1,44 @@
+ M .env.example
+ M .zcode/plans/plan-sess_242d1fee-a101-4a1d-9562-6f3ad3a91fbc.md
+ M README.md
+ M minicode/agent_loop.py
+ M minicode/memory.py
+ M minicode/memory_hybrid.py
+ M minicode/memory_hybrid_promotion_contract.py
+ M minicode/memory_hybrid_release.py
+ M minicode/memory_hybrid_runtime.py
+ M minicode/memory_pipeline.py
+ M minicode/memory_retrieval.py
+ M minicode/reflection_evidence.py
+ M minicode/reflection_synthesis.py
+ M minicode/run_events.py
+ M minicode/run_journal.py
+ M pyproject.toml
+ M scripts/memory_hybrid_qwen_v2_evaluator.py
+ M tests/test_agent_loop.py
+ M tests/test_agent_loop_work_chain_disabled.py
+ M tests/test_agent_model_events.py
+ M tests/test_memory_feedback_versioning.py
+ M tests/test_memory_hybrid_qwen_v2_evaluator.py
+ M tests/test_memory_hybrid_v2.py
+ M tests/test_runtime_observation_events.py
+?? artifacts/memory-deposition-six-forms-2026-10-22/
+?? artifacts/memory-deposition-yield-audit-v1.json
+?? artifacts/multi-agent-practicality-2026-10-22/
+?? artifacts/multi-agent-route-review-2026-10-22/
+?? artifacts/skill-model-routing-diagnosis-2026-10-21/
+?? artifacts/skill-routing-three-arm-2026-10-21/
+?? docs/2026-10-21--permissive-deposition-experiment--design.md
+?? docs/2026-10-22--hybrid-promotion-protocol-v8.1-amendment.md
+?? docs/2026-10-22--multi-agent-practicality-repair-plan.md
+?? docs/2026-10-22--six-form-memory-deposition.md
+?? minicode/memory_deposition_experiment.py
+?? minicode/memory_hot_store.py
+?? scripts/memory_deposition_yield_audit.py
+?? tests/test_memory_declared_recurrence.py
+?? tests/test_memory_declared_retry.py
+?? tests/test_memory_deposition_experiment.py
+?? tests/test_memory_deposition_yield_audit.py
+?? tests/test_memory_hot_store.py
+?? tests/test_memory_pending_drafts.py
+?? tests/test_reflection_declared_dependencies.py

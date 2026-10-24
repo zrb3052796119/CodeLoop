@@ -1,0 +1,225 @@
+........................................................................ [ 18%]
+........................................................................ [ 37%]
+...................................F.......F.F...F.....F................ [ 55%]
+........................................................................ [ 74%]
+........................................................................ [ 92%]
+.............................                                            [100%]
+=================================== FAILURES ===================================
+____ test_true_product_gap_is_the_only_assertion_feedback_sent_to_executor _____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-427/test_true_product_gap_is_the_o0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1076a6e10>
+
+    def test_true_product_gap_is_the_only_assertion_feedback_sent_to_executor(tmp_path, monkeypatch):
+        product = SOURCE.replace("return n + amount", "return n")
+        review, assess, _, cap = pending(tmp_path, monkeypatch,
+            adjudication_driver=judge("product_gap"), product=product)
+        try:
+            result = assess(lambda *_: pytest.fail("confirmed product gap returns to existing owner"))
+            assert result["status"] == "changes_required"
+>           assert [p["code"] for p in result["repairProbes"]] == [WRONG]
+E           AssertionError: assert [] == ['from stock ...ntity == 5\n']
+E             
+E             Right contains one more item: 'from stock import hold, release\ndef test_inventory():\n    assert hold(5, 2) == 3\n    quantity = release(3, 2)\n    quantity = release(quantity, 4)\n    assert quantity == 5\n'
+E             Use -v to get more diff
+
+tests/test_completion_failure_adjudication.py:106: AssertionError
+_ test_classified_product_gap_cannot_restore_without_each_exact_independent_authority _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-427/test_classified_product_gap_ca0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113c87710>
+
+    def test_classified_product_gap_cannot_restore_without_each_exact_independent_authority(tmp_path, monkeypatch):
+        review, assess, _, cap = pending(tmp_path, monkeypatch, adjudication_driver=judge("product_gap"))
+        try:
+            result = assess(lambda *_: None)
+            assert result["status"] == "changes_required"
+            state = review.state
+            record = state["legacyResolutions"][-1]
+>           assert record["status"] == "classified" and record["productGapAdjudicationRefs"]
+E           AssertionError: assert ('replacement_failed' == 'classified'
+E             
+E             - classified
+E             + replacement_failed)
+
+tests/test_completion_failure_adjudication.py:169: AssertionError
+_ test_corrected_expectation_exposes_real_gap_and_returns_it_in_same_assessment _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-427/test_corrected_expectation_exp0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113b6b050>
+
+    def test_corrected_expectation_exposes_real_gap_and_returns_it_in_same_assessment(tmp_path, monkeypatch):
+        tail = "    assert release(3, 2.5) == 5.5\n"
+        wrong, right = WRONG + tail, RIGHT + tail
+        calls = []
+    
+        def attribution(tools, child, packet):
+            calls.append(packet["probe"]["code"])
+            return judge("probe_error" if len(calls) == 1 else "product_gap", code=right)(tools, child, packet)
+    
+        legacy = _seed_legacy(tmp_path, monkeypatch)
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            review_factory=lambda spec: ImplementationCompletionReview.from_state(spec, legacy),
+            adjudication_driver=attribution)
+        (tmp_path / "stock.py").write_text(SOURCE.replace("return n + amount", "return n + int(amount)"))
+        review.queue_legacy_resolution(_resolution(review, tmp_path, replacement=wrong))
+        def proposal(tools, child, packet):
+            assert review.state["corrections"] == []
+            result = _submit(tools, child, packet, status="changes_required", rows=_rows(packet, status="missing"),
+                findings=["The corrected expectation exposes the actual missing fractional-quantity behavior."])
+            assert result.ok, result.output
+    
+        try:
+            result = assess(proposal)
+            assert result["status"] == "changes_required" and calls == [wrong, right]
+            assert [p["code"] for p in result["repairProbes"]] == [right]
+>           assert review.state["pendingLegacyResolution"] is None
+E           AssertionError: assert {'candidateDigest': 'sha256:d28453e04b1fed9b3fd371eb13248db67cb0fe97b4f578d51d9f575815b60c89', 'decisions': [{'accepta...jectiveDigest': 'sha256:f8fa07aea948d40e9597ff60c71bf28404bd5d63a7e67288d5bc4b2a1440c888', 'resolutionVersion': 1, ...} is None
+
+tests/test_completion_failure_adjudication.py:235: AssertionError
+_ test_same_owner_resumes_independent_adjudication_real_tests_and_delivery[fix-probe-preserve-product] _
+
+inventory = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113f68e60>
+product_gap = False
+
+    @pytest.mark.parametrize('product_gap', [False, True], ids=['fix-probe-preserve-product', 'fix-real-product-gap'])
+    def test_same_owner_resumes_independent_adjudication_real_tests_and_delivery(inventory, monkeypatch, product_gap):
+        case = inventory
+        document, saved, old_probe_id = seed_failed_checkpoint(case, monkeypatch, product_gap=product_gap)
+        preserved_tool_result = deepcopy(_result(saved, 'old-source-read'))
+        original_files = {name: (case['workspace'] / name).read_bytes() for name in ('stock.py', 'test_public.py')}
+        initial_command_count = len(case['commands'])
+        saved_state = deepcopy(document['reviewState'])
+        restored = HostImplementationContinuation.from_document(document, spec=case['spec'], messages=saved)
+        final_text = 'The requested inventory operations passed the current checks and independent review.'
+        all_requests, adjudications, checks, audit_reads, audit_document_reads = [], [], [], [], []
+    
+        class ResumeDriver:
+            adjudication_calls = 0
+            parent_calls = 0
+            coverage_calls = 0
+    
+            def next(self, messages, **kwargs):
+                names = set(kwargs['tools_override'].list_all())
+                all_requests.append(names)
+                inspection_step = _inspection_step(messages, kwargs["tools_override"])
+                if inspection_step is not None:
+                    return inspection_step
+                if 'completion_coverage_audit_submit' in names:
+                    self.coverage_calls += 1
+                    assert not {'write_file', 'executor_check', 'completion_review_submit'} & names
+                    packet = packet_with(messages, 'evidenceIndex')
+                    # A correction retains the old failed source in audit history,
+                    # but only its active passed successor is proposed for coverage.
+                    assert len(packet['evidenceIndex']) == 1
+                    assert packet['evidenceIndex'][0]['active'] is True
+                    assert packet['evidenceIndex'][0]['status'] == 'passed'
+                    step = _native_coverage_step(messages)
+                    assert step is not None
+                    if step.calls[0]['toolName'] == 'review_probe_read':
+                        audit_reads.append(step.calls[0]['input'])
+                    elif step.calls[0]['toolName'] == 'review_evidence_read':
+                        audit_document_reads.append(step.calls[0]['input'])
+                    return step
+                if 'completion_probe_adjudication_submit' in names:
+                    self.adjudication_calls += 1
+                    assert names == {'read_file', 'completion_probe_adjudication_submit', 'completion_evidence_read'}
+                    packet = packet_with(messages, 'probe')
+                    assert packet['probe']['probeId'] == old_probe_id
+                    assert packet['probe']['code'] == (PROBE if product_gap else WRONG_PROBE)
+                    if self.adjudication_calls == 1:
+                        return _call('adjudicator-source', 'read_file', path='stock.py')
+                    assert self.adjudication_calls == 2
+                    assert _result(messages, 'adjudicator-source')['isError'] is False
+                    verdict = 'product_gap' if product_gap else 'probe_error'
+                    adjudications.append(verdict)
+                    values = {'verdict': verdict,
+                        'reason': ('release currently returns the unchanged count, contrary to adding the amount.'
+                            if product_gap else 'The objective requires addition; the probe expected subtraction instead.'),
+                        'objectiveEvidence': [{'startLine': 2, 'endLine': 2}],
+                        'sourceEvidence': [{'path': 'stock.py', 'startLine': 4, 'endLine': 5}]}
+                    if not product_gap:
+                        values['replacement'] = {'criterionIds': packet['probe']['criterionIds'],
+                            'scenario': packet['probe']['scenario'], 'code': PROBE}
+                    return _call('adjudication', 'completion_probe_adjudication_submit', **values)
+                if 'completion_review_submit' in names:
+                    packet = packet_with(messages, 'retainedProbes')
+                    retained = packet['retainedProbes']
+                    assert retained
+                    passed = [row['probeId'] for row in retained if row['status'] == 'passed']
+                    status = 'approved' if len(passed) == len(retained) else 'changes_required'
+                    assert status == 'approved' or product_gap
+                    return _call('current-review-' + status, 'completion_review_submit', status=status,
+                        requirements=[{'id': row['id'], 'status': 'covered' if status == 'approved' else 'missing',
+                            'sourceEvidence': [{'path': 'stock.py', 'startLine': 1, 'endLine': 5}],
+                            'probeIds': passed if status == 'approved' else [],
+                            'rationale': 'The current source and real isolated acceptance receipts establish this behavior.'}
+                            for row in requirement_units(OBJECTIVE)],
+                        findings=[] if status == 'approved' else ['release must add the amount.'])
+                assert 'write_file' in names and 'executor_check' in names
+                self.parent_calls += 1
+                assert adjudications, 'No implementation request may precede independent failure adjudication.'
+                assert _result(messages, 'old-source-read') == preserved_tool_result
+                if product_gap:
+                    if self.parent_calls == 1:
+                        return _call('same-owner-repair', 'write_file', path='stock.py', content=COMPLETE)
+                    if self.parent_calls == 2:
+                        assert _result(messages, 'same-owner-repair')['isError'] is False
+                        return _call('same-owner-tests', 'executor_check', check=1)
+                    assert self.parent_calls == 3
+                    check = json.loads(_result(messages, 'same-owner-tests')['content'])
+                    checks.append(check)
+                    assert check['status'] == 'passed' and check['evidence']['exitCode'] == 0
+                else:
+                    assert self.parent_calls == 1
+                    assert not any(message.get('_implementation_completion_feedback') for message in messages)
+                    assert any(message.get('_implementation_completion_status') for message in messages)
+                    assert {name: (case['workspace'] / name).read_bytes() for name in original_files} == original_files
+                return AgentStep(type='assistant', kind='final', content=final_text)
+    
+        model = ResumeDriver()
+        result = run_agent_turn(model=model, messages=saved, implementation_continuation=restored, **case['options'])
+        assert all_requests and 'completion_probe_adjudication_submit' in all_requests[0]
+        assert sum('completion_coverage_inspection_submit' in names for names in all_requests) == 2
+        assert adjudications == ['product_gap' if product_gap else 'probe_error']
+        # A semantic replacement additionally reads the retained invalid source and
+        # its independent authority; a genuine product repair has one active probe.
+>       assert model.coverage_calls == len(audit_reads) + len(audit_document_reads) + 1
+E       AssertionError: assert 4 == ((4 + 0) + 1)
+E        +  where 4 = <test_completion_failure_adjudication_resume.test_same_owner_resumes_independent_adjudication_real_tests_and_delivery.<locals>.ResumeDriver object at 0x113f6a660>.coverage_calls
+E        +  and   4 = len([{'probeId': 'review_probe_1f6cd7f1b22837626cdce903', 'receiptView': 'current', 'limit': 16000, 'offset': 0}, {'probeI...': 0}, {'probeId': 'review_probe_46c91ae24331290b3b21bcfb', 'receiptView': 'current', 'limit': 16000, 'offset': 16000}])
+E        +  and   0 = len([])
+
+tests/test_completion_failure_adjudication_resume.py:227: AssertionError
+____ test_confirmed_product_gap_preserves_acceptance_and_diagnostic_history ____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-427/test_confirmed_product_gap_pre0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113c25d30>
+
+    def test_confirmed_product_gap_preserves_acceptance_and_diagnostic_history(tmp_path, monkeypatch):
+        legacy = _seed_legacy(tmp_path, monkeypatch)
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch,
+            review_factory=lambda spec: ImplementationCompletionReview.from_state(spec, legacy))
+        # Integer release is repaired, so the defect-detection probe now fails;
+        # fractional release still violates the same original addition objective.
+        (tmp_path / "stock.py").write_text(SOURCE.replace("return n + amount", "return n + int(amount)"))
+        acceptance = PROBE + "    assert release(3, 2.5) == 5.5\n"
+        review.queue_legacy_resolution(_resolution(review, tmp_path, replacement=acceptance))
+        try:
+            result = assess(lambda *_args: pytest.fail("failed migration cannot enter final approval review"))
+            assert result["status"] == "changes_required"
+>           assert result["reason"] == "legacy_acceptance_product_gap"
+E           AssertionError: assert 'confirmed_product_gap' == 'legacy_accep...e_product_gap'
+E             
+E             - legacy_acceptance_product_gap
+E             + confirmed_product_gap
+
+tests/test_completion_probe_purposes.py:175: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_completion_failure_adjudication.py::test_true_product_gap_is_the_only_assertion_feedback_sent_to_executor
+FAILED tests/test_completion_failure_adjudication.py::test_classified_product_gap_cannot_restore_without_each_exact_independent_authority
+FAILED tests/test_completion_failure_adjudication.py::test_corrected_expectation_exposes_real_gap_and_returns_it_in_same_assessment
+FAILED tests/test_completion_failure_adjudication_resume.py::test_same_owner_resumes_independent_adjudication_real_tests_and_delivery[fix-probe-preserve-product]
+FAILED tests/test_completion_probe_purposes.py::test_confirmed_product_gap_preserves_acceptance_and_diagnostic_history
+5 failed, 384 passed in 153.42s (0:02:33)

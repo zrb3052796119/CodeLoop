@@ -1,0 +1,11 @@
+--- a/minicode/memory_pipeline.py
++++ b/minicode/memory_pipeline.py
+@@ -1770,7 +1770,7 @@
+                     and isinstance(entry.updated_at, (int, float))
+                     and not isinstance(entry.updated_at, bool)
+                     and math.isfinite(entry.updated_at)
+-                    and now - entry.updated_at > pending_draft_age_seconds()
++                    and now - entry.updated_at >= 0
+                 ):
+                     aged.append((entry, now + draft_ttl_seconds(), True))
+             except (AttributeError, TypeError, ValueError):

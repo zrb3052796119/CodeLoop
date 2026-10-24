@@ -1,0 +1,32 @@
+
+==================================== ERRORS ====================================
+______ ERROR collecting tests/test_completion_coverage_recovery_bridge.py ______
+ImportError while importing test module '/private/tmp/native-review-validation-host-cl3u8c9q/tests/test_completion_coverage_recovery_bridge.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_coverage_recovery_bridge.py:19: in <module>
+    from scripts import run_requirement_completion_checkpoint as runner
+E   ImportError: cannot import name 'run_requirement_completion_checkpoint' from 'scripts' (/private/tmp/native-review-validation-host-cl3u8c9q/scripts/__init__.py)
+_______ ERROR collecting tests/test_completion_review_draft_recovery.py ________
+ImportError while importing test module '/private/tmp/native-review-validation-host-cl3u8c9q/tests/test_completion_review_draft_recovery.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_review_draft_recovery.py:8: in <module>
+    from scripts import run_requirement_completion_checkpoint as runner
+E   ImportError: cannot import name 'run_requirement_completion_checkpoint' from 'scripts' (/private/tmp/native-review-validation-host-cl3u8c9q/scripts/__init__.py)
+______ ERROR collecting tests/test_completion_summary_real_observation.py ______
+tests/test_completion_summary_real_observation.py:20: in <module>
+    ROOT = next(parent for parent in Path(__file__).resolve().parents
+E   StopIteration
+=========================== short test summary info ============================
+ERROR tests/test_completion_coverage_recovery_bridge.py
+ERROR tests/test_completion_review_draft_recovery.py
+ERROR tests/test_completion_summary_real_observation.py - StopIteration
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+3 errors in 5.61s

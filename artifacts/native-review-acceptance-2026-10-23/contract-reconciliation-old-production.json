@@ -1,0 +1,68 @@
+{
+  "cwd": "/tmp/native-review-contract-overlay-yqq233v4",
+  "productionTarget": "/tmp/native-review-before-x1x4ue1e/minicode",
+  "command": [
+    "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_completion_assertion_correction_authority.py",
+    "tests/test_completion_coverage_audit.py",
+    "tests/test_completion_evidence_cursor.py",
+    "tests/test_completion_exception_attribution.py",
+    "tests/test_completion_expression_correction.py",
+    "tests/test_completion_fixture_keywords.py",
+    "tests/test_completion_review_evidence_delivery.py",
+    "tests/test_completion_review_provider_tools.py"
+  ],
+  "overlaidTests": [
+    "test_completion_assertion_correction_authority.py",
+    "test_completion_coverage_audit.py",
+    "test_completion_evidence_cursor.py",
+    "test_completion_exception_attribution.py",
+    "test_completion_expression_correction.py",
+    "test_completion_fixture_keywords.py",
+    "test_completion_review_evidence_delivery.py",
+    "test_completion_review_provider_tools.py"
+  ],
+  "exitCode": 0,
+  "summary": "38 passed in 53.80s",
+  "frozenArchive": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/multi-agent-trigger-2026-10-23/run-v1/execution-host.zip",
+  "frozenArchiveSha256": "a118a493563821da50b8d2e15385f9cdc686ee433c36e44b8f0a3990b88d7d3d",
+  "baselineProductionPyFilesMatched": 318,
+  "baselineProductionMismatches": [],
+  "testHashes": {
+    "test_completion_assertion_correction_authority.py": {
+      "beforeSha256": "6b1e9b08f79256c237aeb48504e3114266c0b4008d8732250ce8b74fd392e427",
+      "afterSha256": "32bd4ec29a820434a722de5b012f0492e64008645aba573ceb2128a6887de13a"
+    },
+    "test_completion_coverage_audit.py": {
+      "beforeSha256": "38beb35766e33e0a4b156c5d953db76d3eef8c7182223c9451969e9d85fdfba2",
+      "afterSha256": "4e92f5d4afeff2465a17aa1225b3b7945f62ca9ab80a8a88e90f3bf9c27856bf"
+    },
+    "test_completion_evidence_cursor.py": {
+      "beforeSha256": "7a37915bae9bde2e481a53c20f5c5ae31d5f863e3f7335171bfc49684d25e9a2",
+      "afterSha256": "42284f19370a5ecaffe2989a63adda2602fe2ece52ce82f555ea7c2eab3e3f76"
+    },
+    "test_completion_exception_attribution.py": {
+      "beforeSha256": "756d0c53a26831a3f2157cd5a63037070c4e2eea08286332893044850c3c6ca5",
+      "afterSha256": "cc4d456591284f14cdde30af827db24b1e4d66a035868cbf711fd0f0734e891e"
+    },
+    "test_completion_expression_correction.py": {
+      "beforeSha256": "8ca68717a2826a9b6ef2d5dd8e438b67b0a7dc662cd9ab63ebae575c1989f4ab",
+      "afterSha256": "b5769c7bf8bf7510f1a7bc7ac0c9b059f4be0b354635d1c6b8e73bf80d839a7e"
+    },
+    "test_completion_fixture_keywords.py": {
+      "beforeSha256": "43626288f68d07de1475bd77f821f911aa8902d36b437eee52e169d85218f73d",
+      "afterSha256": "d6ce7b89aa2f054b368c30e028854777bc20d0074c8ba2498c05e23f94d00d10"
+    },
+    "test_completion_review_evidence_delivery.py": {
+      "beforeSha256": "b35e5e8d9ea6d3496d04cbbb15073e49167c25e75435cc7008b56ad285e7601a",
+      "afterSha256": "127708dd199fa9869ddad6f55bdda49a48df80a673b596b33390e00cd46761a5"
+    },
+    "test_completion_review_provider_tools.py": {
+      "beforeSha256": "c829de96fd250f13f642ffb3eb988503c7295edc0aaf79ea7f6cf8e0a699411c",
+      "afterSha256": "3270ff7a65e0996394c5787d7cdc6aba4df411e5e5924e61c786872d93187370"
+    }
+  }
+}

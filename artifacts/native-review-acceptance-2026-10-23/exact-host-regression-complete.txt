@@ -1,0 +1,239 @@
+.........................FF............................................. [ 10%]
+.................................................FFFFFFF...............F [ 20%]
+.........
+=================================== FAILURES ===================================
+_ test_unresolved_adjudication_preserves_checkpoint_without_exposing_writer[explicit-uncertainty] _
+minicode/agent_loop.py:4467: in run_agent_turn
+    next_step = _model_next(
+minicode/agent_loop.py:1263: in _model_next
+    return call_model_next(
+minicode/model_call_control.py:180: in call_model_next
+    result = model.next(messages, **accepted)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_failure_adjudication_resume.py:63: in next
+    raise failure
+E   KeyboardInterrupt: retain old failed acceptance evidence
+
+During handling of the above exception, another exception occurred:
+tests/test_completion_adjudication_inconclusive.py:17: in test_unresolved_adjudication_preserves_checkpoint_without_exposing_writer
+    document, saved, _ = seed_failed_checkpoint(case, monkeypatch, product_gap=False)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_failure_adjudication_resume.py:73: in seed_failed_checkpoint
+    run_agent_turn(model=model, messages=[{'role': 'user', 'content': OBJECTIVE}],
+minicode/agent_loop.py:7372: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_unresolved_adjudication_preserves_checkpoint_without_exposing_writer[missing-native-verdict] _
+minicode/agent_loop.py:4467: in run_agent_turn
+    next_step = _model_next(
+minicode/agent_loop.py:1263: in _model_next
+    return call_model_next(
+minicode/model_call_control.py:180: in call_model_next
+    result = model.next(messages, **accepted)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_failure_adjudication_resume.py:63: in next
+    raise failure
+E   KeyboardInterrupt: retain old failed acceptance evidence
+
+During handling of the above exception, another exception occurred:
+tests/test_completion_adjudication_inconclusive.py:17: in test_unresolved_adjudication_preserves_checkpoint_without_exposing_writer
+    document, saved, _ = seed_failed_checkpoint(case, monkeypatch, product_gap=False)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_failure_adjudication_resume.py:73: in seed_failed_checkpoint
+    run_agent_turn(model=model, messages=[{'role': 'user', 'content': OBJECTIVE}],
+minicode/agent_loop.py:7372: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_resume_first_request_adjudicates_before_parent_write_surface[wrong-probe] _
+tests/test_completion_failure_adjudication_resume.py:63: in next
+    raise failure
+E   KeyboardInterrupt: retain old failed acceptance evidence
+
+During handling of the above exception, another exception occurred:
+tests/test_completion_failure_adjudication_resume.py:90: in test_resume_first_request_adjudicates_before_parent_write_surface
+    document, saved, _ = seed_failed_checkpoint(case, monkeypatch, product_gap=product_gap)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_failure_adjudication_resume.py:73: in seed_failed_checkpoint
+    run_agent_turn(model=model, messages=[{'role': 'user', 'content': OBJECTIVE}],
+minicode/agent_loop.py:7372: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_resume_first_request_adjudicates_before_parent_write_surface[real-product-gap] _
+tests/test_completion_failure_adjudication_resume.py:63: in next
+    raise failure
+E   KeyboardInterrupt: retain old failed acceptance evidence
+
+During handling of the above exception, another exception occurred:
+tests/test_completion_failure_adjudication_resume.py:90: in test_resume_first_request_adjudicates_before_parent_write_surface
+    document, saved, _ = seed_failed_checkpoint(case, monkeypatch, product_gap=product_gap)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_failure_adjudication_resume.py:73: in seed_failed_checkpoint
+    run_agent_turn(model=model, messages=[{'role': 'user', 'content': OBJECTIVE}],
+minicode/agent_loop.py:7372: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_same_owner_resumes_independent_adjudication_real_tests_and_delivery[fix-probe-preserve-product] _
+tests/test_completion_failure_adjudication_resume.py:63: in next
+    raise failure
+E   KeyboardInterrupt: retain old failed acceptance evidence
+
+During handling of the above exception, another exception occurred:
+tests/test_completion_failure_adjudication_resume.py:131: in test_same_owner_resumes_independent_adjudication_real_tests_and_delivery
+    document, saved, old_probe_id = seed_failed_checkpoint(case, monkeypatch, product_gap=product_gap)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_failure_adjudication_resume.py:73: in seed_failed_checkpoint
+    run_agent_turn(model=model, messages=[{'role': 'user', 'content': OBJECTIVE}],
+minicode/agent_loop.py:7372: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_same_owner_resumes_independent_adjudication_real_tests_and_delivery[fix-real-product-gap] _
+tests/test_completion_failure_adjudication_resume.py:63: in next
+    raise failure
+E   KeyboardInterrupt: retain old failed acceptance evidence
+
+During handling of the above exception, another exception occurred:
+tests/test_completion_failure_adjudication_resume.py:131: in test_same_owner_resumes_independent_adjudication_real_tests_and_delivery
+    document, saved, old_probe_id = seed_failed_checkpoint(case, monkeypatch, product_gap=product_gap)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_failure_adjudication_resume.py:73: in seed_failed_checkpoint
+    run_agent_turn(model=model, messages=[{'role': 'user', 'content': OBJECTIVE}],
+minicode/agent_loop.py:7372: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_rejected_final_preserves_feedback_before_real_check_repair_results[normal-history] _
+tests/test_completion_feedback_chronology.py:205: in test_rejected_final_preserves_feedback_before_real_check_repair_results
+    result = run_agent_turn(model=model, messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+minicode/agent_loop.py:7372: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_rejected_final_preserves_feedback_before_real_check_repair_results[projection-omits-feedback] _
+tests/test_completion_feedback_chronology.py:205: in test_rejected_final_preserves_feedback_before_real_check_repair_results
+    result = run_agent_turn(model=model, messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+minicode/agent_loop.py:7372: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+___ test_old_checkpoint_feedback_cannot_override_goal_or_follow_new_results ____
+tests/test_completion_feedback_chronology.py:141: in next
+    return step(messages) if callable(step) else step
+           ^^^^^^^^^^^^^^
+tests/test_completion_feedback_chronology.py:233: in interrupt
+    raise KeyboardInterrupt("retain actual review feedback and successful checks")
+E   KeyboardInterrupt: retain actual review feedback and successful checks
+
+During handling of the above exception, another exception occurred:
+tests/test_completion_feedback_chronology.py:252: in test_old_checkpoint_feedback_cannot_override_goal_or_follow_new_results
+    run_agent_turn(model=model, messages=[{"role": "user", "content": OBJECTIVE}],
+minicode/agent_loop.py:7372: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+__ test_parent_resume_finishes_explicit_migration_before_returning_to_writer ___
+tests/test_completion_migration_feedback_resume.py:78: in next
+    raise stop
+E   KeyboardInterrupt: old native feedback reached its owner
+
+During handling of the above exception, another exception occurred:
+tests/test_completion_migration_feedback_resume.py:89: in test_parent_resume_finishes_explicit_migration_before_returning_to_writer
+    document, saved = _old_negative_checkpoint(case)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_migration_feedback_resume.py:81: in _old_negative_checkpoint
+    run_agent_turn(model=Seed(), messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+minicode/agent_loop.py:7372: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+=========================== short test summary info ============================
+FAILED tests/test_completion_adjudication_inconclusive.py::test_unresolved_adjudication_preserves_checkpoint_without_exposing_writer[explicit-uncertainty]
+FAILED tests/test_completion_adjudication_inconclusive.py::test_unresolved_adjudication_preserves_checkpoint_without_exposing_writer[missing-native-verdict]
+FAILED tests/test_completion_failure_adjudication_resume.py::test_resume_first_request_adjudicates_before_parent_write_surface[wrong-probe]
+FAILED tests/test_completion_failure_adjudication_resume.py::test_resume_first_request_adjudicates_before_parent_write_surface[real-product-gap]
+FAILED tests/test_completion_failure_adjudication_resume.py::test_same_owner_resumes_independent_adjudication_real_tests_and_delivery[fix-probe-preserve-product]
+FAILED tests/test_completion_failure_adjudication_resume.py::test_same_owner_resumes_independent_adjudication_real_tests_and_delivery[fix-real-product-gap]
+FAILED tests/test_completion_feedback_chronology.py::test_rejected_final_preserves_feedback_before_real_check_repair_results[normal-history]
+FAILED tests/test_completion_feedback_chronology.py::test_rejected_final_preserves_feedback_before_real_check_repair_results[projection-omits-feedback]
+FAILED tests/test_completion_feedback_chronology.py::test_old_checkpoint_feedback_cannot_override_goal_or_follow_new_results
+FAILED tests/test_completion_migration_feedback_resume.py::test_parent_resume_finishes_explicit_migration_before_returning_to_writer
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/private/tmp/native-review-validation-host-cl3u8c9q/minicode/deterministic_verifier.py:920: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+10 failed, 143 passed in 140.40s (0:02:20)

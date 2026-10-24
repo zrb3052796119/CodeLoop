@@ -1,0 +1,28 @@
+{
+  "historicalFailure": {
+    "text": "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate (_ssl.c:1000)",
+    "peerChainRetained": false,
+    "diagnosticSource": "artifacts/multi-agent-trigger-2026-10-23/final-run-diagnostic.md"
+  },
+  "frozenInterpreter": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12",
+  "endpoint": "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
+  "endpointMatchesFrozenRoute": true,
+  "frozenTLSsha256": "520bcd51096831bb60fcd22e0ec66a136dc1ff31b4e3fb31d65ed70dd16c719d",
+  "currentTLSsha256": "520bcd51096831bb60fcd22e0ec66a136dc1ff31b4e3fb31d65ed70dd16c719d",
+  "certifiInstalled": false,
+  "systemBundle": {
+    "path": "/etc/ssl/cert.pem",
+    "sha256": "9dae8d76e55cb08991f2b672d58999ea15560d910759c16b544f843bdffbb994",
+    "bytes": 333483,
+    "caCount": 128,
+    "verifiedRootSha256": "5c58468d55f58e497e743982d2b50010b6d165374acf83a7d4a32db768c4408e",
+    "verifiedRootPresent": true
+  },
+  "requiredEvaluationEnvironment": {
+    "SSL_CERT_FILE": "/etc/ssl/cert.pem"
+  },
+  "productionTLSModified": false,
+  "credentialsReadByProbe": false,
+  "paidModelCalls": 0,
+  "conclusion": "Historical self-signed-chain cause not established; currently not reproduced. Fixed verified system CA and clean-process preflight pass through the current OS proxy."
+}

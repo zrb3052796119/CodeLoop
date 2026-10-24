@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "native-review-bounded-v1",
+  "phase": "native-review-bounded",
+  "cases": [
+    "trigger-stock-allocation",
+    "trigger-config-overlay"
+  ],
+  "arms": [
+    "auto"
+  ],
+  "repeats": 1,
+  "scheduleSeed": 20261023,
+  "schedule": [
+    {
+      "case": "trigger-stock-allocation",
+      "arm": "auto",
+      "repeat": 1,
+      "id": "trigger-stock-allocation-r1-auto"
+    },
+    {
+      "case": "trigger-config-overlay",
+      "arm": "auto",
+      "repeat": 1,
+      "id": "trigger-config-overlay-r1-auto"
+    }
+  ],
+  "concurrency": 1,
+  "model": "glm-5.3-flash",
+  "temperature": 0,
+  "limits": {
+    "maxTokens": 500000,
+    "maxModelCalls": 40,
+    "maxCostUsd": "5",
+    "wallSeconds": 600,
+    "maxOutputTokens": 8192,
+    "requestTimeoutSeconds": 300,
+    "idleTimeoutSeconds": 120,
+    "connectTimeoutSeconds": 30
+  },
+  "price": {
+    "currency": "CNY",
+    "perMillionInput": 0.8,
+    "perMillionOutput": 2.8,
+    "perMillionCacheRead": 0.23,
+    "source": "https://open.bigmodel.cn/pricing",
+    "retrievedOn": "2026-10-13",
+    "basis": "standard API-equivalent list-price estimate for coding subscription route; not actual incremental account charges",
+    "codingRoute": true,
+    "promotionNote": "Official FAQ also mentions half-price promotion; no account-specific discount assumed."
+  },
+  "roleTurnLimits": {
+    "explore": 0,
+    "plan": 0,
+    "general": 0
+  },
+  "roleTurnPolicy": "explicit-zero-role-ceilings-shared-budget-v1",
+  "judgementPolicy": {
+    "version": "common-generated-regression-v1",
+    "totalSeconds": 120,
+    "regressionPath": "tests/test_eval_regression.py",
+    "minimumPassed": 1,
+    "requireEveryCollectedPassed": true,
+    "allowSkipOrXfail": false,
+    "separateUnfilteredRegressionRun": true,
+    "deliveredCopiesOnly": true,
+    "receiptExitAndCleanupRequired": true,
+    "agentBudgetSeconds": 600
+  },
+  "gatePolicy": {
+    "expectedTrials": 2,
+    "gatedCase": "trigger-stock-allocation",
+    "descriptiveCase": "trigger-config-overlay",
+    "acceptedReviewTerminals": [
+      "approved",
+      "rejected"
+    ],
+    "budgetExhaustedPasses": false,
+    "approvedRequiresAcceptedFinal": true,
+    "requireAllTerminal": true,
+    "requireIndependentAudit": true
+  },
+  "reviewPolicy": {
+    "mode": "bounded",
+    "phaseLimits": {
+      "review": [
+        8,
+        90.0
+      ],
+      "inspection": [
+        8,
+        150.0
+      ],
+      "reconciliation": [
+        4,
+        60.0
+      ]
+    },
+    "closingRequests": 2,
+    "adapterRetries": 0,
+    "reentryResetsAllowance": false
+  },
+  "tlsTrust": {
+    "path": "/etc/ssl/cert.pem",
+    "sha256": "9dae8d76e55cb08991f2b672d58999ea15560d910759c16b544f843bdffbb994",
+    "certificateVerification": true
+  },
+  "harnessFiles": [
+    "__init__.py",
+    "run_three_arm_real.py",
+    "evaluation_transport.py",
+    "three_arm_protocol.py",
+    "three_arm_scope.py",
+    "three_arm_scope_metadata.py",
+    "three_arm_processes.py",
+    "run_north_star_live.py",
+    "run_multi_agent_cost_live.py",
+    "analyze_three_arm_real.py",
+    "run_implementation_progress_live.py",
+    "audit_three_arm_real.py",
+    "audit_implementation_progress.py",
+    "analyze_implementation_progress.py",
+    "implementation_judge.py",
+    "public_verification_fixtures.py",
+    "run_multi_agent_gen2.py",
+    "audit_multi_agent_gen2.py",
+    "analyze_multi_agent_gen2.py",
+    "run_multi_agent_trigger.py",
+    "audit_multi_agent_trigger.py",
+    "analyze_multi_agent_trigger.py",
+    "prepare_multi_agent_trigger_tasks.py",
+    "native_review_bounded_validation.py",
+    "audit_native_review_bounded.py"
+  ],
+  "runner": "scripts/native_review_bounded_validation.py",
+  "implementationCapabilities": "shared-public-checks-source-context-and-fixtures-v2",
+  "autoRecipe": "Parent retains direct tools and task; no forced delegation",
+  "implementationPhasePolicy": "production-continuous-default",
+  "requestEvidencePolicy": "complete-parent-provider-body-before-send-ledger-call-v1",
+  "nativeObservationPolicy": "existing-host-events-and-allowance-selection-v1",
+  "hostProvenancePolicy": "original-trigger-archive-plus-committed-explicit-overlay-v1",
+  "baselineArchiveSha256": "a118a493563821da50b8d2e15385f9cdc686ee433c36e44b8f0a3990b88d7d3d",
+  "originalTaskSha256": "78550c227d36e719514f55c3d540a721a11aad8535de34a6a5155d57c8553937",
+  "comparison": "Fixed reused stock/config engineering validation; no causal claim",
+  "status": "prepared-not-frozen-no-provider-execution",
+  "sourceHostCommit": null,
+  "productionSha256": null,
+  "harnessSha256": null,
+  "executionHostArchiveSha256": null,
+  "executionHostInventorySha256": null,
+  "executionHostTreeSha256": null,
+  "environmentSha256": null,
+  "registrationCommit": null,
+  "hostSourceSha256": null,
+  "taskSha256": "2a251d43ca2ecaa7c9f5ffa2a2b2dbce96672f30213ca711dbb56633df7114fb",
+  "analysisPlanSha256": "77e8fc5d78347526d949117459870321eca7864d713518d391f4e45b811b5938",
+  "originalManifestSha256": "a740668dd53ca4ce15b1f07156ae498ee335b2c8873c5ff5b5b344d83b1d91ab",
+  "remoteModelCalls": 0
+}

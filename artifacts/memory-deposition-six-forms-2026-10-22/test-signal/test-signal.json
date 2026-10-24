@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "backend": "semantic-probe",
+  "result": "STRONG",
+  "mutants": [
+    {
+      "id": "strict-guard-bypass",
+      "status": "KILLED",
+      "description": "Strict mode accidentally enables preference and dependency lanes",
+      "target": {
+        "file": "minicode/memory_deposition_experiment.py",
+        "location": {
+          "start": {
+            "line": 66,
+            "column": 1
+          }
+        }
+      },
+      "evidence": {
+        "report": "strict-guard-bypass.json",
+        "patch": "strict-guard-bypass.diff",
+        "command": [
+          "/Users/zhourunbo/miniconda3/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "tests/test_memory_deposition_experiment.py::test_user_preference_survives_technical_trace",
+          "tests/test_reflection_declared_dependencies.py::test_rollback_preserves_historical_manifest_rules"
+        ],
+        "observed_assertion": "Strict-mode USER preference assertion failed because one entry was created; raw manifest rollback assertions also changed confirmed to declared."
+      }
+    },
+    {
+      "id": "declared-autoapproval",
+      "status": "KILLED",
+      "description": "Declared dependencies receive canonical automatic approval",
+      "target": {
+        "file": "minicode/memory_pipeline.py",
+        "location": {
+          "start": {
+            "line": 3272,
+            "column": 1
+          }
+        }
+      },
+      "evidence": {
+        "report": "declared-autoapproval.json",
+        "patch": "declared-autoapproval.diff",
+        "command": [
+          "/Users/zhourunbo/miniconda3/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "tests/test_reflection_declared_dependencies.py::test_pipeline_keeps_declarations_pending_as_drafts"
+        ],
+        "observed_assertion": "Both capture and inject tests observed approval_status=approved instead of required pending."
+      }
+    },
+    {
+      "id": "pending-age-bypass",
+      "status": "KILLED",
+      "description": "Fresh pending entries bypass the configured review age threshold",
+      "target": {
+        "file": "minicode/memory_pipeline.py",
+        "location": {
+          "start": {
+            "line": 1773,
+            "column": 1
+          }
+        }
+      },
+      "evidence": {
+        "report": "pending-age-bypass.json",
+        "patch": "pending-age-bypass.diff",
+        "command": [
+          "/Users/zhourunbo/miniconda3/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "tests/test_memory_pending_drafts.py::test_age_threshold_is_strict_and_configurable"
+        ],
+        "observed_assertion": "An exactly-seven-day-old entry rendered in Recent draft notes when the contract requires age strictly greater than seven days."
+      }
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "counts": {
+      "KILLED": 3
+    }
+  },
+  "baseline": {
+    "before": "baseline.json",
+    "isolated_snapshot": "snapshot-baseline.json",
+    "after": "final-baseline.json",
+    "passed": 122
+  },
+  "snapshot": {
+    "root": "/private/tmp/minicode-deposition-signal-5dstgefi",
+    "head": "a4754ed2d13ee85ba1ac590661c15ffb0758df89",
+    "file_count": 1346,
+    "meaning": "Synthetic current-code snapshot; not historical baseline.",
+    "hash_manifest": "snapshot-manifest.json",
+    "cleanup": "temporary snapshot and all skill runner worktrees removed"
+  },
+  "independent_review_evidence": "scope.json",
+  "shared_production_and_tests_unchanged": true,
+  "limitations": [
+    "These are three bounded synthetic current-code faults; STRONG applies only to the selected strict-mode, declaration-approval and pending-age guards.",
+    "HEAD e092a9af lacks the existing uncommitted experiment module. No runnable historical baseline was available and no PROVEN historical-regression claim is made.",
+    "The initial runner against the user repository was blocked by read-only .git metadata. Its raw evidence remains under initial-blocked-*; a hash-verified source-only /private/tmp Git snapshot resolved isolation without modifying parent Git metadata."
+  ]
+}

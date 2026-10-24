@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-23T07:34:31.571564+00:00",
+  "pythonExecutable": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12",
+  "pythonVersion": "3.12.8 (v3.12.8:2dc476bcb91, Dec  3 2024, 14:43:19) [Clang 13.0.0 (clang-1300.0.29.30)]",
+  "opensslVersion": "OpenSSL 3.0.15 3 Sep 2024",
+  "endpoint": "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
+  "endpointSha256": "dfe1c0c0c520107cb4bd5bbc9ad05a6c372cbaa75b6657387e997980c904652a",
+  "method": "HEAD",
+  "authorizationSent": false,
+  "requestBodyBytes": 0,
+  "defaultVerifyPaths": {
+    "cafile": null,
+    "capath": null,
+    "openssl_cafile_env": "SSL_CERT_FILE",
+    "openssl_cafile": "/Library/Frameworks/Python.framework/Versions/3.12/etc/openssl/cert.pem",
+    "openssl_capath_env": "SSL_CERT_DIR",
+    "openssl_capath": "/Library/Frameworks/Python.framework/Versions/3.12/etc/openssl/certs"
+  },
+  "defaultCertStore": {
+    "x509": 0,
+    "crl": 0,
+    "x509_ca": 0
+  },
+  "productionCertStore": {
+    "x509": 128,
+    "crl": 0,
+    "x509_ca": 128
+  },
+  "checkHostname": true,
+  "verifyMode": 2,
+  "sslCertFile": null,
+  "sslCertFileSha256": null,
+  "proxies": {
+    "http": {
+      "scheme": "http",
+      "hostname": "127.0.0.1",
+      "port": 1082,
+      "credentialsPresent": false
+    },
+    "https": {
+      "scheme": "http",
+      "hostname": "127.0.0.1",
+      "port": 1082,
+      "credentialsPresent": false
+    }
+  },
+  "tlsVerified": true,
+  "httpStatus": 401,
+  "peer": null,
+  "elapsedSeconds": 0.135012
+}

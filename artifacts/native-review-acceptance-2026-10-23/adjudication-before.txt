@@ -1,0 +1,104 @@
+.F.......F.F.....F..............                                         [100%]
+=================================== FAILURES ===================================
+____ test_true_product_gap_is_the_only_assertion_feedback_sent_to_executor _____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-439/test_true_product_gap_is_the_o0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107ef9e80>
+
+    def test_true_product_gap_is_the_only_assertion_feedback_sent_to_executor(tmp_path, monkeypatch):
+        product = SOURCE.replace("return n + amount", "return n")
+        review, assess, _, cap = pending(tmp_path, monkeypatch,
+            adjudication_driver=judge("product_gap"), product=product)
+        try:
+            result = assess(lambda *_: pytest.fail("confirmed product gap returns to existing owner"))
+            assert result["status"] == "changes_required"
+>           assert [p["code"] for p in result["repairProbes"]] == [WRONG]
+E           AssertionError: assert [] == ['from stock ...ntity == 5\n']
+E             
+E             Right contains one more item: 'from stock import hold, release\ndef test_inventory():\n    assert hold(5, 2) == 3\n    quantity = release(3, 2)\n    quantity = release(quantity, 4)\n    assert quantity == 5\n'
+E             Use -v to get more diff
+
+tests/test_completion_failure_adjudication.py:106: AssertionError
+_ test_classified_product_gap_cannot_restore_without_each_exact_independent_authority _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-439/test_classified_product_gap_ca0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106bd37a0>
+
+    def test_classified_product_gap_cannot_restore_without_each_exact_independent_authority(tmp_path, monkeypatch):
+        review, assess, _, cap = pending(tmp_path, monkeypatch, adjudication_driver=judge("product_gap"))
+        try:
+            result = assess(lambda *_: None)
+            assert result["status"] == "changes_required"
+            state = review.state
+            record = state["legacyResolutions"][-1]
+>           assert record["status"] == "classified" and record["productGapAdjudicationRefs"]
+E           AssertionError: assert ('replacement_failed' == 'classified'
+E             
+E             - classified
+E             + replacement_failed)
+
+tests/test_completion_failure_adjudication.py:169: AssertionError
+_ test_corrected_expectation_exposes_real_gap_and_returns_it_in_same_assessment _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-439/test_corrected_expectation_exp0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1101294f0>
+
+    def test_corrected_expectation_exposes_real_gap_and_returns_it_in_same_assessment(tmp_path, monkeypatch):
+        tail = "    assert release(3, 2.5) == 5.5\n"
+        wrong, right = WRONG + tail, RIGHT + tail
+        calls = []
+    
+        def attribution(tools, child, packet):
+            calls.append(packet["probe"]["code"])
+            return judge("probe_error" if len(calls) == 1 else "product_gap", code=right)(tools, child, packet)
+    
+        legacy = _seed_legacy(tmp_path, monkeypatch)
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            review_factory=lambda spec: ImplementationCompletionReview.from_state(spec, legacy),
+            adjudication_driver=attribution)
+        (tmp_path / "stock.py").write_text(SOURCE.replace("return n + amount", "return n + int(amount)"))
+        review.queue_legacy_resolution(_resolution(review, tmp_path, replacement=wrong))
+        def proposal(tools, child, packet):
+            assert review.state["corrections"] == []
+            result = _submit(tools, child, packet, status="changes_required", rows=_rows(packet, status="missing"),
+                findings=["The corrected expectation exposes the actual missing fractional-quantity behavior."])
+            assert result.ok, result.output
+    
+        try:
+            result = assess(proposal)
+            assert result["status"] == "changes_required" and calls == [wrong, right]
+            assert [p["code"] for p in result["repairProbes"]] == [right]
+>           assert review.state["pendingLegacyResolution"] is None
+E           AssertionError: assert {'candidateDigest': 'sha256:d28453e04b1fed9b3fd371eb13248db67cb0fe97b4f578d51d9f575815b60c89', 'decisions': [{'accepta...jectiveDigest': 'sha256:f8fa07aea948d40e9597ff60c71bf28404bd5d63a7e67288d5bc4b2a1440c888', 'resolutionVersion': 1, ...} is None
+
+tests/test_completion_failure_adjudication.py:235: AssertionError
+____ test_confirmed_product_gap_preserves_acceptance_and_diagnostic_history ____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-439/test_confirmed_product_gap_pre0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107ef3b30>
+
+    def test_confirmed_product_gap_preserves_acceptance_and_diagnostic_history(tmp_path, monkeypatch):
+        legacy = _seed_legacy(tmp_path, monkeypatch)
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch,
+            review_factory=lambda spec: ImplementationCompletionReview.from_state(spec, legacy))
+        # Integer release is repaired, so the defect-detection probe now fails;
+        # fractional release still violates the same original addition objective.
+        (tmp_path / "stock.py").write_text(SOURCE.replace("return n + amount", "return n + int(amount)"))
+        acceptance = PROBE + "    assert release(3, 2.5) == 5.5\n"
+        review.queue_legacy_resolution(_resolution(review, tmp_path, replacement=acceptance))
+        try:
+            result = assess(lambda *_args: pytest.fail("failed migration cannot enter final approval review"))
+            assert result["status"] == "changes_required"
+>           assert result["reason"] == "legacy_acceptance_product_gap"
+E           AssertionError: assert 'confirmed_product_gap' == 'legacy_accep...e_product_gap'
+E             
+E             - legacy_acceptance_product_gap
+E             + confirmed_product_gap
+
+tests/test_completion_probe_purposes.py:175: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_completion_failure_adjudication.py::test_true_product_gap_is_the_only_assertion_feedback_sent_to_executor
+FAILED tests/test_completion_failure_adjudication.py::test_classified_product_gap_cannot_restore_without_each_exact_independent_authority
+FAILED tests/test_completion_failure_adjudication.py::test_corrected_expectation_exposes_real_gap_and_returns_it_in_same_assessment
+FAILED tests/test_completion_probe_purposes.py::test_confirmed_product_gap_preserves_acceptance_and_diagnostic_history
+4 failed, 28 passed in 47.28s

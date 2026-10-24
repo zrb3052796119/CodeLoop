@@ -1,0 +1,50 @@
+{
+  "kind": "actual_live_model_five_sessions",
+  "sessions": [
+    {
+      "session": 1,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 33.564,
+      "model_calls": 5,
+      "trace_count": 1,
+      "run_status": "completed"
+    },
+    {
+      "session": 2,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 71.091,
+      "model_calls": 7,
+      "trace_count": 1,
+      "run_status": "completed"
+    },
+    {
+      "session": 3,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 35.385,
+      "model_calls": 6,
+      "trace_count": 1,
+      "run_status": "completed"
+    },
+    {
+      "session": 4,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 89.835,
+      "model_calls": 9,
+      "trace_count": 1,
+      "run_status": "completed"
+    },
+    {
+      "session": 5,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 17.484,
+      "model_calls": 2,
+      "trace_count": 1,
+      "run_status": "completed"
+    }
+  ]
+}

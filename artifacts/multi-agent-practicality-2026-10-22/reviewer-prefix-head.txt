@@ -1,0 +1,16 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_v23_prefix_reserves_native_verdict_before_last_affordable_read[changes_required] _
+tests/test_reviewer_budget_handoff.py:102: in test_v23_prefix_reserves_native_verdict_before_last_affordable_read
+    assert model.calls == 3 and views == [None, None, ["review_submit"]]
+E   assert (2 == 3)
+E    +  where 2 = <test_reviewer_budget_handoff.test_v23_prefix_reserves_native_verdict_before_last_affordable_read.<locals>.Model object at 0x107772e70>.calls
+_ test_v23_prefix_reserves_native_verdict_before_last_affordable_read[inconclusive] _
+tests/test_reviewer_budget_handoff.py:102: in test_v23_prefix_reserves_native_verdict_before_last_affordable_read
+    assert model.calls == 3 and views == [None, None, ["review_submit"]]
+E   assert (2 == 3)
+E    +  where 2 = <test_reviewer_budget_handoff.test_v23_prefix_reserves_native_verdict_before_last_affordable_read.<locals>.Model object at 0x107845340>.calls
+=========================== short test summary info ============================
+FAILED tests/test_reviewer_budget_handoff.py::test_v23_prefix_reserves_native_verdict_before_last_affordable_read[changes_required]
+FAILED tests/test_reviewer_budget_handoff.py::test_v23_prefix_reserves_native_verdict_before_last_affordable_read[inconclusive]
+2 failed, 5 deselected in 0.91s

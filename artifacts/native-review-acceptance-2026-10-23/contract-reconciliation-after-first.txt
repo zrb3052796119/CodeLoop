@@ -1,0 +1,150 @@
+.................................FF...                                   [100%]
+=================================== FAILURES ===================================
+_ test_reviewer_index_has_current_diagnostic_status_and_readable_full_history __
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-456/test_reviewer_index_has_curren0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x102f3cad0>
+
+    def test_reviewer_index_has_current_diagnostic_status_and_readable_full_history(tmp_path, monkeypatch):
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch)
+        saved = {}
+    
+        def diagnose(tools, child, packet):
+            result, evidence = _probe(tools, child, packet, DIAGNOSTIC, purpose="diagnostic")
+            assert not result.ok
+            saved.update(_read_display_original(tools, child, evidence))
+            # An ordinary end is not approval; another attempt can read all evidence.
+    
+        try:
+            assert assess(diagnose)["status"] == "inconclusive"
+    
+            def accept(tools, child, packet):
+                entries = packet["diagnosticObservations"]
+                assert len(entries) == 1
+                row = entries[0]
+                assert row["probeId"] == saved["probeId"]
+                assert row["status"] == "failed"
+                assert row["candidateDigest"] == packet["candidateDigest"]
+                assert row["receiptCount"] == 1
+                assert row["latestReceiptRef"] == saved["receiptRef"]
+                assert "source" not in row and "receipts" not in row
+                full = _read_all(tools, child, row["probeId"])
+                assert full["source"]["code"] == DIAGNOSTIC
+                assert full["receipts"] == [saved]
+                current = _read_all(tools, child, row["probeId"], receiptView="current")
+                assert current["receipts"] == [saved]
+                assert current["historyReceiptCount"] == 1
+                passed, acceptance = _probe(tools, child, packet)
+                assert passed.ok
+                assert _submit(tools, child, packet, ids=[acceptance["probeId"]]).ok
+    
+>           approved = assess(accept)
+                       ^^^^^^^^^^^^^^
+
+tests/test_completion_review_evidence_delivery.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:960: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1852: in _assess_snapshot
+    run_agent_turn(model=model, tools=registry, cwd=str(root), permissions=permissions,
+tests/test_implementation_completion_review.py:130: in review_loop
+    return driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x103bb6de0>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-pz5krcxw/verification-sjiv...ons.SchedulerWorkerReadPermissions object at 0x103b93590>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'diagnosticObservations... completion submission.']], 'probePurposes': {'review_probe_3baec5fef79ad254c4c6b717': {'purpose': 'diagnostic'}}, ...}
+
+    def accept(tools, child, packet):
+        entries = packet["diagnosticObservations"]
+        assert len(entries) == 1
+        row = entries[0]
+        assert row["probeId"] == saved["probeId"]
+        assert row["status"] == "failed"
+        assert row["candidateDigest"] == packet["candidateDigest"]
+        assert row["receiptCount"] == 1
+        assert row["latestReceiptRef"] == saved["receiptRef"]
+        assert "source" not in row and "receipts" not in row
+        full = _read_all(tools, child, row["probeId"])
+        assert full["source"]["code"] == DIAGNOSTIC
+>       assert full["receipts"] == [saved]
+E       AssertionError: assert [{'candidateD...t.json', ...}] == [{'candidateD...t.json', ...}]
+E         
+E         At index 0 diff: {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 232, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Libra...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_completion_review_evidence_delivery.py:71: AssertionError
+___ test_current_receipt_view_does_not_mislabel_previous_candidate_evidence ____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-456/test_current_receipt_view_does0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x103be6810>
+
+    def test_current_receipt_view_does_not_mislabel_previous_candidate_evidence(tmp_path, monkeypatch):
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch)
+        saved = {}
+    
+        def seed(tools, child, packet):
+            result, evidence = _probe(tools, child, packet, DIAGNOSTIC, purpose="diagnostic")
+            assert not result.ok
+            saved.update(_read_display_original(tools, child, evidence))
+    
+        try:
+            assess(seed)
+            with (tmp_path / "stock.py").open("a") as handle:
+                handle.write("\n# a new candidate\n")
+    
+            def resumed(tools, child, packet):
+                entry = packet["diagnosticObservations"][0]
+                assert entry["status"] is None and entry["latestReceiptRef"] is None
+                assert entry["receiptCount"] == 1
+                current = _read_all(tools, child, saved["probeId"], receiptView="current")
+                assert current["receipts"] == [] and current["historyReceiptCount"] == 1
+                full = _read_all(tools, child, saved["probeId"])
+                assert full["receipts"] == [saved]
+                malformed = tools.execute("review_probe_read", {
+                    "probeId": saved["probeId"], "receiptView": "ignore_failures"}, child)
+                assert not malformed.ok
+    
+>           assert assess(resumed)["status"] == "inconclusive"
+                   ^^^^^^^^^^^^^^^
+
+tests/test_completion_review_evidence_delivery.py:113: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:960: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1852: in _assess_snapshot
+    run_agent_turn(model=model, tools=registry, cwd=str(root), permissions=permissions,
+tests/test_implementation_completion_review.py:130: in review_loop
+    return driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x102e7d940>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-jiv4y7c3/verification-wnlu...ons.SchedulerWorkerReadPermissions object at 0x102edf0e0>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'candidateDigest': 'sha256:41bb125a7a9e6475d12b9b5209aea45d36c6e156d7829971f73003a6bafbebda', 'diagnosticObservations... completion submission.']], 'probePurposes': {'review_probe_3baec5fef79ad254c4c6b717': {'purpose': 'diagnostic'}}, ...}
+
+    def resumed(tools, child, packet):
+        entry = packet["diagnosticObservations"][0]
+        assert entry["status"] is None and entry["latestReceiptRef"] is None
+        assert entry["receiptCount"] == 1
+        current = _read_all(tools, child, saved["probeId"], receiptView="current")
+        assert current["receipts"] == [] and current["historyReceiptCount"] == 1
+        full = _read_all(tools, child, saved["probeId"])
+>       assert full["receipts"] == [saved]
+E       AssertionError: assert [{'candidateD...t.json', ...}] == [{'candidateD...t.json', ...}]
+E         
+E         At index 0 diff: {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 227, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Libra...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_completion_review_evidence_delivery.py:108: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_completion_review_evidence_delivery.py::test_reviewer_index_has_current_diagnostic_status_and_readable_full_history
+FAILED tests/test_completion_review_evidence_delivery.py::test_current_receipt_view_does_not_mislabel_previous_candidate_evidence
+2 failed, 36 passed in 39.68s

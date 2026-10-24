@@ -1,0 +1,20 @@
+...........EE                                                            [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evidence _
+tests/test_completion_feedback_size.py:266: in failed_native_handoff
+    with pytest.raises(KeyboardInterrupt) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE KeyboardInterrupt
+------------------------------ Captured log setup ------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4713 Model API error (IndexError): list index out of range
+_ ERROR at setup of test_authenticated_legacy_feedback_restore_projects_before_provider_without_erasing_history[False] _
+tests/test_completion_feedback_size.py:266: in failed_native_handoff
+    with pytest.raises(KeyboardInterrupt) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE KeyboardInterrupt
+------------------------------ Captured log setup ------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4713 Model API error (IndexError): list index out of range
+=========================== short test summary info ============================
+ERROR tests/test_completion_feedback_size.py::test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evidence
+ERROR tests/test_completion_feedback_size.py::test_authenticated_legacy_feedback_restore_projects_before_provider_without_erasing_history[False]
+11 passed, 2 errors in 35.39s

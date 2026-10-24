@@ -1,0 +1,20 @@
+FF....                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and_delivers _
+tests/test_completion_review_provider_handoff.py:222: in test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and_delivers
+    assert [r["role"] for r in requests] == ["parent", "parent", "reviewer", "reviewer",
+E   AssertionError: assert ['parent', 'p...dicator', ...] == ['parent', 'p...dicator', ...]
+E     
+E     Right contains 6 more items, first extra item: 'parent'
+E     Use -v to get more diff
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4713 Model API error (KeyError): 'receipt'
+_ test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evidence _
+tests/test_completion_feedback_size.py:283: in test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evidence
+    assert canonical(original) in feedback["_completion_evidence_original"]
+E   assert '{"attempt": 1, "completionReview": "rejected", "completionReviewVersion": 1, "completionVersion": 1, "continuesSameEx... "2. release adds the amount."}], "requirementsAccepted": false, "status": "changes_required", "unresolvedProbes": []}' in 'Host completion decision: delivery is not accepted. Continue in this same implementation session with the existing ca...avior", "startLine": 2, "text": "2. release adds the amount."}], "status": "changes_required", "unresolvedProbes": []}'
+E    +  where '{"attempt": 1, "completionReview": "rejected", "completionReviewVersion": 1, "completionVersion": 1, "continuesSameEx... "2. release adds the amount."}], "requirementsAccepted": false, "status": "changes_required", "unresolvedProbes": []}' = canonical({'completionVersion': 1, 'executorId': 'implementation_218307336fd546a09abdef55dd903677', 'attempt': 1, 'continuesSameExecutor': True, ...})
+=========================== short test summary info ============================
+FAILED tests/test_completion_review_provider_handoff.py::test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and_delivers
+FAILED tests/test_completion_feedback_size.py::test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evidence
+2 failed, 4 passed in 9.03s

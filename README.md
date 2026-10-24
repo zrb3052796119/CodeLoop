@@ -422,6 +422,17 @@ or path and choose allow or deny; approval is not a substitute for a disposable
 branch or container when working on untrusted code. Enter `/exit` to leave the
 interactive CLI.
 
+### Optional: offline smoke test
+
+For an offline smoke test, `MINI_CODE_MODEL_MODE=mock` selects the scripted
+adapter. Headless mode still validates model configuration before selecting
+that adapter: the flag alone fails with `No model configured` in a clean
+environment. Supply a valid provider/model configuration with a placeholder
+key for this offline test; no real API key or provider request is needed.
+The mock recognizes commands such as `/ls` and `/read README.md` and runs
+their tool calls through the agent loop. Other natural-language prompts
+return its command help, which does not test model reasoning.
+
 ### Optional: route sub-agents to Qwen
 
 In `~/.mini-code/.env`, replace the existing three sub-agent lines; do not
@@ -439,6 +450,30 @@ illustrative choice; the checked-in public live acceptance covers
 `qwen3.7-plus` / `qwen3.7-max`. Per-role overrides are documented in
 [sub-agent model routing](./docs/subagent-model-routing.md).
 
+| Task timeout setting | Default | Behavior |
+| --- | ---: | --- |
+| `MINICODE_TASK_TIMEOUT_SECONDS` | `900` seconds | Bounds the complete sub-agent dispatch, including workflow phases. `0` disables the local cutoff; ancestor deadlines and cancellation still apply. |
+
+Embedders may set `taskTimeoutSeconds` to `None` or `0` for an unlimited local
+timeout. A missing setting uses 900 seconds; a nonempty environment setting
+takes precedence over the runtime value.
+
+For a long workflow brief, save UTF-8 text inside the workspace and set the
+existing task `prompt` to `@file:docs/task-brief.md` followed by a newline and
+an optional summary of at most 800 characters. The workflow's read scope must
+authorize the source file. The host copies its exact bytes to a digest-named
+file in `.workflow-briefs/`, available to the isolated worker. Ordinary inline
+prompts retain the 3800-character limit. Large phase output is retained in a
+persistent evidence file linked from the bounded workflow response.
+
+Complete, nonsensitive change requests now default to Executor → deterministic
+Verifier. Explicit analysis or review requests retain those stages; an actual
+failed verification can invoke diagnosis before the same Executor resumes.
+The frozen gen-2 six-run engineering gate passed 5/6 (single 3/3, explicit
+2/3); this supports continued development, not superiority over a single
+agent. The separate automatic-trigger gate is documented in the
+[multi-agent effectiveness report](./docs/multi-agent-effectiveness.md).
+
 ### Optional: enable hybrid Memory retrieval
 
 Hybrid retrieval is disabled by default and requires promotion evidence. A
@@ -449,11 +484,37 @@ to its configured provider. A Qwen embedding route additionally requires
 provider, model-path, and evidence-file procedure in
 [Memory hybrid retrieval](./docs/memory-hybrid-retrieval.md).
 
+### Optional: Redis Memory hot store
+
+Install `python -m pip install -e '.[redis]'` and set
+`MINI_CODE_MEMORY_REDIS_URL=redis://localhost:6379/0` to enable the disposable
+hot layer. Without the URL, Redis is never imported or contacted.
+
+With `MINI_CODE_MEMORY_DEPOSITION_MODE=inject`, new drafts live in Redis and
+appear after canonical Memory in a separate `Recent draft notes` block,
+within the existing injection budget. `MINI_CODE_MEMORY_REDIS_DRAFT_TTL`
+sets their TTL in seconds; it follows the deposition TTL when omitted
+(14 days by default). Strict and capture modes retain their existing behavior.
+
+Hybrid adjudications are cached for one hour using the frozen authority
+revision, request and protocol/model fingerprints. The in-process LRU remains.
+Redis connection or command errors permanently disable that hot store in the process, and draft
+writes fall back to the existing file path. Redis waiting has a shared 190 ms
+turn allowance, below the 200 ms ceiling. Canonical `memory.json` and blob
+storage remain authoritative; existing drafts and curator file leases stay
+in place. No Redis persistence or data migration is required.
+Invalid local inputs or malformed cached JSON are logged and skipped without
+opening the circuit breaker. The unused lease API currently relies on expiry;
+future explicit release must atomically compare the ownership token before deletion.
+
 ## Verification
 
-Run the same focused checks used during release preparation:
+Install development dependencies into the same Python environment used to run
+tests. The `dev` extra includes `fakeredis`; Redis tests require it and do not
+silently skip when it is missing. Then run the focused release checks:
 
 ```bash
+python -m pip install -e '.[dev]'
 python -m compileall -q minicode scripts
 python -m ruff check minicode/ --select=E,F --ignore=E501
 python scripts/evaluate_agent_quality.py --profile current
@@ -516,6 +577,11 @@ Useful entry points:
   84/91 oracles with 10/10 exact Memory attribution.
 - Asynchronous lifecycle is limited to read-only `explore` and `plan` roles.
   Cancellation is cooperative, not process isolation.
+- On Windows, cleanup with a retained `Popen` handle attempts to terminate the
+  direct child, but does not guarantee cleanup of its descendants. The
+  compatibility path holding only a PID does not terminate it. A background
+  task marked `cancelled` is not confirmation that its entire process tree
+  exited.
 - CodeLoop has approval and path/credential boundaries, but it is **not an OS
   sandbox**. Run it in a disposable branch or container when evaluating
   unfamiliar tasks.

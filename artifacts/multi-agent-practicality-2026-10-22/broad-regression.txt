@@ -1,0 +1,886 @@
+....................FFF................................................. [  5%]
+........................................................................ [ 10%]
+........................................................................ [ 15%]
+...........................FF...........................FF.............. [ 20%]
+...........................FFFFFFFFFFFFFFFFF............................ [ 25%]
+........................................................................ [ 30%]
+.................................F...................................... [ 35%]
+........................................................................ [ 40%]
+........................................................................ [ 46%]
+........................................................................ [ 51%]
+........................................................................ [ 56%]
+........................................................................ [ 61%]
+...F................................F.F..FF.F.FFFFFFFF.................. [ 66%]
+.......F............F...........................................F....... [ 71%]
+.......................FF.FFFFFFF....................................... [ 76%]
+....................................FFF......F.......F....FFF.......F... [ 81%]
+........................................................................ [ 87%]
+........................F................FF............................. [ 92%]
+........................................................................ [ 97%]
+......................................                                   [100%]
+=================================== FAILURES ===================================
+_ test_checked_budget_ended_candidate_reaches_formal_verification_review_and_commit _
+tests/test_checked_candidate_workflow.py:271: in test_checked_budget_ended_candidate_reaches_formal_verification_review_and_commit
+    assert result.ok and trace["committed"], (
+E   AssertionError: ('A checked budget-ended candidate never reached independent gates:', 'executor_budget_exceeded', [1])
+E   assert (False)
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_f65e18bc...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+----------------------------- Captured stdout call -----------------------------
+{"checks": [1], "committed": false, "globalCallLimit": 40, "globalTokenLimit": 500000, "historicalCallPrefix": 0, "historicalTokenPrefix": 468763, "kind": "checked-candidate-local-proof", "mode": "approve", "newEstimatedTokens": 3325, "newModelCalls": 1, "resumed": false, "sessionCount": 1, "terminalReason": "executor_budget_exceeded", "usageSource": "estimated", "usedTokens": 472088}
+___ test_review_rejection_returns_checked_candidate_to_same_executor_session ___
+tests/test_checked_candidate_workflow.py:283: in test_review_rejection_returns_checked_candidate_to_same_executor_session
+    assert result.ok and trace["committed"], (
+E   AssertionError: ('A host candidate did not retain the standard review/repair loop:', 'executor_budget_exceeded', [1])
+E   assert (False)
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_cab04078...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+----------------------------- Captured stdout call -----------------------------
+{"checks": [1], "committed": false, "globalCallLimit": 40, "globalTokenLimit": 500000, "historicalCallPrefix": 0, "historicalTokenPrefix": 468763, "kind": "checked-candidate-local-proof", "mode": "review-repair", "newEstimatedTokens": 3325, "newModelCalls": 1, "resumed": false, "sessionCount": 1, "terminalReason": "executor_budget_exceeded", "usageSource": "estimated", "usedTokens": 472088}
+_ test_review_rejection_without_repair_budget_preserves_candidate_without_commit _
+tests/test_checked_candidate_workflow.py:298: in test_review_rejection_without_repair_budget_preserves_candidate_without_commit
+    assert [c["exit"] for c in commands] == [1, 0, 0]
+E   assert [1] == [1, 0, 0]
+E     
+E     Right contains 2 more items, first extra item: 0
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+{"checks": [1], "committed": false, "globalCallLimit": 40, "globalTokenLimit": 500000, "historicalCallPrefix": 0, "historicalTokenPrefix": 468763, "kind": "checked-candidate-local-proof", "mode": "review-no-budget", "newEstimatedTokens": 3325, "newModelCalls": 1, "resumed": false, "sessionCount": 1, "terminalReason": "executor_budget_exceeded", "usageSource": "estimated", "usedTokens": 472088}
+_ test_failed_check_gate_keeps_executor_conversation_and_candidate[small-diff] _
+tests/test_persistent_executor_workflow.py:182: in test_failed_check_gate_keeps_executor_conversation_and_candidate
+    result, calls, commands, target = _exercise(tmp_path, monkeypatch, large_diff=large_diff)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_persistent_executor_workflow.py:174: in _exercise
+    assert [role for role, _budget, _session in workers] == (["executor"] if on_demand else ["executor", "reviewer"])
+E   AssertionError: assert ['executor'] == ['executor', 'reviewer']
+E     
+E     Right contains one more item: 'reviewer'
+E     Use -v to get more diff
+_ test_failed_check_gate_keeps_executor_conversation_and_candidate[v17-truncated-display-diff] _
+tests/test_persistent_executor_workflow.py:182: in test_failed_check_gate_keeps_executor_conversation_and_candidate
+    result, calls, commands, target = _exercise(tmp_path, monkeypatch, large_diff=large_diff)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_persistent_executor_workflow.py:174: in _exercise
+    assert [role for role, _budget, _session in workers] == (["executor"] if on_demand else ["executor", "reviewer"])
+E   AssertionError: assert ['executor'] == ['executor', 'reviewer']
+E     
+E     Right contains one more item: 'reviewer'
+E     Use -v to get more diff
+_ test_v23_prefix_reserves_native_verdict_before_last_affordable_read[changes_required] _
+tests/test_reviewer_budget_handoff.py:105: in test_v23_prefix_reserves_native_verdict_before_last_affordable_read
+    assert model.calls == 2 and views == [None, ["review_submit"]]
+E   AssertionError: assert (2 == 2 and [['read_file'...view_submit']] == [None, ['review_submit']]
+E    +  where 2 = <test_reviewer_budget_handoff.test_v23_prefix_reserves_native_verdict_before_last_affordable_read.<locals>.Model object at 0x10815e3c0>.calls
+E     
+E     At index 0 diff: ['read_file', 'subagent_note_write', 'review_submit'] != None
+E     Use -v to get more diff)
+_ test_v23_prefix_reserves_native_verdict_before_last_affordable_read[inconclusive] _
+tests/test_reviewer_budget_handoff.py:105: in test_v23_prefix_reserves_native_verdict_before_last_affordable_read
+    assert model.calls == 2 and views == [None, ["review_submit"]]
+E   AssertionError: assert (2 == 2 and [['read_file'...view_submit']] == [None, ['review_submit']]
+E    +  where 2 = <test_reviewer_budget_handoff.test_v23_prefix_reserves_native_verdict_before_last_affordable_read.<locals>.Model object at 0x1080ab0b0>.calls
+E     
+E     At index 0 diff: ['read_file', 'subagent_note_write', 'review_submit'] != None
+E     Use -v to get more diff)
+_________ test_checked_host_candidate_earns_fresh_gates_before_commit __________
+tests/test_scheduler_checked_candidate.py:154: in test_checked_host_candidate_earns_fresh_gates_before_commit
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_1488e93239b8444e9f85f3846e78d23e","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_435e878e062a_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_2ecef198edf06822b37d0136245298c5","artifactId":null,"assignmentId":"asg_435e878e062a_1_executor","attemptId":"attempt_435e878e062a_1_1","decisionId":"decision_435e878e062a_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_1488e93239b8444e9f85f3846e78d23e"},{"agentRunId":"sub_2ecef198edf06822b37d0136245298c5","artifactId":"artifact_asg_435e878e062a_1_executor_attempt_435e878e062a_1_1_receipt","assignmentId":"asg_435e878e062a_1_executor","attemptId":"attempt_435e878e062a_1_1","decisionId":"decision_435e878e062a_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_435e878e062a_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_1488e93239b8444e9f85f3846e78d23e"}],"workflowId":"wf_1488e93239b8444e9f85f3846e78d23e"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_1488e93239b8444e9f85f3846e78d23e","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_1488e932...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+_________ test_unknown_review_never_promotes_a_checked_host_candidate __________
+tests/test_scheduler_checked_candidate.py:170: in test_unknown_review_never_promotes_a_checked_host_candidate
+    assert target.read_text() == "before" and checks == [0, 0]
+E   AssertionError: assert ('before' == 'before'
+E     
+E       before and [0] == [0, 0]
+E     
+E     Right contains one more item: 0
+E     Use -v to get more diff)
+_ test_failed_candidate_needs_fresh_verifier_failure_before_same_owner_repair __
+tests/test_scheduler_checked_candidate.py:180: in test_failed_candidate_needs_fresh_verifier_failure_before_same_owner_repair
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_1160bc3ff390454883d16c9d59b743d4","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"failed":1},"latest":[{"assignmentId":"asg_320da1ea839d_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:0231a1df5851580a1d05618fb15eec4ea3a61071fa7b46322ea74bab82d362d2","status":"failed","exitCode":1,"stdoutPreview":"F                                                                        [100%]\n=================================== FAILURES ==========\n...[diagnostic truncated]...\n=======\nFAILED test_acceptance.py::test_changed - AssertionError: assert 'almost' == 'after'\n  \n  - after\n  + almost\n1 failed in 0.01s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_7d9eb05554470c4fbebb2871e9046c86","artifactId":null,"assignmentId":"asg_320da1ea839d_1_executor","attemptId":"attempt_320da1ea839d_1_1","decisionId":"decision_320da1ea839d_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_1160bc3ff390454883d16c9d59b743d4"},{"agentRunId":"sub_7d9eb05554470c4fbebb2871e9046c86","artifactId":"artifact_asg_320da1ea839d_1_executor_attempt_320da1ea839d_1_1_receipt","assignmentId":"asg_320da1ea839d_1_executor","attemptId":"attempt_320da1ea839d_1_1","decisionId":"decision_320da1ea839d_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_320da1ea839d_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_1160bc3ff390454883d16c9d59b743d4"}],"workflowId":"wf_1160bc3ff390454883d16c9d59b743d4"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_1160bc3ff390454883d16c9d59b743d4","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_1160bc3f...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+_______ test_failed_candidate_does_not_bypass_existing_repair_allowance ________
+tests/test_scheduler_checked_candidate.py:210: in test_failed_candidate_does_not_bypass_existing_repair_allowance
+    assert checks == [1, 1, 1, 1] and roles == ["analyst", "executor", "executor"]
+E   assert ([1] == [1, 1, 1, 1]
+E     
+E     Right contains 3 more items, first extra item: 1
+E     Use -v to get more diff)
+_ test_candidate_audit_rejects_unearned_or_rebound_authority[missing_receipt] __
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_132741bbc21d42d2880a44f51ea009a7","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_29df44efd3b9_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_233ee49ab521cd9feaa84776c8f4addd","artifactId":null,"assignmentId":"asg_29df44efd3b9_1_executor","attemptId":"attempt_29df44efd3b9_1_1","decisionId":"decision_29df44efd3b9_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_132741bbc21d42d2880a44f51ea009a7"},{"agentRunId":"sub_233ee49ab521cd9feaa84776c8f4addd","artifactId":"artifact_asg_29df44efd3b9_1_executor_attempt_29df44efd3b9_1_1_receipt","assignmentId":"asg_29df44efd3b9_1_executor","attemptId":"attempt_29df44efd3b9_1_1","decisionId":"decision_29df44efd3b9_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_29df44efd3b9_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_132741bbc21d42d2880a44f51ea009a7"}],"workflowId":"wf_132741bbc21d42d2880a44f51ea009a7"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_132741bbc21d42d2880a44f51ea009a7","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_132741bb...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+__ test_candidate_audit_rejects_unearned_or_rebound_authority[stale_receipt] ___
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_53da2d042def4368af38cd0e6239ab08","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_ae60a06e08d5_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_dd0a052fcc71a9b6d921ca5f18e7fbce","artifactId":null,"assignmentId":"asg_ae60a06e08d5_1_executor","attemptId":"attempt_ae60a06e08d5_1_1","decisionId":"decision_ae60a06e08d5_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_53da2d042def4368af38cd0e6239ab08"},{"agentRunId":"sub_dd0a052fcc71a9b6d921ca5f18e7fbce","artifactId":"artifact_asg_ae60a06e08d5_1_executor_attempt_ae60a06e08d5_1_1_receipt","assignmentId":"asg_ae60a06e08d5_1_executor","attemptId":"attempt_ae60a06e08d5_1_1","decisionId":"decision_ae60a06e08d5_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_ae60a06e08d5_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_53da2d042def4368af38cd0e6239ab08"}],"workflowId":"wf_53da2d042def4368af38cd0e6239ab08"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_53da2d042def4368af38cd0e6239ab08","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_53da2d04...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+_ test_candidate_audit_rejects_unearned_or_rebound_authority[different_command] _
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_ad927d35a0484565921b6b9924ce8801","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_b4daeb377495_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_d6ad1777057b664c3fc3b6c10dff2e30","artifactId":null,"assignmentId":"asg_b4daeb377495_1_executor","attemptId":"attempt_b4daeb377495_1_1","decisionId":"decision_b4daeb377495_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_ad927d35a0484565921b6b9924ce8801"},{"agentRunId":"sub_d6ad1777057b664c3fc3b6c10dff2e30","artifactId":"artifact_asg_b4daeb377495_1_executor_attempt_b4daeb377495_1_1_receipt","assignmentId":"asg_b4daeb377495_1_executor","attemptId":"attempt_b4daeb377495_1_1","decisionId":"decision_b4daeb377495_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_b4daeb377495_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_ad927d35a0484565921b6b9924ce8801"}],"workflowId":"wf_ad927d35a0484565921b6b9924ce8801"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_ad927d35a0484565921b6b9924ce8801","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_ad927d35...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+__ test_candidate_audit_rejects_unearned_or_rebound_authority[synthetic_pass] __
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_2c052f5c5460457d9abd3f22269b4edd","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_4fdca42e2ba0_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_28cc3833a3a9a4e16954a604c0dc4fe0","artifactId":null,"assignmentId":"asg_4fdca42e2ba0_1_executor","attemptId":"attempt_4fdca42e2ba0_1_1","decisionId":"decision_4fdca42e2ba0_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_2c052f5c5460457d9abd3f22269b4edd"},{"agentRunId":"sub_28cc3833a3a9a4e16954a604c0dc4fe0","artifactId":"artifact_asg_4fdca42e2ba0_1_executor_attempt_4fdca42e2ba0_1_1_receipt","assignmentId":"asg_4fdca42e2ba0_1_executor","attemptId":"attempt_4fdca42e2ba0_1_1","decisionId":"decision_4fdca42e2ba0_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_4fdca42e2ba0_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_2c052f5c5460457d9abd3f22269b4edd"}],"workflowId":"wf_2c052f5c5460457d9abd3f22269b4edd"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_2c052f5c5460457d9abd3f22269b4edd","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_2c052f5c...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+__ test_candidate_audit_rejects_unearned_or_rebound_authority[passed_nonzero] __
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_7fe99bce6f2144e49d87ae66520a588a","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_a0f1cbfbcb9f_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_2bbc04f8820392319eb423ac15eee210","artifactId":null,"assignmentId":"asg_a0f1cbfbcb9f_1_executor","attemptId":"attempt_a0f1cbfbcb9f_1_1","decisionId":"decision_a0f1cbfbcb9f_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_7fe99bce6f2144e49d87ae66520a588a"},{"agentRunId":"sub_2bbc04f8820392319eb423ac15eee210","artifactId":"artifact_asg_a0f1cbfbcb9f_1_executor_attempt_a0f1cbfbcb9f_1_1_receipt","assignmentId":"asg_a0f1cbfbcb9f_1_executor","attemptId":"attempt_a0f1cbfbcb9f_1_1","decisionId":"decision_a0f1cbfbcb9f_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_a0f1cbfbcb9f_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_7fe99bce6f2144e49d87ae66520a588a"}],"workflowId":"wf_7fe99bce6f2144e49d87ae66520a588a"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_7fe99bce6f2144e49d87ae66520a588a","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_7fe99bce...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+___ test_candidate_audit_rejects_unearned_or_rebound_authority[failed_zero] ____
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_288f5e2e482b4687857d3d1216318329","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_93669bf5cf8a_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_e468e4d9ee03b7afb8ddd0ea7531cb2b","artifactId":null,"assignmentId":"asg_93669bf5cf8a_1_executor","attemptId":"attempt_93669bf5cf8a_1_1","decisionId":"decision_93669bf5cf8a_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_288f5e2e482b4687857d3d1216318329"},{"agentRunId":"sub_e468e4d9ee03b7afb8ddd0ea7531cb2b","artifactId":"artifact_asg_93669bf5cf8a_1_executor_attempt_93669bf5cf8a_1_1_receipt","assignmentId":"asg_93669bf5cf8a_1_executor","attemptId":"attempt_93669bf5cf8a_1_1","decisionId":"decision_93669bf5cf8a_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_93669bf5cf8a_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_288f5e2e482b4687857d3d1216318329"}],"workflowId":"wf_288f5e2e482b4687857d3d1216318329"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_288f5e2e482b4687857d3d1216318329","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_288f5e2e...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+_ test_candidate_audit_rejects_unearned_or_rebound_authority[inconclusive_receipt] _
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_237997dc7ee44b2e9451d6f682d7c89c","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_614faaf507d0_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_9bc2a936089ea958d1b3972bf59dc01d","artifactId":null,"assignmentId":"asg_614faaf507d0_1_executor","attemptId":"attempt_614faaf507d0_1_1","decisionId":"decision_614faaf507d0_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_237997dc7ee44b2e9451d6f682d7c89c"},{"agentRunId":"sub_9bc2a936089ea958d1b3972bf59dc01d","artifactId":"artifact_asg_614faaf507d0_1_executor_attempt_614faaf507d0_1_1_receipt","assignmentId":"asg_614faaf507d0_1_executor","attemptId":"attempt_614faaf507d0_1_1","decisionId":"decision_614faaf507d0_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_614faaf507d0_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_237997dc7ee44b2e9451d6f682d7c89c"}],"workflowId":"wf_237997dc7ee44b2e9451d6f682d7c89c"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_237997dc7ee44b2e9451d6f682d7c89c","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_237997dc...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+__ test_candidate_audit_rejects_unearned_or_rebound_authority[assessed_steps] __
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_53314c23c3ad41f6a9aaa05291e27c9b","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_7533c33c26f1_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_ff81dfcc8eb63ba05cf505a2999f541d","artifactId":null,"assignmentId":"asg_7533c33c26f1_1_executor","attemptId":"attempt_7533c33c26f1_1_1","decisionId":"decision_7533c33c26f1_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_53314c23c3ad41f6a9aaa05291e27c9b"},{"agentRunId":"sub_ff81dfcc8eb63ba05cf505a2999f541d","artifactId":"artifact_asg_7533c33c26f1_1_executor_attempt_7533c33c26f1_1_1_receipt","assignmentId":"asg_7533c33c26f1_1_executor","attemptId":"attempt_7533c33c26f1_1_1","decisionId":"decision_7533c33c26f1_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_7533c33c26f1_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_53314c23c3ad41f6a9aaa05291e27c9b"}],"workflowId":"wf_53314c23c3ad41f6a9aaa05291e27c9b"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_53314c23c3ad41f6a9aaa05291e27c9b","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_53314c23...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+_ test_candidate_audit_rejects_unearned_or_rebound_authority[missing_criterion] _
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_11d39466e216428fa5451a07337af3cf","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_af8258e02ac0_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_3a6561c3f78868d349c46ad021903cca","artifactId":null,"assignmentId":"asg_af8258e02ac0_1_executor","attemptId":"attempt_af8258e02ac0_1_1","decisionId":"decision_af8258e02ac0_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_11d39466e216428fa5451a07337af3cf"},{"agentRunId":"sub_3a6561c3f78868d349c46ad021903cca","artifactId":"artifact_asg_af8258e02ac0_1_executor_attempt_af8258e02ac0_1_1_receipt","assignmentId":"asg_af8258e02ac0_1_executor","attemptId":"attempt_af8258e02ac0_1_1","decisionId":"decision_af8258e02ac0_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_af8258e02ac0_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_11d39466e216428fa5451a07337af3cf"}],"workflowId":"wf_11d39466e216428fa5451a07337af3cf"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_11d39466e216428fa5451a07337af3cf","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_11d39466...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+_ test_candidate_audit_rejects_unearned_or_rebound_authority[worker_result_key] _
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_39fc36d2c02f4fc485f2d8f1419fc9a7","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_fdfa04ef824f_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_f977b762aaf4ad112ca5ebcf6ea37e8f","artifactId":null,"assignmentId":"asg_fdfa04ef824f_1_executor","attemptId":"attempt_fdfa04ef824f_1_1","decisionId":"decision_fdfa04ef824f_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_39fc36d2c02f4fc485f2d8f1419fc9a7"},{"agentRunId":"sub_f977b762aaf4ad112ca5ebcf6ea37e8f","artifactId":"artifact_asg_fdfa04ef824f_1_executor_attempt_fdfa04ef824f_1_1_receipt","assignmentId":"asg_fdfa04ef824f_1_executor","attemptId":"attempt_fdfa04ef824f_1_1","decisionId":"decision_fdfa04ef824f_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_fdfa04ef824f_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_39fc36d2c02f4fc485f2d8f1419fc9a7"}],"workflowId":"wf_39fc36d2c02f4fc485f2d8f1419fc9a7"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_39fc36d2c02f4fc485f2d8f1419fc9a7","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_39fc36d2...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+_ test_candidate_audit_rejects_unearned_or_rebound_authority[missing_frozen_diff] _
+tests/test_scheduler_checked_candidate.py:223: in test_candidate_audit_rejects_unearned_or_rebound_authority
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_3adb898546594aea8e9892d9dc71497a","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_de955ecd0e58_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_483b1a1825fc5004357ebc16409b9a1e","artifactId":null,"assignmentId":"asg_de955ecd0e58_1_executor","attemptId":"attempt_de955ecd0e58_1_1","decisionId":"decision_de955ecd0e58_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_3adb898546594aea8e9892d9dc71497a"},{"agentRunId":"sub_483b1a1825fc5004357ebc16409b9a1e","artifactId":"artifact_asg_de955ecd0e58_1_executor_attempt_de955ecd0e58_1_1_receipt","assignmentId":"asg_de955ecd0e58_1_executor","attemptId":"attempt_de955ecd0e58_1_1","decisionId":"decision_de955ecd0e58_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_de955ecd0e58_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_3adb898546594aea8e9892d9dc71497a"}],"workflowId":"wf_3adb898546594aea8e9892d9dc71497a"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_3adb898546594aea8e9892d9dc71497a","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_3adb8985...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+_ test_candidate_cannot_enter_historical_policy_without_mandatory_coverage_review _
+tests/test_scheduler_checked_candidate.py:278: in test_candidate_cannot_enter_historical_policy_without_mandatory_coverage_review
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_746057c4ec554aca9ea4be4af339600b","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_696403a18c21_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_ab9dcf315b8779ea7e54d72ed9967dfa","artifactId":null,"assignmentId":"asg_696403a18c21_1_executor","attemptId":"attempt_696403a18c21_1_1","decisionId":"decision_696403a18c21_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_746057c4ec554aca9ea4be4af339600b"},{"agentRunId":"sub_ab9dcf315b8779ea7e54d72ed9967dfa","artifactId":"artifact_asg_696403a18c21_1_executor_attempt_696403a18c21_1_1_receipt","assignmentId":"asg_696403a18c21_1_executor","attemptId":"attempt_696403a18c21_1_1","decisionId":"decision_696403a18c21_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_696403a18c21_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_746057c4ec554aca9ea4be4af339600b"}],"workflowId":"wf_746057c4ec554aca9ea4be4af339600b"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_746057c4ec554aca9ea4be4af339600b","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_746057c4...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+______ test_passing_candidate_and_verifier_cannot_erase_required_reviewer ______
+tests/test_scheduler_checked_candidate.py:289: in test_passing_candidate_and_verifier_cannot_erase_required_reviewer
+    assert result.ok, result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_9303feca879c4a08b81a087a2648360c","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_3693bb88b5ea_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+E     [Workflow execute phase failed]
+E     
+E     Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_b35e8a996502e38ebab39f6134b3f228","artifactId":null,"assignmentId":"asg_3693bb88b5ea_1_executor","attemptId":"attempt_3693bb88b5ea_1_1","decisionId":"decision_3693bb88b5ea_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_9303feca879c4a08b81a087a2648360c"},{"agentRunId":"sub_b35e8a996502e38ebab39f6134b3f228","artifactId":"artifact_asg_3693bb88b5ea_1_executor_attempt_3693bb88b5ea_1_1_receipt","assignmentId":"asg_3693bb88b5ea_1_executor","attemptId":"attempt_3693bb88b5ea_1_1","decisionId":"decision_3693bb88b5ea_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_3693bb88b5ea_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_9303feca879c4a08b81a087a2648360c"}],"workflowId":"wf_9303feca879c4a08b81a087a2648360c"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_9303feca879c4a08b81a087a2648360c","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert False
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_9303feca...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+____ test_adjudicator_can_read_frozen_evidence_but_not_unassigned_artifacts ____
+tests/test_scheduler_role_boundaries_regression.py:194: in test_adjudicator_can_read_frozen_evidence_but_not_unassigned_artifacts
+    assert roles == ["analyst", "adjudicator"]
+E   AssertionError: assert ['executor'] == ['analyst', 'adjudicator']
+E     
+E     At index 0 diff: 'executor' != 'analyst'
+E     Right contains one more item: 'adjudicator'
+E     Use -v to get more diff
+__ test_same_executor_reads_complete_stderr_across_review_repair_and_delivers __
+tests/test_verification_output_workflow.py:213: in test_same_executor_reads_complete_stderr_across_review_repair_and_delivers
+    assert target.read_text() == _source(3)
+E   AssertionError: assert 'def value():\n    return 2\n' == 'def value():\n    return 3\n'
+E     
+E       def value():
+E     -     return 3
+E     ?            ^
+E     +     return 2
+E     ?            ^
+_______________ test_analysis_retry_cannot_renew_six_call_phase ________________
+tests/test_workflow_analysis_budget.py:26: in test_analysis_retry_cannot_renew_six_call_phase
+    assert invoked == ["analyst"]
+E   AssertionError: assert ['executor'] == ['analyst']
+E     
+E     At index 0 diff: 'executor' != 'analyst'
+E     Use -v to get more diff
+_ test_phase_plans_handoff_against_worker_floors_and_admits_both_closing_calls _
+tests/test_workflow_analysis_budget.py:55: in test_phase_plans_handoff_against_worker_floors_and_admits_both_closing_calls
+    assert request.phase is ImplementationPhase.FINALIZE
+E   AssertionError: assert <ImplementationPhase.IMPLEMENT: 'implement'> is <ImplementationPhase.FINALIZE: 'finalize'>
+E    +  where <ImplementationPhase.IMPLEMENT: 'implement'> = PhaseRequest(phase=<ImplementationPhase.IMPLEMENT: 'implement'>, preserve_calls=0, preserve_tokens=8192, output_limit=8192, deadline=600, message=None, handoff_only=False, conditional_handoff=False).phase
+E    +  and   <ImplementationPhase.FINALIZE: 'finalize'> = <enum 'ImplementationPhase'>.FINALIZE
+____ test_one_workflow_keeps_risk_routing_and_durable_commit_gates[scoped] _____
+tests/test_workflow_analysis_convergence.py:208: in test_one_workflow_keeps_risk_routing_and_durable_commit_gates
+    assert roles == (
+E   AssertionError: assert ['executor', 'verifier'] == ['executor', ...', 'reviewer']
+E     
+E     Right contains one more item: 'reviewer'
+E     Use -v to get more diff
+___ test_one_workflow_keeps_risk_routing_and_durable_commit_gates[reviewed] ____
+tests/test_workflow_analysis_convergence.py:207: in test_one_workflow_keeps_risk_routing_and_durable_commit_gates
+    assert result.ok is True
+E   assert False is True
+E    +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_3f39c656...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+_________ test_freeform_plan_cannot_replace_required_analyst_evidence __________
+tests/test_workflow_analysis_convergence.py:248: in test_freeform_plan_cannot_replace_required_analyst_evidence
+    assert roles and set(roles) == {"analyst"}
+E   AssertionError: assert (['executor'] and {'executor'} == {'analyst'}
+E     
+E     Extra items in the left set:
+E     'executor'
+E     Extra items in the right set:
+E     'analyst'
+E     Use -v to get more diff)
+_ test_scoped_route_still_rejects_each_broken_commit_binding[request_digest-scoped] _
+tests/test_workflow_analysis_convergence.py:356: in test_scoped_route_still_rejects_each_broken_commit_binding
+    assert ready.review_digest != ready.verification_digest
+E   AssertionError: assert 'sha256:11f6de215c5ad16f24db5e3dbf05d2fa3a4ba2c74680d33c58da377fd5d2effc' != 'sha256:11f6de215c5ad16f24db5e3dbf05d2fa3a4ba2c74680d33c58da377fd5d2effc'
+E    +  where 'sha256:11f6de215c5ad16f24db5e3dbf05d2fa3a4ba2c74680d33c58da377fd5d2effc' = SchedulerCommitReady(commit_ready_id='commit_ready_21f254df7d224a17300735e2236b6c9893ff461b53ebc3fe809ff3800f6c3053', ... artifact_set_digest='sha256:dc7cb40938a0c75d799458557360bebf907d53dbeb1b7a2a0638b8d53e92eac0', commit_ready_version=1).review_digest
+E    +  and   'sha256:11f6de215c5ad16f24db5e3dbf05d2fa3a4ba2c74680d33c58da377fd5d2effc' = SchedulerCommitReady(commit_ready_id='commit_ready_21f254df7d224a17300735e2236b6c9893ff461b53ebc3fe809ff3800f6c3053', ... artifact_set_digest='sha256:dc7cb40938a0c75d799458557360bebf907d53dbeb1b7a2a0638b8d53e92eac0', commit_ready_version=1).verification_digest
+_ test_scoped_route_still_rejects_each_broken_commit_binding[base_digest-scoped] _
+tests/test_workflow_analysis_convergence.py:356: in test_scoped_route_still_rejects_each_broken_commit_binding
+    assert ready.review_digest != ready.verification_digest
+E   AssertionError: assert 'sha256:383676d437a88c3c90d757ce7cb32153bf37250457dc7923a9bc81587970674a' != 'sha256:383676d437a88c3c90d757ce7cb32153bf37250457dc7923a9bc81587970674a'
+E    +  where 'sha256:383676d437a88c3c90d757ce7cb32153bf37250457dc7923a9bc81587970674a' = SchedulerCommitReady(commit_ready_id='commit_ready_f92de76c920a32012e0260b9a113849c97128a23b1991ecdb1d2d03080f17ffe', ... artifact_set_digest='sha256:0adad9fd3a56cce060378b2fd1f757fc637621149b97429267df3f59c6cbc6c5', commit_ready_version=1).review_digest
+E    +  and   'sha256:383676d437a88c3c90d757ce7cb32153bf37250457dc7923a9bc81587970674a' = SchedulerCommitReady(commit_ready_id='commit_ready_f92de76c920a32012e0260b9a113849c97128a23b1991ecdb1d2d03080f17ffe', ... artifact_set_digest='sha256:0adad9fd3a56cce060378b2fd1f757fc637621149b97429267df3f59c6cbc6c5', commit_ready_version=1).verification_digest
+_ test_scoped_route_still_rejects_each_broken_commit_binding[patch_digest-scoped] _
+tests/test_workflow_analysis_convergence.py:356: in test_scoped_route_still_rejects_each_broken_commit_binding
+    assert ready.review_digest != ready.verification_digest
+E   AssertionError: assert 'sha256:55f68247e4c67b1ff2c240d7f99d2cfd1d9c4ec7e3e17cd7e8f28794e7978bf5' != 'sha256:55f68247e4c67b1ff2c240d7f99d2cfd1d9c4ec7e3e17cd7e8f28794e7978bf5'
+E    +  where 'sha256:55f68247e4c67b1ff2c240d7f99d2cfd1d9c4ec7e3e17cd7e8f28794e7978bf5' = SchedulerCommitReady(commit_ready_id='commit_ready_e7831236424abbe5527071a0cdb9cc53070d7a582606402fdfdfe62983853c0c', ... artifact_set_digest='sha256:a77142819ed24e4042e617f931a265533601dfa44803a3da7fcdeb2e16a0762d', commit_ready_version=1).review_digest
+E    +  and   'sha256:55f68247e4c67b1ff2c240d7f99d2cfd1d9c4ec7e3e17cd7e8f28794e7978bf5' = SchedulerCommitReady(commit_ready_id='commit_ready_e7831236424abbe5527071a0cdb9cc53070d7a582606402fdfdfe62983853c0c', ... artifact_set_digest='sha256:a77142819ed24e4042e617f931a265533601dfa44803a3da7fcdeb2e16a0762d', commit_ready_version=1).verification_digest
+_ test_scoped_route_still_rejects_each_broken_commit_binding[verification_digest-scoped] _
+tests/test_workflow_analysis_convergence.py:356: in test_scoped_route_still_rejects_each_broken_commit_binding
+    assert ready.review_digest != ready.verification_digest
+E   AssertionError: assert 'sha256:1e928ce386176d4349f60ba30a964ad1db31472654ad32d0012cb85855ab96e4' != 'sha256:1e928ce386176d4349f60ba30a964ad1db31472654ad32d0012cb85855ab96e4'
+E    +  where 'sha256:1e928ce386176d4349f60ba30a964ad1db31472654ad32d0012cb85855ab96e4' = SchedulerCommitReady(commit_ready_id='commit_ready_c1d2c900c235241b0c4624d3247f2520dacb4c4b49fef5516e57d0b1a426238a', ... artifact_set_digest='sha256:4b2d9daa387694634a6055dbfa02fe7130317fae733ab3eadc29dd4e4cabd26b', commit_ready_version=1).review_digest
+E    +  and   'sha256:1e928ce386176d4349f60ba30a964ad1db31472654ad32d0012cb85855ab96e4' = SchedulerCommitReady(commit_ready_id='commit_ready_c1d2c900c235241b0c4624d3247f2520dacb4c4b49fef5516e57d0b1a426238a', ... artifact_set_digest='sha256:4b2d9daa387694634a6055dbfa02fe7130317fae733ab3eadc29dd4e4cabd26b', commit_ready_version=1).verification_digest
+_ test_scoped_route_still_rejects_each_broken_commit_binding[review_digest-scoped] _
+tests/test_workflow_analysis_convergence.py:356: in test_scoped_route_still_rejects_each_broken_commit_binding
+    assert ready.review_digest != ready.verification_digest
+E   AssertionError: assert 'sha256:ea5ba61cfcaf9649339af418f45d010dc0ffcd32659cde49667bc78fc9b1a690' != 'sha256:ea5ba61cfcaf9649339af418f45d010dc0ffcd32659cde49667bc78fc9b1a690'
+E    +  where 'sha256:ea5ba61cfcaf9649339af418f45d010dc0ffcd32659cde49667bc78fc9b1a690' = SchedulerCommitReady(commit_ready_id='commit_ready_2b6224127043e138dae5681f40f1d7dd177c236b6cb1a3c478eb4a1dbd86061e', ... artifact_set_digest='sha256:6e742cbc3a22da8b4001d2aac636a22d88a5595a6eeba480ad672afa2b5383da', commit_ready_version=1).review_digest
+E    +  and   'sha256:ea5ba61cfcaf9649339af418f45d010dc0ffcd32659cde49667bc78fc9b1a690' = SchedulerCommitReady(commit_ready_id='commit_ready_2b6224127043e138dae5681f40f1d7dd177c236b6cb1a3c478eb4a1dbd86061e', ... artifact_set_digest='sha256:6e742cbc3a22da8b4001d2aac636a22d88a5595a6eeba480ad672afa2b5383da', commit_ready_version=1).verification_digest
+_ test_scoped_route_still_rejects_each_broken_commit_binding[artifact_set_digest-scoped] _
+tests/test_workflow_analysis_convergence.py:356: in test_scoped_route_still_rejects_each_broken_commit_binding
+    assert ready.review_digest != ready.verification_digest
+E   AssertionError: assert 'sha256:2431b05c3aa5225b90835923294c4fe7845ea2337eea1f728093991b15a82567' != 'sha256:2431b05c3aa5225b90835923294c4fe7845ea2337eea1f728093991b15a82567'
+E    +  where 'sha256:2431b05c3aa5225b90835923294c4fe7845ea2337eea1f728093991b15a82567' = SchedulerCommitReady(commit_ready_id='commit_ready_9811cba3b7fc7c4153c81a8c001625a5c214a362a3fdfcc97cfebfbcaf50baec', ... artifact_set_digest='sha256:55d7ac8ed763d19e969c67255118cf1c323f7bdd243174f6faaac1aced544ac9', commit_ready_version=1).review_digest
+E    +  and   'sha256:2431b05c3aa5225b90835923294c4fe7845ea2337eea1f728093991b15a82567' = SchedulerCommitReady(commit_ready_id='commit_ready_9811cba3b7fc7c4153c81a8c001625a5c214a362a3fdfcc97cfebfbcaf50baec', ... artifact_set_digest='sha256:55d7ac8ed763d19e969c67255118cf1c323f7bdd243174f6faaac1aced544ac9', commit_ready_version=1).verification_digest
+____ test_reviewed_route_cannot_substitute_verification_for_review[scoped] _____
+tests/test_workflow_analysis_convergence.py:368: in test_reviewed_route_cannot_substitute_verification_for_review
+    assert ready.review_digest != ready.verification_digest
+E   AssertionError: assert 'sha256:0f4ae2ba67c19cba27490956a8da8b438df38fd43af1b9aa1eb133a1cbd4475e' != 'sha256:0f4ae2ba67c19cba27490956a8da8b438df38fd43af1b9aa1eb133a1cbd4475e'
+E    +  where 'sha256:0f4ae2ba67c19cba27490956a8da8b438df38fd43af1b9aa1eb133a1cbd4475e' = SchedulerCommitReady(commit_ready_id='commit_ready_67da2f3c35d0e5d3b5ad651727e0c35110559cbb60aef34e74eb738917837a92', ... artifact_set_digest='sha256:e9ebdc3d7d0b694ba459d98362fbc6f2f5ffcfca40015eae7b580f0a7fe8fb5f', commit_ready_version=1).review_digest
+E    +  and   'sha256:0f4ae2ba67c19cba27490956a8da8b438df38fd43af1b9aa1eb133a1cbd4475e' = SchedulerCommitReady(commit_ready_id='commit_ready_67da2f3c35d0e5d3b5ad651727e0c35110559cbb60aef34e74eb738917837a92', ... artifact_set_digest='sha256:e9ebdc3d7d0b694ba459d98362fbc6f2f5ffcfca40015eae7b580f0a7fe8fb5f', commit_ready_version=1).verification_digest
+___ test_reviewed_route_cannot_substitute_verification_for_review[reviewed] ____
+tests/test_workflow_analysis_convergence.py:368: in test_reviewed_route_cannot_substitute_verification_for_review
+    assert ready.review_digest != ready.verification_digest
+E   AssertionError: assert 'sha256:d81570a9db7e39a5e4942e60b8f32b8e11e2e48453d8029d7d1655bd4d0e585b' != 'sha256:d81570a9db7e39a5e4942e60b8f32b8e11e2e48453d8029d7d1655bd4d0e585b'
+E    +  where 'sha256:d81570a9db7e39a5e4942e60b8f32b8e11e2e48453d8029d7d1655bd4d0e585b' = SchedulerCommitReady(commit_ready_id='commit_ready_f02713192ed0f6bb2228ec4606bda33c22b94d33ff34b39a784350d48bfbc757', ... artifact_set_digest='sha256:06f914b5ce7a15665e2ca87cc6e34c9988e9076af98ce805ceccc9e864c2eb3d', commit_ready_version=1).review_digest
+E    +  and   'sha256:d81570a9db7e39a5e4942e60b8f32b8e11e2e48453d8029d7d1655bd4d0e585b' = SchedulerCommitReady(commit_ready_id='commit_ready_f02713192ed0f6bb2228ec4606bda33c22b94d33ff34b39a784350d48bfbc757', ... artifact_set_digest='sha256:06f914b5ce7a15665e2ca87cc6e34c9988e9076af98ce805ceccc9e864c2eb3d', commit_ready_version=1).verification_digest
+___ test_executor_transition_persists_before_next_stage_hard_exit[reviewer] ____
+tests/test_workflow_candidate_checkpoints.py:89: in test_executor_transition_persists_before_next_stage_hard_exit
+    assert process.returncode == 73, process.stdout + process.stderr
+E   AssertionError: Traceback (most recent call last):
+E       File "<string>", line 47, in <module>
+E     AssertionError: next stage was not reached
+E     
+E   assert 1 == 73
+E    +  where 1 = CompletedProcess(args=['/Library/Frameworks/Python.framework/Versions/3.12/bin/python3', '-c', "import os\nimport sys\...eback (most recent call last):\n  File "<string>", line 47, in <module>\nAssertionError: next stage was not reached\n').returncode
+_ test_green_partial_candidate_is_reviewed_before_commit_and_resumes_same_executor[rejected-review-cannot-commit] _
+tests/test_workflow_completion_coverage.py:194: in test_green_partial_candidate_is_reviewed_before_commit_and_resumes_same_executor
+    assert commands and [entry["exit"] for entry in commands[:2]] == [0, 0], commands
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_042ac5fdf677440da1d1284c758b469a","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     === EXECUTOR OBSERVATIONS v1 ===
+E     {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":2,"scope":"completed_host_receipts","statuses":{"passed":2},"latest":[{"assignmentId":"asg_535cb438567d_1_executor","checkId":"check_tests","argv":["pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:0f1069edd1d4f2b9842c6da676e514838a0224b7a15d5595097ce2c60a26af9d","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""},{"assignmentId":"asg_535cb438567d_4_executor","checkId":"check_tests","argv":["pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:56d23eff26bd2232e4f85938acbeb3739beb13eb274cc19069ee3360e4c21bf5","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":"unavailable_no_authorized_pytest_target","retainedProbes":0}}
+E     ... [workflow narrative truncated]
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "not_configured", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.scoped_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"execute_phase_failed","transitions":[{"agentRunId":"sub_42fb06536e212e6a192fef8c9d5f10fa","artifactId":null,"assignmentId":"asg_535cb438567d_1_executor","attemptId":"attempt_535cb438567d_1_1","decisionId":"decision_535cb438567d_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_42fb06536e212e6a192fef8c9d5f10fa","artifactId":"artifact_asg_535cb438567d_1_executor_attempt_535cb438567d_1_1_execution","assignmentId":"asg_535cb438567d_1_executor","attemptId":"attempt_535cb438567d_1_1","decisionId":"decision_535cb438567d_0002","errorCode":null,"outcome":"completed","parentDecisionId":"decision_535cb438567d_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_69881f917b2ab24527398a762ae4778e","artifactId":null,"assignmentId":"asg_535cb438567d_2_verifier","attemptId":"attempt_535cb438567d_2_1","decisionId":"decision_535cb438567d_0003","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_535cb438567d_0002","sequence":3,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_69881f917b2ab24527398a762ae4778e","artifactId":"artifact_asg_535cb438567d_2_verifier_attempt_535cb438567d_2_1_verification","assignmentId":"asg_535cb438567d_2_verifier","attemptId":"attempt_535cb438567d_2_1","decisionId":"decision_535cb438567d_0004","errorCode":null,"outcome":"completed","parentDecisionId":"decision_535cb438567d_0003","sequence":4,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_2938bc79e1d025320d6526eab11b2a48","artifactId":null,"assignmentId":"asg_535cb438567d_3_reviewer","attemptId":"attempt_535cb438567d_3_1","decisionId":"decision_535cb438567d_0005","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_535cb438567d_0004","sequence":5,"stage":"reviewer","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_2938bc79e1d025320d6526eab11b2a48","artifactId":"artifact_asg_535cb438567d_3_reviewer_attempt_535cb438567d_3_1_review","assignmentId":"asg_535cb438567d_3_reviewer","attemptId":"attempt_535cb438567d_3_1","decisionId":"decision_535cb438567d_0006","errorCode":"review_not_approved","outcome":"rejected","parentDecisionId":"decision_535cb438567d_0005","sequence":6,"stage":"reviewer","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_2938bc79e1d025320d6526eab11b2a48","artifactId":"artifact_asg_535cb438567d_3_reviewer_attempt_535cb438567d_3_1_review","assignmentId":"asg_535cb438567d_3_reviewer","attemptId":"attempt_535cb438567d_3_1","decisionId":"decision_535cb438567d_0007","errorCode":"implementation_continuation_requested","outcome":"repairing","parentDecisionId":"decision_535cb438567d_0006","sequence":7,"stage":"reviewer","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_74f64161872f459220f9582e3c827abe","artifactId":null,"assignmentId":"asg_535cb438567d_4_executor","attemptId":"attempt_535cb438567d_4_1","decisionId":"decision_535cb438567d_0008","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_535cb438567d_0007","sequence":8,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_74f64161872f459220f9582e3c827abe","artifactId":"artifact_asg_535cb438567d_4_executor_attempt_535cb438567d_4_1_execution","assignmentId":"asg_535cb438567d_4_executor","attemptId":"attempt_535cb438567d_4_1","decisionId":"decision_535cb438567d_0009","errorCode":null,"outcome":"completed","parentDecisionId":"decision_535cb438567d_0008","sequence":9,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_2184481d835841ed5cf8fe40c2b9e76e","artifactId":null,"assignmentId":"asg_535cb438567d_5_verifier","attemptId":"attempt_535cb438567d_5_1","decisionId":"decision_535cb438567d_0010","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_535cb438567d_0009","sequence":10,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_2184481d835841ed5cf8fe40c2b9e76e","artifactId":"artifact_asg_535cb438567d_5_verifier_attempt_535cb438567d_5_1_verification","assignmentId":"asg_535cb438567d_5_verifier","attemptId":"attempt_535cb438567d_5_1","decisionId":"decision_535cb438567d_0011","errorCode":null,"outcome":"completed","parentDecisionId":"decision_535cb438567d_0010","sequence":11,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_6e9d6ae654a98fe2fcbf36f6229482e3","artifactId":null,"assignmentId":"asg_535cb438567d_6_reviewer","attemptId":"attempt_535cb438567d_6_1","decisionId":"decision_535cb438567d_0012","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_535cb438567d_0011","sequence":12,"stage":"reviewer","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_6e9d6ae654a98fe2fcbf36f6229482e3","artifactId":"artifact_asg_535cb438567d_6_reviewer_attempt_535cb438567d_6_1_review","assignmentId":"asg_535cb438567d_6_reviewer","attemptId":"attempt_535cb438567d_6_1","decisionId":"decision_535cb438567d_0013","errorCode":"review_not_approved","outcome":"rejected","parentDecisionId":"decision_535cb438567d_0012","sequence":13,"stage":"reviewer","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_6e9d6ae654a98fe2fcbf36f6229482e3","artifactId":"artifact_asg_535cb438567d_6_reviewer_attempt_535cb438567d_6_1_review","assignmentId":"asg_535cb438567d_6_reviewer","attemptId":"attempt_535cb438567d_6_1","decisionId":"decision_535cb438567d_0014","errorCode":"implementation_continuation_requested","outcome":"repairing","parentDecisionId":"decision_535cb438567d_0013","sequence":14,"stage":"reviewer","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_c1ebd73781612c7846b2b9aa36999168","artifactId":null,"assignmentId":"asg_535cb438567d_7_executor","attemptId":"attempt_535cb438567d_7_1","decisionId":"decision_535cb438567d_0015","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_535cb438567d_0014","sequence":15,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"},{"agentRunId":"sub_c1ebd73781612c7846b2b9aa36999168","artifactId":"artifact_asg_535cb438567d_7_executor_attempt_535cb438567d_7_1_receipt","assignmentId":"asg_535cb438567d_7_executor","attemptId":"attempt_535cb438567d_7_1","decisionId":"decision_535cb438567d_0016","errorCode":"execute_phase_failed","outcome":"failed","parentDecisionId":"decision_535cb438567d_0015","sequence":16,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_042ac5fdf677440da1d1284c758b469a"}],"workflowId":"wf_042ac5fdf677440da1d1284c758b469a"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_042ac5fdf677440da1d1284c758b469a","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+E   assert 5 == 4
+E    +  where 5 = len([[{'role': 'system', 'content': 'You are the Executor in a centrally scheduled workflow. Implement only the locked obj...tProjection": "Historical stream previews omitted; complete results remain in the canonical transcript"}]', ...}, ...]])
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4639 Model API error (AssertionError): Unexpected additional Executor request
+assert 5 in {2, 4}
+_ test_real_audited_candidate_can_deliver_but_pending_feedback_cannot_mint_receipt _
+tests/test_workflow_delivery_summary_safety.py:50: in test_real_audited_candidate_can_deliver_but_pending_feedback_cannot_mint_receipt
+    messages, calls, _, capture, _ = _exercise(tmp_path, monkeypatch, candidate_handoff=True)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_workflow_scoped_budget_delivery.py:202: in _exercise
+    assert len(rejections) == 1 and rejections[0]["reason"] == "token budget exhausted"
+E   assert (0 == 1)
+E    +  where 0 = len([])
+------------------------------ Captured log call -------------------------------
+WARNING  minicode.tooling:tooling.py:1451 Tool task crashed: AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+  {"workspaceStateVersion":1,"workflowId":"wf_908a792edd314bbbaa13afd5fd62e68d","parentWriteback":"not_applied","candidateRetained":true,"candidate":{"artifactRef":"scheduler-workflows/wf_908a792edd314bbbaa13afd5fd62e68d/failure-candidate.json","promotable":false},"nextWorkflowBase":"parent_current"}
+  === EXECUTOR OBSERVATIONS v1 ===
+  {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_075481d3b192_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+  [Workflow execute phase failed]
+  
+  Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+  
+  === WORKFLOW FINALIZATION v1 ===
+  {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+  
+  === SCHEDULER TRACE v1 ===
+  {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_e0b5d407eb9d3c173516c28dee71f4e3","artifactId":null,"assignmentId":"asg_075481d3b192_1_executor","attemptId":"attempt_075481d3b192_1_1","decisionId":"decision_075481d3b192_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_908a792edd314bbbaa13afd5fd62e68d"},{"agentRunId":"sub_e0b5d407eb9d3c173516c28dee71f4e3","artifactId":"artifact_asg_075481d3b192_1_executor_attempt_075481d3b192_1_1_receipt","assignmentId":"asg_075481d3b192_1_executor","attemptId":"attempt_075481d3b192_1_1","decisionId":"decision_075481d3b192_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_075481d3b192_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_908a792edd314bbbaa13afd5fd62e68d"}],"workflowId":"wf_908a792edd314bbbaa13afd5fd62e68d"}
+  
+  === SUBAGENT RESULT v1 ===
+  {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_908a792edd314bbbaa13afd5fd62e68d","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+assert (False)
+ +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_908a792e...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+Traceback (most recent call last):
+  File "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/minicode/tooling.py", line 1387, in execute
+    result = tool.run(parsed, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/tests/test_workflow_scoped_budget_delivery.py", line 109, in workflow
+    assert result.ok and result._must_deliver and result._continue_parent, result.output
+AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+  {"workspaceStateVersion":1,"workflowId":"wf_908a792edd314bbbaa13afd5fd62e68d","parentWriteback":"not_applied","candidateRetained":true,"candidate":{"artifactRef":"scheduler-workflows/wf_908a792edd314bbbaa13afd5fd62e68d/failure-candidate.json","promotable":false},"nextWorkflowBase":"parent_current"}
+  === EXECUTOR OBSERVATIONS v1 ===
+  {"observationVersion":1,"evidenceUse":"last_observed_implementation_feedback_not_gate_approval","omissionCountsScope":"retained_recent_windows","retentionLimits":{"latestChecks":40,"submissionErrors":4},"formalVerificationStatus":"not_run","implementationChecks":{"runs":1,"scope":"completed_host_receipts","statuses":{"passed":1},"latest":[{"assignmentId":"asg_075481d3b192_1_executor","checkId":"check_tests","argv":["python","-m","pytest","-q"],"argvTruncated":false,"patchDigest":"sha256:39dc1042024bd14c83fa742307b4fd9fd7f349b3da81285927e61093deb45563","status":"passed","exitCode":0,"stdoutPreview":".                                                                        [100%]\n1 passed in 0.00s\n","stderrPreview":""}],"latestOmitted":0},"submissionErrors":[],"submissionErrorsOmitted":0,"independentReview":{"mode":null,"retainedProbes":0}}
+  [Workflow execute phase failed]
+  
+  Structured Executor result was unavailable; see the Scheduler reason code: executor_budget_exceeded.
+  
+  === WORKFLOW FINALIZATION v1 ===
+  {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+  
+  === SCHEDULER TRACE v1 ===
+  {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"executor_budget_exceeded","transitions":[{"agentRunId":"sub_e0b5d407eb9d3c173516c28dee71f4e3","artifactId":null,"assignmentId":"asg_075481d3b192_1_executor","attemptId":"attempt_075481d3b192_1_1","decisionId":"decision_075481d3b192_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_908a792edd314bbbaa13afd5fd62e68d"},{"agentRunId":"sub_e0b5d407eb9d3c173516c28dee71f4e3","artifactId":"artifact_asg_075481d3b192_1_executor_attempt_075481d3b192_1_1_receipt","assignmentId":"asg_075481d3b192_1_executor","attemptId":"attempt_075481d3b192_1_1","decisionId":"decision_075481d3b192_0002","errorCode":"executor_budget_exceeded","outcome":"failed","parentDecisionId":"decision_075481d3b192_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_908a792edd314bbbaa13afd5fd62e68d"}],"workflowId":"wf_908a792edd314bbbaa13afd5fd62e68d"}
+  
+  === SUBAGENT RESULT v1 ===
+  {"agentType":"workflow","contractStatus":"derived","files":[],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_908a792edd314bbbaa13afd5fd62e68d","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}
+assert (False)
+ +  where False = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_908a792e...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+ERROR    minicode.agent_loop:agent_loop.py:4639 Model API error (AssertionError): assert ([] == [True]
+  
+  Right contains one more item: True
+  Use -v to get more diff)
+_ test_public_workflow_assignment_and_actual_worker_loop_share_one_cap[False] __
+tests/test_workflow_executor_budget.py:316: in test_public_workflow_assignment_and_actual_worker_loop_share_one_cap
+    assert observed == (
+E   AssertionError: assert [('executor', 37)] == [('executor',...reviewer', 8)]
+E     
+E     At index 0 diff: ('executor', 37) != ('executor', 28)
+E     Right contains one more item: ('reviewer', 8)
+E     Use -v to get more diff
+__ test_public_workflow_assignment_and_actual_worker_loop_share_one_cap[True] __
+tests/test_workflow_executor_budget.py:316: in test_public_workflow_assignment_and_actual_worker_loop_share_one_cap
+    assert observed == (
+E   AssertionError: assert [('executor', 37)] == [('analyst', ...reviewer', 8)]
+E     
+E     At index 0 diff: ('executor', 37) != ('analyst', 5)
+E     Right contains 2 more items, first extra item: ('executor', 27)
+E     Use -v to get more diff
+_____ test_insufficient_scoped_budget_blocks_before_worker_or_verifier[1] ______
+tests/test_workflow_executor_budget.py:389: in test_insufficient_scoped_budget_blocks_before_worker_or_verifier
+    assert "executor_budget_insufficient" in result.output
+E   assert 'executor_budget_insufficient' in '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_fd48862a95734659aa88cef8ab14135b","p...rkflowBase":"parent_current"}\nerror[pre_flight_insufficient]: need at least 7 remaining model requests for this route'
+E    +  where '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_fd48862a95734659aa88cef8ab14135b","p...rkflowBase":"parent_current"}\nerror[pre_flight_insufficient]: need at least 7 remaining model requests for this route' = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_fd48862a...t 7 remaining model requests for this route', backgroundTask=None, awaitUser=False, verification=None, capability=None).output
+_____ test_insufficient_scoped_budget_blocks_before_worker_or_verifier[2] ______
+tests/test_workflow_executor_budget.py:389: in test_insufficient_scoped_budget_blocks_before_worker_or_verifier
+    assert "executor_budget_insufficient" in result.output
+E   assert 'executor_budget_insufficient' in '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_4efd8de933c743809dabc7c0b4c06d9a","p...rkflowBase":"parent_current"}\nerror[pre_flight_insufficient]: need at least 7 remaining model requests for this route'
+E    +  where '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_4efd8de933c743809dabc7c0b4c06d9a","p...rkflowBase":"parent_current"}\nerror[pre_flight_insufficient]: need at least 7 remaining model requests for this route' = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_4efd8de9...t 7 remaining model requests for this route', backgroundTask=None, awaitUser=False, verification=None, capability=None).output
+_____ test_insufficient_scoped_budget_blocks_before_worker_or_verifier[3] ______
+tests/test_workflow_executor_budget.py:389: in test_insufficient_scoped_budget_blocks_before_worker_or_verifier
+    assert "executor_budget_insufficient" in result.output
+E   assert 'executor_budget_insufficient' in '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_1d77e083e7014c099f3a4fe7fd59c358","p...rkflowBase":"parent_current"}\nerror[pre_flight_insufficient]: need at least 7 remaining model requests for this route'
+E    +  where '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_1d77e083e7014c099f3a4fe7fd59c358","p...rkflowBase":"parent_current"}\nerror[pre_flight_insufficient]: need at least 7 remaining model requests for this route' = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_1d77e083...t 7 remaining model requests for this route', backgroundTask=None, awaitUser=False, verification=None, capability=None).output
+_____ test_insufficient_scoped_budget_blocks_before_worker_or_verifier[4] ______
+tests/test_workflow_executor_budget.py:389: in test_insufficient_scoped_budget_blocks_before_worker_or_verifier
+    assert "executor_budget_insufficient" in result.output
+E   assert 'executor_budget_insufficient' in '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_4d8c1ae33abd4887bf7062655f3a6746","p...rkflowBase":"parent_current"}\nerror[pre_flight_insufficient]: need at least 7 remaining model requests for this route'
+E    +  where '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_4d8c1ae33abd4887bf7062655f3a6746","p...rkflowBase":"parent_current"}\nerror[pre_flight_insufficient]: need at least 7 remaining model requests for this route' = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_4d8c1ae3...t 7 remaining model requests for this route', backgroundTask=None, awaitUser=False, verification=None, capability=None).output
+_____ test_insufficient_scoped_budget_blocks_before_worker_or_verifier[10] _____
+tests/test_workflow_executor_budget.py:389: in test_insufficient_scoped_budget_blocks_before_worker_or_verifier
+    assert "executor_budget_insufficient" in result.output
+E   assert 'executor_budget_insufficient' in '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_b576748dcd1647ca9427458e781d46cb","p...781d46cb","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}'
+E    +  where '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_b576748dcd1647ca9427458e781d46cb","p...781d46cb","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}' = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_b576748d...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).output
+_____ test_insufficient_scoped_budget_blocks_before_worker_or_verifier[11] _____
+tests/test_workflow_executor_budget.py:389: in test_insufficient_scoped_budget_blocks_before_worker_or_verifier
+    assert "executor_budget_insufficient" in result.output
+E   assert 'executor_budget_insufficient' in '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_7141d4e5122a489d95ed7414eb2a148f","p...eb2a148f","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}'
+E    +  where '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_7141d4e5122a489d95ed7414eb2a148f","p...eb2a148f","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}' = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_7141d4e5...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).output
+_____ test_insufficient_scoped_budget_blocks_before_worker_or_verifier[12] _____
+tests/test_workflow_executor_budget.py:389: in test_insufficient_scoped_budget_blocks_before_worker_or_verifier
+    assert "executor_budget_insufficient" in result.output
+E   assert 'executor_budget_insufficient' in '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_5219529b94754bbe8a5caf48c7e1990e","p...c7e1990e","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}'
+E    +  where '=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_5219529b94754bbe8a5caf48c7e1990e","p...c7e1990e","summary":"Central scheduler ended the workflow as failed.","verification":{"checks":[],"status":"not_run"}}' = ToolResult(ok=False, output='=== WORKFLOW WORKSPACE STATE v1 ===\n{"workspaceStateVersion":1,"workflowId":"wf_5219529b...fication":{"checks":[],"status":"not_run"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).output
+_ test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions[directory] _
+tests/test_workflow_on_demand_risk.py:77: in test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions
+    assert trace["ruleId"] != "route.verified_change", result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_d0127a25307b4eac85763f524026087b","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     [Workflow on-demand review failed]
+E       Phases: Executor -> Verifier
+E     
+E     === DETERMINISTIC VERIFICATION ===
+E     {"checks": [{"artifactRef": "artifact_verification_252fe3176cea9470899d2475", "checkId": "check_tests", "durationMs": 93, "exitCode": 0, "kind": "tests", "status": "passed"}], "executionAssignmentId": "asg_7293da30d590_1_executor", "patchDigest": "sha256:430be78a4e98f5aaf2cb33cc0ec5db3f8ed37ca1f6629bc6e4d88137f5003c8c", "resultType": "VerificationResult.v1", "status": "passed", "taskId": "task_structured_route", "verificationId": "verification_a39fc479620c1cfe9f9f1e13", "verificationVersion": 1, "workflowId": "wf_d0127a25307b4eac85763f524026087b"}
+E     
+E     === EXECUTE ===
+E     {"assignmentId": "asg_7293da30d590_1_executor", "blockers": [], "changeSet": {"baseDigest": "sha256:d980ced62a078cda2c7d2511ae3ec036681d377f342c87c9b5c2418f7d2f6064", "files": [{"action": "modified", "path": "src/changed.py"}], "patchDigest": "sha256:430be78a4e98f5aaf2cb33cc0ec5db3f8ed37ca1f6629bc6e4d88137f5003c8c", "workspaceRef": "isolated://workflow"}, "deviations": [], "orderId": "order_asg_7293da30d590_1_executor_attempt_7293da30d590_1_1", "resultType": "ExecutionResult.v1", "resultVersion": 1, "selfChecks": [], "status": "completed", "stepResults": [{"artifactRefs": [], "status": "completed", "stepId": "s_path_1"}]}
+E     
+E     error[workflow_finalization_incomplete]: changesCommitted=false, finalizationStatus=completed, auditStatus=not_configured
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "not_configured", "changesCommitted": false, "commitReadyStatus": "projection_failed", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"commit_ready_persistence_failed","transitions":[{"agentRunId":"sub_b91f20ea25c4311e6fed7cd9128dd936","artifactId":null,"assignmentId":"asg_7293da30d590_1_executor","attemptId":"attempt_7293da30d590_1_1","decisionId":"decision_7293da30d590_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_d0127a25307b4eac85763f524026087b"},{"agentRunId":"sub_b91f20ea25c4311e6fed7cd9128dd936","artifactId":"artifact_asg_7293da30d590_1_executor_attempt_7293da30d590_1_1_execution","assignmentId":"asg_7293da30d590_1_executor","attemptId":"attempt_7293da30d590_1_1","decisionId":"decision_7293da30d590_0002","errorCode":null,"outcome":"completed","parentDecisionId":"decision_7293da30d590_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_d0127a25307b4eac85763f524026087b"},{"agentRunId":"sub_0818e1ee0f53eed581776b817325f5f3","artifactId":null,"assignmentId":"asg_7293da30d590_2_verifier","attemptId":"attempt_7293da30d590_2_1","decisionId":"decision_7293da30d590_0003","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_7293da30d590_0002","sequence":3,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_d0127a25307b4eac85763f524026087b"},{"agentRunId":"sub_0818e1ee0f53eed581776b817325f5f3","artifactId":"artifact_asg_7293da30d590_2_verifier_attempt_7293da30d590_2_1_verification","assignmentId":"asg_7293da30d590_2_verifier","attemptId":"attempt_7293da30d590_2_1","decisionId":"decision_7293da30d590_0004","errorCode":null,"outcome":"completed","parentDecisionId":"decision_7293da30d590_0003","sequence":4,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_d0127a25307b4eac85763f524026087b"},{"agentRunId":"sub_35f70f8d459f1bce2bb224848d7ae645","artifactId":null,"assignmentId":"asg_7293da30d590_3_commit","attemptId":"attempt_7293da30d590_3_1","decisionId":"decision_7293da30d590_0005","errorCode":null,"outcome":"commit_requested","parentDecisionId":"decision_7293da30d590_0004","sequence":5,"stage":"commit","taskId":"task_structured_route","workflowId":"wf_d0127a25307b4eac85763f524026087b"},{"agentRunId":"sub_35f70f8d459f1bce2bb224848d7ae645","artifactId":null,"assignmentId":"asg_7293da30d590_3_commit","attemptId":"attempt_7293da30d590_3_1","decisionId":"decision_7293da30d590_0006","errorCode":"commit_ready_persistence_failed","outcome":"failed","parentDecisionId":"decision_7293da30d590_0005","sequence":6,"stage":"commit","taskId":"task_structured_route","workflowId":"wf_d0127a25307b4eac85763f524026087b"}],"workflowId":"wf_d0127a25307b4eac85763f524026087b"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[{"action":"modified","path":"src/changed.py"}],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_d0127a25307b4eac85763f524026087b","summary":"Central scheduler failed a frozen change set for 1 file(s).","verification":{"checks":["check_tests: passed [artifact_verification_252fe3176cea9470899d2475]"],"status":"passed"}}
+E   assert 'route.verified_change' != 'route.verified_change'
+_ test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions[directory-with-suffix] _
+tests/test_workflow_on_demand_risk.py:77: in test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions
+    assert trace["ruleId"] != "route.verified_change", result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_42913ae173064340b66a18bfb843c0ae","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     [Workflow on-demand review failed]
+E       Phases: Executor -> Verifier
+E     
+E     === DETERMINISTIC VERIFICATION ===
+E     {"checks": [{"artifactRef": "artifact_verification_b23ff07469582ab8c689165a", "checkId": "check_tests", "durationMs": 95, "exitCode": 0, "kind": "tests", "status": "passed"}], "executionAssignmentId": "asg_f7a6f17f1b08_1_executor", "patchDigest": "sha256:b2000da31a0311333fcc223c48fd34d64db27f29806b63940e2611d7f260cd2d", "resultType": "VerificationResult.v1", "status": "passed", "taskId": "task_structured_route", "verificationId": "verification_85b9cae14a59b8c202de435d", "verificationVersion": 1, "workflowId": "wf_42913ae173064340b66a18bfb843c0ae"}
+E     
+E     === EXECUTE ===
+E     {"assignmentId": "asg_f7a6f17f1b08_1_executor", "blockers": [], "changeSet": {"baseDigest": "sha256:2ffd363188cddbf7f80fcca18f83fc1775c355f9dd379e704acfde952819bd98", "files": [{"action": "modified", "path": "src.py/changed.py"}], "patchDigest": "sha256:b2000da31a0311333fcc223c48fd34d64db27f29806b63940e2611d7f260cd2d", "workspaceRef": "isolated://workflow"}, "deviations": [], "orderId": "order_asg_f7a6f17f1b08_1_executor_attempt_f7a6f17f1b08_1_1", "resultType": "ExecutionResult.v1", "resultVersion": 1, "selfChecks": [], "status": "completed", "stepResults": [{"artifactRefs": [], "status": "completed", "stepId": "s_path_1"}]}
+E     
+E     error[workflow_finalization_incomplete]: changesCommitted=false, finalizationStatus=completed, auditStatus=not_configured
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "not_configured", "changesCommitted": false, "commitReadyStatus": "projection_failed", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"commit_ready_persistence_failed","transitions":[{"agentRunId":"sub_c8a034245365d787fd8d94ecac4db664","artifactId":null,"assignmentId":"asg_f7a6f17f1b08_1_executor","attemptId":"attempt_f7a6f17f1b08_1_1","decisionId":"decision_f7a6f17f1b08_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_42913ae173064340b66a18bfb843c0ae"},{"agentRunId":"sub_c8a034245365d787fd8d94ecac4db664","artifactId":"artifact_asg_f7a6f17f1b08_1_executor_attempt_f7a6f17f1b08_1_1_execution","assignmentId":"asg_f7a6f17f1b08_1_executor","attemptId":"attempt_f7a6f17f1b08_1_1","decisionId":"decision_f7a6f17f1b08_0002","errorCode":null,"outcome":"completed","parentDecisionId":"decision_f7a6f17f1b08_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_42913ae173064340b66a18bfb843c0ae"},{"agentRunId":"sub_2cc577a022fb2bf3f566510ba11da930","artifactId":null,"assignmentId":"asg_f7a6f17f1b08_2_verifier","attemptId":"attempt_f7a6f17f1b08_2_1","decisionId":"decision_f7a6f17f1b08_0003","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_f7a6f17f1b08_0002","sequence":3,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_42913ae173064340b66a18bfb843c0ae"},{"agentRunId":"sub_2cc577a022fb2bf3f566510ba11da930","artifactId":"artifact_asg_f7a6f17f1b08_2_verifier_attempt_f7a6f17f1b08_2_1_verification","assignmentId":"asg_f7a6f17f1b08_2_verifier","attemptId":"attempt_f7a6f17f1b08_2_1","decisionId":"decision_f7a6f17f1b08_0004","errorCode":null,"outcome":"completed","parentDecisionId":"decision_f7a6f17f1b08_0003","sequence":4,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_42913ae173064340b66a18bfb843c0ae"},{"agentRunId":"sub_636d9445d5a50039947393406388cd86","artifactId":null,"assignmentId":"asg_f7a6f17f1b08_3_commit","attemptId":"attempt_f7a6f17f1b08_3_1","decisionId":"decision_f7a6f17f1b08_0005","errorCode":null,"outcome":"commit_requested","parentDecisionId":"decision_f7a6f17f1b08_0004","sequence":5,"stage":"commit","taskId":"task_structured_route","workflowId":"wf_42913ae173064340b66a18bfb843c0ae"},{"agentRunId":"sub_636d9445d5a50039947393406388cd86","artifactId":null,"assignmentId":"asg_f7a6f17f1b08_3_commit","attemptId":"attempt_f7a6f17f1b08_3_1","decisionId":"decision_f7a6f17f1b08_0006","errorCode":"commit_ready_persistence_failed","outcome":"failed","parentDecisionId":"decision_f7a6f17f1b08_0005","sequence":6,"stage":"commit","taskId":"task_structured_route","workflowId":"wf_42913ae173064340b66a18bfb843c0ae"}],"workflowId":"wf_42913ae173064340b66a18bfb843c0ae"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[{"action":"modified","path":"src.py/changed.py"}],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_42913ae173064340b66a18bfb843c0ae","summary":"Central scheduler failed a frozen change set for 1 file(s).","verification":{"checks":["check_tests: passed [artifact_verification_b23ff07469582ab8c689165a]"],"status":"passed"}}
+E   assert 'route.verified_change' != 'route.verified_change'
+_ test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions[new-file] _
+tests/test_workflow_on_demand_risk.py:77: in test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions
+    assert trace["ruleId"] != "route.verified_change", result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_f58b5438d1674a1db1b5c41f6fe5001c","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     [Workflow on-demand review failed]
+E       Phases: Executor -> Verifier
+E     
+E     === DETERMINISTIC VERIFICATION ===
+E     {"checks": [{"artifactRef": "artifact_verification_f246d7730343a471fe9a6d0c", "checkId": "check_tests", "durationMs": 94, "exitCode": 0, "kind": "tests", "status": "passed"}], "executionAssignmentId": "asg_0d5f49d2dd14_1_executor", "patchDigest": "sha256:f678bd669c1e6a346ffec186104a8bc08f34aeaa9f201bb9cecf306ca66fa758", "resultType": "VerificationResult.v1", "status": "passed", "taskId": "task_structured_route", "verificationId": "verification_b96d6fee99c76608b022327f", "verificationVersion": 1, "workflowId": "wf_f58b5438d1674a1db1b5c41f6fe5001c"}
+E     
+E     === EXECUTE ===
+E     {"assignmentId": "asg_0d5f49d2dd14_1_executor", "blockers": [], "changeSet": {"baseDigest": "sha256:1bd58f7bdc09bac26015add70931cbbeebed3be159dcf7276ed91efde18d7273", "files": [{"action": "created", "path": "new.py"}], "patchDigest": "sha256:f678bd669c1e6a346ffec186104a8bc08f34aeaa9f201bb9cecf306ca66fa758", "workspaceRef": "isolated://workflow"}, "deviations": [], "orderId": "order_asg_0d5f49d2dd14_1_executor_attempt_0d5f49d2dd14_1_1", "resultType": "ExecutionResult.v1", "resultVersion": 1, "selfChecks": [], "status": "completed", "stepResults": [{"artifactRefs": [], "status": "completed", "stepId": "s_path_1"}]}
+E     
+E     error[workflow_finalization_incomplete]: changesCommitted=false, finalizationStatus=completed, auditStatus=not_configured
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "not_configured", "changesCommitted": false, "commitReadyStatus": "recorder_missing", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"commit_ready_persistence_failed","transitions":[{"agentRunId":"sub_749f26b19892d12d6d2dc8813ef584ac","artifactId":null,"assignmentId":"asg_0d5f49d2dd14_1_executor","attemptId":"attempt_0d5f49d2dd14_1_1","decisionId":"decision_0d5f49d2dd14_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_f58b5438d1674a1db1b5c41f6fe5001c"},{"agentRunId":"sub_749f26b19892d12d6d2dc8813ef584ac","artifactId":"artifact_asg_0d5f49d2dd14_1_executor_attempt_0d5f49d2dd14_1_1_execution","assignmentId":"asg_0d5f49d2dd14_1_executor","attemptId":"attempt_0d5f49d2dd14_1_1","decisionId":"decision_0d5f49d2dd14_0002","errorCode":null,"outcome":"completed","parentDecisionId":"decision_0d5f49d2dd14_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_f58b5438d1674a1db1b5c41f6fe5001c"},{"agentRunId":"sub_ba92394c128991bb5e3a5e82491cda26","artifactId":null,"assignmentId":"asg_0d5f49d2dd14_2_verifier","attemptId":"attempt_0d5f49d2dd14_2_1","decisionId":"decision_0d5f49d2dd14_0003","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_0d5f49d2dd14_0002","sequence":3,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_f58b5438d1674a1db1b5c41f6fe5001c"},{"agentRunId":"sub_ba92394c128991bb5e3a5e82491cda26","artifactId":"artifact_asg_0d5f49d2dd14_2_verifier_attempt_0d5f49d2dd14_2_1_verification","assignmentId":"asg_0d5f49d2dd14_2_verifier","attemptId":"attempt_0d5f49d2dd14_2_1","decisionId":"decision_0d5f49d2dd14_0004","errorCode":null,"outcome":"completed","parentDecisionId":"decision_0d5f49d2dd14_0003","sequence":4,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_f58b5438d1674a1db1b5c41f6fe5001c"},{"agentRunId":"sub_b27566715becbce5ef743749318c3455","artifactId":null,"assignmentId":"asg_0d5f49d2dd14_3_commit","attemptId":"attempt_0d5f49d2dd14_3_1","decisionId":"decision_0d5f49d2dd14_0005","errorCode":null,"outcome":"commit_requested","parentDecisionId":"decision_0d5f49d2dd14_0004","sequence":5,"stage":"commit","taskId":"task_structured_route","workflowId":"wf_f58b5438d1674a1db1b5c41f6fe5001c"},{"agentRunId":"sub_b27566715becbce5ef743749318c3455","artifactId":null,"assignmentId":"asg_0d5f49d2dd14_3_commit","attemptId":"attempt_0d5f49d2dd14_3_1","decisionId":"decision_0d5f49d2dd14_0006","errorCode":"commit_ready_persistence_failed","outcome":"failed","parentDecisionId":"decision_0d5f49d2dd14_0005","sequence":6,"stage":"commit","taskId":"task_structured_route","workflowId":"wf_f58b5438d1674a1db1b5c41f6fe5001c"}],"workflowId":"wf_f58b5438d1674a1db1b5c41f6fe5001c"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[{"action":"created","path":"new.py"}],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_f58b5438d1674a1db1b5c41f6fe5001c","summary":"Central scheduler failed a frozen change set for 1 file(s).","verification":{"checks":["check_tests: passed [artifact_verification_f246d7730343a471fe9a6d0c]"],"status":"passed"}}
+E   assert 'route.verified_change' != 'route.verified_change'
+_ test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions[keyword-selector] _
+tests/test_workflow_on_demand_risk.py:77: in test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions
+    assert trace["ruleId"] != "route.verified_change", result.output
+E   AssertionError: === WORKFLOW WORKSPACE STATE v1 ===
+E     {"workspaceStateVersion":1,"workflowId":"wf_6936fca92f5043ffbb23734b8103287e","parentWriteback":"not_applied","candidateRetained":false,"candidate":null,"nextWorkflowBase":"parent_current"}
+E     [Workflow on-demand review failed]
+E       Phases: Executor -> Verifier
+E     
+E     === DETERMINISTIC VERIFICATION ===
+E     {"checks": [{"artifactRef": "artifact_verification_41d5fadcfa9fb319258b6e06", "checkId": "check_tests", "durationMs": 96, "exitCode": 0, "kind": "tests", "status": "passed"}], "executionAssignmentId": "asg_9fb01bf781cf_1_executor", "patchDigest": "sha256:dc5388f415070b7e6bcef1c47cf8104f230c3969b66e399669ef9d901e190295", "resultType": "VerificationResult.v1", "status": "passed", "taskId": "task_structured_route", "verificationId": "verification_5acaae0d3833df08ce72de7a", "verificationVersion": 1, "workflowId": "wf_6936fca92f5043ffbb23734b8103287e"}
+E     
+E     === EXECUTE ===
+E     {"assignmentId": "asg_9fb01bf781cf_1_executor", "blockers": [], "changeSet": {"baseDigest": "sha256:8c5af0687f04d71238305d3a7d9b1b76f003c363b4b9b2169fa256841d921186", "files": [{"action": "modified", "path": "tests/test_acceptance.py"}], "patchDigest": "sha256:dc5388f415070b7e6bcef1c47cf8104f230c3969b66e399669ef9d901e190295", "workspaceRef": "isolated://workflow"}, "deviations": [], "orderId": "order_asg_9fb01bf781cf_1_executor_attempt_9fb01bf781cf_1_1", "resultType": "ExecutionResult.v1", "resultVersion": 1, "selfChecks": [], "status": "completed", "stepResults": [{"artifactRefs": [], "status": "completed", "stepId": "s_path_1"}]}
+E     
+E     error[workflow_finalization_incomplete]: changesCommitted=false, finalizationStatus=completed, auditStatus=not_configured
+E     
+E     === WORKFLOW FINALIZATION v1 ===
+E     {"auditStatus": "not_configured", "changesCommitted": false, "commitReadyStatus": "recorder_missing", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E     
+E     === SCHEDULER TRACE v1 ===
+E     {"committed":false,"policyVersion":6,"ruleId":"route.verified_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"commit_ready_persistence_failed","transitions":[{"agentRunId":"sub_5c2080de78fbf1952cae7b6458e497bd","artifactId":null,"assignmentId":"asg_9fb01bf781cf_1_executor","attemptId":"attempt_9fb01bf781cf_1_1","decisionId":"decision_9fb01bf781cf_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_6936fca92f5043ffbb23734b8103287e"},{"agentRunId":"sub_5c2080de78fbf1952cae7b6458e497bd","artifactId":"artifact_asg_9fb01bf781cf_1_executor_attempt_9fb01bf781cf_1_1_execution","assignmentId":"asg_9fb01bf781cf_1_executor","attemptId":"attempt_9fb01bf781cf_1_1","decisionId":"decision_9fb01bf781cf_0002","errorCode":null,"outcome":"completed","parentDecisionId":"decision_9fb01bf781cf_0001","sequence":2,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_6936fca92f5043ffbb23734b8103287e"},{"agentRunId":"sub_8e0c7abb46bdcd6db79c2e6fb13e16d5","artifactId":null,"assignmentId":"asg_9fb01bf781cf_2_verifier","attemptId":"attempt_9fb01bf781cf_2_1","decisionId":"decision_9fb01bf781cf_0003","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_9fb01bf781cf_0002","sequence":3,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_6936fca92f5043ffbb23734b8103287e"},{"agentRunId":"sub_8e0c7abb46bdcd6db79c2e6fb13e16d5","artifactId":"artifact_asg_9fb01bf781cf_2_verifier_attempt_9fb01bf781cf_2_1_verification","assignmentId":"asg_9fb01bf781cf_2_verifier","attemptId":"attempt_9fb01bf781cf_2_1","decisionId":"decision_9fb01bf781cf_0004","errorCode":null,"outcome":"completed","parentDecisionId":"decision_9fb01bf781cf_0003","sequence":4,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_6936fca92f5043ffbb23734b8103287e"},{"agentRunId":"sub_1a3091626b8fdb5a52432bee44a861b8","artifactId":null,"assignmentId":"asg_9fb01bf781cf_3_commit","attemptId":"attempt_9fb01bf781cf_3_1","decisionId":"decision_9fb01bf781cf_0005","errorCode":null,"outcome":"commit_requested","parentDecisionId":"decision_9fb01bf781cf_0004","sequence":5,"stage":"commit","taskId":"task_structured_route","workflowId":"wf_6936fca92f5043ffbb23734b8103287e"},{"agentRunId":"sub_1a3091626b8fdb5a52432bee44a861b8","artifactId":null,"assignmentId":"asg_9fb01bf781cf_3_commit","attemptId":"attempt_9fb01bf781cf_3_1","decisionId":"decision_9fb01bf781cf_0006","errorCode":"commit_ready_persistence_failed","outcome":"failed","parentDecisionId":"decision_9fb01bf781cf_0005","sequence":6,"stage":"commit","taskId":"task_structured_route","workflowId":"wf_6936fca92f5043ffbb23734b8103287e"}],"workflowId":"wf_6936fca92f5043ffbb23734b8103287e"}
+E     
+E     === SUBAGENT RESULT v1 ===
+E     {"agentType":"workflow","contractStatus":"derived","files":[{"action":"modified","path":"tests/test_acceptance.py"}],"outcome":"failed","resultVersion":1,"risks":[],"subagentId":"sub_6936fca92f5043ffbb23734b8103287e","summary":"Central scheduler failed a frozen change set for 1 file(s).","verification":{"checks":["check_tests: passed [artifact_verification_41d5fadcfa9fb319258b6e06]"],"status":"passed"}}
+E   assert 'route.verified_change' != 'route.verified_change'
+___ test_complexity_change_does_not_remove_risk_or_acceptance_gates[medium] ____
+tests/test_workflow_optional_roles.py:69: in test_complexity_change_does_not_remove_risk_or_acceptance_gates
+    assert plan.stages[0] is DispatchStage.ANALYST
+E   AssertionError: assert <DispatchStage.EXECUTOR: 'executor'> is <DispatchStage.ANALYST: 'analyst'>
+E    +  where <DispatchStage.ANALYST: 'analyst'> = DispatchStage.ANALYST
+____ test_complexity_change_does_not_remove_risk_or_acceptance_gates[broad] ____
+tests/test_workflow_optional_roles.py:69: in test_complexity_change_does_not_remove_risk_or_acceptance_gates
+    assert plan.stages[0] is DispatchStage.ANALYST
+E   AssertionError: assert <DispatchStage.EXECUTOR: 'executor'> is <DispatchStage.ANALYST: 'analyst'>
+E    +  where <DispatchStage.ANALYST: 'analyst'> = DispatchStage.ANALYST
+_ test_complex_scoped_workflow_still_earns_real_verification_and_sealed_audit[True] _
+tests/test_workflow_optional_roles.py:146: in test_complex_scoped_workflow_still_earns_real_verification_and_sealed_audit
+    assert trace["ruleId"] == "route.scoped_change"
+E   AssertionError: assert 'route.verified_change' == 'route.scoped_change'
+E     
+E     - route.scoped_change
+E     ?       ^^^^
+E     + route.verified_change
+E     ?       ^^^^^^
+_ test_complex_scoped_workflow_still_earns_real_verification_and_sealed_audit[False] _
+tests/test_workflow_optional_roles.py:146: in test_complex_scoped_workflow_still_earns_real_verification_and_sealed_audit
+    assert trace["ruleId"] == "route.scoped_change"
+E   AssertionError: assert 'route.verified_change' == 'route.scoped_change'
+E     
+E     - route.scoped_change
+E     ?       ^^^^
+E     + route.verified_change
+E     ?       ^^^^^^
+__ test_failure_in_remaining_work_reports_committed_partial_progress[network] __
+tests/test_workflow_parent_continuation.py:214: in test_failure_in_remaining_work_reports_committed_partial_progress
+    assert failure in response.lower()
+E   AssertionError: assert 'network' in 'earlier workflow changes are already committed; remaining work is incomplete. the committed receipts are retained above.\n\nmodel api error (stopiteration): '
+E    +  where 'earlier workflow changes are already committed; remaining work is incomplete. the committed receipts are retained above.\n\nmodel api error (stopiteration): ' = <built-in method lower of str object at 0x108e4f840>()
+E    +    where <built-in method lower of str object at 0x108e4f840> = 'Earlier workflow changes are already committed; remaining work is incomplete. The committed receipts are retained above.\n\nModel API error (StopIteration): '.lower
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4639 Model API error (StopIteration):
+______ test_workflow_finalization_uses_a_frozen_snapshot_and_narrow_ports ______
+tests/test_workflow_runner_module.py:74: in test_workflow_finalization_uses_a_frozen_snapshot_and_narrow_ports
+    assert tuple(parameters) == ("snapshot", "ports")
+E   AssertionError: assert ('snapshot', ...vidence_note') == ('snapshot', 'ports')
+E     
+E     Left contains one more item: 'evidence_note'
+E     Use -v to get more diff
+_ test_typed_parent_handoff_allows_reviewer_correction_and_original_executor_repair _
+tests/test_workflow_typed_handoff_budget.py:305: in test_typed_parent_handoff_allows_reviewer_correction_and_original_executor_repair
+    _exercise(tmp_path, monkeypatch)
+tests/test_workflow_typed_handoff_budget.py:272: in _exercise
+    assert target.read_text() == COMPLETE and (tmp_path / "test_candidate.py").read_text() == REPAIRED_TEST
+E   AssertionError: assert ('def normaliz...lue.strip()\n' == 'def normaliz...lue.strip()\n'
+E     
+E       def normalize(value):
+E     -     if value is None:
+E     -         return ''
+E           return value.strip())
+----------------------------- Captured stdout call -----------------------------
+{"case": "success", "floor": 59141, "usedTokens": 403373, "calls": 9, "roles": ["parent", "parent", "parent", "parent", "parent", "parent", "parent", "parent", "executor"], "rejections": [], "terminal": null}
+------------------------------ Captured log call -------------------------------
+WARNING  minicode.run_lifecycle:run_lifecycle.py:117 Run lifecycle observation unavailable during event.
+__ test_budget_terminal_review_preserves_candidate_without_new_parent_request __
+tests/test_workflow_typed_handoff_budget.py:309: in test_budget_terminal_review_preserves_candidate_without_new_parent_request
+    _exercise(tmp_path, monkeypatch, reject_final_review=True)
+tests/test_workflow_typed_handoff_budget.py:257: in _exercise
+    assert not result.ok and not trace["committed"] and target.read_text() == INITIAL
+E   AssertionError: assert (not True)
+E    +  where True = ToolResult(ok=True, output='[Workflow complete public behavior completed]\n  Phases: Executor -> Verifier\n\n=== DETER... runtime permissions.', 'Model/service interaction remains possible even when worker workspace access is read-only.']}).ok
+----------------------------- Captured stdout call -----------------------------
+{"case": "failure", "floor": 59141, "usedTokens": 403373, "calls": 9, "roles": ["parent", "parent", "parent", "parent", "parent", "parent", "parent", "parent", "executor"], "rejections": [], "terminal": null}
+------------------------------ Captured log call -------------------------------
+WARNING  minicode.run_lifecycle:run_lifecycle.py:117 Run lifecycle observation unavailable during event.
+=========================== short test summary info ============================
+FAILED tests/test_checked_candidate_workflow.py::test_checked_budget_ended_candidate_reaches_formal_verification_review_and_commit
+FAILED tests/test_checked_candidate_workflow.py::test_review_rejection_returns_checked_candidate_to_same_executor_session
+FAILED tests/test_checked_candidate_workflow.py::test_review_rejection_without_repair_budget_preserves_candidate_without_commit
+FAILED tests/test_persistent_executor_workflow.py::test_failed_check_gate_keeps_executor_conversation_and_candidate[small-diff]
+FAILED tests/test_persistent_executor_workflow.py::test_failed_check_gate_keeps_executor_conversation_and_candidate[v17-truncated-display-diff]
+FAILED tests/test_reviewer_budget_handoff.py::test_v23_prefix_reserves_native_verdict_before_last_affordable_read[changes_required]
+FAILED tests/test_reviewer_budget_handoff.py::test_v23_prefix_reserves_native_verdict_before_last_affordable_read[inconclusive]
+FAILED tests/test_scheduler_checked_candidate.py::test_checked_host_candidate_earns_fresh_gates_before_commit
+FAILED tests/test_scheduler_checked_candidate.py::test_unknown_review_never_promotes_a_checked_host_candidate
+FAILED tests/test_scheduler_checked_candidate.py::test_failed_candidate_needs_fresh_verifier_failure_before_same_owner_repair
+FAILED tests/test_scheduler_checked_candidate.py::test_failed_candidate_does_not_bypass_existing_repair_allowance
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[missing_receipt]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[stale_receipt]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[different_command]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[synthetic_pass]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[passed_nonzero]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[failed_zero]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[inconclusive_receipt]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[assessed_steps]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[missing_criterion]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[worker_result_key]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_audit_rejects_unearned_or_rebound_authority[missing_frozen_diff]
+FAILED tests/test_scheduler_checked_candidate.py::test_candidate_cannot_enter_historical_policy_without_mandatory_coverage_review
+FAILED tests/test_scheduler_checked_candidate.py::test_passing_candidate_and_verifier_cannot_erase_required_reviewer
+FAILED tests/test_scheduler_role_boundaries_regression.py::test_adjudicator_can_read_frozen_evidence_but_not_unassigned_artifacts
+FAILED tests/test_verification_output_workflow.py::test_same_executor_reads_complete_stderr_across_review_repair_and_delivers
+FAILED tests/test_workflow_analysis_budget.py::test_analysis_retry_cannot_renew_six_call_phase
+FAILED tests/test_workflow_analysis_budget.py::test_phase_plans_handoff_against_worker_floors_and_admits_both_closing_calls
+FAILED tests/test_workflow_analysis_convergence.py::test_one_workflow_keeps_risk_routing_and_durable_commit_gates[scoped]
+FAILED tests/test_workflow_analysis_convergence.py::test_one_workflow_keeps_risk_routing_and_durable_commit_gates[reviewed]
+FAILED tests/test_workflow_analysis_convergence.py::test_freeform_plan_cannot_replace_required_analyst_evidence
+FAILED tests/test_workflow_analysis_convergence.py::test_scoped_route_still_rejects_each_broken_commit_binding[request_digest-scoped]
+FAILED tests/test_workflow_analysis_convergence.py::test_scoped_route_still_rejects_each_broken_commit_binding[base_digest-scoped]
+FAILED tests/test_workflow_analysis_convergence.py::test_scoped_route_still_rejects_each_broken_commit_binding[patch_digest-scoped]
+FAILED tests/test_workflow_analysis_convergence.py::test_scoped_route_still_rejects_each_broken_commit_binding[verification_digest-scoped]
+FAILED tests/test_workflow_analysis_convergence.py::test_scoped_route_still_rejects_each_broken_commit_binding[review_digest-scoped]
+FAILED tests/test_workflow_analysis_convergence.py::test_scoped_route_still_rejects_each_broken_commit_binding[artifact_set_digest-scoped]
+FAILED tests/test_workflow_analysis_convergence.py::test_reviewed_route_cannot_substitute_verification_for_review[scoped]
+FAILED tests/test_workflow_analysis_convergence.py::test_reviewed_route_cannot_substitute_verification_for_review[reviewed]
+FAILED tests/test_workflow_candidate_checkpoints.py::test_executor_transition_persists_before_next_stage_hard_exit[reviewer]
+FAILED tests/test_workflow_completion_coverage.py::test_green_partial_candidate_is_reviewed_before_commit_and_resumes_same_executor[rejected-review-cannot-commit]
+FAILED tests/test_workflow_delivery_summary_safety.py::test_real_audited_candidate_can_deliver_but_pending_feedback_cannot_mint_receipt
+FAILED tests/test_workflow_executor_budget.py::test_public_workflow_assignment_and_actual_worker_loop_share_one_cap[False]
+FAILED tests/test_workflow_executor_budget.py::test_public_workflow_assignment_and_actual_worker_loop_share_one_cap[True]
+FAILED tests/test_workflow_executor_budget.py::test_insufficient_scoped_budget_blocks_before_worker_or_verifier[1]
+FAILED tests/test_workflow_executor_budget.py::test_insufficient_scoped_budget_blocks_before_worker_or_verifier[2]
+FAILED tests/test_workflow_executor_budget.py::test_insufficient_scoped_budget_blocks_before_worker_or_verifier[3]
+FAILED tests/test_workflow_executor_budget.py::test_insufficient_scoped_budget_blocks_before_worker_or_verifier[4]
+FAILED tests/test_workflow_executor_budget.py::test_insufficient_scoped_budget_blocks_before_worker_or_verifier[10]
+FAILED tests/test_workflow_executor_budget.py::test_insufficient_scoped_budget_blocks_before_worker_or_verifier[11]
+FAILED tests/test_workflow_executor_budget.py::test_insufficient_scoped_budget_blocks_before_worker_or_verifier[12]
+FAILED tests/test_workflow_on_demand_risk.py::test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions[directory]
+FAILED tests/test_workflow_on_demand_risk.py::test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions[directory-with-suffix]
+FAILED tests/test_workflow_on_demand_risk.py::test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions[new-file]
+FAILED tests/test_workflow_on_demand_risk.py::test_host_scope_prevents_directory_sensitive_and_test_alias_exemptions[keyword-selector]
+FAILED tests/test_workflow_optional_roles.py::test_complexity_change_does_not_remove_risk_or_acceptance_gates[medium]
+FAILED tests/test_workflow_optional_roles.py::test_complexity_change_does_not_remove_risk_or_acceptance_gates[broad]
+FAILED tests/test_workflow_optional_roles.py::test_complex_scoped_workflow_still_earns_real_verification_and_sealed_audit[True]
+FAILED tests/test_workflow_optional_roles.py::test_complex_scoped_workflow_still_earns_real_verification_and_sealed_audit[False]
+FAILED tests/test_workflow_parent_continuation.py::test_failure_in_remaining_work_reports_committed_partial_progress[network]
+FAILED tests/test_workflow_runner_module.py::test_workflow_finalization_uses_a_frozen_snapshot_and_narrow_ports
+FAILED tests/test_workflow_typed_handoff_budget.py::test_typed_parent_handoff_allows_reviewer_correction_and_original_executor_repair
+FAILED tests/test_workflow_typed_handoff_budget.py::test_budget_terminal_review_preserves_candidate_without_new_parent_request
+63 failed, 1343 passed in 231.24s (0:03:51)

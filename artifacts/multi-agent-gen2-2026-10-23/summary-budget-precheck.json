@@ -1,0 +1,18 @@
+{
+  "base": {
+    "ref": "9aaa6a434ae0a86766d28f8b1b91529451a31eb8",
+    "exit_code": 1,
+    "output": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n___________ test_compaction_prices_its_shared_adapter_catalog[True] ____________\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-gen2-schema-budget-h44mf68w/probe/test_request_schema_auxiliary_budget.py:35: in test_compaction_prices_its_shared_adapter_catalog\n    assert calls == [], 'A summary request must not spend a catalog that exceeds the shared balance.'\nE   AssertionError: A summary request must not spend a catalog that exceeds the shared balance.\nE   assert [9531] == []\nE     \nE     Left contains one more item: 9531\nE     Use -v to get more diff\n=========================== short test summary info ============================\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-gen2-schema-budget-h44mf68w/probe/test_request_schema_auxiliary_budget.py::test_compaction_prices_its_shared_adapter_catalog[True]\n1 failed, 1 passed, 2 deselected in 0.40s\n",
+    "sourceRoot": "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-gen2-schema-budget-h44mf68w/base"
+  },
+  "reference": {
+    "ref": "ad20e4a893248a747e3b3ac741c280ded413ff54",
+    "exit_code": 0,
+    "output": "..                                                                       [100%]\n2 passed, 2 deselected in 0.38s\n",
+    "sourceRoot": "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-gen2-schema-budget-h44mf68w/reference"
+  },
+  "oracleSha256": {
+    "test_request_schema_soft_landing_review.py": "e2d4e7c4680d65561b0fcd27eecfdc4c89ad03679ffd407bce9394e77aa1daf6",
+    "test_request_schema_auxiliary_budget.py": "f932fc9cd800756cd4c173e65a996624f92f24446fde080b9ec00d69c11508e4"
+  }
+}

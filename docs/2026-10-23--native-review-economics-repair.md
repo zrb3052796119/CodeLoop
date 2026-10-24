@@ -1,7 +1,7 @@
 # 宿主完成审查链经济学修复方案
 
 日期：2026-10-23
-状态：R1、R2 已实现并完成针对性本地验证；完整回归门尚有 4 项修前失败；R3 暂缓
+状态：R1/R2 已实现，完成审查域 81 文件 713 回归全绿；两格 bounded 验证未过原门（budget_exhausted），已按双档语义采纳 bounded 为日常默认形态；full 校准挂起；R3 暂缓
 前置依据：
 - `artifacts/multi-agent-trigger-2026-10-23/native-review-diagnostic.md`（stock/config 两格逐请求诊断）
 - `artifacts/multi-agent-trigger-2026-10-23/evaluation-report.md`（Phase 2 八格终局）
@@ -115,13 +115,20 @@ MINI_CODE_COMPLETION_REVIEW_MODE = bounded | full    # 默认 bounded
 
 **R3 结论：两个激活条件均未满足，继续暂缓。** 两格均在首次 review 耗尽，尚未进入 inspection；既有 full 轨迹未见同绑定的已完成 inspection 被重复执行。详细证据见 `artifacts/native-review-acceptance-2026-10-23/evaluation-report.md` 和 `full-trace-comparison.md`。
 
-## 5. 真实验证门（预注册后执行）
+## 5. 真实验证门（2026-10-23 修订：双档语义）
 
-1. 前置：TLS 证书问题单独修复（infra，不在本方案）。
-2. 两格 bounded 真实验证（stock 形态 ×1、config 形态 ×1），预注册题目、预算、门槛后执行：
-   - 门：stock 形态格的审查链在预算内到达终态决定（`approved` 或 `rejected`），`approved` 时形成 accepted final；`budget_exhausted` 视为该格**未过门**（保底路径是安全网，不是目标）。config 形态格只记录不设门。
-3. 两格过门后，才考虑 gen-2 六格在 bounded 模式下的重跑（另预注册）；不过门则回 `full` 模式分析轨迹，不追加试次。
-4. 全部失败原样保留；不换模型、不补跑、不挑轮次。
+**决策（项目所有者，2026-10-23）**：采纳双档语义——
+- **bounded = 日常默认交互形态**：候选 + 证据完整交付、`completionReview` 如实标注（approved / rejected / budget_exhausted）、快速便宜、可恢复；**用户是最终权威**。"链到达终态"不是本档的成功标准。
+- **full = 正式对照 / 需要机器终态裁决的场景**："链到达终态决定"是本档的门槛。
+
+**原门（链必须到达终态）在两格上未过，结果已提交（88ec62d0）并原样保留，本修订不为其翻案。** 按新档位语义回看本次运行：stock 格 168.8s / 49k token / 候选与证据完整交付 / 状态如实标注 = 满足 bounded 交互态标准；config 格同样交付候选，486.5s 耗时来自父侧延迟（与预告一致，不归因审查链）。此为事实陈述，不追认旧门。
+
+**后续程序**：
+1. bounded 交互态收尾（唯一可能的代码改动）：确认 budget_exhausted 时交付给用户的信息包含候选、证据路径、未完成的腿（如 inspection/reconciliation 未进入）——缺则补呈现，不加新机制。
+2. full 模式校准程序（review 上限 90→240s 量级、链级份额重估）**挂起**，仅在决定启动正式对照时执行一次并冻结，不逐轮调参。
+3. R3 激活条件①作废（bounded 下"链未到终态"不再构成激活理由）；条件②（跨 turn 续审重复 inspection 成本可测）保留。
+4. 正式对照（gen-2 六格或 48 次）启动前必须：full 校准完成 + 预注册 + 沿用旧门。
+5. 全部失败原样保留；不换模型、不补跑、不挑轮次。
 
 ## 6. 不做清单
 
@@ -178,5 +185,7 @@ MINI_CODE_COMPLETION_REVIEW_MODE = bounded | full    # 默认 bounded
 - **不过门** → 回 `full` 模式分析轨迹：若 inspection 是瓶颈且数据支持 → 按 R3 冻结设计激活缩窄实现；否则止损，维持显式协作形态（E→V 工程门已过，作为产品能力保留）。
 
 原则：一次一个变量；全部失败原样保留；不补跑、不换模型、不挑轮次。
+
+**执行结果（2026-10-23）**：分诊 A 完成（独立反馈通道确认，修复 + 3 项新增回归），回归域扩到 81 文件 713 全绿；TLS 保持校验开启后两格无证书错误。两格 bounded 验证未过原门（均 budget_exhausted，瓶颈为 review 腿 90s 上限低于实际需求 ~184s）。按 §5 修订采纳双档语义：bounded 为日常默认形态（本次运行已满足其标准），full 校准挂起。R3 维持暂缓——数据表明瓶颈在 review 腿而非 inspection，激活条件①不适用。
 
 **本轮最终分叉：停止 gen-2 六格 bounded 扩跑，R3 不激活，保留此前已过工程门的显式 E→V 能力。** 已回看存活的 full 轨迹，历史 stock 的首次 inspection 较慢，但其完成后已经直接进入核对；现有代码也已有有效 inspection 的续审复用。新两格未到 inspection，不支持以复用解决当前失败。这个停止决定不构成“模型是唯一瓶颈”的因果结论，也不证明协作优于单 Agent。

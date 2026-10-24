@@ -1,0 +1,1115 @@
+FFFFFFFFFFFFFFF                                                          [100%]
+=================================== FAILURES ===================================
+_ test_ordinary_review_cannot_retire_assertion_failure_without_independent_authority _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_ordinary_review_cannot_re0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10588b620>
+
+    def test_ordinary_review_cannot_retire_assertion_failure_without_independent_authority(tmp_path, monkeypatch):
+        adjudications = []
+        audits = []
+    
+        def audit(tools, child, packet):
+            audits.append(packet)
+            assert len(adjudications) == 1
+            assert review.state["corrections"] == []
+            assert review.state["retiredProbeIds"] == []
+            edge = review.state["supersessions"][0]
+            assert packet["supersessionIndex"][0]["id"] == edge["supersessionId"]
+            sources = {}
+            for probe_id in _coverage_probe_ids(packet):
+                offset, pages = 0, []
+                while True:
+                    result = tools.execute("review_probe_read", {
+                        "probeId": probe_id, "receiptView": "current",
+                        "offset": offset, "limit": 16000}, child)
+                    assert result.ok, result.output
+                    page = json.loads(result.output)
+                    pages.append(page["text"])
+                    if page["nextOffset"] is None:
+                        break
+                    offset = page["nextOffset"]
+                sources[probe_id] = json.loads("".join(pages))["source"]
+            assert sources[edge["oldProbeId"]]["code"] == WRONG_INPUT
+            assert sources[edge["newProbeId"]]["code"] == VALID_INPUT
+            result = tools.execute("completion_coverage_audit_submit", _coverage_approval(packet, sources), child)
+            assert result.ok and result._implementation_submitted, result.output
+            return AgentStep(type="assistant", kind="final", content="Independent inventory obligations preserved")
+    
+        def judge(tools, child, packet):
+            adjudications.append(packet)
+            old = packet["probe"]
+            result = tools.execute("completion_probe_adjudication_submit", {
+                "verdict": "probe_error",
+                "reason": "The probe intends to release two units but supplied one; preserve both original assertions and correct the supplied amount.",
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                "replacement": {"criterionIds": old["criterionIds"], "scenario": old["scenario"], "code": VALID_INPUT}}, child)
+            assert result.ok, result.output
+            return AgentStep(type="assistant", kind="final", content="Independent fixture error recorded")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=judge, coverage_driver=audit)
+    
+        def driver(tools, child, packet):
+            failed, old = _probe(tools, child, packet, WRONG_INPUT)
+            assert not failed.ok and old["receipt"]["status"] == "failed"
+            assert old["receipt"]["testReport"]["caseReport"]["cases"][0]["failureKind"] == "assertion"
+            attempted, _ = _probe(tools, child, packet, VALID_INPUT,
+                correctsProbeId=old["probeId"], correctionReason="The input should have been two units.",
+                sourceEvidence=[{"path": "stock.py", "startLine": 1, "endLine": 5}])
+            assert not attempted.ok, "ordinary reviewer must not self-authorize assertion-input correction"
+            assert review.state["corrections"] == [] and review.state["retiredProbeIds"] == []
+            assert adjudications == []
+            # Independent invalidity judgment only proposes a replacement. A
+            # separate coverage audit must accept its original obligations.
+            rejected = _submit(tools, child, packet, ids=[old["probeId"]])
+            assert not rejected.ok
+            assert len(adjudications) == 1
+            assert review.state["corrections"] == [] and review.state["retiredProbeIds"] == []
+            successor = review.state["supersessions"][0]["newProbeId"]
+            assert _submit(tools, child, packet, ids=[successor]).ok
+    
+        try:
+>           assert assess(driver)["status"] == "approved"
+                   ^^^^^^^^^^^^^^
+
+tests/test_completion_assertion_correction_authority.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1792: in _assess_snapshot
+    audit = audit_completion_coverage(objective=self.objective,
+minicode/completion_coverage_audit.py:1036: in audit_completion_coverage
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:105: in review_loop
+    return coverage_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <test_implementation_completion_review._DeliveredRegistry object at 0x10588bfb0>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-tj_7256c/verification-nzw1...ons.SchedulerWorkerReadPermissions object at 0x10767ad50>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'authorityRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-713h5ozn/00012-coverage-...n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-713h5ozn/00013-coverage-audit-evidence-documents.json', ...}
+
+    def audit(tools, child, packet):
+        audits.append(packet)
+        assert len(adjudications) == 1
+        assert review.state["corrections"] == []
+        assert review.state["retiredProbeIds"] == []
+        edge = review.state["supersessions"][0]
+        assert packet["supersessionIndex"][0]["id"] == edge["supersessionId"]
+        sources = {}
+        for probe_id in _coverage_probe_ids(packet):
+            offset, pages = 0, []
+            while True:
+                result = tools.execute("review_probe_read", {
+                    "probeId": probe_id, "receiptView": "current",
+                    "offset": offset, "limit": 16000}, child)
+                assert result.ok, result.output
+                page = json.loads(result.output)
+                pages.append(page["text"])
+                if page["nextOffset"] is None:
+                    break
+                offset = page["nextOffset"]
+            sources[probe_id] = json.loads("".join(pages))["source"]
+        assert sources[edge["oldProbeId"]]["code"] == WRONG_INPUT
+        assert sources[edge["newProbeId"]]["code"] == VALID_INPUT
+        result = tools.execute("completion_coverage_audit_submit", _coverage_approval(packet, sources), child)
+>       assert result.ok and result._implementation_submitted, result.output
+E       AssertionError: {"draftId": "coverage_draft_53d36202e959958fe254a5e7", "draftRef": "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-713h5ozn/00023-coverage-audit-submission-draft.json", "draftStatus": "unaccepted", "errorCode": "coverage_audit_invalid", "message": "read the exact supersession sources and independent invalidity evidence before accepting", "missingDocumentIds": ["evidence_2fae8081a8c249848da9340836ff2ba2098c2e085abb84b79d30c832b5466de0"]}
+E       assert (False)
+E        +  where False = ToolResult(ok=False, output='{"draftId": "coverage_draft_53d36202e959958fe254a5e7", "draftRef": "/var/folders/f4/9n10f...pendently audit completion coverage without changing the implementation'], 'supported_operations': [], 'evidence': []}).ok
+
+tests/test_completion_assertion_correction_authority.py:48: AssertionError
+_ test_full_authority_is_saved_without_duplicating_receipt_history_in_initial_context _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_full_authority_is_saved_w0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10763be00>
+
+    def test_full_authority_is_saved_without_duplicating_receipt_history_in_initial_context(tmp_path, monkeypatch):
+        case = _case(tmp_path, monkeypatch)
+        case["proposal"].update(probeReceipts=[{"output": "old execution " * 2000}],
+                                diagnosticObservations=[{"output": "old diagnostic " * 2000}])
+        requests = _native(monkeypatch, case, [(None, "Everything is approved.")])
+        result = case["assess"]()
+        assert result["status"] == "inconclusive"
+        packet = _coverage_packet(requests[0])
+        assert set(packet["proposal"]) == {"status", "requirements", "findings"}
+>       authority = json.loads(Path(result["authorityRef"]).read_text())
+                                    ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'authorityRef'
+
+tests/test_completion_coverage_audit.py:302: KeyError
+__ test_supersession_needs_exact_compact_source_authority_and_receipt_closure __
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_supersession_needs_exact_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1061e9e20>
+
+    def test_supersession_needs_exact_compact_source_authority_and_receipt_closure(tmp_path, monkeypatch):
+        suffix = "# Inventory setup and nonzero quantity restoration remain separate checks.\n" * 250
+        old_code, new_code = BAD + suffix, GOOD + suffix
+        observations = {}
+    
+        def adjudicate(tools, child, packet):
+            result = tools.execute("completion_probe_adjudication_submit", {
+                "verdict": "probe_error", "reason": "The fixture calls an already constructed inventory twice.",
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                "replacement": {"criterionIds": packet["probe"]["criterionIds"],
+                    "scenario": packet["probe"]["scenario"], "code": new_code}}, child)
+            assert result.ok, result.output
+    
+        def audit(tools, child, packet):
+            originals = {p["probeId"]: p for p in review.state["probes"]}
+            approval = _coverage_approval(packet, originals)
+            blocked = tools.execute("completion_coverage_audit_submit", approval, child)
+            assert not blocked.ok
+            missing = json.loads(blocked.output)["missingDocumentIds"]
+            assert missing
+            edge_id = packet["supersessionIndex"][0]["obligationDocumentId"]
+            assert edge_id in missing
+            manifest, manifest_page, _ = _read(tools, child, edge_id)
+            assert manifest_page["documentType"] == "supersession_obligation"
+            dependencies = set(manifest_page["requiredDocumentIds"])
+            authority_id = manifest["authority"]["$evidenceDocument"]
+            sources, read_ids, pending = {}, {edge_id}, set(dependencies) - {authority_id}
+            read_documents = {}
+            withheld = []
+            deferred_authority = True
+            while pending or deferred_authority:
+                if not pending:
+                    assert set(sources) == set(originals)
+                    refused = tools.execute("completion_coverage_audit_submit", approval, child)
+                    assert not refused.ok
+                    refusal = json.loads(refused.output)
+                    assert "independent invalidity evidence" in refusal["message"]
+                    assert authority_id in refusal["missingDocumentIds"]
+                    assert review.state["retiredProbeIds"] == []
+                    pending.add(authority_id)
+                    deferred_authority = False
+                document_id = pending.pop()
+                if document_id in read_ids:
+                    continue
+                # Open a one-page descriptor to find authority; its entire receipt
+                # closure still has to be delivered before accepted can succeed.
+                result = tools.execute("review_evidence_read", {"documentId": document_id}, child)
+                assert result.ok
+                first = json.loads(result.output)
+                if first["documentType"] == "invalidity_authority":
+                    withheld.extend(first["requiredDocumentIds"])
+                value, page, pages = _read(tools, child, document_id)
+                read_ids.add(document_id)
+                read_documents[document_id] = value
+                pending.update(set(page["requiredDocumentIds"]) - read_ids)
+                if page["documentType"] == "probe_source":
+                    sources[value["probeId"]] = value
+                    assert len(pages) >= 2
+                    assert all(p["documentId"] == document_id for p in pages)
+                    # The cursor contract cannot be converted back into a guessed
+                    # offset or different view by the caller.
+                    forged = tools.execute("review_evidence_read", {
+                        "cursor": pages[0]["nextCursor"], "offset": 9000}, child)
+                    assert not forged.ok
+            assert set(sources) == set(originals) and sources == originals
+            assert withheld  # Authority references exact shared source bytes.
+            assert len(json.dumps(manifest)) < len(old_code)
+            approved = tools.execute("completion_coverage_audit_submit", approval, child)
+            assert approved.ok, approved.output
+            observations.update(packet=packet, manifest=manifest, readIds=read_ids)
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=adjudicate, coverage_driver=audit)
+        original_product = (tmp_path / "stock.py").read_bytes()
+        try:
+            def seed(tools, child, packet):
+                result, receipt = _probe(tools, child, packet, old_code)
+                assert not result.ok and receipt["receipt"]["status"] == "failed"
+    
+            def propose(tools, child, packet):
+                assert _submit(tools, child, packet, ids=[p["probeId"] for p in packet["retainedProbes"]]).ok
+    
+            assess(seed)
+>           assert assess(propose)["status"] == "approved"
+                   ^^^^^^^^^^^^^^^
+
+tests/test_completion_evidence_cursor.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1792: in _assess_snapshot
+    audit = audit_completion_coverage(objective=self.objective,
+minicode/completion_coverage_audit.py:1036: in audit_completion_coverage
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:105: in review_loop
+    return coverage_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <test_implementation_completion_review._DeliveredRegistry object at 0x1057ce6f0>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-z1uvum9s/verification-6591...ons.SchedulerWorkerReadPermissions object at 0x106140440>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'authorityRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-ll8_s1cv/00013-coverage-...n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-ll8_s1cv/00014-coverage-audit-evidence-documents.json', ...}
+
+    def audit(tools, child, packet):
+        originals = {p["probeId"]: p for p in review.state["probes"]}
+        approval = _coverage_approval(packet, originals)
+        blocked = tools.execute("completion_coverage_audit_submit", approval, child)
+        assert not blocked.ok
+        missing = json.loads(blocked.output)["missingDocumentIds"]
+        assert missing
+        edge_id = packet["supersessionIndex"][0]["obligationDocumentId"]
+        assert edge_id in missing
+        manifest, manifest_page, _ = _read(tools, child, edge_id)
+>       assert manifest_page["documentType"] == "supersession_obligation"
+E       AssertionError: assert 'supersession_review_material' == 'supersession_obligation'
+E         
+E         - supersession_obligation
+E         + supersession_review_material
+
+tests/test_completion_evidence_cursor.py:54: AssertionError
+_ test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves[local-alias] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_independent_name_binding_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1060a21b0>
+replacement = 'from stock import hold, release\ndef test_inventory():\n    _remaining = hold(5, 2)\n    remaining = _remaining\n    assert remaining == 3\n    assert release(3, 2) == 5\n'
+
+    @pytest.mark.parametrize("replacement", [ALIASED_PROBE, REBOUND_PROBE], ids=["local-alias", "assignment-target"])
+    def test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves(tmp_path, monkeypatch, replacement):
+        calls = []
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicator("probe_error", calls, replacement=replacement))
+        original = (tmp_path / "stock.py").read_bytes()
+        try:
+            _initial, failed = _seed_exception(assess, UNBOUND_PROBE)
+>           approved = assess(_approve)
+                       ^^^^^^^^^^^^^^^^
+
+tests/test_completion_exception_attribution.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1620: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1515: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:350: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x1077d0170>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-zaqfowds/verification-wpov47ai/wor...ons.SchedulerWorkerReadPermissions object at 0x107790980>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def driver(tools, child, packet):
+        calls.append(deepcopy(packet))
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_exception_attribution.py:36: AssertionError
+_ test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves[assignment-target] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_independent_name_binding_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1060a3d40>
+replacement = 'from stock import hold, release\ndef test_inventory():\n    remaining = hold(5, 2)\n    assert remaining == 3\n    assert release(3, 2) == 5\n'
+
+    @pytest.mark.parametrize("replacement", [ALIASED_PROBE, REBOUND_PROBE], ids=["local-alias", "assignment-target"])
+    def test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves(tmp_path, monkeypatch, replacement):
+        calls = []
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicator("probe_error", calls, replacement=replacement))
+        original = (tmp_path / "stock.py").read_bytes()
+        try:
+            _initial, failed = _seed_exception(assess, UNBOUND_PROBE)
+>           approved = assess(_approve)
+                       ^^^^^^^^^^^^^^^^
+
+tests/test_completion_exception_attribution.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1620: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1515: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:350: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x1077f6210>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-vn_bq98i/verification-zhok7sed/wor...ons.SchedulerWorkerReadPermissions object at 0x107790d10>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def driver(tools, child, packet):
+        calls.append(deepcopy(packet))
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_exception_attribution.py:36: AssertionError
+_ test_confirmed_product_exception_returns_repair_then_same_review_accepts_repaired_candidate _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_confirmed_product_excepti0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1077919d0>
+
+    def test_confirmed_product_exception_returns_repair_then_same_review_accepts_repaired_candidate(tmp_path, monkeypatch):
+        calls = []
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicator("product_gap", calls))
+        (tmp_path / "stock.py").write_text(BROKEN_PRODUCT)
+        try:
+            _initial, failed = _seed_exception(assess, PROBE)
+    
+            def review_gap(tools, child, packet):
+                assert len(calls) == 1, "Independent attribution must precede any writer feedback."
+                submitted = _submit(tools, child, packet, status="changes_required",
+                    rows=_rows(packet, status="missing"), findings=["release raises instead of adding the amount"])
+                assert submitted.ok, submitted.output
+    
+>           result = assess(review_gap)
+                     ^^^^^^^^^^^^^^^^^^
+
+tests/test_completion_exception_attribution.py:152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1620: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1515: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:350: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x1078394f0>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-f5_vwa1p/verification-a1dt9a7b/wor...ons.SchedulerWorkerReadPermissions object at 0x106172300>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d7a6e5ecc1521a94caaf6ba5b5e3e4a9ba903563ae83bc51...receipt.json', ...}, 'candidateDigest': 'sha256:d7a6e5ecc1521a94caaf6ba5b5e3e4a9ba903563ae83bc514ca6006ffa7c29f6', ...}
+
+    def driver(tools, child, packet):
+        calls.append(deepcopy(packet))
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_exception_attribution.py:36: AssertionError
+__ test_inconclusive_exception_attribution_never_carries_bad_probe_to_writer ___
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_inconclusive_exception_at0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107828da0>
+
+    def test_inconclusive_exception_attribution_never_carries_bad_probe_to_writer(tmp_path, monkeypatch):
+        calls = []
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicator("inconclusive", calls))
+        original = (tmp_path / "stock.py").read_bytes()
+        try:
+            _initial, failed = _seed_exception(assess, UNBOUND_PROBE)
+            for expected_calls in (1, 2):
+>               result = assess(lambda *_: pytest.fail("Unknown attribution cannot request implementation repair"))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_completion_exception_attribution.py:179: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1620: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1515: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:350: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x107790d10>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-xehqdd37/verification-7_dzjm3r/wor...ons.SchedulerWorkerReadPermissions object at 0x1077f6510>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def driver(tools, child, packet):
+        calls.append(deepcopy(packet))
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_exception_attribution.py:36: AssertionError
+_ test_independent_expression_correction_executes_approves_and_restores[collection-accessor] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_independent_expression_co0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10782b3e0>
+bad = 'from types import SimpleNamespace\nfrom stock import hold, release\ndef test_inventory():\n    batch = SimpleNamespac...ead_rows():\n        assert hold(quantity, amount) == expected\n        assert release(expected, amount) == quantity\n'
+good = 'from types import SimpleNamespace\nfrom stock import hold, release\ndef test_inventory():\n    batch = SimpleNamespac...batch.rows:\n        assert hold(quantity, amount) == expected\n        assert release(expected, amount) == quantity\n'
+mode = 'fixture_accessor', failure_kind = 'exception'
+reason = 'The fixture stores rows as a collection property and has no read_rows method; reading that collection preserves both inventory assertions and their loop.'
+
+    @pytest.mark.parametrize("bad,good,mode,failure_kind,reason", CASES)
+    def test_independent_expression_correction_executes_approves_and_restores(
+            tmp_path, monkeypatch, bad, good, mode, failure_kind, reason):
+        judgments = []
+    
+        def adjudicate(tools, child, packet):
+            assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+            assert packet["probe"]["code"] == bad
+            judgments.append(packet["receipt"]["receiptRef"])
+            result = tools.execute("completion_probe_adjudication_submit", {
+                "verdict": "probe_error", "reason": reason,
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                "replacement": {"criterionIds": packet["probe"]["criterionIds"],
+                    "scenario": packet["probe"]["scenario"], "code": good},
+            }, child)
+            assert result.ok and result._implementation_submitted, result.output
+            document = json.loads(result.output)
+            assert document["verdict"] == "probe_error" and document["correctionMode"] == mode
+            assert "approved" not in document.values(), "An attributed correction still needs actual execution."
+            return AgentStep(type="assistant", kind="final", content="Independent probe correction submitted")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch, adjudication_driver=adjudicate)
+        original = {name: (tmp_path / name).read_bytes() for name in ("stock.py", "test_public.py")}
+        try:
+            initial = assess(lambda tools, child, packet: _seed(tools, child, packet, bad, failure_kind))
+            assert initial["status"] == "inconclusive" and initial["repairProbes"] == []
+            failed = review.state["receipts"][0]
+            assert len(commands) == 2 and judgments == []
+>           approved = assess(_approve)
+                       ^^^^^^^^^^^^^^^^
+
+tests/test_completion_expression_correction.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1620: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1515: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:350: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x107df1160>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-fj0uangv/verification-jygtlvj0/wor...ons.SchedulerWorkerReadPermissions object at 0x106172a50>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def adjudicate(tools, child, packet):
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_expression_correction.py:62: AssertionError
+_ test_independent_expression_correction_executes_approves_and_restores[inline-input] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_independent_expression_co1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106173290>
+bad = 'from stock import hold, release\ndef test_inventory():\n    assert hold(5, 1) == 3\n    assert release(3, 2) == 5\n'
+good = 'from stock import hold, release\ndef test_inventory():\n    assert hold(5, 2) == 3\n    assert release(3, 2) == 5\n'
+mode = 'fixture_inline_inputs', failure_kind = 'assertion'
+reason = 'The objective requires subtraction: subtracting two from five yields three. The probe used one as input while keeping the correct expected result for two.'
+
+    @pytest.mark.parametrize("bad,good,mode,failure_kind,reason", CASES)
+    def test_independent_expression_correction_executes_approves_and_restores(
+            tmp_path, monkeypatch, bad, good, mode, failure_kind, reason):
+        judgments = []
+    
+        def adjudicate(tools, child, packet):
+            assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+            assert packet["probe"]["code"] == bad
+            judgments.append(packet["receipt"]["receiptRef"])
+            result = tools.execute("completion_probe_adjudication_submit", {
+                "verdict": "probe_error", "reason": reason,
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                "replacement": {"criterionIds": packet["probe"]["criterionIds"],
+                    "scenario": packet["probe"]["scenario"], "code": good},
+            }, child)
+            assert result.ok and result._implementation_submitted, result.output
+            document = json.loads(result.output)
+            assert document["verdict"] == "probe_error" and document["correctionMode"] == mode
+            assert "approved" not in document.values(), "An attributed correction still needs actual execution."
+            return AgentStep(type="assistant", kind="final", content="Independent probe correction submitted")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch, adjudication_driver=adjudicate)
+        original = {name: (tmp_path / name).read_bytes() for name in ("stock.py", "test_public.py")}
+        try:
+            initial = assess(lambda tools, child, packet: _seed(tools, child, packet, bad, failure_kind))
+            assert initial["status"] == "inconclusive" and initial["repairProbes"] == []
+            failed = review.state["receipts"][0]
+            assert len(commands) == 2 and judgments == []
+>           approved = assess(_approve)
+                       ^^^^^^^^^^^^^^^^
+
+tests/test_completion_expression_correction.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1620: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1515: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:350: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x107d8e510>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-oxtlag7o/verification-966ero06/wor...ons.SchedulerWorkerReadPermissions object at 0x107df2e40>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def adjudicate(tools, child, packet):
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_expression_correction.py:62: AssertionError
+_ test_independent_fixture_keyword_addition_reexecutes_then_approves_and_restores _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_independent_fixture_keywo0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107df2240>
+
+    def test_independent_fixture_keyword_addition_reexecutes_then_approves_and_restores(tmp_path, monkeypatch):
+        judgments = []
+    
+        def adjudicate(tools, child, packet):
+            assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+            assert packet["probe"]["code"] == BAD
+            judgments.append(packet["receipt"]["receiptRef"])
+            request = {
+                "verdict": "probe_error",
+                "reason": "The test creates its temporary directory before prepare creates the same directory again; "
+                          "allowing the directory to exist preserves the experiment and every inventory assertion.",
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                "replacement": {"criterionIds": packet["probe"]["criterionIds"],
+                    "scenario": packet["probe"]["scenario"], "code": GOOD},
+            }
+            result = tools.execute("completion_probe_adjudication_submit", request, child)
+            assert result.ok, result.output
+            assert result._implementation_submitted
+            document = json.loads(result.output)
+            assert document["verdict"] == "probe_error" and document["correctionMode"] == "fixture_keywords"
+            assert "approved" not in document.values(), "Attribution alone is not completion approval."
+            return AgentStep(type="assistant", kind="final", content="Fixture keyword correction independently submitted")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch, adjudication_driver=adjudicate)
+        original = {name: (tmp_path / name).read_bytes() for name in ("stock.py", "test_public.py")}
+        try:
+            initial = assess(_seed)
+            assert initial["status"] == "inconclusive" and initial["repairProbes"] == []
+            failed = review.state["receipts"][0]
+            assert len(commands) == 2 and judgments == []
+>           approved = assess(_approve)
+                       ^^^^^^^^^^^^^^^^
+
+tests/test_completion_fixture_keywords.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1620: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1515: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:350: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x107df36e0>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-ewr46x9d/verification-_j9uvryz/wor...ons.SchedulerWorkerReadPermissions object at 0x107e02cc0>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def adjudicate(tools, child, packet):
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_fixture_keywords.py:49: AssertionError
+_ test_reviewer_index_has_current_diagnostic_status_and_readable_full_history __
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_reviewer_index_has_curren0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107e01400>
+
+    def test_reviewer_index_has_current_diagnostic_status_and_readable_full_history(tmp_path, monkeypatch):
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch)
+        saved = {}
+    
+        def diagnose(tools, child, packet):
+            result, evidence = _probe(tools, child, packet, DIAGNOSTIC, purpose="diagnostic")
+            assert not result.ok
+            saved.update(evidence)
+            # An ordinary end is not approval; another attempt can read all evidence.
+    
+        try:
+            assert assess(diagnose)["status"] == "inconclusive"
+    
+            def accept(tools, child, packet):
+                entries = packet["diagnosticObservations"]
+                assert len(entries) == 1
+                row = entries[0]
+                assert row["probeId"] == saved["probeId"]
+                assert row["status"] == "failed"
+                assert row["candidateDigest"] == packet["candidateDigest"]
+                assert row["receiptCount"] == 1
+                assert row["latestReceiptRef"] == saved["receiptRef"]
+                assert "source" not in row and "receipts" not in row
+                full = _read_all(tools, child, row["probeId"])
+                assert full["source"]["code"] == DIAGNOSTIC
+                assert full["receipts"] == [saved]
+                current = _read_all(tools, child, row["probeId"], receiptView="current")
+                assert current["receipts"] == [saved]
+                assert current["historyReceiptCount"] == 1
+                passed, acceptance = _probe(tools, child, packet)
+                assert passed.ok
+                assert _submit(tools, child, packet, ids=[acceptance["probeId"]]).ok
+    
+>           approved = assess(accept)
+                       ^^^^^^^^^^^^^^
+
+tests/test_completion_review_evidence_delivery.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1732: in _assess_snapshot
+    run_agent_turn(model=model, tools=registry, cwd=str(root), permissions=permissions,
+tests/test_implementation_completion_review.py:130: in review_loop
+    return driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x10783a210>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-2oqvrto2/verification-1lcv...ons.SchedulerWorkerReadPermissions object at 0x107df2840>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'diagnosticObservations... completion submission.']], 'probePurposes': {'review_probe_3baec5fef79ad254c4c6b717': {'purpose': 'diagnostic'}}, ...}
+
+    def accept(tools, child, packet):
+        entries = packet["diagnosticObservations"]
+        assert len(entries) == 1
+        row = entries[0]
+        assert row["probeId"] == saved["probeId"]
+        assert row["status"] == "failed"
+        assert row["candidateDigest"] == packet["candidateDigest"]
+        assert row["receiptCount"] == 1
+        assert row["latestReceiptRef"] == saved["receiptRef"]
+        assert "source" not in row and "receipts" not in row
+        full = _read_all(tools, child, row["probeId"])
+        assert full["source"]["code"] == DIAGNOSTIC
+>       assert full["receipts"] == [saved]
+E       AssertionError: assert [{'candidateD...t.json', ...}] == [{'candidateD...885cf3', ...}]
+E         
+E         At index 0 diff: {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 164, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Libra...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_completion_review_evidence_delivery.py:49: AssertionError
+___ test_current_receipt_view_does_not_mislabel_previous_candidate_evidence ____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_current_receipt_view_does0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107793290>
+
+    def test_current_receipt_view_does_not_mislabel_previous_candidate_evidence(tmp_path, monkeypatch):
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch)
+        saved = {}
+    
+        def seed(tools, child, packet):
+            result, evidence = _probe(tools, child, packet, DIAGNOSTIC, purpose="diagnostic")
+            assert not result.ok
+            saved.update(evidence)
+    
+        try:
+            assess(seed)
+            with (tmp_path / "stock.py").open("a") as handle:
+                handle.write("\n# a new candidate\n")
+    
+            def resumed(tools, child, packet):
+                entry = packet["diagnosticObservations"][0]
+                assert entry["status"] is None and entry["latestReceiptRef"] is None
+                assert entry["receiptCount"] == 1
+                current = _read_all(tools, child, saved["probeId"], receiptView="current")
+                assert current["receipts"] == [] and current["historyReceiptCount"] == 1
+                full = _read_all(tools, child, saved["probeId"])
+                assert full["receipts"] == [saved]
+                malformed = tools.execute("review_probe_read", {
+                    "probeId": saved["probeId"], "receiptView": "ignore_failures"}, child)
+                assert not malformed.ok
+    
+>           assert assess(resumed)["status"] == "inconclusive"
+                   ^^^^^^^^^^^^^^^
+
+tests/test_completion_review_evidence_delivery.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1732: in _assess_snapshot
+    run_agent_turn(model=model, tools=registry, cwd=str(root), permissions=permissions,
+tests/test_implementation_completion_review.py:130: in review_loop
+    return driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x107dda630>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-_jugoq6u/verification-de1p...ons.SchedulerWorkerReadPermissions object at 0x107828ad0>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'candidateDigest': 'sha256:41bb125a7a9e6475d12b9b5209aea45d36c6e156d7829971f73003a6bafbebda', 'diagnosticObservations... completion submission.']], 'probePurposes': {'review_probe_3baec5fef79ad254c4c6b717': {'purpose': 'diagnostic'}}, ...}
+
+    def resumed(tools, child, packet):
+        entry = packet["diagnosticObservations"][0]
+        assert entry["status"] is None and entry["latestReceiptRef"] is None
+        assert entry["receiptCount"] == 1
+        current = _read_all(tools, child, saved["probeId"], receiptView="current")
+        assert current["receipts"] == [] and current["historyReceiptCount"] == 1
+        full = _read_all(tools, child, saved["probeId"])
+>       assert full["receipts"] == [saved]
+E       AssertionError: assert [{'candidateD...t.json', ...}] == [{'candidateD...5589e8', ...}]
+E         
+E         At index 0 diff: {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 166, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Libra...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_completion_review_evidence_delivery.py:86: AssertionError
+_ test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[False-False] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_shared_openai_adapter_use0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107dda7e0>
+inject_parent_tools = False, force_parent_choice = False
+
+    @pytest.mark.parametrize("inject_parent_tools,force_parent_choice", [(False, False), (True, False), (True, True)])
+    def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
+            tmp_path, monkeypatch, inject_parent_tools, force_parent_choice):
+        review, _assess, _commands, capability = _fixture(tmp_path, monkeypatch)
+        parent_tools = ToolRegistry([read_file_tool, edit_file_tool])
+        runtime = {"model": "gpt-test", "openaiBaseUrl": "https://openai.invalid/v1",
+                   "openaiApiKey": "test", "modelMaxRetries": 0, "maxOutputTokens": 4096}
+        parent_names = {"read_file", "edit_file"}
+        if inject_parent_tools:
+            runtime["_openrouter_params"] = {"tools": [{"type": "function", "function": {
+                "name": "parent_runtime_write", "description": "Parent configured write capability",
+                "parameters": {"type": "object", "properties": {}}}}]}
+            parent_names = {"parent_runtime_write"}
+        if force_parent_choice:
+            runtime["_openrouter_params"]["tool_choice"] = {
+                "type": "function", "function": {"name": "parent_runtime_write"}}
+        adapter = OpenAIModelAdapter(runtime, parent_tools)
+        # Reuse the existing adapter and prime its original tool cache, just as a
+        # completed implementation would. The nested review must not mutate it.
+        assert {tool["function"]["name"] for tool in adapter.request_tool_schemas()} == parent_names
+        expected = {"read_file", "review_test", "review_probe_read", "completion_review_submit"}
+        audit_expected = expected - {"completion_review_submit"} | {
+            "completion_coverage_audit_submit", "review_evidence_read"}
+        requests = []
+    
+        class Response(io.BytesIO):
+            status = 200
+    
+        def transport(request, *, timeout):
+            del timeout
+            body = json.loads(request.data.decode())
+            requests.append(body)
+            names = {tool["function"]["name"] for tool in body.get("tools", [])}
+            if names not in (expected, audit_expected):
+                # A real provider can only select its advertised capabilities.
+                # End this local attempt instead of fabricating an unadvertised
+                # native call, which would conceal the production wiring defect.
+                message = {"role": "assistant", "content": "Required review tools are unavailable."}
+                finish = "stop"
+            else:
+                packet = {"requirements": list(review.requirements)}
+                if names == audit_expected:
+                    packet = next(json.loads(m["content"]) for m in body["messages"]
+                                  if m.get("role") == "user" and '"evidenceIndex"' in m.get("content", ""))
+                    reads = [m for m in body["messages"] if m.get("role") == "tool"]
+                    if not reads:
+                        name, args = "review_probe_read", {"probeId": packet["evidenceIndex"][0]["probeId"],
+                                                           "receiptView": "current", "limit": 16000}
+                    else:
+                        source = json.loads(json.loads(reads[-1]["content"])["text"])["source"]
+                        name, args = "completion_coverage_audit_submit", _coverage_approval(packet, {source["probeId"]: source})
+                elif len(requests) == 1:
+                    name, args = "review_test", {"purpose": "acceptance", "criterionIds": [u["id"] for u in review.requirements],
+                        "scenario": "Both public quantity operations work", "code": PROBE}
+                else:
+                    assert len(requests) == 2
+                    receipt = json.loads(next(message["content"] for message in reversed(body["messages"])
+                                             if message.get("role") == "tool"))
+                    name, args = "completion_review_submit", {"status": "approved", "findings": [],
+                        "requirements": _rows(packet, ids=[receipt["probeId"]])}
+                message = {"role": "assistant", "content": None, "tool_calls": [
+                    {"id": f"provider-call-{len(requests)}", "type": "function", "function": {
+                        "name": name, "arguments": json.dumps(args)}}]}
+                finish = "tool_calls"
+            return Response(json.dumps({"choices": [{"index": 0, "message": message,
+                "finish_reason": finish}], "usage": {"prompt_tokens": 100, "completion_tokens": 50}}).encode())
+    
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", transport)
+        context = ToolContext(cwd=str(tmp_path), _runtime=runtime)
+        try:
+            result = review.assess(model=adapter, tools=parent_tools, context=context,
+                agent_budget=None, event_sink=None, cancellation_token=None,
+                deadline_monotonic=None, checks_receipt=capability.ensure_completion_checks(context))
+            assert requests
+>           assert all({tool["function"]["name"] for tool in body.get("tools", [])} in (expected, audit_expected)
+                       for body in requests), "Provider schema must use the actual nested registry, even without phases."
+E                      AssertionError: Provider schema must use the actual nested registry, even without phases.
+E                      assert False
+E                       +  where False = all(<generator object test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled.<locals>.<genexpr> at 0x107881f40>)
+
+tests/test_completion_review_provider_tools.py:89: AssertionError
+_ test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[True-False] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_shared_openai_adapter_use1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107dd9c70>
+inject_parent_tools = True, force_parent_choice = False
+
+    @pytest.mark.parametrize("inject_parent_tools,force_parent_choice", [(False, False), (True, False), (True, True)])
+    def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
+            tmp_path, monkeypatch, inject_parent_tools, force_parent_choice):
+        review, _assess, _commands, capability = _fixture(tmp_path, monkeypatch)
+        parent_tools = ToolRegistry([read_file_tool, edit_file_tool])
+        runtime = {"model": "gpt-test", "openaiBaseUrl": "https://openai.invalid/v1",
+                   "openaiApiKey": "test", "modelMaxRetries": 0, "maxOutputTokens": 4096}
+        parent_names = {"read_file", "edit_file"}
+        if inject_parent_tools:
+            runtime["_openrouter_params"] = {"tools": [{"type": "function", "function": {
+                "name": "parent_runtime_write", "description": "Parent configured write capability",
+                "parameters": {"type": "object", "properties": {}}}}]}
+            parent_names = {"parent_runtime_write"}
+        if force_parent_choice:
+            runtime["_openrouter_params"]["tool_choice"] = {
+                "type": "function", "function": {"name": "parent_runtime_write"}}
+        adapter = OpenAIModelAdapter(runtime, parent_tools)
+        # Reuse the existing adapter and prime its original tool cache, just as a
+        # completed implementation would. The nested review must not mutate it.
+        assert {tool["function"]["name"] for tool in adapter.request_tool_schemas()} == parent_names
+        expected = {"read_file", "review_test", "review_probe_read", "completion_review_submit"}
+        audit_expected = expected - {"completion_review_submit"} | {
+            "completion_coverage_audit_submit", "review_evidence_read"}
+        requests = []
+    
+        class Response(io.BytesIO):
+            status = 200
+    
+        def transport(request, *, timeout):
+            del timeout
+            body = json.loads(request.data.decode())
+            requests.append(body)
+            names = {tool["function"]["name"] for tool in body.get("tools", [])}
+            if names not in (expected, audit_expected):
+                # A real provider can only select its advertised capabilities.
+                # End this local attempt instead of fabricating an unadvertised
+                # native call, which would conceal the production wiring defect.
+                message = {"role": "assistant", "content": "Required review tools are unavailable."}
+                finish = "stop"
+            else:
+                packet = {"requirements": list(review.requirements)}
+                if names == audit_expected:
+                    packet = next(json.loads(m["content"]) for m in body["messages"]
+                                  if m.get("role") == "user" and '"evidenceIndex"' in m.get("content", ""))
+                    reads = [m for m in body["messages"] if m.get("role") == "tool"]
+                    if not reads:
+                        name, args = "review_probe_read", {"probeId": packet["evidenceIndex"][0]["probeId"],
+                                                           "receiptView": "current", "limit": 16000}
+                    else:
+                        source = json.loads(json.loads(reads[-1]["content"])["text"])["source"]
+                        name, args = "completion_coverage_audit_submit", _coverage_approval(packet, {source["probeId"]: source})
+                elif len(requests) == 1:
+                    name, args = "review_test", {"purpose": "acceptance", "criterionIds": [u["id"] for u in review.requirements],
+                        "scenario": "Both public quantity operations work", "code": PROBE}
+                else:
+                    assert len(requests) == 2
+                    receipt = json.loads(next(message["content"] for message in reversed(body["messages"])
+                                             if message.get("role") == "tool"))
+                    name, args = "completion_review_submit", {"status": "approved", "findings": [],
+                        "requirements": _rows(packet, ids=[receipt["probeId"]])}
+                message = {"role": "assistant", "content": None, "tool_calls": [
+                    {"id": f"provider-call-{len(requests)}", "type": "function", "function": {
+                        "name": name, "arguments": json.dumps(args)}}]}
+                finish = "tool_calls"
+            return Response(json.dumps({"choices": [{"index": 0, "message": message,
+                "finish_reason": finish}], "usage": {"prompt_tokens": 100, "completion_tokens": 50}}).encode())
+    
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", transport)
+        context = ToolContext(cwd=str(tmp_path), _runtime=runtime)
+        try:
+            result = review.assess(model=adapter, tools=parent_tools, context=context,
+                agent_budget=None, event_sink=None, cancellation_token=None,
+                deadline_monotonic=None, checks_receipt=capability.ensure_completion_checks(context))
+            assert requests
+>           assert all({tool["function"]["name"] for tool in body.get("tools", [])} in (expected, audit_expected)
+                       for body in requests), "Provider schema must use the actual nested registry, even without phases."
+E                      AssertionError: Provider schema must use the actual nested registry, even without phases.
+E                      assert False
+E                       +  where False = all(<generator object test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled.<locals>.<genexpr> at 0x107882240>)
+
+tests/test_completion_review_provider_tools.py:89: AssertionError
+_ test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[True-True] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-447/test_shared_openai_adapter_use2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107d8ec60>
+inject_parent_tools = True, force_parent_choice = True
+
+    @pytest.mark.parametrize("inject_parent_tools,force_parent_choice", [(False, False), (True, False), (True, True)])
+    def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
+            tmp_path, monkeypatch, inject_parent_tools, force_parent_choice):
+        review, _assess, _commands, capability = _fixture(tmp_path, monkeypatch)
+        parent_tools = ToolRegistry([read_file_tool, edit_file_tool])
+        runtime = {"model": "gpt-test", "openaiBaseUrl": "https://openai.invalid/v1",
+                   "openaiApiKey": "test", "modelMaxRetries": 0, "maxOutputTokens": 4096}
+        parent_names = {"read_file", "edit_file"}
+        if inject_parent_tools:
+            runtime["_openrouter_params"] = {"tools": [{"type": "function", "function": {
+                "name": "parent_runtime_write", "description": "Parent configured write capability",
+                "parameters": {"type": "object", "properties": {}}}}]}
+            parent_names = {"parent_runtime_write"}
+        if force_parent_choice:
+            runtime["_openrouter_params"]["tool_choice"] = {
+                "type": "function", "function": {"name": "parent_runtime_write"}}
+        adapter = OpenAIModelAdapter(runtime, parent_tools)
+        # Reuse the existing adapter and prime its original tool cache, just as a
+        # completed implementation would. The nested review must not mutate it.
+        assert {tool["function"]["name"] for tool in adapter.request_tool_schemas()} == parent_names
+        expected = {"read_file", "review_test", "review_probe_read", "completion_review_submit"}
+        audit_expected = expected - {"completion_review_submit"} | {
+            "completion_coverage_audit_submit", "review_evidence_read"}
+        requests = []
+    
+        class Response(io.BytesIO):
+            status = 200
+    
+        def transport(request, *, timeout):
+            del timeout
+            body = json.loads(request.data.decode())
+            requests.append(body)
+            names = {tool["function"]["name"] for tool in body.get("tools", [])}
+            if names not in (expected, audit_expected):
+                # A real provider can only select its advertised capabilities.
+                # End this local attempt instead of fabricating an unadvertised
+                # native call, which would conceal the production wiring defect.
+                message = {"role": "assistant", "content": "Required review tools are unavailable."}
+                finish = "stop"
+            else:
+                packet = {"requirements": list(review.requirements)}
+                if names == audit_expected:
+                    packet = next(json.loads(m["content"]) for m in body["messages"]
+                                  if m.get("role") == "user" and '"evidenceIndex"' in m.get("content", ""))
+                    reads = [m for m in body["messages"] if m.get("role") == "tool"]
+                    if not reads:
+                        name, args = "review_probe_read", {"probeId": packet["evidenceIndex"][0]["probeId"],
+                                                           "receiptView": "current", "limit": 16000}
+                    else:
+                        source = json.loads(json.loads(reads[-1]["content"])["text"])["source"]
+                        name, args = "completion_coverage_audit_submit", _coverage_approval(packet, {source["probeId"]: source})
+                elif len(requests) == 1:
+                    name, args = "review_test", {"purpose": "acceptance", "criterionIds": [u["id"] for u in review.requirements],
+                        "scenario": "Both public quantity operations work", "code": PROBE}
+                else:
+                    assert len(requests) == 2
+                    receipt = json.loads(next(message["content"] for message in reversed(body["messages"])
+                                             if message.get("role") == "tool"))
+                    name, args = "completion_review_submit", {"status": "approved", "findings": [],
+                        "requirements": _rows(packet, ids=[receipt["probeId"]])}
+                message = {"role": "assistant", "content": None, "tool_calls": [
+                    {"id": f"provider-call-{len(requests)}", "type": "function", "function": {
+                        "name": name, "arguments": json.dumps(args)}}]}
+                finish = "tool_calls"
+            return Response(json.dumps({"choices": [{"index": 0, "message": message,
+                "finish_reason": finish}], "usage": {"prompt_tokens": 100, "completion_tokens": 50}}).encode())
+    
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", transport)
+        context = ToolContext(cwd=str(tmp_path), _runtime=runtime)
+        try:
+            result = review.assess(model=adapter, tools=parent_tools, context=context,
+                agent_budget=None, event_sink=None, cancellation_token=None,
+                deadline_monotonic=None, checks_receipt=capability.ensure_completion_checks(context))
+            assert requests
+>           assert all({tool["function"]["name"] for tool in body.get("tools", [])} in (expected, audit_expected)
+                       for body in requests), "Provider schema must use the actual nested registry, even without phases."
+E                      AssertionError: Provider schema must use the actual nested registry, even without phases.
+E                      assert False
+E                       +  where False = all(<generator object test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled.<locals>.<genexpr> at 0x107882a40>)
+
+tests/test_completion_review_provider_tools.py:89: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_completion_assertion_correction_authority.py::test_ordinary_review_cannot_retire_assertion_failure_without_independent_authority
+FAILED tests/test_completion_coverage_audit.py::test_full_authority_is_saved_without_duplicating_receipt_history_in_initial_context
+FAILED tests/test_completion_evidence_cursor.py::test_supersession_needs_exact_compact_source_authority_and_receipt_closure
+FAILED tests/test_completion_exception_attribution.py::test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves[local-alias]
+FAILED tests/test_completion_exception_attribution.py::test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves[assignment-target]
+FAILED tests/test_completion_exception_attribution.py::test_confirmed_product_exception_returns_repair_then_same_review_accepts_repaired_candidate
+FAILED tests/test_completion_exception_attribution.py::test_inconclusive_exception_attribution_never_carries_bad_probe_to_writer
+FAILED tests/test_completion_expression_correction.py::test_independent_expression_correction_executes_approves_and_restores[collection-accessor]
+FAILED tests/test_completion_expression_correction.py::test_independent_expression_correction_executes_approves_and_restores[inline-input]
+FAILED tests/test_completion_fixture_keywords.py::test_independent_fixture_keyword_addition_reexecutes_then_approves_and_restores
+FAILED tests/test_completion_review_evidence_delivery.py::test_reviewer_index_has_current_diagnostic_status_and_readable_full_history
+FAILED tests/test_completion_review_evidence_delivery.py::test_current_receipt_view_does_not_mislabel_previous_candidate_evidence
+FAILED tests/test_completion_review_provider_tools.py::test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[False-False]
+FAILED tests/test_completion_review_provider_tools.py::test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[True-False]
+FAILED tests/test_completion_review_provider_tools.py::test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[True-True]
+15 failed in 15.99s

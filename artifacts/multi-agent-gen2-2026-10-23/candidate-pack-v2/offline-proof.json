@@ -1,0 +1,182 @@
+[
+  {
+    "case": "gen2-read-context",
+    "oracleSha256": "754b59911ebc20cc6acb7abc37287118d878c5b9adc53feb747e0efc469a96f8",
+    "publicTestSha256": "a1d4bf4c3da440020646d615d8551f614d7b9a2ba82acabe17f448277848de15",
+    "baselineCommit": "9aaa6a434ae0a86766d28f8b1b91529451a31eb8",
+    "referenceCommit": "ad20e4a893248a747e3b3ac741c280ded413ff54",
+    "referenceProjection": "baseline tree plus exact reference sourcePaths blobs",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.50s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-bz49ty8d/hidden_oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-bz49ty8d/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-bz49ty8d/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"passed\": false, \"checks\": 60, \"errors\": [\"Search must report physical LF-normalized source lines: source0.py:2:  乙'\\nsource0.py:3: needle = 42\\nsource0.py:4:  last = '尾😀'\\n\\n\\n1 match(es) in 1 file(s)\", \"Source string data must stay on its physical line: source0.py\", \"EOF total must measure normalized file content, not requested offset: FILE: source0.py\\nOFFSET: 39\\nEND: 39\\nTOTAL_CHARS: 39\\nTRUNCATED: no\\n\", \"EOF total must measure normalized file content, not requested offset: FILE: source0.py\\nOFFSET: 12383\\nEND: 12383\\nTOTAL_CHARS: 12383\\nTRUNCATED: no\\n\", \"Search must report physical LF-normalized source lines: source1.py:2:  乙'\\nsource1.py:3: needle = 42\\nsource1.py:4:  last = '尾😀'\\n\\n\\n1 match(es) in 1 file(s) (1 file(s) skipped)\", \"Source string data must stay on its physical line: source1.py\", \"EOF total must measure normalized file content, not requested offset: FILE: source1.py\\nOFFSET: 39\\nEND: 39\\nTOTAL_CHARS: 39\\nTRUNCATED: no\\n\", \"EOF total must measure normalized file content, not requested offset: FILE: source1.py\\nOFFSET: 12383\\nEND: 12383\\nTOTAL_CHARS: 12383\\nTRUNCATED: no\\n\", \"Search must report physical LF-normalized source lines: source2.py:2:  乙'\\nsource2.py:3: needle = 42\\nsource2.py:4:  last = '尾😀'\\n\\n\\n1 match(es) in 1 file(s) (2 file(s) skipped)\", \"Source string data must stay on its physical line: source2.py\", \"EOF total must measure normalized file content, not requested offset: FILE: source2.py\\nOFFSET: 39\\nEND: 39\\nTOTAL_CHARS: 39\\nTRUNCATED: no\\n\", \"EOF total must measure normalized file content, not requested offset: FILE: source2.py\\nOFFSET: 12383\\nEND: 12383\\nTOTAL_CHARS: 12383\\nTRUNCATED: no\\n\", \"Search must report physical LF-normalized source lines: source3.py:2:  乙'\\nsource3.py:3: needle = 42\\nsource3.py:4:  last = '尾😀'\\n\\n\\n1 match(es) in 1 file(s) (3 file(s) skipped)\", \"Source string data must stay on its physical line: source3.py\", \"EOF total must measure normalized file content, not requested offset: FILE: source3.py\\nOFFSET: 39\\nEND: 39\\nTOTAL_CHARS: 39\\nTRUNCATED: no\\n\", \"EOF total must measure normalized file content, not requested offset: FILE: source3.py\\nOFFSET: 12383\\nEND: 12383\\nTOTAL_CHARS: 12383\\nTRUNCATED: no\\n\", \"Search must report physical LF-normalized source lines: source4.py:2:  乙'\\nsource4.py:3: needle = 42\\nsource4.py:4:  last = '尾😀'\\n\\n\\n1 match(es) in 1 file(s) (4 file(s) skipped)\", \"Source string data must stay on its physical line: source4.py\", \"EOF total must measure normalized file content, not requested offset: FILE: source4.py\\nOFFSET: 39\\nEND: 39\\nTOTAL_CHARS: 39\\nTRUNCATED: no\\n\", \"EOF total must measure normalized file content, not requested offset: FILE: source4.py\\nOFFSET: 12383\\nEND: 12383\\nTOTAL_CHARS: 12383\\nTRUNCATED: no\\n\"]}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.50s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-bz49ty8d/hidden_oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-bz49ty8d/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-bz49ty8d/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"passed\": true, \"checks\": 60, \"errors\": []}\n",
+      "stderr": ""
+    }
+  },
+  {
+    "case": "gen2-registry-lifetime",
+    "oracleSha256": "06d120fe42a23ec6caa31b6066a81c164d49f720afbe8df31d965d9a0483eec9",
+    "publicTestSha256": "2417cc0e9dc711896fdb007b5916cc5a528a465135827365c6bb0e84bd5d34f7",
+    "baselineCommit": "9aaa6a434ae0a86766d28f8b1b91529451a31eb8",
+    "referenceCommit": "ad20e4a893248a747e3b3ac741c280ded413ff54",
+    "referenceProjection": "baseline tree plus exact reference sourcePaths blobs",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "...                                                                      [100%]\n3 passed in 0.02s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-o6rexx9t/hidden_oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-o6rexx9t/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-o6rexx9t/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"evidence\": {\"backgroundAcceptingAfterChildClose\": false, \"backgroundAcceptingAfterOwnerClose\": false, \"canReserveAfterChildClose\": false, \"childCloseErrors\": [], \"ownerDisposerCallsAfterChildClose\": 0, \"ownerDisposerCallsAfterOwnerClose\": 1, \"parentProcessAliveAfterChildClose\": false, \"parentProcessStoppedAfterOwnerClose\": true, \"parentReplyAfterChildClose\": null, \"terminalStatus\": \"cancelled\", \"terminationReason\": \"application_shutdown\"}, \"failures\": [\"parentProcessAliveAfterChildClose: expected True, observed False\", \"backgroundAcceptingAfterChildClose: expected True, observed False\", \"parentReplyAfterChildClose: expected 'ACK:after-child-close', observed None\", \"canReserveAfterChildClose: expected True, observed False\"], \"passed\": false}\n",
+      "stderr": ""
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "...                                                                      [100%]\n3 passed in 0.03s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-o6rexx9t/hidden_oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-o6rexx9t/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-o6rexx9t/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"evidence\": {\"backgroundAcceptingAfterChildClose\": true, \"backgroundAcceptingAfterOwnerClose\": false, \"canReserveAfterChildClose\": true, \"childCloseErrors\": [], \"ownerDisposerCallsAfterChildClose\": 0, \"ownerDisposerCallsAfterOwnerClose\": 1, \"parentProcessAliveAfterChildClose\": true, \"parentProcessStoppedAfterOwnerClose\": true, \"parentReplyAfterChildClose\": \"ACK:after-child-close\", \"terminalStatus\": \"cancelled\", \"terminationReason\": \"application_shutdown\"}, \"failures\": [], \"passed\": true}\n",
+      "stderr": ""
+    }
+  },
+  {
+    "case": "gen2-summary-budget",
+    "oracleSha256": "b6b6884930c92f373ac945bfc59a45c9680ec5372ffafcc58d505a4b19928da4",
+    "publicTestSha256": "14f147d9507609d39138b50248d48b8f64410f0552a51036278ef150e2272d48",
+    "baselineCommit": "9aaa6a434ae0a86766d28f8b1b91529451a31eb8",
+    "referenceCommit": "ad20e4a893248a747e3b3ac741c280ded413ff54",
+    "referenceProjection": "baseline tree plus exact reference sourcePaths blobs",
+    "baselinePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.05s\n",
+      "stderr": ""
+    },
+    "baselineOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-esu99nsc/hidden_oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-esu99nsc/baseline",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-esu99nsc/response.txt"
+      ],
+      "returncode": 1,
+      "stdout": "{\"checks\": [{\"label\": \"schema_does_not_fit\", \"limit\": 9293, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"schema_fits\", \"limit\": 13390, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"unlimited_catalog\", \"limit\": null, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"no_catalog_fits\", \"limit\": 4096, \"requests\": [{\"input\": 252, \"reserved\": 252, \"schemas\": 0, \"toolNames\": []}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 275}, {\"label\": \"messages_do_not_fit\", \"limit\": 1, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}], \"errors\": [\"schema_does_not_fit: expected 0 requests, got 1\", \"schema_does_not_fit: refused request returned summary or charged tokens\", \"schema_fits: admitted actual request exceeds reserved input\"], \"ok\": false, \"schemaTokens\": 9294}\n",
+      "stderr": "LLM summary skipped: shared Agent turn budget exhausted\n"
+    },
+    "referencePublic": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "tests/test_public.py"
+      ],
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.05s\n",
+      "stderr": ""
+    },
+    "referenceOracle": {
+      "argv": [
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "-B",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-esu99nsc/hidden_oracle.py",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-esu99nsc/reference",
+        "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/gen2-proof-esu99nsc/response.txt"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\": [{\"label\": \"schema_does_not_fit\", \"limit\": 9293, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}, {\"label\": \"schema_fits\", \"limit\": 13390, \"requests\": [{\"input\": 9546, \"reserved\": 9546, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"unlimited_catalog\", \"limit\": null, \"requests\": [{\"input\": 9546, \"reserved\": 252, \"schemas\": 9294, \"toolNames\": [\"lookup_entry\"]}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 9569}, {\"label\": \"no_catalog_fits\", \"limit\": 4096, \"requests\": [{\"input\": 252, \"reserved\": 252, \"schemas\": 0, \"toolNames\": []}], \"reservedTokens\": 0, \"summaryAvailable\": true, \"usedCalls\": 1, \"usedTokens\": 275}, {\"label\": \"messages_do_not_fit\", \"limit\": 1, \"requests\": [], \"reservedTokens\": 0, \"summaryAvailable\": false, \"usedCalls\": 0, \"usedTokens\": 0}], \"errors\": [], \"ok\": true, \"schemaTokens\": 9294}\n",
+      "stderr": "LLM summary skipped: shared Agent turn budget exhausted\nLLM summary skipped: shared Agent turn budget exhausted\n"
+    }
+  }
+]

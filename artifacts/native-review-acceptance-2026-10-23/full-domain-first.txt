@@ -1,0 +1,2742 @@
+...........................F.........................F.................. [ 10%]
+............F............FFFF.FFF..........................EE...F....... [ 20%]
+.............................F........................................F. [ 30%]
+.....................................................FF................. [ 40%]
+.................FFFFF.....F..............F.FFFFFFF..................... [ 50%]
+........................................................................ [ 60%]
+........................................................................ [ 70%]
+........................................................................ [ 81%]
+........................................................................ [ 91%]
+.......FFF....................................................           [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evidence _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_native_failed_review_retu0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x118e05670>
+request = <SubRequest 'failed_native_handoff' for <Function test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evidence>>
+
+    @pytest.fixture
+    def failed_native_handoff(tmp_path, monkeypatch, request):
+        import minicode.workflow_runner as runner
+    
+        read_before_interrupt = getattr(request, "param", True)
+        # Many real candidate functions make the trace large without invented
+        # evidence, huge stdout, or executing project-specific benchmark material.
+        initial = ("def hold(n, amount):\n    return n - amount\n\n"
+                   "def release(n, amount):\n"
+                   + "".join(f"    probe_helper_{i}(n)\n" for i in range(180))
+                   + "    return n\n\n"
+                   + "".join(f"def probe_helper_{i}(n):\n    return n\n\n" for i in range(180)))
+        (tmp_path / "stock.py").write_text(initial)
+        (tmp_path / "test_public.py").write_text(
+            "from stock import hold\ndef test_hold():\n    assert hold(10, 3) == 7\n")
+        commands, checkpoints, events, requests = [], [], [], []
+    
+        class Sandbox:
+            def wrap_command(self, *, argv, cwd, **_kwargs):
+                commands.append({"argv": list(argv), "cwd": Path(cwd)})
+                return argv
+    
+        class Sink:
+            def emit(self, name, *, step=None, payload=None):
+                events.append({"type": name, "payload": deepcopy(payload)})
+    
+        monkeypatch.setattr(PermissionManager, "ensure_command", lambda *_a, **_k: None)
+        monkeypatch.setattr(runner, "_deterministic_verifier_for_context",
+            lambda *_a, **_k: DeterministicVerifier(sandbox_backend=Sandbox(),
+                explicit_trusted_executables={"python3": sys.executable}))
+        registry = ToolRegistry([read_file_tool, write_file_tool])
+        runtime = {"model": "gpt-test", "openaiBaseUrl": "https://openai.invalid/v1",
+            "openaiApiKey": "test", "modelMaxRetries": 0, "maxOutputTokens": 4096}
+        adapter = OpenAIModelAdapter(runtime, registry)
+        spec = ImplementationSpec(("stock.py", "test_public.py"), (VerificationCheck(
+            "public", "tests", ("python3", "-m", "pytest", "-q", "test_public.py"), 20),), OBJECTIVE)
+        ids = [row["id"] for row in requirement_units(OBJECTIVE)]
+        options = dict(model=adapter, tools=registry, runtime=runtime, cwd=str(tmp_path),
+            implementation_task=True, implementation_spec=spec, enable_work_chain=False,
+            enable_implementation_phases=False, max_steps=None, agent_budget=AgentTurnBudget(),
+            event_sink=Sink(), defer_curator_maintenance=True,
+            implementation_checkpoint_sink=lambda document, messages: checkpoints.append(
+                (deepcopy(document), deepcopy(messages))))
+        stop = KeyboardInterrupt("Observed intact same-owner repair context and native evidence access")
+        counts = {"parent": 0, "reviewer": 0, "adjudicator": 0}
+        observed = {}
+    
+        class Response(io.BytesIO):
+            status = 200
+    
+        def transport(request, *, timeout):
+            body = json.loads(request.data)
+            names = {tool["function"]["name"] for tool in body["tools"]}
+            role = ("adjudicator" if "completion_probe_adjudication_submit" in names else
+                    "reviewer" if "completion_review_submit" in names else "parent")
+            assert "completion_coverage_audit_submit" not in names, "A confirmed missing requirement cannot enter approval."
+            counts[role] += 1
+            assert sum(counts.values()) < 45, "Evidence reading must not restart the review protocol."
+            requests.append({"role": role, "body": deepcopy(body)})
+            chosen = None
+            text = None
+            if role == "parent":
+                assert {"write_file", "executor_check"} <= names
+                if counts[role] == 1:
+                    chosen = _call("existing-edit", "write_file", {"path": "stock.py", "content": initial + RETAINED})
+                elif counts[role] == 2:
+                    observed["prior_write"] = deepcopy(_result(body, "existing-edit"))
+                    text = "Both requested behaviors are complete."
+                else:
+                    assert _result(body, "existing-edit") == observed["prior_write"]
+                    if "reader" not in observed:
+                        decision, feedback = _decision(body)
+                        original = next(event["payload"] for event in reversed(events)
+                            if event["type"] == "implementation.completion_decided")
+                        assert decision["status"] == "changes_required" and decision["continuesSameExecutor"]
+                        assert decision["executorId"] == original["executorId"]
+                        receipt = original["probeReceipts"][0]["receipt"]
+                        report = receipt["testReport"]["executionReport"]
+                        assert validate_execution_report(receipt["testReport"])
+                        assert len(canonical(report)) > 60000
+                        assert len(feedback) < len(canonical(original)) // 3
+                        assert len(request.data) < len(canonical(report))
+                        assert "assert 7 == 10" in feedback, "The concrete assertion failure must remain actionable."
+                        assert decision["repairProbes"][0]["code"] == PROBE
+                        view = _execution_view(decision["probeReceipts"][0])
+                        assert view["displayOnly"] and "cases" not in view
+                        assert view["originalDigest"] == content_digest(canonical(report))
+                        observed.update(decision=original, feedback_view=decision,
+                            reader=_NativeEvidenceReads(report, view["documentRef"], stop))
+                        if not read_before_interrupt:
+                            raise stop
+                    chosen = observed["reader"].step(body, names)
+            elif role == "reviewer":
+                assert not {"write_file", "executor_check"} & names
+                if counts[role] == 1:
+                    chosen = _call("independent-check", "review_test", {"purpose": "acceptance", "criterionIds": ids,
+                        "scenario": "Both original quantity operations are exercised.", "code": PROBE})
+                else:
+                    assert counts[role] == 2
+                    value = _tool_json(body, "independent-check")
+                    assert value["receipt"]["status"] == "failed"
+                    view = _execution_view(value)
+                    assert view["displayOnly"] and "cases" not in view
+                    assert "assert 7 == 10" in canonical(value)
+                    chosen = _call("reject-gap", "completion_review_submit", {"status": "changes_required",
+                        "requirements": [{"id": identity, "status": "missing", "probeIds": [],
+                            "sourceEvidence": [{"path": "stock.py", "startLine": 4, "endLine": 185}],
+                            "rationale": "release returns the original stock instead of adding the amount."} for identity in ids],
+                        "findings": ["release(7, 3) must add the amount; the test reports assert 7 == 10."]})
+            else:
+                assert not {"write_file", "executor_check", "completion_review_submit"} & names
+                packet = _packet(body, "originalObjective")
+                assert packet["originalObjective"] == OBJECTIVE and packet["probe"]["code"] == PROBE
+                assert _execution_view(packet["receipt"])["displayOnly"]
+                assert len(request.data) < 30000
+                if counts[role] == 1:
+                    chosen = _call("attribution-source", "read_file", {"path": "stock.py"})
+                else:
+                    assert counts[role] == 2
+                    assert "return n" in _result(body, "attribution-source")["content"]
+                    chosen = _call("product-gap", "completion_probe_adjudication_submit", {
+                        "verdict": "product_gap", "reason": "release leaves n unchanged instead of adding the requested amount.",
+                        "objectiveEvidence": [{"startLine": 2, "endLine": 2}],
+                        "sourceEvidence": [{"path": "stock.py", "startLine": 4, "endLine": 185}]})
+            assert chosen is None or chosen["function"]["name"] in names
+            message = {"role": "assistant", "content": text}
+            if chosen is not None:
+                message["tool_calls"] = [chosen]
+            return Response(json.dumps({"choices": [{"index": 0, "message": message,
+                "finish_reason": "tool_calls" if chosen else "stop"}],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 50}}).encode())
+    
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", transport)
+>       with pytest.raises(KeyboardInterrupt) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE KeyboardInterrupt
+
+tests/test_completion_feedback_size.py:264: Failed
+------------------------------ Captured log setup ------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4713 Model API error (IndexError): list index out of range
+_ ERROR at setup of test_authenticated_legacy_feedback_restore_projects_before_provider_without_erasing_history[False] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_authenticated_legacy_feed0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119e17c50>
+request = <SubRequest 'failed_native_handoff' for <Function test_authenticated_legacy_feedback_restore_projects_before_provider_without_erasing_history[False]>>
+
+    @pytest.fixture
+    def failed_native_handoff(tmp_path, monkeypatch, request):
+        import minicode.workflow_runner as runner
+    
+        read_before_interrupt = getattr(request, "param", True)
+        # Many real candidate functions make the trace large without invented
+        # evidence, huge stdout, or executing project-specific benchmark material.
+        initial = ("def hold(n, amount):\n    return n - amount\n\n"
+                   "def release(n, amount):\n"
+                   + "".join(f"    probe_helper_{i}(n)\n" for i in range(180))
+                   + "    return n\n\n"
+                   + "".join(f"def probe_helper_{i}(n):\n    return n\n\n" for i in range(180)))
+        (tmp_path / "stock.py").write_text(initial)
+        (tmp_path / "test_public.py").write_text(
+            "from stock import hold\ndef test_hold():\n    assert hold(10, 3) == 7\n")
+        commands, checkpoints, events, requests = [], [], [], []
+    
+        class Sandbox:
+            def wrap_command(self, *, argv, cwd, **_kwargs):
+                commands.append({"argv": list(argv), "cwd": Path(cwd)})
+                return argv
+    
+        class Sink:
+            def emit(self, name, *, step=None, payload=None):
+                events.append({"type": name, "payload": deepcopy(payload)})
+    
+        monkeypatch.setattr(PermissionManager, "ensure_command", lambda *_a, **_k: None)
+        monkeypatch.setattr(runner, "_deterministic_verifier_for_context",
+            lambda *_a, **_k: DeterministicVerifier(sandbox_backend=Sandbox(),
+                explicit_trusted_executables={"python3": sys.executable}))
+        registry = ToolRegistry([read_file_tool, write_file_tool])
+        runtime = {"model": "gpt-test", "openaiBaseUrl": "https://openai.invalid/v1",
+            "openaiApiKey": "test", "modelMaxRetries": 0, "maxOutputTokens": 4096}
+        adapter = OpenAIModelAdapter(runtime, registry)
+        spec = ImplementationSpec(("stock.py", "test_public.py"), (VerificationCheck(
+            "public", "tests", ("python3", "-m", "pytest", "-q", "test_public.py"), 20),), OBJECTIVE)
+        ids = [row["id"] for row in requirement_units(OBJECTIVE)]
+        options = dict(model=adapter, tools=registry, runtime=runtime, cwd=str(tmp_path),
+            implementation_task=True, implementation_spec=spec, enable_work_chain=False,
+            enable_implementation_phases=False, max_steps=None, agent_budget=AgentTurnBudget(),
+            event_sink=Sink(), defer_curator_maintenance=True,
+            implementation_checkpoint_sink=lambda document, messages: checkpoints.append(
+                (deepcopy(document), deepcopy(messages))))
+        stop = KeyboardInterrupt("Observed intact same-owner repair context and native evidence access")
+        counts = {"parent": 0, "reviewer": 0, "adjudicator": 0}
+        observed = {}
+    
+        class Response(io.BytesIO):
+            status = 200
+    
+        def transport(request, *, timeout):
+            body = json.loads(request.data)
+            names = {tool["function"]["name"] for tool in body["tools"]}
+            role = ("adjudicator" if "completion_probe_adjudication_submit" in names else
+                    "reviewer" if "completion_review_submit" in names else "parent")
+            assert "completion_coverage_audit_submit" not in names, "A confirmed missing requirement cannot enter approval."
+            counts[role] += 1
+            assert sum(counts.values()) < 45, "Evidence reading must not restart the review protocol."
+            requests.append({"role": role, "body": deepcopy(body)})
+            chosen = None
+            text = None
+            if role == "parent":
+                assert {"write_file", "executor_check"} <= names
+                if counts[role] == 1:
+                    chosen = _call("existing-edit", "write_file", {"path": "stock.py", "content": initial + RETAINED})
+                elif counts[role] == 2:
+                    observed["prior_write"] = deepcopy(_result(body, "existing-edit"))
+                    text = "Both requested behaviors are complete."
+                else:
+                    assert _result(body, "existing-edit") == observed["prior_write"]
+                    if "reader" not in observed:
+                        decision, feedback = _decision(body)
+                        original = next(event["payload"] for event in reversed(events)
+                            if event["type"] == "implementation.completion_decided")
+                        assert decision["status"] == "changes_required" and decision["continuesSameExecutor"]
+                        assert decision["executorId"] == original["executorId"]
+                        receipt = original["probeReceipts"][0]["receipt"]
+                        report = receipt["testReport"]["executionReport"]
+                        assert validate_execution_report(receipt["testReport"])
+                        assert len(canonical(report)) > 60000
+                        assert len(feedback) < len(canonical(original)) // 3
+                        assert len(request.data) < len(canonical(report))
+                        assert "assert 7 == 10" in feedback, "The concrete assertion failure must remain actionable."
+                        assert decision["repairProbes"][0]["code"] == PROBE
+                        view = _execution_view(decision["probeReceipts"][0])
+                        assert view["displayOnly"] and "cases" not in view
+                        assert view["originalDigest"] == content_digest(canonical(report))
+                        observed.update(decision=original, feedback_view=decision,
+                            reader=_NativeEvidenceReads(report, view["documentRef"], stop))
+                        if not read_before_interrupt:
+                            raise stop
+                    chosen = observed["reader"].step(body, names)
+            elif role == "reviewer":
+                assert not {"write_file", "executor_check"} & names
+                if counts[role] == 1:
+                    chosen = _call("independent-check", "review_test", {"purpose": "acceptance", "criterionIds": ids,
+                        "scenario": "Both original quantity operations are exercised.", "code": PROBE})
+                else:
+                    assert counts[role] == 2
+                    value = _tool_json(body, "independent-check")
+                    assert value["receipt"]["status"] == "failed"
+                    view = _execution_view(value)
+                    assert view["displayOnly"] and "cases" not in view
+                    assert "assert 7 == 10" in canonical(value)
+                    chosen = _call("reject-gap", "completion_review_submit", {"status": "changes_required",
+                        "requirements": [{"id": identity, "status": "missing", "probeIds": [],
+                            "sourceEvidence": [{"path": "stock.py", "startLine": 4, "endLine": 185}],
+                            "rationale": "release returns the original stock instead of adding the amount."} for identity in ids],
+                        "findings": ["release(7, 3) must add the amount; the test reports assert 7 == 10."]})
+            else:
+                assert not {"write_file", "executor_check", "completion_review_submit"} & names
+                packet = _packet(body, "originalObjective")
+                assert packet["originalObjective"] == OBJECTIVE and packet["probe"]["code"] == PROBE
+                assert _execution_view(packet["receipt"])["displayOnly"]
+                assert len(request.data) < 30000
+                if counts[role] == 1:
+                    chosen = _call("attribution-source", "read_file", {"path": "stock.py"})
+                else:
+                    assert counts[role] == 2
+                    assert "return n" in _result(body, "attribution-source")["content"]
+                    chosen = _call("product-gap", "completion_probe_adjudication_submit", {
+                        "verdict": "product_gap", "reason": "release leaves n unchanged instead of adding the requested amount.",
+                        "objectiveEvidence": [{"startLine": 2, "endLine": 2}],
+                        "sourceEvidence": [{"path": "stock.py", "startLine": 4, "endLine": 185}]})
+            assert chosen is None or chosen["function"]["name"] in names
+            message = {"role": "assistant", "content": text}
+            if chosen is not None:
+                message["tool_calls"] = [chosen]
+            return Response(json.dumps({"choices": [{"index": 0, "message": message,
+                "finish_reason": "tool_calls" if chosen else "stop"}],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 50}}).encode())
+    
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", transport)
+>       with pytest.raises(KeyboardInterrupt) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE KeyboardInterrupt
+
+tests/test_completion_feedback_size.py:264: Failed
+------------------------------ Captured log setup ------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4713 Model API error (IndexError): list index out of range
+=================================== FAILURES ===================================
+_ test_ordinary_review_cannot_retire_assertion_failure_without_independent_authority _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_ordinary_review_cannot_re0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x118ececc0>
+
+    def test_ordinary_review_cannot_retire_assertion_failure_without_independent_authority(tmp_path, monkeypatch):
+        adjudications = []
+        audits = []
+    
+        def audit(tools, child, packet):
+            audits.append(packet)
+            assert len(adjudications) == 1
+            assert review.state["corrections"] == []
+            assert review.state["retiredProbeIds"] == []
+            edge = review.state["supersessions"][0]
+            assert packet["supersessionIndex"][0]["id"] == edge["supersessionId"]
+            sources = {}
+            for probe_id in _coverage_probe_ids(packet):
+                offset, pages = 0, []
+                while True:
+                    result = tools.execute("review_probe_read", {
+                        "probeId": probe_id, "receiptView": "current",
+                        "offset": offset, "limit": 16000}, child)
+                    assert result.ok, result.output
+                    page = json.loads(result.output)
+                    pages.append(page["text"])
+                    if page["nextOffset"] is None:
+                        break
+                    offset = page["nextOffset"]
+                sources[probe_id] = json.loads("".join(pages))["source"]
+            assert sources[edge["oldProbeId"]]["code"] == WRONG_INPUT
+            assert sources[edge["newProbeId"]]["code"] == VALID_INPUT
+            result = tools.execute("completion_coverage_audit_submit", _coverage_approval(packet, sources), child)
+            assert result.ok and result._implementation_submitted, result.output
+            return AgentStep(type="assistant", kind="final", content="Independent inventory obligations preserved")
+    
+        def judge(tools, child, packet):
+            adjudications.append(packet)
+            old = packet["probe"]
+            result = tools.execute("completion_probe_adjudication_submit", {
+                "verdict": "probe_error",
+                "reason": "The probe intends to release two units but supplied one; preserve both original assertions and correct the supplied amount.",
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                "replacement": {"criterionIds": old["criterionIds"], "scenario": old["scenario"], "code": VALID_INPUT}}, child)
+            assert result.ok, result.output
+            return AgentStep(type="assistant", kind="final", content="Independent fixture error recorded")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=judge, coverage_driver=audit)
+    
+        def driver(tools, child, packet):
+            failed, old = _probe(tools, child, packet, WRONG_INPUT)
+            assert not failed.ok and old["receipt"]["status"] == "failed"
+            assert old["receipt"]["testReport"]["caseReport"]["cases"][0]["failureKind"] == "assertion"
+            attempted, _ = _probe(tools, child, packet, VALID_INPUT,
+                correctsProbeId=old["probeId"], correctionReason="The input should have been two units.",
+                sourceEvidence=[{"path": "stock.py", "startLine": 1, "endLine": 5}])
+            assert not attempted.ok, "ordinary reviewer must not self-authorize assertion-input correction"
+            assert review.state["corrections"] == [] and review.state["retiredProbeIds"] == []
+            assert adjudications == []
+            # Independent invalidity judgment only proposes a replacement. A
+            # separate coverage audit must accept its original obligations.
+            rejected = _submit(tools, child, packet, ids=[old["probeId"]])
+            assert not rejected.ok
+            assert len(adjudications) == 1
+            assert review.state["corrections"] == [] and review.state["retiredProbeIds"] == []
+            successor = review.state["supersessions"][0]["newProbeId"]
+            assert _submit(tools, child, packet, ids=[successor]).ok
+    
+        try:
+>           assert assess(driver)["status"] == "approved"
+                   ^^^^^^^^^^^^^^
+
+tests/test_completion_assertion_correction_authority.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1880: in _assess_snapshot
+    audit = audit_completion_coverage(objective=self.objective,
+minicode/completion_coverage_audit.py:1045: in audit_completion_coverage
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:105: in review_loop
+    return coverage_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <test_implementation_completion_review._DeliveredRegistry object at 0x118e7d040>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-tpcdw37g/verification-6d8x...ons.SchedulerWorkerReadPermissions object at 0x118cb4860>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'authorityRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-4l3bql97/00012-coverage-...n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-4l3bql97/00013-coverage-audit-evidence-documents.json', ...}
+
+    def audit(tools, child, packet):
+        audits.append(packet)
+        assert len(adjudications) == 1
+        assert review.state["corrections"] == []
+        assert review.state["retiredProbeIds"] == []
+        edge = review.state["supersessions"][0]
+        assert packet["supersessionIndex"][0]["id"] == edge["supersessionId"]
+        sources = {}
+        for probe_id in _coverage_probe_ids(packet):
+            offset, pages = 0, []
+            while True:
+                result = tools.execute("review_probe_read", {
+                    "probeId": probe_id, "receiptView": "current",
+                    "offset": offset, "limit": 16000}, child)
+                assert result.ok, result.output
+                page = json.loads(result.output)
+                pages.append(page["text"])
+                if page["nextOffset"] is None:
+                    break
+                offset = page["nextOffset"]
+            sources[probe_id] = json.loads("".join(pages))["source"]
+        assert sources[edge["oldProbeId"]]["code"] == WRONG_INPUT
+        assert sources[edge["newProbeId"]]["code"] == VALID_INPUT
+        result = tools.execute("completion_coverage_audit_submit", _coverage_approval(packet, sources), child)
+>       assert result.ok and result._implementation_submitted, result.output
+E       AssertionError: {"draftId": "coverage_draft_6e8984085f9e8a3a786975d6", "draftRef": "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-4l3bql97/00023-coverage-audit-submission-draft.json", "draftStatus": "unaccepted", "errorCode": "coverage_audit_invalid", "message": "read the exact supersession sources and independent invalidity evidence before accepting", "missingDocumentIds": ["evidence_90f25b756199060a94b5cfb057381fd3903c3474bd00c28fbdbbbc126123691d"]}
+E       assert (False)
+E        +  where False = ToolResult(ok=False, output='{"draftId": "coverage_draft_6e8984085f9e8a3a786975d6", "draftRef": "/var/folders/f4/9n10f...pendently audit completion coverage without changing the implementation'], 'supported_operations': [], 'evidence': []}).ok
+
+tests/test_completion_assertion_correction_authority.py:48: AssertionError
+_ test_full_authority_is_saved_without_duplicating_receipt_history_in_initial_context _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_full_authority_is_saved_w0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x118ea8050>
+
+    def test_full_authority_is_saved_without_duplicating_receipt_history_in_initial_context(tmp_path, monkeypatch):
+        case = _case(tmp_path, monkeypatch)
+        case["proposal"].update(probeReceipts=[{"output": "old execution " * 2000}],
+                                diagnosticObservations=[{"output": "old diagnostic " * 2000}])
+        requests = _native(monkeypatch, case, [(None, "Everything is approved.")])
+        result = case["assess"]()
+        assert result["status"] == "inconclusive"
+        packet = _coverage_packet(requests[0])
+        assert set(packet["proposal"]) == {"status", "requirements", "findings"}
+>       authority = json.loads(Path(result["authorityRef"]).read_text())
+                                    ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'authorityRef'
+
+tests/test_completion_coverage_audit.py:302: KeyError
+__ test_supersession_needs_exact_compact_source_authority_and_receipt_closure __
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_supersession_needs_exact_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106d41b80>
+
+    def test_supersession_needs_exact_compact_source_authority_and_receipt_closure(tmp_path, monkeypatch):
+        suffix = "# Inventory setup and nonzero quantity restoration remain separate checks.\n" * 250
+        old_code, new_code = BAD + suffix, GOOD + suffix
+        observations = {}
+    
+        def adjudicate(tools, child, packet):
+            result = tools.execute("completion_probe_adjudication_submit", {
+                "verdict": "probe_error", "reason": "The fixture calls an already constructed inventory twice.",
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                "replacement": {"criterionIds": packet["probe"]["criterionIds"],
+                    "scenario": packet["probe"]["scenario"], "code": new_code}}, child)
+            assert result.ok, result.output
+    
+        def audit(tools, child, packet):
+            originals = {p["probeId"]: p for p in review.state["probes"]}
+            approval = _coverage_approval(packet, originals)
+            blocked = tools.execute("completion_coverage_audit_submit", approval, child)
+            assert not blocked.ok
+            missing = json.loads(blocked.output)["missingDocumentIds"]
+            assert missing
+            edge_id = packet["supersessionIndex"][0]["obligationDocumentId"]
+            assert edge_id in missing
+            manifest, manifest_page, _ = _read(tools, child, edge_id)
+            assert manifest_page["documentType"] == "supersession_obligation"
+            dependencies = set(manifest_page["requiredDocumentIds"])
+            authority_id = manifest["authority"]["$evidenceDocument"]
+            sources, read_ids, pending = {}, {edge_id}, set(dependencies) - {authority_id}
+            read_documents = {}
+            withheld = []
+            deferred_authority = True
+            while pending or deferred_authority:
+                if not pending:
+                    assert set(sources) == set(originals)
+                    refused = tools.execute("completion_coverage_audit_submit", approval, child)
+                    assert not refused.ok
+                    refusal = json.loads(refused.output)
+                    assert "independent invalidity evidence" in refusal["message"]
+                    assert authority_id in refusal["missingDocumentIds"]
+                    assert review.state["retiredProbeIds"] == []
+                    pending.add(authority_id)
+                    deferred_authority = False
+                document_id = pending.pop()
+                if document_id in read_ids:
+                    continue
+                # Open a one-page descriptor to find authority; its entire receipt
+                # closure still has to be delivered before accepted can succeed.
+                result = tools.execute("review_evidence_read", {"documentId": document_id}, child)
+                assert result.ok
+                first = json.loads(result.output)
+                if first["documentType"] == "invalidity_authority":
+                    withheld.extend(first["requiredDocumentIds"])
+                value, page, pages = _read(tools, child, document_id)
+                read_ids.add(document_id)
+                read_documents[document_id] = value
+                pending.update(set(page["requiredDocumentIds"]) - read_ids)
+                if page["documentType"] == "probe_source":
+                    sources[value["probeId"]] = value
+                    assert len(pages) >= 2
+                    assert all(p["documentId"] == document_id for p in pages)
+                    # The cursor contract cannot be converted back into a guessed
+                    # offset or different view by the caller.
+                    forged = tools.execute("review_evidence_read", {
+                        "cursor": pages[0]["nextCursor"], "offset": 9000}, child)
+                    assert not forged.ok
+            assert set(sources) == set(originals) and sources == originals
+            assert withheld  # Authority references exact shared source bytes.
+            assert len(json.dumps(manifest)) < len(old_code)
+            approved = tools.execute("completion_coverage_audit_submit", approval, child)
+            assert approved.ok, approved.output
+            observations.update(packet=packet, manifest=manifest, readIds=read_ids)
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=adjudicate, coverage_driver=audit)
+        original_product = (tmp_path / "stock.py").read_bytes()
+        try:
+            def seed(tools, child, packet):
+                result, receipt = _probe(tools, child, packet, old_code)
+                assert not result.ok and receipt["receipt"]["status"] == "failed"
+    
+            def propose(tools, child, packet):
+                assert _submit(tools, child, packet, ids=[p["probeId"] for p in packet["retainedProbes"]]).ok
+    
+            assess(seed)
+>           assert assess(propose)["status"] == "approved"
+                   ^^^^^^^^^^^^^^^
+
+tests/test_completion_evidence_cursor.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1880: in _assess_snapshot
+    audit = audit_completion_coverage(objective=self.objective,
+minicode/completion_coverage_audit.py:1045: in audit_completion_coverage
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:105: in review_loop
+    return coverage_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <test_implementation_completion_review._DeliveredRegistry object at 0x118ecd100>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-s8pzyzc2/verification-logr...ons.SchedulerWorkerReadPermissions object at 0x1196ec950>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'authorityRef': '/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-20e5ly96/00013-coverage-...n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-completion-review-20e5ly96/00014-coverage-audit-evidence-documents.json', ...}
+
+    def audit(tools, child, packet):
+        originals = {p["probeId"]: p for p in review.state["probes"]}
+        approval = _coverage_approval(packet, originals)
+        blocked = tools.execute("completion_coverage_audit_submit", approval, child)
+        assert not blocked.ok
+        missing = json.loads(blocked.output)["missingDocumentIds"]
+        assert missing
+        edge_id = packet["supersessionIndex"][0]["obligationDocumentId"]
+        assert edge_id in missing
+        manifest, manifest_page, _ = _read(tools, child, edge_id)
+>       assert manifest_page["documentType"] == "supersession_obligation"
+E       AssertionError: assert 'supersession_review_material' == 'supersession_obligation'
+E         
+E         - supersession_obligation
+E         + supersession_review_material
+
+tests/test_completion_evidence_cursor.py:54: AssertionError
+_ test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves[local-alias] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_independent_name_binding_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119c8e5a0>
+replacement = 'from stock import hold, release\ndef test_inventory():\n    _remaining = hold(5, 2)\n    remaining = _remaining\n    assert remaining == 3\n    assert release(3, 2) == 5\n'
+
+    @pytest.mark.parametrize("replacement", [ALIASED_PROBE, REBOUND_PROBE], ids=["local-alias", "assignment-target"])
+    def test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves(tmp_path, monkeypatch, replacement):
+        calls = []
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicator("probe_error", calls, replacement=replacement))
+        original = (tmp_path / "stock.py").read_bytes()
+        try:
+            _initial, failed = _seed_exception(assess, UNBOUND_PROBE)
+>           approved = assess(_approve)
+                       ^^^^^^^^^^^^^^^^
+
+tests/test_completion_exception_attribution.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1697: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1593: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:356: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x119cf0410>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-xjtaj5va/verification-ihsw5g73/wor...ons.SchedulerWorkerReadPermissions object at 0x119c35b80>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def driver(tools, child, packet):
+        calls.append(deepcopy(packet))
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_exception_attribution.py:36: AssertionError
+_ test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves[assignment-target] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_independent_name_binding_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119cf1be0>
+replacement = 'from stock import hold, release\ndef test_inventory():\n    remaining = hold(5, 2)\n    assert remaining == 3\n    assert release(3, 2) == 5\n'
+
+    @pytest.mark.parametrize("replacement", [ALIASED_PROBE, REBOUND_PROBE], ids=["local-alias", "assignment-target"])
+    def test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves(tmp_path, monkeypatch, replacement):
+        calls = []
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicator("probe_error", calls, replacement=replacement))
+        original = (tmp_path / "stock.py").read_bytes()
+        try:
+            _initial, failed = _seed_exception(assess, UNBOUND_PROBE)
+>           approved = assess(_approve)
+                       ^^^^^^^^^^^^^^^^
+
+tests/test_completion_exception_attribution.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1697: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1593: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:356: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x119c834d0>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-89ni7wet/verification-bn67rhnl/wor...ons.SchedulerWorkerReadPermissions object at 0x119cfa180>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def driver(tools, child, packet):
+        calls.append(deepcopy(packet))
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_exception_attribution.py:36: AssertionError
+_ test_confirmed_product_exception_returns_repair_then_same_review_accepts_repaired_candidate _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_confirmed_product_excepti0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119c59550>
+
+    def test_confirmed_product_exception_returns_repair_then_same_review_accepts_repaired_candidate(tmp_path, monkeypatch):
+        calls = []
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicator("product_gap", calls))
+        (tmp_path / "stock.py").write_text(BROKEN_PRODUCT)
+        try:
+            _initial, failed = _seed_exception(assess, PROBE)
+    
+            def review_gap(tools, child, packet):
+                assert len(calls) == 1, "Independent attribution must precede any writer feedback."
+                submitted = _submit(tools, child, packet, status="changes_required",
+                    rows=_rows(packet, status="missing"), findings=["release raises instead of adding the amount"])
+                assert submitted.ok, submitted.output
+    
+>           result = assess(review_gap)
+                     ^^^^^^^^^^^^^^^^^^
+
+tests/test_completion_exception_attribution.py:152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1697: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1593: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:356: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x119c37b00>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-2ks84gfr/verification-fxzm2wyu/wor...ons.SchedulerWorkerReadPermissions object at 0x119c2cad0>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d7a6e5ecc1521a94caaf6ba5b5e3e4a9ba903563ae83bc51...receipt.json', ...}, 'candidateDigest': 'sha256:d7a6e5ecc1521a94caaf6ba5b5e3e4a9ba903563ae83bc514ca6006ffa7c29f6', ...}
+
+    def driver(tools, child, packet):
+        calls.append(deepcopy(packet))
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_exception_attribution.py:36: AssertionError
+__ test_inconclusive_exception_attribution_never_carries_bad_probe_to_writer ___
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_inconclusive_exception_at0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119c2ede0>
+
+    def test_inconclusive_exception_attribution_never_carries_bad_probe_to_writer(tmp_path, monkeypatch):
+        calls = []
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicator("inconclusive", calls))
+        original = (tmp_path / "stock.py").read_bytes()
+        try:
+            _initial, failed = _seed_exception(assess, UNBOUND_PROBE)
+            for expected_calls in (1, 2):
+>               result = assess(lambda *_: pytest.fail("Unknown attribution cannot request implementation repair"))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_completion_exception_attribution.py:179: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1697: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1593: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:356: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x118cdbd10>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-0_auwj5s/verification-e5oulkjm/wor...ons.SchedulerWorkerReadPermissions object at 0x118cdb710>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def driver(tools, child, packet):
+        calls.append(deepcopy(packet))
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_exception_attribution.py:36: AssertionError
+_ test_independent_correction_retains_exception_successor_and_continues_attribution[True] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_independent_correction_re1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1068df380>
+product_gap = True
+
+    @pytest.mark.parametrize("product_gap", [False, True])
+    def test_independent_correction_retains_exception_successor_and_continues_attribution(
+        tmp_path, monkeypatch, product_gap,
+    ):
+        first = BROKEN_FIXTURE.replace("_remaining =", "remaining =") if product_gap else BROKEN_FIXTURE
+        second = INTERMEDIATE.replace("_remaining =", "remaining =") if product_gap else INTERMEDIATE
+        seen = []
+    
+        def adjudicate(tools, child, packet):
+            code = packet["probe"]["code"]
+            seen.append(code)
+            fixture = code == first
+            request = {
+                "verdict": "probe_error" if fixture or not product_gap else "product_gap",
+                "reason": (
+                    "The fixture creates the same directory twice; preserve the experiment and allow reuse."
+                    if fixture else "The test reads an unbound variable instead of its retained hold result."
+                    if not product_gap else "The release operation raises instead of adding the quantity."
+                ),
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+            }
+            if request["verdict"] == "probe_error":
+                request["replacement"] = {
+                    "criterionIds": packet["probe"]["criterionIds"],
+                    "scenario": packet["probe"]["scenario"],
+                    "code": second if fixture else CORRECT,
+                }
+            result = tools.execute("completion_probe_adjudication_submit", request, child)
+            assert result.ok, result.output
+            return AgentStep(type="assistant", kind="final", content="Attribution recorded")
+    
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch, adjudication_driver=adjudicate)
+        if product_gap:
+            (tmp_path / "stock.py").write_text(SOURCE.replace("return n + amount", "raise ValueError('broken release')"))
+        original = (tmp_path / "stock.py").read_bytes()
+        try:
+            _seed_exception(assess, first)
+    
+            def review_gap(tools, child, packet):
+                assert seen == [first, second]
+                assert review.state["corrections"] == [] and review.state["retiredProbeIds"] == []
+                result = _submit(tools, child, packet, status="changes_required",
+                    rows=_rows(packet, status="missing"), findings=["release must add the quantity"])
+                assert result.ok, result.output
+    
+            def review_replacement_chain(tools, child, packet):
+                assert len(review.state["supersessions"]) == 2
+                assert review.state["corrections"] == [] and review.state["retiredProbeIds"] == []
+                return _approve(tools, child, packet)
+    
+            result = assess(review_gap if product_gap else review_replacement_chain)
+            assert seen == [first, second], "Each newly exposed exception needs its own independent attribution."
+            assert result["status"] == ("changes_required" if product_gap else "approved")
+            assert [row["code"] for row in result["repairProbes"]] == ([second] if product_gap else [])
+            assert (tmp_path / "stock.py").read_bytes() == original
+            state = review.state
+>           assert len(state["corrections"]) == (1 if product_gap else 2)
+E           assert 0 == 1
+E            +  where 0 = len([])
+
+tests/test_completion_exception_successor.py:90: AssertionError
+_ test_independent_expression_correction_executes_approves_and_restores[collection-accessor] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_independent_expression_co0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107990d70>
+bad = 'from types import SimpleNamespace\nfrom stock import hold, release\ndef test_inventory():\n    batch = SimpleNamespac...ead_rows():\n        assert hold(quantity, amount) == expected\n        assert release(expected, amount) == quantity\n'
+good = 'from types import SimpleNamespace\nfrom stock import hold, release\ndef test_inventory():\n    batch = SimpleNamespac...batch.rows:\n        assert hold(quantity, amount) == expected\n        assert release(expected, amount) == quantity\n'
+mode = 'fixture_accessor', failure_kind = 'exception'
+reason = 'The fixture stores rows as a collection property and has no read_rows method; reading that collection preserves both inventory assertions and their loop.'
+
+    @pytest.mark.parametrize("bad,good,mode,failure_kind,reason", CASES)
+    def test_independent_expression_correction_executes_approves_and_restores(
+            tmp_path, monkeypatch, bad, good, mode, failure_kind, reason):
+        judgments = []
+    
+        def adjudicate(tools, child, packet):
+            assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+            assert packet["probe"]["code"] == bad
+            judgments.append(packet["receipt"]["receiptRef"])
+            result = tools.execute("completion_probe_adjudication_submit", {
+                "verdict": "probe_error", "reason": reason,
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                "replacement": {"criterionIds": packet["probe"]["criterionIds"],
+                    "scenario": packet["probe"]["scenario"], "code": good},
+            }, child)
+            assert result.ok and result._implementation_submitted, result.output
+            document = json.loads(result.output)
+            assert document["verdict"] == "probe_error" and document["correctionMode"] == mode
+            assert "approved" not in document.values(), "An attributed correction still needs actual execution."
+            return AgentStep(type="assistant", kind="final", content="Independent probe correction submitted")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch, adjudication_driver=adjudicate)
+        original = {name: (tmp_path / name).read_bytes() for name in ("stock.py", "test_public.py")}
+        try:
+            initial = assess(lambda tools, child, packet: _seed(tools, child, packet, bad, failure_kind))
+            assert initial["status"] == "inconclusive" and initial["repairProbes"] == []
+            failed = review.state["receipts"][0]
+            assert len(commands) == 2 and judgments == []
+>           approved = assess(_approve)
+                       ^^^^^^^^^^^^^^^^
+
+tests/test_completion_expression_correction.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1697: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1593: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:356: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x119629640>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-wd6apu_q/verification-m37a3psc/wor...ons.SchedulerWorkerReadPermissions object at 0x106f62bd0>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def adjudicate(tools, child, packet):
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_expression_correction.py:62: AssertionError
+_ test_independent_expression_correction_executes_approves_and_restores[inline-input] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_independent_expression_co1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119c2d760>
+bad = 'from stock import hold, release\ndef test_inventory():\n    assert hold(5, 1) == 3\n    assert release(3, 2) == 5\n'
+good = 'from stock import hold, release\ndef test_inventory():\n    assert hold(5, 2) == 3\n    assert release(3, 2) == 5\n'
+mode = 'fixture_inline_inputs', failure_kind = 'assertion'
+reason = 'The objective requires subtraction: subtracting two from five yields three. The probe used one as input while keeping the correct expected result for two.'
+
+    @pytest.mark.parametrize("bad,good,mode,failure_kind,reason", CASES)
+    def test_independent_expression_correction_executes_approves_and_restores(
+            tmp_path, monkeypatch, bad, good, mode, failure_kind, reason):
+        judgments = []
+    
+        def adjudicate(tools, child, packet):
+            assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+            assert packet["probe"]["code"] == bad
+            judgments.append(packet["receipt"]["receiptRef"])
+            result = tools.execute("completion_probe_adjudication_submit", {
+                "verdict": "probe_error", "reason": reason,
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                "replacement": {"criterionIds": packet["probe"]["criterionIds"],
+                    "scenario": packet["probe"]["scenario"], "code": good},
+            }, child)
+            assert result.ok and result._implementation_submitted, result.output
+            document = json.loads(result.output)
+            assert document["verdict"] == "probe_error" and document["correctionMode"] == mode
+            assert "approved" not in document.values(), "An attributed correction still needs actual execution."
+            return AgentStep(type="assistant", kind="final", content="Independent probe correction submitted")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch, adjudication_driver=adjudicate)
+        original = {name: (tmp_path / name).read_bytes() for name in ("stock.py", "test_public.py")}
+        try:
+            initial = assess(lambda tools, child, packet: _seed(tools, child, packet, bad, failure_kind))
+            assert initial["status"] == "inconclusive" and initial["repairProbes"] == []
+            failed = review.state["receipts"][0]
+            assert len(commands) == 2 and judgments == []
+>           approved = assess(_approve)
+                       ^^^^^^^^^^^^^^^^
+
+tests/test_completion_expression_correction.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1697: in _assess_snapshot
+    adjudicate_failures()
+minicode/implementation_completion_review.py:1593: in adjudicate_failures
+    authority = ProbeFailureAdjudicator(self.spec).assess(
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:356: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x106cbb920>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-9yaj962w/verification-yecz5n2v/wor...ons.SchedulerWorkerReadPermissions object at 0x118cd8530>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def adjudicate(tools, child, packet):
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_expression_correction.py:62: AssertionError
+_ test_independent_fixture_keyword_addition_reexecutes_then_approves_and_restores _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_independent_fixture_keywo0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119ec7530>
+
+    def test_independent_fixture_keyword_addition_reexecutes_then_approves_and_restores(tmp_path, monkeypatch):
+        judgments = []
+    
+        def adjudicate(tools, child, packet):
+            assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+            assert packet["probe"]["code"] == BAD
+            judgments.append(packet["receipt"]["receiptRef"])
+            request = {
+                "verdict": "probe_error",
+                "reason": "The test creates its temporary directory before prepare creates the same directory again; "
+                          "allowing the directory to exist preserves the experiment and every inventory assertion.",
+                "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                "replacement": {"criterionIds": packet["probe"]["criterionIds"],
+                    "scenario": packet["probe"]["scenario"], "code": GOOD},
+            }
+            result = tools.execute("completion_probe_adjudication_submit", request, child)
+            assert result.ok, result.output
+            assert result._implementation_submitted
+            document = json.loads(result.output)
+            assert document["verdict"] == "probe_error" and document["correctionMode"] == "fixture_keywords"
+            assert "approved" not in document.values(), "Attribution alone is not completion approval."
+            return AgentStep(type="assistant", kind="final", content="Fixture keyword correction independently submitted")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch, adjudication_driver=adjudicate)
+        original = {name: (tmp_path / name).read_bytes() for name in ("stock.py", "test_public.py")}
+        try:
+            initial = assess(_seed)
+            assert initial["status"] == "inconclusive" and initial["repairProbes"] == []
+            failed = review.state["receipts"][0]
+            assert len(commands) == 2 and judgments == []
+>           approved = assess(_approve)
+                       ^^^^^^^^^^^^^^^^
+
+tests/test_completion_fixture_keywords.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    if (cached.get("status") != "approved"
+minicode/implementation_completion_review.py:1697: in _assess_snapshot
+    self._register_purpose(self._probes[row["probeId"]], row["purpose"], legacy_resolution=resolution)
+    ^^^^^^^^^^^^^^^^^^^^^
+minicode/implementation_completion_review.py:1593: in adjudicate_failures
+    if authority is None:
+minicode/probe_failure_adjudication.py:199: in assess
+    result = self._review(model=model, tools=tools, host=host, cwd=str(cwd),
+minicode/probe_failure_adjudication.py:356: in _review
+    run_agent_turn(model=model, tools=registry, cwd=cwd, permissions=permissions,
+tests/test_implementation_completion_review.py:119: in review_loop
+    return adjudication_driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x119e72420>
+child = ToolContext(cwd='/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-3hfm4t65/verification-dw6unhh8/wor...ons.SchedulerWorkerReadPermissions object at 0x119e70800>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'advisoryContext': {'advisoryVersion': 1, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044d...receipt.json', ...}, 'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', ...}
+
+    def adjudicate(tools, child, packet):
+>       assert set(tools.list_all()) == {"read_file", "completion_probe_adjudication_submit"}
+E       AssertionError: assert {'completion_..., 'read_file'} == {'completion_..., 'read_file'}
+E         
+E         Extra items in the left set:
+E         'completion_evidence_read'
+E         Use -v to get more diff
+
+tests/test_completion_fixture_keywords.py:49: AssertionError
+_ test_same_candidate_classified_obligations_do_not_restart_semantic_classifier _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_same_candidate_classified0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106eaab40>
+
+    def test_same_candidate_classified_obligations_do_not_restart_semantic_classifier(tmp_path, monkeypatch):
+        import minicode.agent_loop as loop
+    
+        real_loop = loop.run_agent_turn
+        legacy = _seed_legacy(tmp_path, monkeypatch)
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch,
+            review_factory=lambda spec: ImplementationCompletionReview.from_state(spec, legacy))
+        (tmp_path / "stock.py").write_text(SOURCE.replace("return n + amount", "return n"))
+        review.queue_legacy_resolution(_resolution(review, tmp_path))
+        failed = assess(lambda *_args: pytest.fail("failed replacement must not ask a final reviewer"))
+        assert failed["reason"] == "legacy_acceptance_product_gap"
+        assert not review.has_legacy_probes and review.state["pendingLegacyResolution"] is None
+        owner = "implementation_" + "4" * 32
+        feedback = {"role": "user", "_implementation_completion_feedback": True,
+                    "content": "Original request:\n" + review.spec.objective + "\nCompletion evidence:\n" + json.dumps(failed)}
+        messages = [{"role": "user", "content": review.spec.objective}, feedback]
+        continuation = HostImplementationContinuation.capture(spec=review.spec,
+            context=ToolContext(cwd=str(tmp_path)), messages=messages,
+            executor_id=owner, attempt=1, review_state=review.state)
+        cap.close()
+        calls, decisions, migrations = [], [], []
+    
+        def forbid_migration(*args, **kwargs):
+            migrations.append((args, kwargs))
+            pytest.fail("same candidate pending resolution must reuse existing migration evidence")
+    
+        class Model:
+            def next(self, current, **_kwargs):
+                if any(row.get("role") == "system" and "Independently attribute" in row.get("content", "")
+                       for row in current):
+                    return AgentStep(type="tool_calls", calls=[ToolCall(id="confirmed-product-gap", toolName="completion_probe_adjudication_submit", input={
+                        "verdict": "product_gap", "reason": "The original release addition requirement still fails.",
+                        "objectiveEvidence": [{"startLine": 1, "endLine": 4}],
+                        "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}]})])
+                calls.append(list(current))
+                if len(calls) <= 2:
+                    return AgentStep(type="assistant", kind="final", content="Ready for delivery.")
+                raise TurnCancellationRequested("turn_" + "4" * 32)
+    
+        class Sink:
+            def emit(self, event_type, *, step=None, payload=None):
+                if event_type == "implementation.completion_decided":
+                    decisions.append(payload)
+    
+        monkeypatch.setattr("minicode.completion_probe_migration.CompletionProbeMigration.assess", forbid_migration)
+        monkeypatch.setattr(loop, "run_agent_turn", real_loop)
+        with pytest.raises(TurnCancellationRequested):
+            real_loop(model=Model(), tools=ToolRegistry([read_file_tool, edit_file_tool]),
+                cwd=str(tmp_path), messages=messages, runtime={"model": "test"},
+                implementation_spec=review.spec, implementation_continuation=continuation,
+                max_steps=None, agent_budget=AgentTurnBudget(), enable_work_chain=False,
+                enable_implementation_phases=False, event_sink=Sink(), defer_curator_maintenance=True)
+        assert migrations == []
+        assert len(calls) == 3
+>       assert [row["status"] for row in decisions] == ["changes_required", "changes_required"]
+E       AssertionError: assert ['changes_req...ges_required'] == ['changes_req...ges_required']
+E         
+E         Left contains one more item: 'changes_required'
+E         Use -v to get more diff
+
+tests/test_completion_pending_migration.py:73: AssertionError
+_ test_pending_replacement_does_not_cancel_independent_product_repair[independent_missing] _
+
+inventory = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+evidence = 'independent_missing'
+
+    @pytest.mark.parametrize("evidence", ["product_gap", "independent_missing", "unknown_only"])
+    def test_pending_replacement_does_not_cancel_independent_product_repair(inventory, evidence):
+        case = inventory
+        ids = [row["id"] for row in requirement_units(OBJECTIVE)]
+        known = evidence != "unknown_only"
+        broken = BROKEN_FIXTURE if evidence == "product_gap" else BROKEN_FIXTURE.replace(
+            "    assert backend.restore(7, 3) == 10\n", "")
+        valid = broken.replace("make_backend()()", "make_backend()")
+        criterion_ids = ids if evidence == "product_gap" else ids[:1]
+        stop = KeyboardInterrupt("native parent received confirmed repair; no patch is applied")
+        calls = {"parent": 0, "review": 0, "audit": 0, "attributions": []}
+        original_read = None
+    
+        class Driver:
+            model_id = "local-repair-priority-regression"
+            old_id = None
+    
+            def next(self, messages, **kwargs):
+                nonlocal original_read
+                names = set(kwargs["tools_override"].list_all())
+                if "completion_probe_adjudication_submit" in names:
+                    packet = packet_with(messages, "probe")
+                    source = [m for m in messages if m.get("role") == "tool_result"
+                              and m.get("toolUseId") == "attribution-source"]
+                    if not source:
+                        return _call("attribution-source", "read_file", path="stock.py")
+                    assert not source[-1]["isError"]
+                    fixture_error = packet["probe"]["probeId"] == self.old_id
+                    assert packet["probe"]["code"] == (broken if fixture_error else valid)
+                    verdict = "probe_error" if fixture_error else "product_gap"
+                    calls["attributions"].append(verdict)
+                    value = {"verdict": verdict,
+                        "reason": "The fixture invokes an already constructed Backend instance." if fixture_error
+                            else "release returns 7 instead of the required addition result 10.",
+                        "objectiveEvidence": [{"startLine": 1, "endLine": 2}],
+                        "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}]}
+                    if fixture_error:
+                        value["replacement"] = {"criterionIds": criterion_ids,
+                            "scenario": packet["probe"]["scenario"], "code": valid}
+                    return _call("attribution-submit", "completion_probe_adjudication_submit", **value)
+                if "completion_review_submit" in names:
+                    calls["review"] += 1
+                    if calls["review"] == 1:
+                        return _call("broken-probe", "review_test", purpose="acceptance",
+                            criterionIds=criterion_ids, scenario="Real inventory operations.", code=broken)
+                    if calls["review"] == 2:
+                        result = json.JSONDecoder().raw_decode(_result(messages, "broken-probe")["content"])[0]
+                        assert result["receipt"]["status"] == "failed"
+                        self.old_id = result["probeId"]
+                        return _call("review-source", "read_file", path="stock.py")
+                    assert calls["review"] == 3
+                    assert not _result(messages, "review-source")["isError"]
+                    return _call("review-submit", "completion_review_submit",
+                        status="changes_required" if known else "inconclusive",
+                        requirements=[{"id": identity, "status": "unknown",
+                            "sourceEvidence": [], "probeIds": [],
+                            "rationale": "No separate source-backed omission is submitted before attribution."}
+                            for identity in ids],
+                        findings=["release must add the requested amount." if known
+                                  else "The replacement equivalence still needs independent scrutiny."])
+                if "completion_coverage_audit_submit" in names:
+                    calls["audit"] += 1
+                    packet = packet_with(messages, "evidenceIndex")
+                    assert packet["supersessionIndex"]
+                    assert calls["audit"] <= 2, [m for m in messages if m.get("isError")]
+                    if calls["audit"] == 1:
+                        return _call("audit-source", "read_file", path="stock.py")
+                    assert not _result(messages, "audit-source")["isError"]
+                    return _call("audit-submit", "completion_coverage_audit_submit",
+                        status="changes_required" if known else "inconclusive",
+                        requirements=[{"id": ids[1], "status": "missing" if known else "unknown",
+                            "reason": "Source confirms missing addition." if known else "Replacement equivalence is unresolved.",
+                            "witnesses": []}],
+                        findings=["Repair missing addition." if known else "No product defect has been established."],
+                        supersessions=[])
+                assert {"write_file", "executor_check"} <= names
+                calls["parent"] += 1
+                if calls["parent"] == 1:
+                    return _call("original-read", "read_file", path="stock.py")
+                if calls["parent"] == 2:
+                    original_read = deepcopy(_result(messages, "original-read"))
+                    return AgentStep(type="assistant", kind="final", content="Ready for independent review.")
+                assert known, "Unknown test evidence must not become a product repair instruction"
+                assert _result(messages, "original-read") == original_read
+                raise stop
+    
+        driver = Driver()
+        try:
+            run_agent_turn(model=driver, messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+        except KeyboardInterrupt as error:
+            assert error is stop
+        assert calls["attributions"] == (["probe_error", "product_gap"] if evidence == "product_gap" else ["probe_error"])
+        assert (case["workspace"] / "stock.py").read_text() == PARTIAL
+        document, saved = case["checkpoints"][-1]
+        assert _result(saved, "original-read") == original_read
+        assert len({item[0]["executorId"] for item in case["checkpoints"]}) == 1
+        assert document["reviewState"]["supersessions"]
+        assert document["reviewState"]["retiredProbeIds"] == []
+        decision = next(row["payload"] for row in reversed(case["events"])
+                        if row["type"] == "implementation.completion_decided")
+        assert decision["status"] != "approved"
+        assert decision["unresolvedProbes"], "Unknown fixture evidence must remain visible"
+        if not known:
+            assert calls["parent"] == 2
+            assert decision["status"] == "inconclusive" and decision["canContinue"] is False
+            assert decision["repairProbes"] == []
+            return
+>       assert calls["parent"] == 3, ("Independent product defect was suppressed by a pending test replacement", decision)
+E       AssertionError: ('Independent product defect was suppressed by a pending test replacement', {'completionVersion': 1, 'executorId': 'implementation_b29043add1ae4544a574bc1942946a79', 'attempt': 1, 'continuesSameExecutor': False, ...})
+E       assert 2 == 3
+
+tests/test_completion_repair_priority.py:126: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4713 Model API error (AssertionError): assert {'executor_ch... 'write_file'} <= {'completion_...'review_test'}
+  
+  Extra items in the left set:
+  'executor_check'
+  'write_file'
+_ test_reviewer_index_has_current_diagnostic_status_and_readable_full_history __
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_reviewer_index_has_curren0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119e29d60>
+
+    def test_reviewer_index_has_current_diagnostic_status_and_readable_full_history(tmp_path, monkeypatch):
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch)
+        saved = {}
+    
+        def diagnose(tools, child, packet):
+            result, evidence = _probe(tools, child, packet, DIAGNOSTIC, purpose="diagnostic")
+            assert not result.ok
+            saved.update(evidence)
+            # An ordinary end is not approval; another attempt can read all evidence.
+    
+        try:
+            assert assess(diagnose)["status"] == "inconclusive"
+    
+            def accept(tools, child, packet):
+                entries = packet["diagnosticObservations"]
+                assert len(entries) == 1
+                row = entries[0]
+                assert row["probeId"] == saved["probeId"]
+                assert row["status"] == "failed"
+                assert row["candidateDigest"] == packet["candidateDigest"]
+                assert row["receiptCount"] == 1
+                assert row["latestReceiptRef"] == saved["receiptRef"]
+                assert "source" not in row and "receipts" not in row
+                full = _read_all(tools, child, row["probeId"])
+                assert full["source"]["code"] == DIAGNOSTIC
+                assert full["receipts"] == [saved]
+                current = _read_all(tools, child, row["probeId"], receiptView="current")
+                assert current["receipts"] == [saved]
+                assert current["historyReceiptCount"] == 1
+                passed, acceptance = _probe(tools, child, packet)
+                assert passed.ok
+                assert _submit(tools, child, packet, ids=[acceptance["probeId"]]).ok
+    
+>           approved = assess(accept)
+                       ^^^^^^^^^^^^^^
+
+tests/test_completion_review_evidence_delivery.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    if (cached.get("status") != "approved"
+minicode/implementation_completion_review.py:1817: in _assess_snapshot
+    "diagnostic records observations, cannot certify coverage, and does not become a required passing regression. "
+tests/test_implementation_completion_review.py:130: in review_loop
+    return driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x119b479b0>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-diz7bta6/verification-ehue...ons.SchedulerWorkerReadPermissions object at 0x119c34380>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'diagnosticObservations... completion submission.']], 'probePurposes': {'review_probe_3baec5fef79ad254c4c6b717': {'purpose': 'diagnostic'}}, ...}
+
+    def accept(tools, child, packet):
+        entries = packet["diagnosticObservations"]
+        assert len(entries) == 1
+        row = entries[0]
+        assert row["probeId"] == saved["probeId"]
+        assert row["status"] == "failed"
+        assert row["candidateDigest"] == packet["candidateDigest"]
+        assert row["receiptCount"] == 1
+        assert row["latestReceiptRef"] == saved["receiptRef"]
+        assert "source" not in row and "receipts" not in row
+        full = _read_all(tools, child, row["probeId"])
+        assert full["source"]["code"] == DIAGNOSTIC
+>       assert full["receipts"] == [saved]
+E       AssertionError: assert [{'candidateD...t.json', ...}] == [{'candidateD...7eb2cc', ...}]
+E         
+E         At index 0 diff: {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 224, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Libra...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_completion_review_evidence_delivery.py:49: AssertionError
+___ test_current_receipt_view_does_not_mislabel_previous_candidate_evidence ____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_current_receipt_view_does0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119e700b0>
+
+    def test_current_receipt_view_does_not_mislabel_previous_candidate_evidence(tmp_path, monkeypatch):
+        review, assess, _commands, cap = _fixture(tmp_path, monkeypatch)
+        saved = {}
+    
+        def seed(tools, child, packet):
+            result, evidence = _probe(tools, child, packet, DIAGNOSTIC, purpose="diagnostic")
+            assert not result.ok
+            saved.update(evidence)
+    
+        try:
+            assess(seed)
+            with (tmp_path / "stock.py").open("a") as handle:
+                handle.write("\n# a new candidate\n")
+    
+            def resumed(tools, child, packet):
+                entry = packet["diagnosticObservations"][0]
+                assert entry["status"] is None and entry["latestReceiptRef"] is None
+                assert entry["receiptCount"] == 1
+                current = _read_all(tools, child, saved["probeId"], receiptView="current")
+                assert current["receipts"] == [] and current["historyReceiptCount"] == 1
+                full = _read_all(tools, child, saved["probeId"])
+                assert full["receipts"] == [saved]
+                malformed = tools.execute("review_probe_read", {
+                    "probeId": saved["probeId"], "receiptView": "ignore_failures"}, child)
+                assert not malformed.ok
+    
+>           assert assess(resumed)["status"] == "inconclusive"
+                   ^^^^^^^^^^^^^^^
+
+tests/test_completion_review_evidence_delivery.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    if (cached.get("status") != "approved"
+minicode/implementation_completion_review.py:1817: in _assess_snapshot
+    "diagnostic records observations, cannot certify coverage, and does not become a required passing regression. "
+tests/test_implementation_completion_review.py:130: in review_loop
+    return driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tools = <minicode.tooling.ToolRegistry object at 0x107171d60>
+child = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-workflow-p81p5fkl/verification-ikxw...ons.SchedulerWorkerReadPermissions object at 0x119cf1460>, _runtime=None, _event_sink=None, _step=None, _agent_depth=0)
+packet = {'candidateDigest': 'sha256:41bb125a7a9e6475d12b9b5209aea45d36c6e156d7829971f73003a6bafbebda', 'diagnosticObservations... completion submission.']], 'probePurposes': {'review_probe_3baec5fef79ad254c4c6b717': {'purpose': 'diagnostic'}}, ...}
+
+    def resumed(tools, child, packet):
+        entry = packet["diagnosticObservations"][0]
+        assert entry["status"] is None and entry["latestReceiptRef"] is None
+        assert entry["receiptCount"] == 1
+        current = _read_all(tools, child, saved["probeId"], receiptView="current")
+        assert current["receipts"] == [] and current["historyReceiptCount"] == 1
+        full = _read_all(tools, child, saved["probeId"])
+>       assert full["receipts"] == [saved]
+E       AssertionError: assert [{'candidateD...t.json', ...}] == [{'candidateD...2dcaac', ...}]
+E         
+E         At index 0 diff: {'candidateDigest': 'sha256:d21c2f95427bebe10e95e2307cbb6184a5acce5d3b69044dd179bda9ff427320', 'probeId': 'review_probe_3baec5fef79ad254c4c6b717', 'receipt': {'criterionIds': ['req_624a5f97a5c1d9430cf0', 'req_f9748bf627102258bef0'], 'evidence': {'argv': ['python3', '-m', 'pytest', '-q', '__minicode_review_probe__.py'], 'checkId': 'public', 'commandDigest': 'sha256:2f902337ebea6ede3d414cf21927909c0bccb0460e734769219b2dff31adade0', 'durationMs': 231, 'evidenceVersion': 1, 'exitCode': 1, 'failureReason': None, 'kind': 'tests', 'resolvedExecutable': '/Libra...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_completion_review_evidence_delivery.py:86: AssertionError
+_ test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and_delivers _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_real_provider_rejection_r0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x118ea3530>
+
+    def test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and_delivers(tmp_path, monkeypatch):
+        import minicode.workflow_runner as runner
+    
+        objective = "1. hold subtracts amount from available.\n2. release adds amount to available."
+        initial = ("def hold(available, amount):\n    return available\n\n"
+                   "def release(available, amount):\n    return available\n")
+        partial_test = "from stock import hold\ndef test_hold():\n    assert hold(10, 3) == 7\n"
+        complete_test = partial_test + "\nfrom stock import release\ndef test_release():\n    assert release(7, 3) == 10\n"
+        probe_source = ("from stock import hold, release\ndef test_both():\n"
+                        "    assert hold(10, 3) == 7\n    assert release(7, 3) == 10\n")
+        (tmp_path / "stock.py").write_text(initial)
+        (tmp_path / "test_requested.py").write_text("def test_initial():\n    assert True\n")
+        commands, requests, events, presented, streamed = [], [], [], [], []
+    
+        class Sandbox:
+            def wrap_command(self, *, argv, cwd, **kwargs):
+                commands.append({"argv": list(argv), "cwd": Path(cwd)})
+                return argv
+    
+        class Sink:
+            def emit(self, event_type, *, step=None, payload=None):
+                events.append({"type": event_type, "step": step, "payload": payload})
+    
+        monkeypatch.setattr(runner, "_deterministic_verifier_for_context",
+            lambda *_a, **_k: DeterministicVerifier(sandbox_backend=Sandbox(),
+                explicit_trusted_executables={"python3": sys.executable}))
+        monkeypatch.setattr(PermissionManager, "ensure_command", lambda *_a, **_k: None)
+        registry = ToolRegistry([read_file_tool, edit_file_tool, write_file_tool])
+        runtime = {"model": "gpt-test", "openaiBaseUrl": "https://openai.invalid/v1",
+                   "openaiApiKey": "test", "modelMaxRetries": 0, "maxOutputTokens": 4096}
+        adapter = OpenAIModelAdapter(runtime, registry)
+        original_schemas = json.loads(json.dumps(adapter.request_tool_schemas()))
+        parent_names = {"read_file", "edit_file", "write_file", "executor_check", "executor_test", "verification_output_read"}
+        reviewer_names = {"read_file", "review_test", "review_probe_read", "completion_review_submit"}
+        adjudicator_names = {"read_file", "completion_probe_adjudication_submit"}
+        auditor_names = reviewer_names - {"completion_review_submit"} | {
+            "completion_coverage_audit_submit", "review_evidence_read"}
+        requirement_ids = [unit["id"] for unit in requirement_units(objective)]
+        parent_calls = reviewer_calls = adjudicator_calls = auditor_calls = 0
+        failed_probe = {}
+        premature = "Both operations are complete."
+        final = "Both operations are implemented and tested."
+    
+        class Response(io.BytesIO):
+            status = 200
+    
+        def call(identity, name, **arguments):
+            return {"id": identity, "type": "function", "function": {
+                "name": name, "arguments": json.dumps(arguments)}}
+    
+        def verdict(status):
+            return {"status": status, "requirements": [
+                {"id": identity, "status": "covered" if status == "approved" else "missing",
+                 "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                 "probeIds": [failed_probe["probeId"]] if status == "approved" else [],
+                 "rationale": "Both public operations passed the retained probe." if status == "approved"
+                    else "The combined acceptance probe fails because release remains a no-op."}
+                for identity in requirement_ids], "findings": [] if status == "approved" else [
+                    "release(7, 3) returns 7; the original addition requirement is missing."]}
+    
+        def transport(request, *, timeout):
+            nonlocal parent_calls, reviewer_calls, adjudicator_calls, auditor_calls
+            del timeout
+            body = json.loads(request.data.decode())
+            names = {tool["function"]["name"] for tool in body.get("tools", [])}
+            # Classification and every chosen tool are based on the actual HTTP
+            # schema, never a scripted Model.next that ignores the capabilities.
+            role = ("adjudicator" if "completion_probe_adjudication_submit" in names
+                    else "auditor" if "completion_coverage_audit_submit" in names
+                    else "reviewer" if "completion_review_submit" in names else "parent")
+            requests.append({"role": role, "body": body})
+            tools, text = [], None
+            if role == "auditor":
+                assert names == auditor_names
+                auditor_calls += 1
+                packet = next(json.loads(m["content"]) for m in body["messages"]
+                              if m.get("role") == "user" and '"evidenceIndex"' in m.get("content", ""))
+                if auditor_calls == 1:
+                    assert not presented and not streamed
+                    tools = [call("audit-source", "review_probe_read", probeId=failed_probe["probeId"],
+                                  receiptView="current", limit=16000)]
+                else:
+                    assert auditor_calls == 2
+                    raw = next(m["content"] for m in body["messages"]
+                               if m.get("role") == "tool" and m.get("tool_call_id") == "audit-source")
+                    source = json.loads(json.loads(raw)["text"])["source"]
+                    assert source["code"] == probe_source
+                    tools = [call("audit-approved", "completion_coverage_audit_submit",
+                                  **_coverage_approval(packet, {source["probeId"]: source}))]
+            elif role == "adjudicator":
+                assert names == adjudicator_names
+                schema = next(tool["function"]["parameters"] for tool in body["tools"]
+                              if tool["function"]["name"] == "completion_probe_adjudication_submit")
+                assert set(schema["required"]) == {"verdict", "reason", "objectiveEvidence", "sourceEvidence"}
+                assert set(schema["properties"]["verdict"]["enum"]) == {"product_gap", "probe_error", "inconclusive"}
+                packet = next(json.loads(message["content"]) for message in body["messages"]
+                    if message.get("role") == "user" and '"originalObjective"' in message.get("content", ""))
+                assert packet["originalObjective"] == objective
+                assert packet["probe"]["code"] == probe_source
+                assert packet["probe"]["probeId"] == failed_probe["probeId"]
+                assert packet["receipt"]["receipt"]["status"] == "failed"
+                adjudicator_calls += 1
+                if adjudicator_calls == 1:
+                    tools = [call("adjudication-source", "read_file", path="stock.py")]
+                else:
+                    assert adjudicator_calls == 2
+                    source = next(message["content"] for message in body["messages"]
+                        if message.get("role") == "tool" and message.get("tool_call_id") == "adjudication-source")
+                    assert "return available" in source and "return available + amount" not in source
+                    tools = [call("adjudication-product-gap", "completion_probe_adjudication_submit",
+                        verdict="product_gap", reason="release returns the unchanged count instead of the required addition.",
+                        objectiveEvidence=[{"startLine": 2, "endLine": 2}],
+                        sourceEvidence=[{"path": "stock.py", "startLine": 4, "endLine": 5}])]
+            elif role == "parent":
+                assert names == parent_names
+                parent_calls += 1
+                if parent_calls == 1:
+                    tools = [call("implement-hold", "edit_file", path="stock.py",
+                        old="def hold(available, amount):\n    return available",
+                        new="def hold(available, amount):\n    return available - amount"),
+                        call("test-only-hold", "write_file", path="test_requested.py", content=partial_test)]
+                elif parent_calls == 2:
+                    text = premature
+                elif parent_calls == 3:
+                    # The same owner receives all previous edits and tool receipts,
+                    # plus actionable probe source rather than a temp-only ref.
+                    assert (tmp_path / "stock.py").read_text() == initial.replace(
+                        "def hold(available, amount):\n    return available",
+                        "def hold(available, amount):\n    return available - amount")
+                    assert (tmp_path / "test_requested.py").read_text() == partial_test
+                    assert {"implement-hold", "test-only-hold"} <= {
+                        message.get("tool_call_id") for message in body["messages"] if message.get("role") == "tool"}
+                    feedback = next(message["content"] for message in reversed(body["messages"])
+                        if "\nCompletion evidence:\n" in message.get("content", ""))
+                    decision = json.loads(feedback.split("\nCompletion evidence:\n", 1)[1])
+                    assert decision["continuesSameExecutor"] and decision["status"] == "changes_required"
+                    assert decision["repairProbes"][0]["code"] == probe_source
+                    assert decision["probeReceipts"][0]["receipt"]["status"] == "failed"
+                    assert decision["probeReceipts"][0]["probeId"] == failed_probe["probeId"]
+                    assert not presented and not streamed
+                    tools = [call("complete-release", "edit_file", path="stock.py",
+                        old="def release(available, amount):\n    return available",
+                        new="def release(available, amount):\n    return available + amount"),
+                        call("test-both", "write_file", path="test_requested.py", content=complete_test)]
+                else:
+                    assert parent_calls == 4, "a new parent session or extra final request is a regression"
+                    text = final
+            else:
+                assert names == reviewer_names
+                probe_schema = next(tool["function"]["parameters"] for tool in body["tools"]
+                                    if tool["function"]["name"] == "review_test")
+                assert "purpose" in probe_schema["required"]
+                assert set(probe_schema["properties"]["purpose"]["enum"]) == {"diagnostic", "acceptance"}
+                reviewer_calls += 1
+                if reviewer_calls == 1:
+                    tools = [call("independent-check", "review_test", purpose="acceptance", criterionIds=requirement_ids,
+                        scenario="Both original quantity operations are exercised.", code=probe_source)]
+                elif reviewer_calls == 2:
+                    receipt = json.JSONDecoder().raw_decode(next(message["content"] for message in reversed(body["messages"])
+                        if message.get("role") == "tool"))[0]
+                    assert receipt["receipt"]["status"] == "failed"
+                    assert receipt["receipt"]["testReport"]["failed"] == 1
+                    failed_probe.update(receipt)
+                    tools = [call("reject-gap", "completion_review_submit", **verdict("changes_required"))]
+                else:
+                    assert reviewer_calls == 3, "retained probe should replay without a new model-authored test"
+                    prompt = next(json.loads(message["content"]) for message in body["messages"]
+                        if message.get("role") == "user" and '"retainedProbes"' in message.get("content", ""))
+                    assert prompt["retainedProbes"] == [{"probeId": failed_probe["probeId"],
+                        "criterionIds": requirement_ids, "status": "passed"}]
+                    assert prompt["candidateDigest"] != failed_probe["candidateDigest"]
+                    tools = [call("approve-repair", "completion_review_submit", **verdict("approved"))]
+            assert all(tool["function"]["name"] in names for tool in tools)
+            message = {"role": "assistant", "content": text}
+            if tools:
+                message["tool_calls"] = tools
+            return Response(json.dumps({"choices": [{"index": 0, "message": message,
+                "finish_reason": "tool_calls" if tools else "stop"}],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 50}}).encode())
+    
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", transport)
+        spec = ImplementationSpec(("stock.py", "test_requested.py"), (
+            VerificationCheck("public", "tests", ("python3", "-m", "pytest", "-q", "test_requested.py"), 20),
+        ), objective)
+        capture = AgentOutcomeCapture()
+        budget = AgentTurnBudget(max_model_calls=None, max_total_tokens=None, max_cost_usd=None)
+        transcript = run_agent_turn(model=adapter, tools=registry, runtime=runtime,
+            messages=[{"role": "user", "content": objective}], cwd=str(tmp_path),
+            implementation_task=True, implementation_spec=spec, enable_work_chain=False,
+            enable_implementation_phases=False, max_steps=None, agent_budget=budget,
+            event_sink=Sink(), outcome_capture=capture, on_assistant_message=presented.append,
+            on_assistant_stream_chunk=streamed.append, defer_curator_maintenance=True)
+    
+>       assert [r["role"] for r in requests] == ["parent", "parent", "reviewer", "reviewer",
+            "adjudicator", "adjudicator", "parent", "parent", "reviewer", "auditor", "auditor"]
+E       AssertionError: assert ['parent'] == ['parent', 'p...dicator', ...]
+E         
+E         Right contains 10 more items, first extra item: 'parent'
+E         Use -v to get more diff
+
+tests/test_completion_review_provider_handoff.py:216: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4713 Model API error (AssertionError): assert {'completion_...ut_read', ...} == {'edit_file',... 'write_file'}
+  
+  Extra items in the left set:
+  'completion_evidence_read'
+  Use -v to get more diff
+_ test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[False-False] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_shared_openai_adapter_use0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119c58b90>
+inject_parent_tools = False, force_parent_choice = False
+
+    @pytest.mark.parametrize("inject_parent_tools,force_parent_choice", [(False, False), (True, False), (True, True)])
+    def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
+            tmp_path, monkeypatch, inject_parent_tools, force_parent_choice):
+        review, _assess, _commands, capability = _fixture(tmp_path, monkeypatch)
+        parent_tools = ToolRegistry([read_file_tool, edit_file_tool])
+        runtime = {"model": "gpt-test", "openaiBaseUrl": "https://openai.invalid/v1",
+                   "openaiApiKey": "test", "modelMaxRetries": 0, "maxOutputTokens": 4096}
+        parent_names = {"read_file", "edit_file"}
+        if inject_parent_tools:
+            runtime["_openrouter_params"] = {"tools": [{"type": "function", "function": {
+                "name": "parent_runtime_write", "description": "Parent configured write capability",
+                "parameters": {"type": "object", "properties": {}}}}]}
+            parent_names = {"parent_runtime_write"}
+        if force_parent_choice:
+            runtime["_openrouter_params"]["tool_choice"] = {
+                "type": "function", "function": {"name": "parent_runtime_write"}}
+        adapter = OpenAIModelAdapter(runtime, parent_tools)
+        # Reuse the existing adapter and prime its original tool cache, just as a
+        # completed implementation would. The nested review must not mutate it.
+        assert {tool["function"]["name"] for tool in adapter.request_tool_schemas()} == parent_names
+        expected = {"read_file", "review_test", "review_probe_read", "completion_review_submit"}
+        audit_expected = expected - {"completion_review_submit"} | {
+            "completion_coverage_audit_submit", "review_evidence_read"}
+        requests = []
+    
+        class Response(io.BytesIO):
+            status = 200
+    
+        def transport(request, *, timeout):
+            del timeout
+            body = json.loads(request.data.decode())
+            requests.append(body)
+            names = {tool["function"]["name"] for tool in body.get("tools", [])}
+            if names not in (expected, audit_expected):
+                # A real provider can only select its advertised capabilities.
+                # End this local attempt instead of fabricating an unadvertised
+                # native call, which would conceal the production wiring defect.
+                message = {"role": "assistant", "content": "Required review tools are unavailable."}
+                finish = "stop"
+            else:
+                packet = {"requirements": list(review.requirements)}
+                if names == audit_expected:
+                    packet = next(json.loads(m["content"]) for m in body["messages"]
+                                  if m.get("role") == "user" and '"evidenceIndex"' in m.get("content", ""))
+                    reads = [m for m in body["messages"] if m.get("role") == "tool"]
+                    if not reads:
+                        name, args = "review_probe_read", {"probeId": packet["evidenceIndex"][0]["probeId"],
+                                                           "receiptView": "current", "limit": 16000}
+                    else:
+                        source = json.loads(json.loads(reads[-1]["content"])["text"])["source"]
+                        name, args = "completion_coverage_audit_submit", _coverage_approval(packet, {source["probeId"]: source})
+                elif len(requests) == 1:
+                    name, args = "review_test", {"purpose": "acceptance", "criterionIds": [u["id"] for u in review.requirements],
+                        "scenario": "Both public quantity operations work", "code": PROBE}
+                else:
+                    assert len(requests) == 2
+                    receipt = json.loads(next(message["content"] for message in reversed(body["messages"])
+                                             if message.get("role") == "tool"))
+                    name, args = "completion_review_submit", {"status": "approved", "findings": [],
+                        "requirements": _rows(packet, ids=[receipt["probeId"]])}
+                message = {"role": "assistant", "content": None, "tool_calls": [
+                    {"id": f"provider-call-{len(requests)}", "type": "function", "function": {
+                        "name": name, "arguments": json.dumps(args)}}]}
+                finish = "tool_calls"
+            return Response(json.dumps({"choices": [{"index": 0, "message": message,
+                "finish_reason": finish}], "usage": {"prompt_tokens": 100, "completion_tokens": 50}}).encode())
+    
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", transport)
+        context = ToolContext(cwd=str(tmp_path), _runtime=runtime)
+        try:
+            result = review.assess(model=adapter, tools=parent_tools, context=context,
+                agent_budget=None, event_sink=None, cancellation_token=None,
+                deadline_monotonic=None, checks_receipt=capability.ensure_completion_checks(context))
+            assert requests
+>           assert all({tool["function"]["name"] for tool in body.get("tools", [])} in (expected, audit_expected)
+                       for body in requests), "Provider schema must use the actual nested registry, even without phases."
+E                      AssertionError: Provider schema must use the actual nested registry, even without phases.
+E                      assert False
+E                       +  where False = all(<generator object test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled.<locals>.<genexpr> at 0x119c0fc40>)
+
+tests/test_completion_review_provider_tools.py:89: AssertionError
+_ test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[True-False] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_shared_openai_adapter_use1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106e5bd40>
+inject_parent_tools = True, force_parent_choice = False
+
+    @pytest.mark.parametrize("inject_parent_tools,force_parent_choice", [(False, False), (True, False), (True, True)])
+    def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
+            tmp_path, monkeypatch, inject_parent_tools, force_parent_choice):
+        review, _assess, _commands, capability = _fixture(tmp_path, monkeypatch)
+        parent_tools = ToolRegistry([read_file_tool, edit_file_tool])
+        runtime = {"model": "gpt-test", "openaiBaseUrl": "https://openai.invalid/v1",
+                   "openaiApiKey": "test", "modelMaxRetries": 0, "maxOutputTokens": 4096}
+        parent_names = {"read_file", "edit_file"}
+        if inject_parent_tools:
+            runtime["_openrouter_params"] = {"tools": [{"type": "function", "function": {
+                "name": "parent_runtime_write", "description": "Parent configured write capability",
+                "parameters": {"type": "object", "properties": {}}}}]}
+            parent_names = {"parent_runtime_write"}
+        if force_parent_choice:
+            runtime["_openrouter_params"]["tool_choice"] = {
+                "type": "function", "function": {"name": "parent_runtime_write"}}
+        adapter = OpenAIModelAdapter(runtime, parent_tools)
+        # Reuse the existing adapter and prime its original tool cache, just as a
+        # completed implementation would. The nested review must not mutate it.
+        assert {tool["function"]["name"] for tool in adapter.request_tool_schemas()} == parent_names
+        expected = {"read_file", "review_test", "review_probe_read", "completion_review_submit"}
+        audit_expected = expected - {"completion_review_submit"} | {
+            "completion_coverage_audit_submit", "review_evidence_read"}
+        requests = []
+    
+        class Response(io.BytesIO):
+            status = 200
+    
+        def transport(request, *, timeout):
+            del timeout
+            body = json.loads(request.data.decode())
+            requests.append(body)
+            names = {tool["function"]["name"] for tool in body.get("tools", [])}
+            if names not in (expected, audit_expected):
+                # A real provider can only select its advertised capabilities.
+                # End this local attempt instead of fabricating an unadvertised
+                # native call, which would conceal the production wiring defect.
+                message = {"role": "assistant", "content": "Required review tools are unavailable."}
+                finish = "stop"
+            else:
+                packet = {"requirements": list(review.requirements)}
+                if names == audit_expected:
+                    packet = next(json.loads(m["content"]) for m in body["messages"]
+                                  if m.get("role") == "user" and '"evidenceIndex"' in m.get("content", ""))
+                    reads = [m for m in body["messages"] if m.get("role") == "tool"]
+                    if not reads:
+                        name, args = "review_probe_read", {"probeId": packet["evidenceIndex"][0]["probeId"],
+                                                           "receiptView": "current", "limit": 16000}
+                    else:
+                        source = json.loads(json.loads(reads[-1]["content"])["text"])["source"]
+                        name, args = "completion_coverage_audit_submit", _coverage_approval(packet, {source["probeId"]: source})
+                elif len(requests) == 1:
+                    name, args = "review_test", {"purpose": "acceptance", "criterionIds": [u["id"] for u in review.requirements],
+                        "scenario": "Both public quantity operations work", "code": PROBE}
+                else:
+                    assert len(requests) == 2
+                    receipt = json.loads(next(message["content"] for message in reversed(body["messages"])
+                                             if message.get("role") == "tool"))
+                    name, args = "completion_review_submit", {"status": "approved", "findings": [],
+                        "requirements": _rows(packet, ids=[receipt["probeId"]])}
+                message = {"role": "assistant", "content": None, "tool_calls": [
+                    {"id": f"provider-call-{len(requests)}", "type": "function", "function": {
+                        "name": name, "arguments": json.dumps(args)}}]}
+                finish = "tool_calls"
+            return Response(json.dumps({"choices": [{"index": 0, "message": message,
+                "finish_reason": finish}], "usage": {"prompt_tokens": 100, "completion_tokens": 50}}).encode())
+    
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", transport)
+        context = ToolContext(cwd=str(tmp_path), _runtime=runtime)
+        try:
+            result = review.assess(model=adapter, tools=parent_tools, context=context,
+                agent_budget=None, event_sink=None, cancellation_token=None,
+                deadline_monotonic=None, checks_receipt=capability.ensure_completion_checks(context))
+            assert requests
+>           assert all({tool["function"]["name"] for tool in body.get("tools", [])} in (expected, audit_expected)
+                       for body in requests), "Provider schema must use the actual nested registry, even without phases."
+E                      AssertionError: Provider schema must use the actual nested registry, even without phases.
+E                      assert False
+E                       +  where False = all(<generator object test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled.<locals>.<genexpr> at 0x119c0ee40>)
+
+tests/test_completion_review_provider_tools.py:89: AssertionError
+_ test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[True-True] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_shared_openai_adapter_use2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119cf12b0>
+inject_parent_tools = True, force_parent_choice = True
+
+    @pytest.mark.parametrize("inject_parent_tools,force_parent_choice", [(False, False), (True, False), (True, True)])
+    def test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled(
+            tmp_path, monkeypatch, inject_parent_tools, force_parent_choice):
+        review, _assess, _commands, capability = _fixture(tmp_path, monkeypatch)
+        parent_tools = ToolRegistry([read_file_tool, edit_file_tool])
+        runtime = {"model": "gpt-test", "openaiBaseUrl": "https://openai.invalid/v1",
+                   "openaiApiKey": "test", "modelMaxRetries": 0, "maxOutputTokens": 4096}
+        parent_names = {"read_file", "edit_file"}
+        if inject_parent_tools:
+            runtime["_openrouter_params"] = {"tools": [{"type": "function", "function": {
+                "name": "parent_runtime_write", "description": "Parent configured write capability",
+                "parameters": {"type": "object", "properties": {}}}}]}
+            parent_names = {"parent_runtime_write"}
+        if force_parent_choice:
+            runtime["_openrouter_params"]["tool_choice"] = {
+                "type": "function", "function": {"name": "parent_runtime_write"}}
+        adapter = OpenAIModelAdapter(runtime, parent_tools)
+        # Reuse the existing adapter and prime its original tool cache, just as a
+        # completed implementation would. The nested review must not mutate it.
+        assert {tool["function"]["name"] for tool in adapter.request_tool_schemas()} == parent_names
+        expected = {"read_file", "review_test", "review_probe_read", "completion_review_submit"}
+        audit_expected = expected - {"completion_review_submit"} | {
+            "completion_coverage_audit_submit", "review_evidence_read"}
+        requests = []
+    
+        class Response(io.BytesIO):
+            status = 200
+    
+        def transport(request, *, timeout):
+            del timeout
+            body = json.loads(request.data.decode())
+            requests.append(body)
+            names = {tool["function"]["name"] for tool in body.get("tools", [])}
+            if names not in (expected, audit_expected):
+                # A real provider can only select its advertised capabilities.
+                # End this local attempt instead of fabricating an unadvertised
+                # native call, which would conceal the production wiring defect.
+                message = {"role": "assistant", "content": "Required review tools are unavailable."}
+                finish = "stop"
+            else:
+                packet = {"requirements": list(review.requirements)}
+                if names == audit_expected:
+                    packet = next(json.loads(m["content"]) for m in body["messages"]
+                                  if m.get("role") == "user" and '"evidenceIndex"' in m.get("content", ""))
+                    reads = [m for m in body["messages"] if m.get("role") == "tool"]
+                    if not reads:
+                        name, args = "review_probe_read", {"probeId": packet["evidenceIndex"][0]["probeId"],
+                                                           "receiptView": "current", "limit": 16000}
+                    else:
+                        source = json.loads(json.loads(reads[-1]["content"])["text"])["source"]
+                        name, args = "completion_coverage_audit_submit", _coverage_approval(packet, {source["probeId"]: source})
+                elif len(requests) == 1:
+                    name, args = "review_test", {"purpose": "acceptance", "criterionIds": [u["id"] for u in review.requirements],
+                        "scenario": "Both public quantity operations work", "code": PROBE}
+                else:
+                    assert len(requests) == 2
+                    receipt = json.loads(next(message["content"] for message in reversed(body["messages"])
+                                             if message.get("role") == "tool"))
+                    name, args = "completion_review_submit", {"status": "approved", "findings": [],
+                        "requirements": _rows(packet, ids=[receipt["probeId"]])}
+                message = {"role": "assistant", "content": None, "tool_calls": [
+                    {"id": f"provider-call-{len(requests)}", "type": "function", "function": {
+                        "name": name, "arguments": json.dumps(args)}}]}
+                finish = "tool_calls"
+            return Response(json.dumps({"choices": [{"index": 0, "message": message,
+                "finish_reason": finish}], "usage": {"prompt_tokens": 100, "completion_tokens": 50}}).encode())
+    
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", transport)
+        context = ToolContext(cwd=str(tmp_path), _runtime=runtime)
+        try:
+            result = review.assess(model=adapter, tools=parent_tools, context=context,
+                agent_budget=None, event_sink=None, cancellation_token=None,
+                deadline_monotonic=None, checks_receipt=capability.ensure_completion_checks(context))
+            assert requests
+>           assert all({tool["function"]["name"] for tool in body.get("tools", [])} in (expected, audit_expected)
+                       for body in requests), "Provider schema must use the actual nested registry, even without phases."
+E                      AssertionError: Provider schema must use the actual nested registry, even without phases.
+E                      assert False
+E                       +  where False = all(<generator object test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled.<locals>.<genexpr> at 0x119c0e840>)
+
+tests/test_completion_review_provider_tools.py:89: AssertionError
+__ test_retry_after_transient_unavailability_can_correct_a_real_fixture_error __
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_retry_after_transient_una0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119c37410>
+
+    def test_retry_after_transient_unavailability_can_correct_a_real_fixture_error(tmp_path, monkeypatch):
+        review, assess, _commands, capability = _fixture(tmp_path, monkeypatch)
+        broken = ("from stock import hold, release\ndef test_inventory():\n"
+                  "    amount = int('invalid fixture')\n"
+                  "    assert hold(5, amount) == 3\n    assert release(3, amount) == 5\n")
+        corrected = broken.replace("int('invalid fixture')", "int('2')")
+        execute = completion.run_isolated_review_probe
+        attempts = []
+    
+        def unavailable_once(**kwargs):
+            attempts.append(kwargs["probe"].probe_id)
+            if len(attempts) == 1:
+                # Only the first host execution boundary is unavailable. The retry
+                # and corrected probe below execute real managed pytest processes.
+                return {"probeId": kwargs["probe"].probe_id,
+                        "patchDigest": kwargs["frozen"].patch_digest,
+                        "status": "inconclusive", "reason": "review_probe_execution_unavailable",
+                        "evidence": {"failureReason": "timeout"}, "testReport": None}
+            return execute(**kwargs)
+    
+        monkeypatch.setattr(completion, "run_isolated_review_probe", unavailable_once)
+        retained = []
+    
+        def first(tools, child, packet):
+            result, receipt = _probe(tools, child, packet, broken)
+            assert not result.ok and receipt["receipt"]["status"] == "inconclusive"
+            retained.append(receipt["probeId"])
+            assert _submit(tools, child, packet, rows=_rows(packet, status="unknown"),
+                           status="inconclusive", findings=["The independent check timed out."]).ok
+    
+        def second(tools, child, packet):
+            # The unchanged candidate's retained probe actually retried and failed
+            # in the test body. A future valid correction must not erase that trace.
+            assert packet["retainedProbes"][0]["status"] == "failed"
+            fixed, replacement = _probe(tools, child, packet, corrected,
+                correctsProbeId=retained[0],
+                correctionReason="The public operations accept integer quantities; the test fixture parsed invalid text.",
+                sourceEvidence=[{"path": "stock.py", "startLine": 1, "endLine": 5}])
+            assert fixed.ok, (
+                "An earlier unavailable attempt must not permanently block an explicit "
+                "fixture correction after a real classified failure: " + fixed.output)
+            assert _submit(tools, child, packet, ids=[replacement["probeId"]]).ok
+    
+        try:
+            assert assess(first)["status"] == "inconclusive"
+            result = assess(second)
+>           assert result["status"] == "approved"
+E           AssertionError: assert 'changes_required' == 'approved'
+E             
+E             - approved
+E             + changes_required
+
+tests/test_completion_review_transient_history.py:53: AssertionError
+_ test_unpassed_acceptance_is_identified_and_diagnostic_is_not_a_blocker[failed] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_unpassed_acceptance_is_id0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107173860>
+unpassed = 'failed'
+
+    @pytest.mark.parametrize("unpassed", ["failed", "inconclusive"])
+    def test_unpassed_acceptance_is_identified_and_diagnostic_is_not_a_blocker(tmp_path, monkeypatch, unpassed):
+        _review, assess, _commands, capability = _fixture(tmp_path, monkeypatch)
+        if unpassed == "failed":
+            (tmp_path / "stock.py").write_text(SOURCE.replace("return n + amount", "return n"))
+    
+        def driver(tools, child, packet):
+            # A passing narrow probe can support a reviewer's declared rows, but a
+            # separate retained counterexample must still prevent approval.
+            passed, pass_receipt = _probe(tools, child, packet,
+                "from stock import hold\ndef test_hold():\n    assert hold(5, 2) == 3\n")
+            assert passed.ok
+            diagnostic, diagnostic_receipt = _probe(tools, child, packet,
+                "def test_observation():\n    assert False\n", purpose="diagnostic", scenario="Record an obsolete observation")
+            assert not diagnostic.ok and diagnostic_receipt["receipt"]["status"] == "failed"
+            code = ("from stock import release\ndef test_release():\n    assert release(3, 2) == 5\n"
+                    if unpassed == "failed" else
+                    "import pytest\n@pytest.mark.skip(reason='execution unavailable')\ndef test_release():\n    assert True\n")
+            failed, failed_receipt = _probe(tools, child, packet, code)
+            assert not failed.ok and failed_receipt["receipt"]["status"] == unpassed
+            observed = blockers(_submit(tools, child, packet, ids=[pass_receipt["probeId"]]))
+            assert observed["findings"] == [] and observed["uncoveredRequirements"] == []
+            assert observed["unpassedRetainedProbes"] == [{"probeId": failed_receipt["probeId"], "status": unpassed}]
+            assert not observed["missingRetainedAcceptance"]
+            assert diagnostic_receipt["probeId"] not in json.dumps(observed)
+            assert _submit(tools, child, packet, status="changes_required" if unpassed == "failed" else "inconclusive",
+                rows=_rows(packet, status="missing"), findings=["release still needs verified evidence."]).ok
+    
+        try:
+>           assert assess(driver)["status"] == ("changes_required" if unpassed == "failed" else "inconclusive")
+                   ^^^^^^^^^^^^^^
+
+tests/test_completion_submit_feedback.py:100: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:927: in assess
+    if (cached.get("status") != "approved"
+minicode/implementation_completion_review.py:1817: in _assess_snapshot
+    "diagnostic records observations, cannot certify coverage, and does not become a required passing regression. "
+tests/test_implementation_completion_review.py:130: in review_loop
+    return driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_submit_feedback.py:91: in driver
+    observed = blockers(_submit(tools, child, packet, ids=[pass_receipt["probeId"]]))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+result = ToolResult(ok=True, output='{"candidateDigest": "sha256:2009906dc2fcbb86c3de131935441b78d0fb9fe970cd1588f8fffc19f52162...rposes': ['Review the current implementation without changing its files'], 'supported_operations': [], 'evidence': []})
+
+    def blockers(result):
+>       assert not result.ok
+E       assert not True
+E        +  where True = ToolResult(ok=True, output='{"candidateDigest": "sha256:2009906dc2fcbb86c3de131935441b78d0fb9fe970cd1588f8fffc19f52162...rposes': ['Review the current implementation without changing its files'], 'supported_operations': [], 'evidence': []}).ok
+
+tests/test_completion_submit_feedback.py:14: AssertionError
+_ test_parent_pauses_without_rerunning_probes_then_same_owner_resumes_and_approves _
+
+inventory = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x118e17b90>
+
+    def test_parent_pauses_without_rerunning_probes_then_same_owner_resumes_and_approves(inventory, monkeypatch):
+        case = inventory
+        ids = [row["id"] for row in requirement_units(OBJECTIVE)]
+        before_pause = {}
+        monkeypatch.setattr("minicode.agent_loop.controlled_retry_sleep", lambda *_a, **_k: None)
+    
+        def probe_count():
+            return len([row for row in case["commands"] if "test_public.py" not in row["argv"]])
+    
+        class Seed:
+            parent_calls = reviewer_calls = 0
+            rejected = False
+    
+            def next(self, messages, **kwargs):
+                registry = kwargs["tools_override"]
+                inspected = _inspection_step(messages, registry)
+                if inspected is not None:
+                    return inspected
+                names = set(registry.list_all())
+                if "completion_coverage_audit_submit" in names:
+                    if self.rejected:
+                        assert _result(messages, "rejected-before-network")["isError"]
+                        before_pause.update(messages=deepcopy(messages), probes=probe_count())
+                        raise KeyboardInterrupt("seed the existing same-owner audit before its network failure")
+                    step = _native_coverage_step(messages, stable_evidence=True)
+                    if step.calls[0]["toolName"] == "completion_coverage_audit_submit":
+                        step.calls[0]["id"] = "rejected-before-network"
+                        step.calls[0]["input"]["findings"] = ["Unsupported approval annotation."]
+                        self.rejected = True
+                    return step
+                if "completion_review_submit" in names:
+                    self.reviewer_calls += 1
+                    if self.reviewer_calls == 1:
+                        return _call("actual-probe", "review_test", purpose="acceptance", criterionIds=ids,
+                            scenario="Actual inventory quantity operations.", code=PROBE)
+                    assert self.reviewer_calls == 2
+                    receipt = json.JSONDecoder().raw_decode(_result(messages, "actual-probe")["content"])[0]
+                    assert receipt["receipt"]["status"] == "passed"
+                    return _call("proposal", "completion_review_submit", status="approved", findings=[],
+                        requirements=[{"id": identity, "status": "covered", "probeIds": [receipt["probeId"]],
+                            "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                            "rationale": "The actual quantity assertions passed."} for identity in ids])
+                self.parent_calls += 1
+                if self.parent_calls == 1:
+                    return _call("original-edit", "write_file", path="stock.py", content=COMPLETE)
+                assert self.parent_calls == 2, "Network failure is not an Executor product-repair turn."
+                return AgentStep(type="assistant", kind="final", content="Request completion review.")
+    
+        seed = Seed()
+        with pytest.raises(KeyboardInterrupt, match="seed the existing same-owner audit"):
+            run_agent_turn(model=seed, messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+        seed_document, seed_messages = deepcopy(case["checkpoints"][-1])
+        seed_continuation = HostImplementationContinuation.from_document(seed_document,
+            spec=case["spec"], messages=seed_messages)
+    
+        class Pause:
+            calls = 0
+    
+            def next(self, actual, **kwargs):
+                self.calls += 1
+                assert "completion_coverage_audit_submit" in kwargs["tools_override"].list_all()
+                assert actual[:len(before_pause["messages"])] == before_pause["messages"]
+                raise TimeoutError("generic auditor provider timeout")
+    
+        pause = Pause()
+        run_agent_turn(model=pause, messages=seed_messages, implementation_continuation=seed_continuation,
+            **case["options"])
+        document, messages = deepcopy(case["checkpoints"][-1])
+        pending = document["reviewState"]["pendingCoverageAudit"]
+        assert pending is not None
+        assert pause.calls == 4 and seed.parent_calls == 2
+        assert probe_count() == before_pause["probes"], "No receipt refresh before unfinished coverage audit resumes."
+        retained = record_document(pending["messagesRecord"])["messages"]
+        assert retained[:len(before_pause["messages"])] == before_pause["messages"]
+        paused = [row["payload"] for row in case["events"] if row["type"] == "implementation.completion_decided"][-1]
+>       assert paused["status"] == "inconclusive" and paused["reason"] == "coverage_audit_interrupted"
+E       AssertionError: assert ('inconclusive' == 'inconclusive'
+E         
+E           inconclusive and 'completion_r...get_exhausted' == 'coverage_audit_interrupted'
+E         
+E         - coverage_audit_interrupted
+E         + completion_review_budget_exhausted)
+
+tests/test_coverage_audit_interruption.py:201: AssertionError
+_ test_same_owner_resumes_audit_evidence_then_runs_final_checks[submit-correction-positive-findings] _
+
+inventory = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+rejection = 'positive-findings', repair_after_resume = False
+
+    @pytest.mark.parametrize("rejection", ["positive-findings", "outside-source"])
+    @pytest.mark.parametrize("repair_after_resume", [False, True], ids=["submit-correction", "then-implementation-repair"])
+    def test_same_owner_resumes_audit_evidence_then_runs_final_checks(inventory, rejection, repair_after_resume):
+        case = inventory
+        ids = [row["id"] for row in requirement_units(OBJECTIVE)]
+        initial_source = PARTIAL if repair_after_resume else COMPLETE
+        retained_work = "\n# Existing partial work must survive the interrupted audit.\n"
+        initial_source += retained_work
+        final_source = COMPLETE + retained_work
+        # A weak passed test may be an author's proposed evidence, but the resumed
+        # independent auditor must still be able to reject its semantic adequacy.
+        code = (PROBE.replace("    assert release(7, 3) == 10\n", "") if repair_after_resume else PROBE)
+        code += "# Retained generic inventory test context.\n" * 500
+        child_messages = []
+    
+        class Seed:
+            parent_calls = 0
+            reviewer_calls = 0
+            rejected = False
+    
+            def next(self, messages, **kwargs):
+                inspection_step = _inspection_step(messages, kwargs["tools_override"])
+                if inspection_step is not None:
+                    return inspection_step
+                names = set(kwargs["tools_override"].list_all())
+                if "completion_coverage_audit_submit" in names:
+                    if self.rejected:
+                        assert _result(messages, "rejected-audit")["isError"]
+                        child_messages[:] = deepcopy(messages)
+                        raise KeyboardInterrupt("preserve the real rejected audit and all delivered pages")
+                    step = _native_coverage_step(messages, stable_evidence=True)
+                    if step.calls[0]["toolName"] == "completion_coverage_audit_submit":
+                        value = step.calls[0]["input"]
+                        if rejection == "positive-findings":
+                            value["findings"] = ["Both quantity operations passed."]
+                        else:
+                            value["requirements"][0]["witnesses"][0]["endLine"] = len(code.splitlines()) + 1
+                        step.calls[0]["id"] = "rejected-audit"
+                        self.rejected = True
+                    return step
+                if "completion_review_submit" in names:
+                    self.reviewer_calls += 1
+                    if self.reviewer_calls == 1:
+                        return _call("actual-probe", "review_test", purpose="acceptance", criterionIds=ids,
+                            scenario="Both actual inventory operations satisfy their public contract.", code=code)
+                    assert self.reviewer_calls == 2
+                    receipt = json.JSONDecoder().raw_decode(_result(messages, "actual-probe")["content"])[0]
+                    assert receipt["receipt"]["status"] == "passed"
+                    return _call("proposal", "completion_review_submit", status="approved", findings=[],
+                        requirements=[{"id": identity, "status": "covered", "probeIds": [receipt["probeId"]],
+                            "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                            "rationale": "The original quantity assertions passed on the candidate."} for identity in ids])
+                self.parent_calls += 1
+                if self.parent_calls == 1:
+                    return _call("original-read", "read_file", path="stock.py")
+                if self.parent_calls == 2:
+                    return _call("original-edit", "write_file", path="stock.py", content=initial_source)
+                assert self.parent_calls == 3
+                return AgentStep(type="assistant", kind="final", content="Quantity operations are ready.")
+    
+        seed = Seed()
+>       with pytest.raises(KeyboardInterrupt, match="preserve the real rejected audit"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE KeyboardInterrupt
+
+tests/test_coverage_audit_parent_resume.py:89: Failed
+_ test_same_owner_resumes_audit_evidence_then_runs_final_checks[submit-correction-outside-source] _
+
+inventory = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+rejection = 'outside-source', repair_after_resume = False
+
+    @pytest.mark.parametrize("rejection", ["positive-findings", "outside-source"])
+    @pytest.mark.parametrize("repair_after_resume", [False, True], ids=["submit-correction", "then-implementation-repair"])
+    def test_same_owner_resumes_audit_evidence_then_runs_final_checks(inventory, rejection, repair_after_resume):
+        case = inventory
+        ids = [row["id"] for row in requirement_units(OBJECTIVE)]
+        initial_source = PARTIAL if repair_after_resume else COMPLETE
+        retained_work = "\n# Existing partial work must survive the interrupted audit.\n"
+        initial_source += retained_work
+        final_source = COMPLETE + retained_work
+        # A weak passed test may be an author's proposed evidence, but the resumed
+        # independent auditor must still be able to reject its semantic adequacy.
+        code = (PROBE.replace("    assert release(7, 3) == 10\n", "") if repair_after_resume else PROBE)
+        code += "# Retained generic inventory test context.\n" * 500
+        child_messages = []
+    
+        class Seed:
+            parent_calls = 0
+            reviewer_calls = 0
+            rejected = False
+    
+            def next(self, messages, **kwargs):
+                inspection_step = _inspection_step(messages, kwargs["tools_override"])
+                if inspection_step is not None:
+                    return inspection_step
+                names = set(kwargs["tools_override"].list_all())
+                if "completion_coverage_audit_submit" in names:
+                    if self.rejected:
+                        assert _result(messages, "rejected-audit")["isError"]
+                        child_messages[:] = deepcopy(messages)
+                        raise KeyboardInterrupt("preserve the real rejected audit and all delivered pages")
+                    step = _native_coverage_step(messages, stable_evidence=True)
+                    if step.calls[0]["toolName"] == "completion_coverage_audit_submit":
+                        value = step.calls[0]["input"]
+                        if rejection == "positive-findings":
+                            value["findings"] = ["Both quantity operations passed."]
+                        else:
+                            value["requirements"][0]["witnesses"][0]["endLine"] = len(code.splitlines()) + 1
+                        step.calls[0]["id"] = "rejected-audit"
+                        self.rejected = True
+                    return step
+                if "completion_review_submit" in names:
+                    self.reviewer_calls += 1
+                    if self.reviewer_calls == 1:
+                        return _call("actual-probe", "review_test", purpose="acceptance", criterionIds=ids,
+                            scenario="Both actual inventory operations satisfy their public contract.", code=code)
+                    assert self.reviewer_calls == 2
+                    receipt = json.JSONDecoder().raw_decode(_result(messages, "actual-probe")["content"])[0]
+                    assert receipt["receipt"]["status"] == "passed"
+                    return _call("proposal", "completion_review_submit", status="approved", findings=[],
+                        requirements=[{"id": identity, "status": "covered", "probeIds": [receipt["probeId"]],
+                            "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                            "rationale": "The original quantity assertions passed on the candidate."} for identity in ids])
+                self.parent_calls += 1
+                if self.parent_calls == 1:
+                    return _call("original-read", "read_file", path="stock.py")
+                if self.parent_calls == 2:
+                    return _call("original-edit", "write_file", path="stock.py", content=initial_source)
+                assert self.parent_calls == 3
+                return AgentStep(type="assistant", kind="final", content="Quantity operations are ready.")
+    
+        seed = Seed()
+>       with pytest.raises(KeyboardInterrupt, match="preserve the real rejected audit"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE KeyboardInterrupt
+
+tests/test_coverage_audit_parent_resume.py:89: Failed
+_ test_same_owner_resumes_audit_evidence_then_runs_final_checks[then-implementation-repair-positive-findings] _
+
+inventory = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+rejection = 'positive-findings', repair_after_resume = True
+
+    @pytest.mark.parametrize("rejection", ["positive-findings", "outside-source"])
+    @pytest.mark.parametrize("repair_after_resume", [False, True], ids=["submit-correction", "then-implementation-repair"])
+    def test_same_owner_resumes_audit_evidence_then_runs_final_checks(inventory, rejection, repair_after_resume):
+        case = inventory
+        ids = [row["id"] for row in requirement_units(OBJECTIVE)]
+        initial_source = PARTIAL if repair_after_resume else COMPLETE
+        retained_work = "\n# Existing partial work must survive the interrupted audit.\n"
+        initial_source += retained_work
+        final_source = COMPLETE + retained_work
+        # A weak passed test may be an author's proposed evidence, but the resumed
+        # independent auditor must still be able to reject its semantic adequacy.
+        code = (PROBE.replace("    assert release(7, 3) == 10\n", "") if repair_after_resume else PROBE)
+        code += "# Retained generic inventory test context.\n" * 500
+        child_messages = []
+    
+        class Seed:
+            parent_calls = 0
+            reviewer_calls = 0
+            rejected = False
+    
+            def next(self, messages, **kwargs):
+                inspection_step = _inspection_step(messages, kwargs["tools_override"])
+                if inspection_step is not None:
+                    return inspection_step
+                names = set(kwargs["tools_override"].list_all())
+                if "completion_coverage_audit_submit" in names:
+                    if self.rejected:
+                        assert _result(messages, "rejected-audit")["isError"]
+                        child_messages[:] = deepcopy(messages)
+                        raise KeyboardInterrupt("preserve the real rejected audit and all delivered pages")
+                    step = _native_coverage_step(messages, stable_evidence=True)
+                    if step.calls[0]["toolName"] == "completion_coverage_audit_submit":
+                        value = step.calls[0]["input"]
+                        if rejection == "positive-findings":
+                            value["findings"] = ["Both quantity operations passed."]
+                        else:
+                            value["requirements"][0]["witnesses"][0]["endLine"] = len(code.splitlines()) + 1
+                        step.calls[0]["id"] = "rejected-audit"
+                        self.rejected = True
+                    return step
+                if "completion_review_submit" in names:
+                    self.reviewer_calls += 1
+                    if self.reviewer_calls == 1:
+                        return _call("actual-probe", "review_test", purpose="acceptance", criterionIds=ids,
+                            scenario="Both actual inventory operations satisfy their public contract.", code=code)
+                    assert self.reviewer_calls == 2
+                    receipt = json.JSONDecoder().raw_decode(_result(messages, "actual-probe")["content"])[0]
+                    assert receipt["receipt"]["status"] == "passed"
+                    return _call("proposal", "completion_review_submit", status="approved", findings=[],
+                        requirements=[{"id": identity, "status": "covered", "probeIds": [receipt["probeId"]],
+                            "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                            "rationale": "The original quantity assertions passed on the candidate."} for identity in ids])
+                self.parent_calls += 1
+                if self.parent_calls == 1:
+                    return _call("original-read", "read_file", path="stock.py")
+                if self.parent_calls == 2:
+                    return _call("original-edit", "write_file", path="stock.py", content=initial_source)
+                assert self.parent_calls == 3
+                return AgentStep(type="assistant", kind="final", content="Quantity operations are ready.")
+    
+        seed = Seed()
+>       with pytest.raises(KeyboardInterrupt, match="preserve the real rejected audit"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE KeyboardInterrupt
+
+tests/test_coverage_audit_parent_resume.py:89: Failed
+_ test_same_owner_resumes_audit_evidence_then_runs_final_checks[then-implementation-repair-outside-source] _
+
+inventory = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+rejection = 'outside-source', repair_after_resume = True
+
+    @pytest.mark.parametrize("rejection", ["positive-findings", "outside-source"])
+    @pytest.mark.parametrize("repair_after_resume", [False, True], ids=["submit-correction", "then-implementation-repair"])
+    def test_same_owner_resumes_audit_evidence_then_runs_final_checks(inventory, rejection, repair_after_resume):
+        case = inventory
+        ids = [row["id"] for row in requirement_units(OBJECTIVE)]
+        initial_source = PARTIAL if repair_after_resume else COMPLETE
+        retained_work = "\n# Existing partial work must survive the interrupted audit.\n"
+        initial_source += retained_work
+        final_source = COMPLETE + retained_work
+        # A weak passed test may be an author's proposed evidence, but the resumed
+        # independent auditor must still be able to reject its semantic adequacy.
+        code = (PROBE.replace("    assert release(7, 3) == 10\n", "") if repair_after_resume else PROBE)
+        code += "# Retained generic inventory test context.\n" * 500
+        child_messages = []
+    
+        class Seed:
+            parent_calls = 0
+            reviewer_calls = 0
+            rejected = False
+    
+            def next(self, messages, **kwargs):
+                inspection_step = _inspection_step(messages, kwargs["tools_override"])
+                if inspection_step is not None:
+                    return inspection_step
+                names = set(kwargs["tools_override"].list_all())
+                if "completion_coverage_audit_submit" in names:
+                    if self.rejected:
+                        assert _result(messages, "rejected-audit")["isError"]
+                        child_messages[:] = deepcopy(messages)
+                        raise KeyboardInterrupt("preserve the real rejected audit and all delivered pages")
+                    step = _native_coverage_step(messages, stable_evidence=True)
+                    if step.calls[0]["toolName"] == "completion_coverage_audit_submit":
+                        value = step.calls[0]["input"]
+                        if rejection == "positive-findings":
+                            value["findings"] = ["Both quantity operations passed."]
+                        else:
+                            value["requirements"][0]["witnesses"][0]["endLine"] = len(code.splitlines()) + 1
+                        step.calls[0]["id"] = "rejected-audit"
+                        self.rejected = True
+                    return step
+                if "completion_review_submit" in names:
+                    self.reviewer_calls += 1
+                    if self.reviewer_calls == 1:
+                        return _call("actual-probe", "review_test", purpose="acceptance", criterionIds=ids,
+                            scenario="Both actual inventory operations satisfy their public contract.", code=code)
+                    assert self.reviewer_calls == 2
+                    receipt = json.JSONDecoder().raw_decode(_result(messages, "actual-probe")["content"])[0]
+                    assert receipt["receipt"]["status"] == "passed"
+                    return _call("proposal", "completion_review_submit", status="approved", findings=[],
+                        requirements=[{"id": identity, "status": "covered", "probeIds": [receipt["probeId"]],
+                            "sourceEvidence": [{"path": "stock.py", "startLine": 1, "endLine": 5}],
+                            "rationale": "The original quantity assertions passed on the candidate."} for identity in ids])
+                self.parent_calls += 1
+                if self.parent_calls == 1:
+                    return _call("original-read", "read_file", path="stock.py")
+                if self.parent_calls == 2:
+                    return _call("original-edit", "write_file", path="stock.py", content=initial_source)
+                assert self.parent_calls == 3
+                return AgentStep(type="assistant", kind="final", content="Quantity operations are ready.")
+    
+        seed = Seed()
+>       with pytest.raises(KeyboardInterrupt, match="preserve the real rejected audit"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE KeyboardInterrupt
+
+tests/test_coverage_audit_parent_resume.py:89: Failed
+_ test_pending_supersession_resumes_before_replay_then_rechecks_and_restores[first-resume] _
+
+inventory = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106cb88f0>
+later_execution = False
+
+    @pytest.mark.parametrize('later_execution', [False, True], ids=['first-resume', 'later-host-receipt'])
+    def test_pending_supersession_resumes_before_replay_then_rechecks_and_restores(inventory, monkeypatch, later_execution):
+        case = inventory
+>       seed = interrupted_replacement_audit(case, monkeypatch)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_coverage_audit_receipt_snapshot.py:132: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106cb88f0>
+runtime_failure = False
+
+    def interrupted_replacement_audit(case, monkeypatch, *, runtime_failure=False):
+        if runtime_failure:
+            # LANG is deliberately inherited by the verifier. Use a real runtime
+            # change to fail the later invocation without editing candidate bytes.
+            monkeypatch.setenv('LANG', 'C')
+        initial, parent, old_id = seed_native_fixture_failure(case, monkeypatch, product_gap=False)
+        continuation = HostImplementationContinuation.from_document(initial, spec=case['spec'], messages=parent)
+        ids = [row['id'] for row in requirement_units(OBJECTIVE)]
+        captured = {}
+        replacement_code = VALID_FIXTURE + ("\ndef test_runtime_ready():\n    assert __import__('os').environ.get('LANG') == 'C'\n" if runtime_failure else "")
+    
+        class Seed:
+            rejected = False
+    
+            def next(self, actual, **kwargs):
+                inspection_step = _inspection_step(actual, kwargs["tools_override"])
+                if inspection_step is not None:
+                    return inspection_step
+                names = set(kwargs['tools_override'].list_all())
+                if 'completion_probe_adjudication_submit' in names:
+                    packet = packet_with(actual, 'probe')
+                    assert packet['probe']['probeId'] == old_id and packet['probe']['code'] == BROKEN_FIXTURE
+                    if not any(m.get('toolUseId') == 'fixture-source' for m in actual):
+                        return _call('fixture-source', 'read_file', path='stock.py')
+                    return _call('correct-fixture', 'completion_probe_adjudication_submit', verdict='probe_error',
+                        reason='The helper returns a backend instance, so the second call prevents both unchanged assertions.',
+                        objectiveEvidence=[{'startLine': 1, 'endLine': 2}],
+                        sourceEvidence=[{'path': 'stock.py', 'startLine': 1, 'endLine': 5}],
+                        replacement={'criterionIds': ids, 'scenario': packet['probe']['scenario'], 'code': replacement_code})
+                if 'completion_review_submit' in names:
+                    packet = packet_with(actual, 'retainedProbes')
+                    passed = [row['probeId'] for row in packet['retainedProbes'] if row['status'] == 'passed']
+                    assert len(passed) == 1 and passed[0] != old_id
+                    captured['newId'] = passed[0]
+                    return _call('replacement-proposal', 'completion_review_submit', status='approved', findings=[],
+                        requirements=[{'id': identity, 'status': 'covered', 'probeIds': passed,
+                            'sourceEvidence': [{'path': 'stock.py', 'startLine': 1, 'endLine': 5}],
+                            'rationale': 'The actual replacement quantity assertions passed.'} for identity in ids])
+                if 'completion_coverage_audit_submit' in names:
+                    if self.rejected:
+                        assert _result(actual, 'rejected-replacement-audit')['isError']
+                        captured['childMessages'] = deepcopy(actual)
+                        raise KeyboardInterrupt('save the actual replacement audit after native rejection')
+                    step = _native_coverage_step(actual, stable_evidence=True)
+                    if step.calls[0]['toolName'] == 'completion_coverage_audit_submit':
+                        value = step.calls[0]['input']
+                        assert len(value['supersessions']) == 1 and value['supersessions'][0]['status'] == 'accepted'
+                        value['findings'] = ['Positive observation belongs in the requirement reasons.']
+                        step.calls[0]['id'] = 'rejected-replacement-audit'
+                        self.rejected = True
+                    return step
+                pytest.fail('The incomplete replacement audit must not return to the writer.')
+    
+>       with pytest.raises(KeyboardInterrupt, match='actual replacement audit'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE KeyboardInterrupt
+
+tests/test_coverage_audit_receipt_snapshot.py:83: Failed
+_ test_pending_supersession_resumes_before_replay_then_rechecks_and_restores[later-host-receipt] _
+
+inventory = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x118e069f0>
+later_execution = True
+
+    @pytest.mark.parametrize('later_execution', [False, True], ids=['first-resume', 'later-host-receipt'])
+    def test_pending_supersession_resumes_before_replay_then_rechecks_and_restores(inventory, monkeypatch, later_execution):
+        case = inventory
+>       seed = interrupted_replacement_audit(case, monkeypatch)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_coverage_audit_receipt_snapshot.py:132: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x118e069f0>
+runtime_failure = False
+
+    def interrupted_replacement_audit(case, monkeypatch, *, runtime_failure=False):
+        if runtime_failure:
+            # LANG is deliberately inherited by the verifier. Use a real runtime
+            # change to fail the later invocation without editing candidate bytes.
+            monkeypatch.setenv('LANG', 'C')
+        initial, parent, old_id = seed_native_fixture_failure(case, monkeypatch, product_gap=False)
+        continuation = HostImplementationContinuation.from_document(initial, spec=case['spec'], messages=parent)
+        ids = [row['id'] for row in requirement_units(OBJECTIVE)]
+        captured = {}
+        replacement_code = VALID_FIXTURE + ("\ndef test_runtime_ready():\n    assert __import__('os').environ.get('LANG') == 'C'\n" if runtime_failure else "")
+    
+        class Seed:
+            rejected = False
+    
+            def next(self, actual, **kwargs):
+                inspection_step = _inspection_step(actual, kwargs["tools_override"])
+                if inspection_step is not None:
+                    return inspection_step
+                names = set(kwargs['tools_override'].list_all())
+                if 'completion_probe_adjudication_submit' in names:
+                    packet = packet_with(actual, 'probe')
+                    assert packet['probe']['probeId'] == old_id and packet['probe']['code'] == BROKEN_FIXTURE
+                    if not any(m.get('toolUseId') == 'fixture-source' for m in actual):
+                        return _call('fixture-source', 'read_file', path='stock.py')
+                    return _call('correct-fixture', 'completion_probe_adjudication_submit', verdict='probe_error',
+                        reason='The helper returns a backend instance, so the second call prevents both unchanged assertions.',
+                        objectiveEvidence=[{'startLine': 1, 'endLine': 2}],
+                        sourceEvidence=[{'path': 'stock.py', 'startLine': 1, 'endLine': 5}],
+                        replacement={'criterionIds': ids, 'scenario': packet['probe']['scenario'], 'code': replacement_code})
+                if 'completion_review_submit' in names:
+                    packet = packet_with(actual, 'retainedProbes')
+                    passed = [row['probeId'] for row in packet['retainedProbes'] if row['status'] == 'passed']
+                    assert len(passed) == 1 and passed[0] != old_id
+                    captured['newId'] = passed[0]
+                    return _call('replacement-proposal', 'completion_review_submit', status='approved', findings=[],
+                        requirements=[{'id': identity, 'status': 'covered', 'probeIds': passed,
+                            'sourceEvidence': [{'path': 'stock.py', 'startLine': 1, 'endLine': 5}],
+                            'rationale': 'The actual replacement quantity assertions passed.'} for identity in ids])
+                if 'completion_coverage_audit_submit' in names:
+                    if self.rejected:
+                        assert _result(actual, 'rejected-replacement-audit')['isError']
+                        captured['childMessages'] = deepcopy(actual)
+                        raise KeyboardInterrupt('save the actual replacement audit after native rejection')
+                    step = _native_coverage_step(actual, stable_evidence=True)
+                    if step.calls[0]['toolName'] == 'completion_coverage_audit_submit':
+                        value = step.calls[0]['input']
+                        assert len(value['supersessions']) == 1 and value['supersessions'][0]['status'] == 'accepted'
+                        value['findings'] = ['Positive observation belongs in the requirement reasons.']
+                        step.calls[0]['id'] = 'rejected-replacement-audit'
+                        self.rejected = True
+                    return step
+                pytest.fail('The incomplete replacement audit must not return to the writer.')
+    
+>       with pytest.raises(KeyboardInterrupt, match='actual replacement audit'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE KeyboardInterrupt
+
+tests/test_coverage_audit_receipt_snapshot.py:83: Failed
+__ test_new_post_audit_failure_blocks_delivery_after_original_context_resumes __
+
+inventory = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119b69ac0>
+
+    def test_new_post_audit_failure_blocks_delivery_after_original_context_resumes(inventory, monkeypatch):
+        case = inventory
+>       seed = interrupted_replacement_audit(case, monkeypatch, runtime_failure=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_coverage_audit_receipt_snapshot.py:183: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'spec': ImplementationSpec(write_paths=('stock.py', 'test_public.py'), checks=(VerificationCheck(check_id='public', k...public.py'), timeout_seconds=20),), objective='1. hold subtracts the amount.\n2. release adds the amount.'), ...}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119b69ac0>
+runtime_failure = True
+
+    def interrupted_replacement_audit(case, monkeypatch, *, runtime_failure=False):
+        if runtime_failure:
+            # LANG is deliberately inherited by the verifier. Use a real runtime
+            # change to fail the later invocation without editing candidate bytes.
+            monkeypatch.setenv('LANG', 'C')
+        initial, parent, old_id = seed_native_fixture_failure(case, monkeypatch, product_gap=False)
+        continuation = HostImplementationContinuation.from_document(initial, spec=case['spec'], messages=parent)
+        ids = [row['id'] for row in requirement_units(OBJECTIVE)]
+        captured = {}
+        replacement_code = VALID_FIXTURE + ("\ndef test_runtime_ready():\n    assert __import__('os').environ.get('LANG') == 'C'\n" if runtime_failure else "")
+    
+        class Seed:
+            rejected = False
+    
+            def next(self, actual, **kwargs):
+                inspection_step = _inspection_step(actual, kwargs["tools_override"])
+                if inspection_step is not None:
+                    return inspection_step
+                names = set(kwargs['tools_override'].list_all())
+                if 'completion_probe_adjudication_submit' in names:
+                    packet = packet_with(actual, 'probe')
+                    assert packet['probe']['probeId'] == old_id and packet['probe']['code'] == BROKEN_FIXTURE
+                    if not any(m.get('toolUseId') == 'fixture-source' for m in actual):
+                        return _call('fixture-source', 'read_file', path='stock.py')
+                    return _call('correct-fixture', 'completion_probe_adjudication_submit', verdict='probe_error',
+                        reason='The helper returns a backend instance, so the second call prevents both unchanged assertions.',
+                        objectiveEvidence=[{'startLine': 1, 'endLine': 2}],
+                        sourceEvidence=[{'path': 'stock.py', 'startLine': 1, 'endLine': 5}],
+                        replacement={'criterionIds': ids, 'scenario': packet['probe']['scenario'], 'code': replacement_code})
+                if 'completion_review_submit' in names:
+                    packet = packet_with(actual, 'retainedProbes')
+                    passed = [row['probeId'] for row in packet['retainedProbes'] if row['status'] == 'passed']
+                    assert len(passed) == 1 and passed[0] != old_id
+                    captured['newId'] = passed[0]
+                    return _call('replacement-proposal', 'completion_review_submit', status='approved', findings=[],
+                        requirements=[{'id': identity, 'status': 'covered', 'probeIds': passed,
+                            'sourceEvidence': [{'path': 'stock.py', 'startLine': 1, 'endLine': 5}],
+                            'rationale': 'The actual replacement quantity assertions passed.'} for identity in ids])
+                if 'completion_coverage_audit_submit' in names:
+                    if self.rejected:
+                        assert _result(actual, 'rejected-replacement-audit')['isError']
+                        captured['childMessages'] = deepcopy(actual)
+                        raise KeyboardInterrupt('save the actual replacement audit after native rejection')
+                    step = _native_coverage_step(actual, stable_evidence=True)
+                    if step.calls[0]['toolName'] == 'completion_coverage_audit_submit':
+                        value = step.calls[0]['input']
+                        assert len(value['supersessions']) == 1 and value['supersessions'][0]['status'] == 'accepted'
+                        value['findings'] = ['Positive observation belongs in the requirement reasons.']
+                        step.calls[0]['id'] = 'rejected-replacement-audit'
+                        self.rejected = True
+                    return step
+                pytest.fail('The incomplete replacement audit must not return to the writer.')
+    
+>       with pytest.raises(KeyboardInterrupt, match='actual replacement audit'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE KeyboardInterrupt
+
+tests/test_coverage_audit_receipt_snapshot.py:83: Failed
+____ test_approval_cannot_skip_pending_replacement_authority[missing_edge] _____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_approval_cannot_skip_pend0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119986780>
+failure = 'missing_edge'
+
+    @pytest.mark.parametrize("failure", ["missing_edge", "unread_evidence", "omitted_requirement"])
+    def test_approval_cannot_skip_pending_replacement_authority(tmp_path, monkeypatch, failure):
+        def audit(tools, child, packet):
+            assert len(review.state["supersessions"]) == 1
+            assert review.state["retiredProbeIds"] == []
+            assert review.state["corrections"] == []
+            sources = {p["probeId"]: p for p in review.state["probes"]}
+            if failure != "unread_evidence":
+                sources = _read(tools, child, packet)
+            value = _coverage_approval(packet, sources)
+            if failure == "missing_edge":
+                value.pop("supersessions")
+            elif failure == "omitted_requirement":
+                value["supersessions"][0]["requirements"].pop()
+            refused = tools.execute("completion_coverage_audit_submit", value, child)
+            assert not refused.ok
+            assert review.state["retiredProbeIds"] == []
+            return AgentStep(type="assistant", kind="final", content="No valid independent supersession decision.")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicate, coverage_driver=audit)
+        try:
+            assess(_seed)
+            result = assess(_propose)
+            assert result["status"] == "inconclusive"
+>           assert result["reason"] == "failure_adjudication_inconclusive"
+E           AssertionError: assert 'coverage_audit_interrupted' == 'failure_adju..._inconclusive'
+E             
+E             - failure_adjudication_inconclusive
+E             + coverage_audit_interrupted
+
+tests/test_probe_supersession.py:112: AssertionError
+___ test_approval_cannot_skip_pending_replacement_authority[unread_evidence] ___
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_approval_cannot_skip_pend1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119e28a70>
+failure = 'unread_evidence'
+
+    @pytest.mark.parametrize("failure", ["missing_edge", "unread_evidence", "omitted_requirement"])
+    def test_approval_cannot_skip_pending_replacement_authority(tmp_path, monkeypatch, failure):
+        def audit(tools, child, packet):
+            assert len(review.state["supersessions"]) == 1
+            assert review.state["retiredProbeIds"] == []
+            assert review.state["corrections"] == []
+            sources = {p["probeId"]: p for p in review.state["probes"]}
+            if failure != "unread_evidence":
+                sources = _read(tools, child, packet)
+            value = _coverage_approval(packet, sources)
+            if failure == "missing_edge":
+                value.pop("supersessions")
+            elif failure == "omitted_requirement":
+                value["supersessions"][0]["requirements"].pop()
+            refused = tools.execute("completion_coverage_audit_submit", value, child)
+            assert not refused.ok
+            assert review.state["retiredProbeIds"] == []
+            return AgentStep(type="assistant", kind="final", content="No valid independent supersession decision.")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicate, coverage_driver=audit)
+        try:
+            assess(_seed)
+            result = assess(_propose)
+            assert result["status"] == "inconclusive"
+>           assert result["reason"] == "failure_adjudication_inconclusive"
+E           AssertionError: assert 'coverage_audit_interrupted' == 'failure_adju..._inconclusive'
+E             
+E             - failure_adjudication_inconclusive
+E             + coverage_audit_interrupted
+
+tests/test_probe_supersession.py:112: AssertionError
+_ test_approval_cannot_skip_pending_replacement_authority[omitted_requirement] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-441/test_approval_cannot_skip_pend2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119bee000>
+failure = 'omitted_requirement'
+
+    @pytest.mark.parametrize("failure", ["missing_edge", "unread_evidence", "omitted_requirement"])
+    def test_approval_cannot_skip_pending_replacement_authority(tmp_path, monkeypatch, failure):
+        def audit(tools, child, packet):
+            assert len(review.state["supersessions"]) == 1
+            assert review.state["retiredProbeIds"] == []
+            assert review.state["corrections"] == []
+            sources = {p["probeId"]: p for p in review.state["probes"]}
+            if failure != "unread_evidence":
+                sources = _read(tools, child, packet)
+            value = _coverage_approval(packet, sources)
+            if failure == "missing_edge":
+                value.pop("supersessions")
+            elif failure == "omitted_requirement":
+                value["supersessions"][0]["requirements"].pop()
+            refused = tools.execute("completion_coverage_audit_submit", value, child)
+            assert not refused.ok
+            assert review.state["retiredProbeIds"] == []
+            return AgentStep(type="assistant", kind="final", content="No valid independent supersession decision.")
+    
+        review, assess, commands, cap = _fixture(tmp_path, monkeypatch,
+            adjudication_driver=_adjudicate, coverage_driver=audit)
+        try:
+            assess(_seed)
+            result = assess(_propose)
+            assert result["status"] == "inconclusive"
+>           assert result["reason"] == "failure_adjudication_inconclusive"
+E           AssertionError: assert 'coverage_audit_interrupted' == 'failure_adju..._inconclusive'
+E             
+E             - failure_adjudication_inconclusive
+E             + coverage_audit_interrupted
+
+tests/test_probe_supersession.py:112: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_completion_assertion_correction_authority.py::test_ordinary_review_cannot_retire_assertion_failure_without_independent_authority
+FAILED tests/test_completion_coverage_audit.py::test_full_authority_is_saved_without_duplicating_receipt_history_in_initial_context
+FAILED tests/test_completion_evidence_cursor.py::test_supersession_needs_exact_compact_source_authority_and_receipt_closure
+FAILED tests/test_completion_exception_attribution.py::test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves[local-alias]
+FAILED tests/test_completion_exception_attribution.py::test_independent_name_binding_repair_preserves_assertions_then_retests_and_approves[assignment-target]
+FAILED tests/test_completion_exception_attribution.py::test_confirmed_product_exception_returns_repair_then_same_review_accepts_repaired_candidate
+FAILED tests/test_completion_exception_attribution.py::test_inconclusive_exception_attribution_never_carries_bad_probe_to_writer
+FAILED tests/test_completion_exception_successor.py::test_independent_correction_retains_exception_successor_and_continues_attribution[True]
+FAILED tests/test_completion_expression_correction.py::test_independent_expression_correction_executes_approves_and_restores[collection-accessor]
+FAILED tests/test_completion_expression_correction.py::test_independent_expression_correction_executes_approves_and_restores[inline-input]
+FAILED tests/test_completion_fixture_keywords.py::test_independent_fixture_keyword_addition_reexecutes_then_approves_and_restores
+FAILED tests/test_completion_pending_migration.py::test_same_candidate_classified_obligations_do_not_restart_semantic_classifier
+FAILED tests/test_completion_repair_priority.py::test_pending_replacement_does_not_cancel_independent_product_repair[independent_missing]
+FAILED tests/test_completion_review_evidence_delivery.py::test_reviewer_index_has_current_diagnostic_status_and_readable_full_history
+FAILED tests/test_completion_review_evidence_delivery.py::test_current_receipt_view_does_not_mislabel_previous_candidate_evidence
+FAILED tests/test_completion_review_provider_handoff.py::test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and_delivers
+FAILED tests/test_completion_review_provider_tools.py::test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[False-False]
+FAILED tests/test_completion_review_provider_tools.py::test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[True-False]
+FAILED tests/test_completion_review_provider_tools.py::test_shared_openai_adapter_uses_nested_review_registry_with_phases_disabled[True-True]
+FAILED tests/test_completion_review_transient_history.py::test_retry_after_transient_unavailability_can_correct_a_real_fixture_error
+FAILED tests/test_completion_submit_feedback.py::test_unpassed_acceptance_is_identified_and_diagnostic_is_not_a_blocker[failed]
+FAILED tests/test_coverage_audit_interruption.py::test_parent_pauses_without_rerunning_probes_then_same_owner_resumes_and_approves
+FAILED tests/test_coverage_audit_parent_resume.py::test_same_owner_resumes_audit_evidence_then_runs_final_checks[submit-correction-positive-findings]
+FAILED tests/test_coverage_audit_parent_resume.py::test_same_owner_resumes_audit_evidence_then_runs_final_checks[submit-correction-outside-source]
+FAILED tests/test_coverage_audit_parent_resume.py::test_same_owner_resumes_audit_evidence_then_runs_final_checks[then-implementation-repair-positive-findings]
+FAILED tests/test_coverage_audit_parent_resume.py::test_same_owner_resumes_audit_evidence_then_runs_final_checks[then-implementation-repair-outside-source]
+FAILED tests/test_coverage_audit_receipt_snapshot.py::test_pending_supersession_resumes_before_replay_then_rechecks_and_restores[first-resume]
+FAILED tests/test_coverage_audit_receipt_snapshot.py::test_pending_supersession_resumes_before_replay_then_rechecks_and_restores[later-host-receipt]
+FAILED tests/test_coverage_audit_receipt_snapshot.py::test_new_post_audit_failure_blocks_delivery_after_original_context_resumes
+FAILED tests/test_probe_supersession.py::test_approval_cannot_skip_pending_replacement_authority[missing_edge]
+FAILED tests/test_probe_supersession.py::test_approval_cannot_skip_pending_replacement_authority[unread_evidence]
+FAILED tests/test_probe_supersession.py::test_approval_cannot_skip_pending_replacement_authority[omitted_requirement]
+ERROR tests/test_completion_feedback_size.py::test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evidence
+ERROR tests/test_completion_feedback_size.py::test_authenticated_legacy_feedback_restore_projects_before_provider_without_erasing_history[False]
+32 failed, 676 passed, 2 errors in 454.98s (0:07:34)

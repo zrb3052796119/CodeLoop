@@ -1,0 +1,27 @@
+{
+  "production": [
+    "minicode/memory_deposition_experiment.py",
+    "minicode/memory_pipeline.py",
+    "minicode/reflection_evidence.py",
+    "minicode/reflection_synthesis.py"
+  ],
+  "tests": [
+    "tests/test_memory_deposition_experiment.py",
+    "tests/test_memory_pending_drafts.py",
+    "tests/test_reflection_declared_dependencies.py"
+  ],
+  "excluded": "All unrelated tracked/untracked repository changes and generated artifacts",
+  "backend": "semantic-probe",
+  "real_baseline": {
+    "head": "e092a9af973360e3239d4d49aeb1adf18e56146d",
+    "status": "BLOCKED",
+    "reason": "HEAD does not contain minicode/memory_deposition_experiment.py; exact current tests import this existing uncommitted foundation. A HEAD-side import failure would not establish the intended behavioral regression.",
+    "file_present": false
+  },
+  "review": [
+    "Strict rollback test invokes the real pipeline with technical traces and asserts absence of USER preference entries.",
+    "Declared approval test executes real read_file and trace recording, ReflectionEngine and MemoryPipeline, then independently asserts pending status and not is_active.",
+    "Age test pins time and checks exact seven-day boundary plus independent six/eight-day configurations; wider module tests inject through the public pipeline and verify authority/content unchanged.",
+    "No production/mock substitution in selected guard tests; monkeypatch is used for environment and time boundaries."
+  ]
+}

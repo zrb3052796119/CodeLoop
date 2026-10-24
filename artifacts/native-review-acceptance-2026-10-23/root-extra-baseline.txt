@@ -1,0 +1,320 @@
+FFFFFFFFFFFFFFFFFEE                                                      [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evidence _
+tests/test_completion_feedback_size.py:264: in failed_native_handoff
+    with pytest.raises(KeyboardInterrupt) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE KeyboardInterrupt
+------------------------------ Captured log setup ------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4652 Model API error (IndexError): list index out of range
+_ ERROR at setup of test_authenticated_legacy_feedback_restore_projects_before_provider_without_erasing_history[False] _
+tests/test_completion_feedback_size.py:264: in failed_native_handoff
+    with pytest.raises(KeyboardInterrupt) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE KeyboardInterrupt
+------------------------------ Captured log setup ------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4652 Model API error (IndexError): list index out of range
+=================================== FAILURES ===================================
+_ test_independent_correction_retains_exception_successor_and_continues_attribution[True] _
+tests/test_completion_exception_successor.py:90: in test_independent_correction_retains_exception_successor_and_continues_attribution
+    assert len(state["corrections"]) == (1 if product_gap else 2)
+E   assert 0 == 1
+E    +  where 0 = len([])
+_ test_same_candidate_classified_obligations_do_not_restart_semantic_classifier _
+tests/test_completion_pending_migration.py:29: in test_same_candidate_classified_obligations_do_not_restart_semantic_classifier
+    assert failed["reason"] == "legacy_acceptance_product_gap"
+           ^^^^^^^^^^^^^^^^
+E   KeyError: 'reason'
+_ test_pending_replacement_does_not_cancel_independent_product_repair[independent_missing] _
+tests/test_completion_repair_priority.py:107: in test_pending_replacement_does_not_cancel_independent_product_repair
+    run_agent_turn(model=driver, messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+minicode/agent_loop.py:7309: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4652 Model API error (AssertionError): assert {'executor_ch... 'write_file'} <= {'completion_...'review_test'}
+  
+  Extra items in the left set:
+  'executor_check'
+  'write_file'
+_ test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and_delivers _
+tests/test_completion_review_provider_handoff.py:216: in test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and_delivers
+    assert [r["role"] for r in requests] == ["parent", "parent", "reviewer", "reviewer",
+E   AssertionError: assert ['parent'] == ['parent', 'p...dicator', ...]
+E     
+E     Right contains 10 more items, first extra item: 'parent'
+E     Use -v to get more diff
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:4652 Model API error (AssertionError): assert {'completion_...ut_read', ...} == {'edit_file',... 'write_file'}
+  
+  Extra items in the left set:
+  'completion_evidence_read'
+  Use -v to get more diff
+__ test_retry_after_transient_unavailability_can_correct_a_real_fixture_error __
+tests/test_completion_review_transient_history.py:53: in test_retry_after_transient_unavailability_can_correct_a_real_fixture_error
+    assert result["status"] == "approved"
+E   AssertionError: assert 'changes_required' == 'approved'
+E     
+E     - approved
+E     + changes_required
+_ test_unpassed_acceptance_is_identified_and_diagnostic_is_not_a_blocker[failed] _
+tests/test_completion_submit_feedback.py:100: in test_unpassed_acceptance_is_identified_and_diagnostic_is_not_a_blocker
+    assert assess(driver)["status"] == ("changes_required" if unpassed == "failed" else "inconclusive")
+           ^^^^^^^^^^^^^^
+tests/test_implementation_completion_review.py:135: in assess
+    return review.assess(model=model, tools=tools, context=context, agent_budget=None,
+minicode/implementation_completion_review.py:850: in assess
+    result = self._assess_snapshot(model=model, tools=tools, host=host, transaction=transaction,
+minicode/implementation_completion_review.py:1732: in _assess_snapshot
+    run_agent_turn(model=model, tools=registry, cwd=str(root), permissions=permissions,
+tests/test_implementation_completion_review.py:130: in review_loop
+    return driver(values["tools"], child, packet)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_submit_feedback.py:91: in driver
+    observed = blockers(_submit(tools, child, packet, ids=[pass_receipt["probeId"]]))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_completion_submit_feedback.py:14: in blockers
+    assert not result.ok
+E   assert not True
+E    +  where True = ToolResult(ok=True, output='{"candidateDigest": "sha256:2009906dc2fcbb86c3de131935441b78d0fb9fe970cd1588f8fffc19f52162...rposes': ['Review the current implementation without changing its files'], 'supported_operations': [], 'evidence': []}).ok
+_ test_parent_pauses_without_rerunning_probes_then_same_owner_resumes_and_approves _
+tests/test_coverage_audit_interruption.py:149: in next
+    raise KeyboardInterrupt("seed the existing same-owner audit before its network failure")
+E   KeyboardInterrupt: seed the existing same-owner audit before its network failure
+
+During handling of the above exception, another exception occurred:
+tests/test_coverage_audit_interruption.py:176: in test_parent_pauses_without_rerunning_probes_then_same_owner_resumes_and_approves
+    run_agent_turn(model=seed, messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+minicode/agent_loop.py:7309: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_same_owner_resumes_audit_evidence_then_runs_final_checks[submit-correction-positive-findings] _
+tests/test_coverage_audit_parent_resume.py:57: in next
+    raise KeyboardInterrupt("preserve the real rejected audit and all delivered pages")
+E   KeyboardInterrupt: preserve the real rejected audit and all delivered pages
+
+During handling of the above exception, another exception occurred:
+tests/test_coverage_audit_parent_resume.py:90: in test_same_owner_resumes_audit_evidence_then_runs_final_checks
+    run_agent_turn(model=seed, messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+minicode/agent_loop.py:7309: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_same_owner_resumes_audit_evidence_then_runs_final_checks[submit-correction-outside-source] _
+tests/test_coverage_audit_parent_resume.py:57: in next
+    raise KeyboardInterrupt("preserve the real rejected audit and all delivered pages")
+E   KeyboardInterrupt: preserve the real rejected audit and all delivered pages
+
+During handling of the above exception, another exception occurred:
+tests/test_coverage_audit_parent_resume.py:90: in test_same_owner_resumes_audit_evidence_then_runs_final_checks
+    run_agent_turn(model=seed, messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+minicode/agent_loop.py:7309: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_same_owner_resumes_audit_evidence_then_runs_final_checks[then-implementation-repair-positive-findings] _
+tests/test_coverage_audit_parent_resume.py:57: in next
+    raise KeyboardInterrupt("preserve the real rejected audit and all delivered pages")
+E   KeyboardInterrupt: preserve the real rejected audit and all delivered pages
+
+During handling of the above exception, another exception occurred:
+tests/test_coverage_audit_parent_resume.py:90: in test_same_owner_resumes_audit_evidence_then_runs_final_checks
+    run_agent_turn(model=seed, messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+minicode/agent_loop.py:7309: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_same_owner_resumes_audit_evidence_then_runs_final_checks[then-implementation-repair-outside-source] _
+tests/test_coverage_audit_parent_resume.py:57: in next
+    raise KeyboardInterrupt("preserve the real rejected audit and all delivered pages")
+E   KeyboardInterrupt: preserve the real rejected audit and all delivered pages
+
+During handling of the above exception, another exception occurred:
+tests/test_coverage_audit_parent_resume.py:90: in test_same_owner_resumes_audit_evidence_then_runs_final_checks
+    run_agent_turn(model=seed, messages=[{"role": "user", "content": OBJECTIVE}], **case["options"])
+minicode/agent_loop.py:7309: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_pending_supersession_resumes_before_replay_then_rechecks_and_restores[first-resume] _
+minicode/agent_loop.py:4406: in run_agent_turn
+    next_step = _model_next(
+minicode/agent_loop.py:1263: in _model_next
+    return call_model_next(
+minicode/model_call_control.py:180: in call_model_next
+    result = model.next(messages, **accepted)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_semantic_supersession_continuation.py:67: in next
+    raise stop
+E   KeyboardInterrupt: retain actual candidate and failing generated fixture
+
+During handling of the above exception, another exception occurred:
+tests/test_coverage_audit_receipt_snapshot.py:132: in test_pending_supersession_resumes_before_replay_then_rechecks_and_restores
+    seed = interrupted_replacement_audit(case, monkeypatch)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_coverage_audit_receipt_snapshot.py:35: in interrupted_replacement_audit
+    initial, parent, old_id = seed_native_fixture_failure(case, monkeypatch, product_gap=False)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_semantic_supersession_continuation.py:75: in seed_native_fixture_failure
+    run_agent_turn(model=seed, messages=[{'role': 'user', 'content': OBJECTIVE}], **case['options'])
+minicode/agent_loop.py:7309: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+_ test_pending_supersession_resumes_before_replay_then_rechecks_and_restores[later-host-receipt] _
+minicode/agent_loop.py:4406: in run_agent_turn
+    next_step = _model_next(
+minicode/agent_loop.py:1263: in _model_next
+    return call_model_next(
+minicode/model_call_control.py:180: in call_model_next
+    result = model.next(messages, **accepted)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_semantic_supersession_continuation.py:67: in next
+    raise stop
+E   KeyboardInterrupt: retain actual candidate and failing generated fixture
+
+During handling of the above exception, another exception occurred:
+tests/test_coverage_audit_receipt_snapshot.py:132: in test_pending_supersession_resumes_before_replay_then_rechecks_and_restores
+    seed = interrupted_replacement_audit(case, monkeypatch)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_coverage_audit_receipt_snapshot.py:35: in interrupted_replacement_audit
+    initial, parent, old_id = seed_native_fixture_failure(case, monkeypatch, product_gap=False)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_semantic_supersession_continuation.py:75: in seed_native_fixture_failure
+    run_agent_turn(model=seed, messages=[{'role': 'user', 'content': OBJECTIVE}], **case['options'])
+minicode/agent_loop.py:7309: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+__ test_new_post_audit_failure_blocks_delivery_after_original_context_resumes __
+minicode/agent_loop.py:4406: in run_agent_turn
+    next_step = _model_next(
+minicode/agent_loop.py:1263: in _model_next
+    return call_model_next(
+minicode/model_call_control.py:180: in call_model_next
+    result = model.next(messages, **accepted)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_semantic_supersession_continuation.py:67: in next
+    raise stop
+E   KeyboardInterrupt: retain actual candidate and failing generated fixture
+
+During handling of the above exception, another exception occurred:
+tests/test_coverage_audit_receipt_snapshot.py:183: in test_new_post_audit_failure_blocks_delivery_after_original_context_resumes
+    seed = interrupted_replacement_audit(case, monkeypatch, runtime_failure=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_coverage_audit_receipt_snapshot.py:35: in interrupted_replacement_audit
+    initial, parent, old_id = seed_native_fixture_failure(case, monkeypatch, product_gap=False)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_semantic_supersession_continuation.py:75: in seed_native_fixture_failure
+    run_agent_turn(model=seed, messages=[{'role': 'user', 'content': OBJECTIVE}], **case['options'])
+minicode/agent_loop.py:7309: in run_agent_turn
+    save_supervisor_report(supervisor_report)
+minicode/cybernetic_supervisor.py:250: in save_supervisor_report
+    SUPERVISOR_STATE_PATH.write_text(
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 1] Operation not permitted: '/Users/zhourunbo/.mini-code/cybernetic_supervisor.json'
+____ test_approval_cannot_skip_pending_replacement_authority[missing_edge] _____
+tests/test_probe_supersession.py:112: in test_approval_cannot_skip_pending_replacement_authority
+    assert result["reason"] == "failure_adjudication_inconclusive"
+E   AssertionError: assert 'coverage_audit_interrupted' == 'failure_adju..._inconclusive'
+E     
+E     - failure_adjudication_inconclusive
+E     + coverage_audit_interrupted
+___ test_approval_cannot_skip_pending_replacement_authority[unread_evidence] ___
+tests/test_probe_supersession.py:112: in test_approval_cannot_skip_pending_replacement_authority
+    assert result["reason"] == "failure_adjudication_inconclusive"
+E   AssertionError: assert 'coverage_audit_interrupted' == 'failure_adju..._inconclusive'
+E     
+E     - failure_adjudication_inconclusive
+E     + coverage_audit_interrupted
+_ test_approval_cannot_skip_pending_replacement_authority[omitted_requirement] _
+tests/test_probe_supersession.py:112: in test_approval_cannot_skip_pending_replacement_authority
+    assert result["reason"] == "failure_adjudication_inconclusive"
+E   AssertionError: assert 'coverage_audit_interrupted' == 'failure_adju..._inconclusive'
+E     
+E     - failure_adjudication_inconclusive
+E     + coverage_audit_interrupted
+=========================== short test summary info ============================
+FAILED tests/test_completion_exception_successor.py::test_independent_correction_retains_exception_successor_and_continues_attribution[True]
+FAILED tests/test_completion_pending_migration.py::test_same_candidate_classified_obligations_do_not_restart_semantic_classifier
+FAILED tests/test_completion_repair_priority.py::test_pending_replacement_does_not_cancel_independent_product_repair[independent_missing]
+FAILED tests/test_completion_review_provider_handoff.py::test_real_provider_rejection_returns_to_same_executor_then_replays_probe_and_delivers
+FAILED tests/test_completion_review_transient_history.py::test_retry_after_transient_unavailability_can_correct_a_real_fixture_error
+FAILED tests/test_completion_submit_feedback.py::test_unpassed_acceptance_is_identified_and_diagnostic_is_not_a_blocker[failed]
+FAILED tests/test_coverage_audit_interruption.py::test_parent_pauses_without_rerunning_probes_then_same_owner_resumes_and_approves
+FAILED tests/test_coverage_audit_parent_resume.py::test_same_owner_resumes_audit_evidence_then_runs_final_checks[submit-correction-positive-findings]
+FAILED tests/test_coverage_audit_parent_resume.py::test_same_owner_resumes_audit_evidence_then_runs_final_checks[submit-correction-outside-source]
+FAILED tests/test_coverage_audit_parent_resume.py::test_same_owner_resumes_audit_evidence_then_runs_final_checks[then-implementation-repair-positive-findings]
+FAILED tests/test_coverage_audit_parent_resume.py::test_same_owner_resumes_audit_evidence_then_runs_final_checks[then-implementation-repair-outside-source]
+FAILED tests/test_coverage_audit_receipt_snapshot.py::test_pending_supersession_resumes_before_replay_then_rechecks_and_restores[first-resume]
+FAILED tests/test_coverage_audit_receipt_snapshot.py::test_pending_supersession_resumes_before_replay_then_rechecks_and_restores[later-host-receipt]
+FAILED tests/test_coverage_audit_receipt_snapshot.py::test_new_post_audit_failure_blocks_delivery_after_original_context_resumes
+FAILED tests/test_probe_supersession.py::test_approval_cannot_skip_pending_replacement_authority[missing_edge]
+FAILED tests/test_probe_supersession.py::test_approval_cannot_skip_pending_replacement_authority[unread_evidence]
+FAILED tests/test_probe_supersession.py::test_approval_cannot_skip_pending_replacement_authority[omitted_requirement]
+ERROR tests/test_completion_feedback_size.py::test_native_failed_review_returns_compact_feedback_and_exact_retrievable_evidence
+ERROR tests/test_completion_feedback_size.py::test_authenticated_legacy_feedback_restore_projects_before_provider_without_erasing_history[False]
+17 failed, 2 errors in 22.20s

@@ -1,0 +1,6 @@
+Command (cwd /tmp/native-review-validation-host-cl3u8c9q):
+/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python run_gate.py -q --tb=short tests/test_unlimited_agent_budget.py
+
+Tool-captured stdout, exit code 0:
+..................................                                       [100%]
+34 passed in 0.14s

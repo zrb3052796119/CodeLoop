@@ -1,0 +1,11 @@
+--- a/minicode/memory_deposition_experiment.py
++++ b/minicode/memory_deposition_experiment.py
+@@ -63,7 +63,7 @@
+ def deposition_feature_enabled(feature: str) -> bool:
+     """Enable each lane in experimental modes; explicit invalid flags fail closed."""
+     env = _FEATURE_ENVS[feature]
+-    return deposition_mode() != "strict" and os.environ.get(env, "1").strip().lower() in {
++    return os.environ.get(env, "1").strip().lower() in {
+         "1", "true", "yes", "on",
+     }
+ 
