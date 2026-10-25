@@ -1,6 +1,6 @@
 # CodeLoop 治理基线 — 2026-10-24
 
-**当前状态：Phase 1 候选 `e6492f9b` 已取得完整支持矩阵验收，原定 GO 条件成立，已通过 [PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) 合入 main `ed21acb3`。** 合入后 seed `52` 暴露一项 deadline 测试前提失败；修复候选已通过定向检查，完整 CI 仍待，不能把当前 main 称为全绿。P0 `9f936942` 的完整本机验收及 main `ff2f18ea` 保持历史身份。Phase 2 r2 已受控停止，保留 5 完成 / 1 中断未判分 / 26 未运行的 pilot；补齐公开契约的 r3 已注册、冻结并启动，仍待完整 32 次报告，不能据 Phase 1 验收推断收益或改变默认路径。
+**当前状态：Phase 1 已完成切片验收并经 PR #2 合入；其后 deadline fixture 修复 `fbfed052` 通过 seed `53` 六项正式 CI、无重跑，已经 [PR #3](https://github.com/zrb3052796119/CodeLoop/pull/3) 合入 main `8c0a9582`。** 下方分别保留 P0、P1、seed `52` 红例及后续修复的原身份。Phase 2 r3 已完成 32/32，见[r3 完整结果与维护决策](real-task-comparison-r3-results-2026-10-25.md)；未形成实际协作或记忆增益证据，维持配置与机制冻结。
 
 main 与开发分支曾于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档/证据序列的生产及测试字节与通过的 `9f936942` 相同。当前验收对应 P1 PR head `e6492f9b` 及其 CI merge ref，后续文档提交 `3f0115ee` 保持同一 runtime/test 字节，并于 2026-10-25 经 PR #2 合入 main `ed21acb3`；此前两次本机失败、各旧 CI 失败与局部证明保持原记录。
 
@@ -12,7 +12,13 @@ main `ed21acb3` 的 [CI `40146728915`](https://github.com/zrb3052796119/CodeLoop
 
 这是测试前提缺口：5 ms 的真实期限可能在 provider 调用前耗尽，此时生产在 preflight 正确拒绝，尚无 `model.started`。原测试本机自然运行 **1 failed / 1 passed**；加 20 ms 准备延迟后两参数均在同点失败，观察到 0 次 provider 调用和空事件。原 CI 的具体交错未知，受控反例不冒称精确重放。修复只在测试局部控制 classifier/control 两模块的时钟，确认真实进入 provider 后推进 20 ms 再抛原异常；保留原 5 ms 期限，并在模型外验证调用、完整事件/operationId、释放预留及精确估算计账。
 
-最终测试 SHA `3e5aa848a5b8b516cedd153082ad2fcd14ca70b7120714787cd942710203cef2`：相关 **81 passed / 0.78 秒**，含目标两项；目标受控、自然和恢复执行均通过，是重叠执行、不累加。四种合成控制/计账/事件故障均被拒绝，不称历史产品 bug；首个误指不存在文件的无效命令也保留。原 CI、前后证明、源身份与独立审查见[deadline fixture 证据包](../artifacts/governance-trial-2026-10-24/intent-deadline-fixture-proofs/README.md)。生产/脚本未改，既有 quality 的 439 个输入逐字节相同，继续引用原 88/88 和 57/57 记录；没有重新执行 quality 或本机全套。**本修订的完整 CI 待完成，Phase 2 r3 的 ROOT 冻结保持不变。**
+最终测试 SHA `3e5aa848a5b8b516cedd153082ad2fcd14ca70b7120714787cd942710203cef2`：相关 **81 passed / 0.78 秒**，含目标两项；目标受控、自然和恢复执行均通过，是重叠执行、不累加。四种合成控制/计账/事件故障均被拒绝，不称历史产品 bug；首个误指不存在文件的无效命令也保留。原 CI、前后证明、源身份与独立审查见[deadline fixture 证据包](../artifacts/governance-trial-2026-10-24/intent-deadline-fixture-proofs/README.md)。生产/脚本未改，既有 quality 的 439 个输入逐字节相同，继续引用原 88/88 和 57/57 记录；没有重新执行 quality 或本机全套。**本修订随后通过 seed `53` 完整正式矩阵并正常合入，详情如下；r3 已在原冻结 ROOT 上完成报告，未混入本次修复。**
+
+## PR #3 修复验收与合入
+
+精确 PR head `fbfed052f628030914d89456fcac75306f7b5d5d`，实际 CI checkout merge `5e0b2529ba8f390fe9928ecbfa585c11b64e3445`；[CI `40151364118`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40151364118) attempt 1、seed `53` 六项全部成功，无重跑。Linux Python 3.11/3.12 各 **14,952 passed / 19 skipped**，macOS 两版各 **14,963 passed / 8 skipped**，四份 XML 均 **0 failed / 0 errors**；修复目标两个参数在四个平台均实际通过。Windows 两项仅为实验性包/静态检查，独立完整诊断仍失败。
+
+PR #3 于 **2026-10-25 10:44:17（Asia/Shanghai）** 正常合入 `8c0a9582057cc9d8ccaa86528c4847a19178d28e`。[PR #3 正式 CI 证据](../artifacts/governance-trial-2026-10-24/pr3-formal-ci/README.md)保存六份 raw log、四份 XML、身份及合入收据，共 30 成员，均实际恢复逐字节核验。seed `53` 是合入前验收；自然触发的 main [seed `54`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40155594757) 是另一次运行，不能将两者拼接或倒填。后续结果发布仅涉及文档和证据，原 source/fixture 身份保持可核对。
 
 ## Phase 1 最终支持矩阵
 
@@ -156,7 +162,7 @@ R2 的局部事件日志、完整原始错误及续跑 XML 均保留在诊断证
 
 这些证据解释已复现的失败族，不能外推原报告全部 workflow 失败。其余诊断分为真实生产缺陷、fixture 契约漂移、测试环境限制和诊断工具失效；原始红日志、无效基线尝试及每组范围均保留。真实缺陷包括 MCP SSE 错误路径的未定义变量、阶段输出预算漏算工具 schema、v6 失败诊断后的 Analyst→Reviewer 审计绑定、checkpoint 把准备耗时误作执行证据，以及历史 verifier-only 提交授权和多轮修复后的长 trace 投影错误。fixture 迁移则显式选择 bounded/full 模式或 Analyst/Reviewer 路由，并提供当前要求的真实独立检查及分页证据，不据此宣称生产修复。todo 测试中同文件共享默认列表的污染也已用局部 monkeypatch 隔离，不与上述跨文件最小前导证明混为一谈。
 
-Phase 2 的首次冻结 `987f7cf3…` 在零模型试次时撤销，其后 [r2 冻结](../artifacts/governance-trial-2026-10-24/phase2-freeze-r2/README.md) `32dacc25…` 因公开契约缺口受控停止：**5 次完成、1 次中断未判分、26 次未运行**，固定分母与原始记录保留为 [r2 不完整试跑](real-task-comparison-r2-pilot-2026-10-25.md)，不倒填成功或合并成绩。用户确认补齐公开契约后重新执行完整一轮；[r3 注册](../artifacts/governance-trial-2026-10-24/phase2-preparation-r3/README.md)、[冻结](../artifacts/governance-trial-2026-10-24/phase2-freeze-r3/README.md)和旧试跑处置已在首个 API 调用前随 `f41a9006`、`48a8216487b2951ca15e442a76629ee9e824047d` 发布。**r3 已启动，当前冻结 manifest 为 `b32718a77f1680cf2d7d465d655a95bdcdcf5c6c745c3d30e1b9e430193d3b01`；本轮结果待执行结束后按预定 32 次汇总。** 两组仍为 GLM 5.3 Flash、同一顺序和限制；产品维持 P0，评测器含 r2 transport 修复，不含 P1 抽取或后来的 PTY 修复。执行树继续冻结至报告，既有 92/114 离线检查不计模型成绩；[r3 说明](real-task-comparison-r3-2026-10-25.md)保留事后修订及读范围暴露等解释限制。 首次默认值误认导致的 freeze 失败保留为零 API 的准备记录；本 P0 验收结果不混入 Phase 2 模型证据。
+Phase 2 的首次冻结 `987f7cf3…` 在零模型试次时撤销，其后 [r2 冻结](../artifacts/governance-trial-2026-10-24/phase2-freeze-r2/README.md) `32dacc25…` 因公开契约缺口受控停止：**5 次完成、1 次中断未判分、26 次未运行**，固定分母与原始记录保留为 [r2 不完整试跑](real-task-comparison-r2-pilot-2026-10-25.md)，不倒填成功或合并成绩。用户确认补齐公开契约后重新执行完整一轮；[r3 注册](../artifacts/governance-trial-2026-10-24/phase2-preparation-r3/README.md)、[冻结](../artifacts/governance-trial-2026-10-24/phase2-freeze-r3/README.md)和旧试跑处置已在首个 API 调用前随 `f41a9006`、`48a8216487b2951ca15e442a76629ee9e824047d` 发布。**r3 已按该冻结 manifest `b32718a77f1680cf2d7d465d655a95bdcdcf5c6c745c3d30e1b9e430193d3b01` 完成 32/32；single 8/16、auto 7/16，见[r3 完整结果与维护决策](real-task-comparison-r3-results-2026-10-25.md)。** 两组仍为 GLM 5.3 Flash、同一顺序和限制；产品维持 P0，评测器含 r2 transport 修复，不含 P1 抽取或后来的 PTY 修复。报告已在匹配冻结的执行树上完成，既有 92/114 离线检查不计模型成绩；[r3 说明](real-task-comparison-r3-2026-10-25.md)保留事后修订及读范围暴露等解释限制。 首次默认值误认导致的 freeze 失败保留为零 API 的准备记录；本 P0 验收结果不混入 Phase 2 模型证据。
 
 ## 反馈回路建议
 
