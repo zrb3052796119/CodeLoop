@@ -1,0 +1,326 @@
+{
+  "schemaVersion": 1,
+  "classification": "Completed formal PR3 CI seed53, prior to merge. Separate from post-merge seed54 runs and from experimental Windows full-runtime diagnostics.",
+  "pullRequest": 3,
+  "runId": 40151364118,
+  "runAttempt": 1,
+  "randomlySeed": 53,
+  "headSha": "fbfed052f628030914d89456fcac75306f7b5d5d",
+  "actualCheckoutMergeRef": "5e0b2529ba8f390fe9928ecbfa585c11b64e3445",
+  "runConclusion": "success",
+  "selectedJobCount": 6,
+  "reruns": 0,
+  "sourceAllowlist": {
+    "file": "final-verification.json",
+    "sha256": "1a9192fe4ec32c9f78f3890d78d83811bd8a564c26dfcce628d454a1a616a12f",
+    "listedMemberCount": 27
+  },
+  "additionalMembers": [
+    "final-verification.json",
+    "repaired-target-verification.json",
+    "phase1-pr3-merge-receipt.json"
+  ],
+  "mergeReceipt": {
+    "headRefOid": "fbfed052f628030914d89456fcac75306f7b5d5d",
+    "mergeCommit": {
+      "oid": "8c0a9582057cc9d8ccaa86528c4847a19178d28e"
+    },
+    "mergedAt": "2026-10-25T02:44:17Z",
+    "number": 3,
+    "state": "MERGED",
+    "url": "https://github.com/zrb3052796119/CodeLoop/pull/3"
+  },
+  "postMergeCiClaim": false,
+  "experimentalWindowsFullRuntimeIncluded": false,
+  "priorFailedSeed52Replaced": false,
+  "archive": "proofs.tar.gz",
+  "archiveBytes": 1414017,
+  "archiveSha256": "839e97db81c4a1688249452e6ffe6c1f994d8f606ba567bd496e12c0b3f48520",
+  "entryCount": 30,
+  "rawBytes": 10682724,
+  "determinism": "Sorted USTAR regular files; mode0644 uid/gid/mtime0 and empty owners; gzip mtime0/empty filename/level9; repeated assembly byte-identical.",
+  "restorationVerification": {
+    "allMembersActuallyRestored": true,
+    "allMembersByteComparedWithSources": true,
+    "memberCount": 30,
+    "reportSha256": "572f056a8193d5ceb8e41b2f7f1380b7340a721f67807f242138c5c3a195fa6f"
+  },
+  "jobs": [
+    {
+      "name": "Experimental package checks / Python 3.11 on windows-latest",
+      "jobId": 121043414209,
+      "headSha": "fbfed052f628030914d89456fcac75306f7b5d5d",
+      "actualCheckoutMergeRef": "5e0b2529ba8f390fe9928ecbfa585c11b64e3445",
+      "conclusion": "success",
+      "scope": "experimental-package-only",
+      "rawLog": "windows-311-job-121043414209.log",
+      "rawSha256": "f8df1c3a196d8c5b92855691edb2e9586ceff38b4672eabe6872e392b0f38790",
+      "startedAt": "2026-10-25T01:37:33Z",
+      "completedAt": "2026-10-25T01:40:36Z"
+    },
+    {
+      "name": "Experimental package checks / Python 3.12 on windows-latest",
+      "jobId": 121043414228,
+      "headSha": "fbfed052f628030914d89456fcac75306f7b5d5d",
+      "actualCheckoutMergeRef": "5e0b2529ba8f390fe9928ecbfa585c11b64e3445",
+      "conclusion": "success",
+      "scope": "experimental-package-only",
+      "rawLog": "windows-312-job-121043414228.log",
+      "rawSha256": "5f6b7831a6e1427105750148a8c4032471faf1dc2ce3eb620b25d33e33802380",
+      "startedAt": "2026-10-25T01:37:32Z",
+      "completedAt": "2026-10-25T01:39:58Z"
+    },
+    {
+      "name": "Full runtime / Python 3.12 on ubuntu-latest",
+      "jobId": 121043414090,
+      "headSha": "fbfed052f628030914d89456fcac75306f7b5d5d",
+      "actualCheckoutMergeRef": "5e0b2529ba8f390fe9928ecbfa585c11b64e3445",
+      "conclusion": "success",
+      "scope": "complete-runtime",
+      "rawLog": "ubuntu-312-job-121043414090.log",
+      "rawSha256": "706c233305fcf89328ba39c8102c0af65a6acc63dc635d5852c9276a87383877",
+      "startedAt": "2026-10-25T01:37:32Z",
+      "completedAt": "2026-10-25T02:20:31Z",
+      "randomlySeed": 53,
+      "outcomes": {
+        "failure": 0,
+        "error": 0,
+        "skipped": 19,
+        "passed": 14952
+      },
+      "xmlSha256": "230ca8d618251b1d56b8fbbc9865960793e10ddf2c445a4b4fa748cdcf9ad0e4",
+      "artifactId": 12583372807,
+      "artifactCreatedAt": "2026-10-25T02:20:29Z",
+      "zipSha256": "e4e2535060114fcd167790a86dc23c615febb95621a0ecd0f18ca661e386c8d7",
+      "zipBytes": 313283,
+      "artifactDigestAndXmlBytesVerified": true
+    },
+    {
+      "name": "Full runtime / Python 3.11 on ubuntu-latest",
+      "jobId": 121043414254,
+      "headSha": "fbfed052f628030914d89456fcac75306f7b5d5d",
+      "actualCheckoutMergeRef": "5e0b2529ba8f390fe9928ecbfa585c11b64e3445",
+      "conclusion": "success",
+      "scope": "complete-runtime",
+      "rawLog": "ubuntu-311-job-121043414254.log",
+      "rawSha256": "5c2c838f5827c328e968599798e096a4659e867bb9ac30c843e5d0292de91c95",
+      "startedAt": "2026-10-25T01:37:32Z",
+      "completedAt": "2026-10-25T02:25:04Z",
+      "randomlySeed": 53,
+      "outcomes": {
+        "failure": 0,
+        "error": 0,
+        "skipped": 19,
+        "passed": 14952
+      },
+      "xmlSha256": "6158539f7754cb81a9711e708400a39fe75f448da1fbfc6b38854fd96cf471f9",
+      "artifactId": 12583802014,
+      "artifactCreatedAt": "2026-10-25T02:25:01Z",
+      "zipSha256": "0b513e79ae19a8fe23f4e269015224f73d63170441a3d52e8ea030d548e4258b",
+      "zipBytes": 314125,
+      "artifactDigestAndXmlBytesVerified": true
+    },
+    {
+      "name": "Full runtime / Python 3.12 on macos-latest",
+      "jobId": 121043414223,
+      "headSha": "fbfed052f628030914d89456fcac75306f7b5d5d",
+      "actualCheckoutMergeRef": "5e0b2529ba8f390fe9928ecbfa585c11b64e3445",
+      "conclusion": "success",
+      "scope": "complete-runtime",
+      "rawLog": "macos-312-job-121043414223.log",
+      "rawSha256": "3ffb2904c65aa20f974a501d7fa9180a9cf7dca43dcd039d5eb233b549032384",
+      "startedAt": "2026-10-25T01:37:32Z",
+      "completedAt": "2026-10-25T02:28:56Z",
+      "randomlySeed": 53,
+      "outcomes": {
+        "failure": 0,
+        "error": 0,
+        "skipped": 8,
+        "passed": 14963
+      },
+      "xmlSha256": "2e98a77faf0cac1f9b1189c184add3b918d8539bf0f338f0b8e06732850eaac3",
+      "artifactId": 12583802440,
+      "artifactCreatedAt": "2026-10-25T02:28:52Z",
+      "zipSha256": "c5c4a58170b62bd8ccb5578270db5117edf35aaf2b2cfa2e9b90bfd18c108fde",
+      "zipBytes": 315346,
+      "artifactDigestAndXmlBytesVerified": true
+    },
+    {
+      "name": "Full runtime / Python 3.11 on macos-latest",
+      "jobId": 121043414276,
+      "headSha": "fbfed052f628030914d89456fcac75306f7b5d5d",
+      "actualCheckoutMergeRef": "5e0b2529ba8f390fe9928ecbfa585c11b64e3445",
+      "conclusion": "success",
+      "scope": "complete-runtime",
+      "rawLog": "macos-311-job-121043414276.log",
+      "rawSha256": "a67a072614393c6019dc44672686dfbe83f55cab6bee9a27f3e0dc3017f563cd",
+      "startedAt": "2026-10-25T01:37:33Z",
+      "completedAt": "2026-10-25T02:38:36Z",
+      "randomlySeed": 53,
+      "outcomes": {
+        "failure": 0,
+        "error": 0,
+        "skipped": 8,
+        "passed": 14963
+      },
+      "xmlSha256": "9e9cc66a4c6108230d390dc71ee1d1b4c3b4960313e993cb3f60773559974cec",
+      "artifactId": 12583404257,
+      "artifactCreatedAt": "2026-10-25T02:38:31Z",
+      "zipSha256": "d095e7b030d769ee2849aa198b1478ccc27f3a59d725b45ec2c9c78496252fab",
+      "zipBytes": 318652,
+      "artifactDigestAndXmlBytesVerified": true
+    }
+  ],
+  "entries": [
+    {
+      "path": "artifacts-latest.json",
+      "bytes": 3626,
+      "sha256": "11219224145f574eef9b2db03b6d6495cdc782646a9b20f2c996efa4a00deb5a"
+    },
+    {
+      "path": "completed-summary.json",
+      "bytes": 41433,
+      "sha256": "e68dd472cb4e14c3da2c5f9a236420a8147ab48c5c9bce36cb34655ca3d373c5"
+    },
+    {
+      "path": "final-run.json",
+      "bytes": 12962,
+      "sha256": "d86b4754046c3fbae1fc393333605af8da14e595387f457e2a3a6394c31b50a8"
+    },
+    {
+      "path": "final-verification.json",
+      "bytes": 10099,
+      "sha256": "1a9192fe4ec32c9f78f3890d78d83811bd8a564c26dfcce628d454a1a616a12f"
+    },
+    {
+      "path": "jobs-latest.json",
+      "bytes": 32739,
+      "sha256": "e8e54be5e6acb3926c1560bdd0eb32472d2ae19c8cd5894b72963c14542fbe83"
+    },
+    {
+      "path": "macos-311-job-121043414276.json",
+      "bytes": 4786,
+      "sha256": "c959c96ae2ee3aef490684fb77665d348d6c4f24f2cbb9e31eb27ea7aef94858"
+    },
+    {
+      "path": "macos-311-job-121043414276.log",
+      "bytes": 179599,
+      "sha256": "a67a072614393c6019dc44672686dfbe83f55cab6bee9a27f3e0dc3017f563cd"
+    },
+    {
+      "path": "macos-311-pytest-results.xml",
+      "bytes": 2407531,
+      "sha256": "9e9cc66a4c6108230d390dc71ee1d1b4c3b4960313e993cb3f60773559974cec"
+    },
+    {
+      "path": "macos-311-summary.json",
+      "bytes": 6926,
+      "sha256": "01349daf504e1d35d5c7a3d2e54da8a1f3d984baff32ccc6ef313d646b1cc896"
+    },
+    {
+      "path": "macos-312-job-121043414223.json",
+      "bytes": 4786,
+      "sha256": "44b64645c2883c57678fa17092cd88ec83a6cfb10d9518f57405a661fa22c719"
+    },
+    {
+      "path": "macos-312-job-121043414223.log",
+      "bytes": 179064,
+      "sha256": "3ffb2904c65aa20f974a501d7fa9180a9cf7dca43dcd039d5eb233b549032384"
+    },
+    {
+      "path": "macos-312-pytest-results.xml",
+      "bytes": 2407527,
+      "sha256": "2e98a77faf0cac1f9b1189c184add3b918d8539bf0f338f0b8e06732850eaac3"
+    },
+    {
+      "path": "macos-312-summary.json",
+      "bytes": 6926,
+      "sha256": "9313ad482b334e9ed153a032c25c582f4275296b9cdfc717a17f800bc470c07e"
+    },
+    {
+      "path": "monitor-plan.json",
+      "bytes": 390,
+      "sha256": "80509559cb8cfa84bfe59b729da4ac0590be273331837331823b1b070ea502dd"
+    },
+    {
+      "path": "phase1-pr3-merge-receipt.json",
+      "bytes": 242,
+      "sha256": "5f89b4a1d810e9cf1691e3d588870dca655858761cb6fa4026d22a115cc3ccac"
+    },
+    {
+      "path": "repaired-target-verification.json",
+      "bytes": 2646,
+      "sha256": "b0737bed9808a58ef5769b6a2eb396c597168d8f285f5b11f60bcedbe0d2d197"
+    },
+    {
+      "path": "ubuntu-311-job-121043414254.json",
+      "bytes": 4788,
+      "sha256": "69325025f84d5c8ee2fddc09d7794c0d44ec63b8f56c4432fd00fc030d2b0980"
+    },
+    {
+      "path": "ubuntu-311-job-121043414254.log",
+      "bytes": 177792,
+      "sha256": "5c2c838f5827c328e968599798e096a4659e867bb9ac30c843e5d0292de91c95"
+    },
+    {
+      "path": "ubuntu-311-pytest-results.xml",
+      "bytes": 2409895,
+      "sha256": "6158539f7754cb81a9711e708400a39fe75f448da1fbfc6b38854fd96cf471f9"
+    },
+    {
+      "path": "ubuntu-311-summary.json",
+      "bytes": 6878,
+      "sha256": "88d30301b72d78c89d62ef75cb0eb18142af1b5142120c139114824cc2879f74"
+    },
+    {
+      "path": "ubuntu-312-job-121043414090.json",
+      "bytes": 4788,
+      "sha256": "1b34acc2697547f23e83a6685c5a0a83226896cb876fa23b460ab9495a52df7b"
+    },
+    {
+      "path": "ubuntu-312-job-121043414090.log",
+      "bytes": 179433,
+      "sha256": "706c233305fcf89328ba39c8102c0af65a6acc63dc635d5852c9276a87383877"
+    },
+    {
+      "path": "ubuntu-312-pytest-results.xml",
+      "bytes": 2409890,
+      "sha256": "230ca8d618251b1d56b8fbbc9865960793e10ddf2c445a4b4fa748cdcf9ad0e4"
+    },
+    {
+      "path": "ubuntu-312-summary.json",
+      "bytes": 6878,
+      "sha256": "7cc219927cb691593dc379897964c117ec7da6b5d5bd9ea7871e10512c1db77e"
+    },
+    {
+      "path": "windows-311-job-121043414209.json",
+      "bytes": 4805,
+      "sha256": "df7a6da2a2d653dd2db38d35378c577226834c13f4c90680a8e0b44509bca91e"
+    },
+    {
+      "path": "windows-311-job-121043414209.log",
+      "bytes": 80057,
+      "sha256": "f8df1c3a196d8c5b92855691edb2e9586ceff38b4672eabe6872e392b0f38790"
+    },
+    {
+      "path": "windows-311-summary.json",
+      "bytes": 5632,
+      "sha256": "a4488e54fe8bec3794315bb8c73e4dcf122962f5d6f0cc0d78d7f60548e6a363"
+    },
+    {
+      "path": "windows-312-job-121043414228.json",
+      "bytes": 4805,
+      "sha256": "d3a9ee01ef43d3a7913acda92e5edebe3debbce11875c4173d0ba914aeb0be20"
+    },
+    {
+      "path": "windows-312-job-121043414228.log",
+      "bytes": 80169,
+      "sha256": "5f6b7831a6e1427105750148a8c4032471faf1dc2ce3eb620b25d33e33802380"
+    },
+    {
+      "path": "windows-312-summary.json",
+      "bytes": 5632,
+      "sha256": "22e620ebcceab887336fe4d3ba55d6ccd51b49ff9588a4257eb59dec74e23e43"
+    }
+  ]
+}

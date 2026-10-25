@@ -69,7 +69,7 @@ support layer across them, not a fifth capability track.
 
 ## Evidence at a Glance
 
-**Governance status: Phase 1 passed acceptance at `e6492f9b` and merged via [PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) into main `ed21acb3`.** The first extraction removes 497 lines from `run_agent_turn`, moves all four target closures, and uses at most 11 parameters per new function. The [acceptance record](./docs/release-baseline-2026-10-24.md#phase-1-最终支持矩阵) documents the complete supported-platform CI and one infrastructure retry. The post-merge seed-52 run exposed one deadline-fixture failure; its deterministic repair is awaiting full CI, as recorded in the acceptance record. [Phase 2 r3](./docs/real-task-comparison-r3-2026-10-25.md) is still running; efficiency claims and default-path decisions await its complete report.
+**Governance status: Phase 1 is merged; the first extraction removes 497 lines from `run_agent_turn`, moves all four target closures, and uses at most 11 parameters per new function.** The subsequent deadline-test fix passed all six formal CI jobs (seed 53) and merged through [PR #3](https://github.com/zrb3052796119/CodeLoop/pull/3); [the acceptance record](./docs/release-baseline-2026-10-24.md) preserves earlier failures and exact source identities. [Phase 2 r3 completed all 32 runs](./docs/real-task-comparison-r3-results-2026-10-25.md): single 8/16, auto 7/16, with no recorded delegation or leaf-role requests. This does not establish multi-agent or memory benefit; defaults remain unchanged and new mechanisms remain frozen for the trial.
 
 First, the contract surface for the four tracks and their support layer:
 
