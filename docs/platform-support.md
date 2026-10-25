@@ -1,6 +1,6 @@
 # 本期平台支持与验收范围
 
-2026-10-25，用户在审阅 Windows 完整诊断后明确选择：**本期正式支持 Linux/macOS，原生 Windows 标为实验性，保留可见失败诊断和移植清单**。这是对既有 README 平台承诺的显式收窄，不是将旧 Windows 失败改判为通过。P1 候选 `e6492f9b` 已完成本期正式平台验收，Phase 1 GO，待正常 PR 合入 main。
+2026-10-25，用户在审阅 Windows 完整诊断后明确选择：**本期正式支持 Linux/macOS，原生 Windows 标为实验性，保留可见失败诊断和移植清单**。这是对既有 README 平台承诺的显式收窄，不是将旧 Windows 失败改判为通过。P1 候选 `e6492f9b` 已完成本期正式平台验收，Phase 1 GO，已通过 [PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) 合入 main `ed21acb3`。 合入后 main seed `52` 另有一项 deadline fixture 失败，修复及最新 CI 状态见[基线跟进](release-baseline-2026-10-24.md#合入后的-seed-52-跟进)；平台范围不变。
 
 | 能力 / 验证 | Linux、macOS（Python 3.11 / 3.12） | 原生 Windows（Python 3.11 / 3.12） |
 | --- | --- | --- |
