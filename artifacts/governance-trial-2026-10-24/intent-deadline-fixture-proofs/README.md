@@ -1,0 +1,17 @@
+# Intent semantic deadline fixture evidence
+
+This package records a test-precondition repair. The original 5 ms wall-clock deadline could expire before provider entry, where production lawfully emits no model events. The test then indexed an empty event list. Production remains byte-identical to `ed21acb302a548e1c3c9ddf3a989e9c113fa7d47`; only the semantic-classifier test fixture changed. This is not a production bug claim or a new full-suite acceptance.
+
+Original main CI [40146728915](https://github.com/zrb3052796119/CodeLoop/actions/runs/40146728915), macOS 3.12 job `121029558209`, seed **52**, recorded **14,962 passed / 1 failed / 8 skipped / 0 errors**. Its complete raw log, JUnit and summary are preserved under `original-ci/`. Exact historical scheduling is unknown.
+
+The old test bytes fail naturally (**1 failed / 1 passed**) and with controlled preparation latency (**2 failed**, zero provider calls/events/usage). The repaired fixture uses module-local clocks, retains the real provider boundary, and proves valid deadline, live reservation and started event at entry before advancing time and raising the original provider error. Assertions outside that boundary retain actual call count, deadline precedence, accounting, paired events and sanitization.
+
+On unchanged production, the final three-file related run is **81 passed / 0.78s**, local seed **20261024**. The two target cases and repeated controlled/natural/restored runs overlap that set and must not be added. Four synthetic faults are rejected: omitted parent recheck, estimate charge, failed event, and premature preflight rejection. These are fault-sensitivity checks, not historical production bugs. The initial invalid related command (`after-related`, missing test filename, exit 4, zero tests) remains retained and does not count as validation. See `report.md/json` and the read-only `independent-review.md/json`; the review did not independently execute the author's tests.
+
+The archived final test SHA-256 is `3e5aa848a5b8b516cedd153082ad2fcd14ca70b7120714787cd942710203cef2`. Existing quality inputs are unchanged, as recorded in `intent-deadline-quality-identity.json`; no new quality/full-suite/API run is claimed. New candidate CI remains pending. Historical report status text is retained verbatim.
+
+The frozen allowlist SHA-256 is `459dd68683f2d46d50687882ecce1823babcb61b9d1607b4822d4b9b2d952702`: **56 listed files / 2,768,188 bytes**, copied without transformation. Its original JSON is additionally archived as one member, for **57 members / 2,785,149 raw bytes**. No HOME, cache, virtual environment, credential, provider transcript or whole source tree is included.
+
+`proofs.tar.gz`: **380,765 bytes**, SHA-256 `8c9999788c518d45b38b7b44e3ec6e567729122d84d9d944d34f2a2952d1f456`. Sorted deterministic USTAR headers and gzip fixed time/empty filename were assembled twice with identical bytes. Every member was actually restored to a fresh temporary directory and compared byte-for-byte with its original source. `manifest.json` lists every size and SHA; restoring does not execute the included scripts.
+
+To inspect locally, first verify the archive hash against `manifest.json`, then extract the regular relative members into an empty directory and verify each member's listed size/SHA. `artifact-allowlist.json` retains the preparation-time absolute source paths for provenance; those paths are not needed to inspect the restored evidence. No tests or models were run during packaging.

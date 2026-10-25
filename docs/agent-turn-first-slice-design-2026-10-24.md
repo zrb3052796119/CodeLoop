@@ -1,8 +1,10 @@
 # Agent Turn 首个切片设计与候选实现（2026-10-24）
 
-本候选把“上下文压缩结果的安装与权威消息保留”移到现有 `agent_loop.py` 的模块级操作。`run_agent_turn` 同一 AST 节点从 **5321 行降为 4824 行，净减 497 行**；4 个目标闭包全部迁出，新增函数最多 11 个参数。局部行为对照与完整支持矩阵均已通过；**`e6492f9b` 的 Phase 1 GO 条件已成立，待正常 PR 合入 main**。这一结论不代表已合入或发布，也不替代仍在运行的 Phase 2 r3 报告。
+本候选把“上下文压缩结果的安装与权威消息保留”移到现有 `agent_loop.py` 的模块级操作。`run_agent_turn` 同一 AST 节点从 **5321 行降为 4824 行，净减 497 行**；4 个目标闭包全部迁出，新增函数最多 11 个参数。局部行为对照与完整支持矩阵均已通过；**`e6492f9b` 的 Phase 1 GO 条件已成立，已通过 [PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) 合入 main `ed21acb3`**。这是代码治理验收与合入结论，不替代仍在运行的 Phase 2 r3 报告。
 
 原设计只检查若干命名闭包，暂时未找到自然的 300 行边界；后续独立复审补查了主循环中较大的同职责应用段。依据 [D1 状态矩阵](agent-turn-state-ownership-2026-10-24.md)，92 个捕获绑定中 28 个跨职责组共享，占 30.43%，**没有触发 >60% no-go**。此前暂停源于等待基线与补齐所有权设计的时序约束，不需要另设人工批准点。
+
+合入后的 main seed `52` 在独立 deadline fixture 上出现一项失败；测试前提已修复，最新完整 CI 待完成，见[基线跟进](release-baseline-2026-10-24.md#合入后的-seed-52-跟进)。上述切片验收保持原提交身份，未将这项测试修复称为新的生产行为改动。
 
 ## 基准与实际减量
 
@@ -155,8 +157,8 @@ P0 `9f936942` 已取得 14,923 passed / 8 skipped 的完整随机结果，文档
 
 当前离线 quality 已在 P1 HEAD `715dd1226ef6994990283994ab8db9293185b176` 加请求时序 fixture（SHA-256 `f73325d0f18305d10cee66b636f7aa118c39020fc19589c2a1610065864852ce`）上各执行一次：current **88/88 / 14.28 秒**、a **57/57 / 15.06 秒**，两次 remoteCallCount 均为 **0**。运行前后 439 个源码/脚本/fixture 文件 SHA 映射相同，并与候选 `1decc813` 逐项一致；其中 319 个 `minicode/**/*.py` 的生产内容集合 SHA-256 为 `4ce824100db5350ba47aae0bdd96bc74ed3a09948cdfb08195a39abfee4a35a7`，已覆盖 PTY 修复。原始 JSON stdout、空 stderr、元数据、来源映射、实际 wrapper 及摘要计算口径见[本次 quality 证据包](../artifacts/governance-trial-2026-10-24/phase1-post-policy-quality/README.md)。这是离线开发集重放，不是模型任务成绩，两个 profile 范围不累加；最新版完整 CI 仍待完成，不以这些结果替代 Phase 1 完整验收。
 
-**Phase 1 GO：候选 `e6492f9be7357a707bb8f05c722aa2af4eefcc3d` 已满足原定验收条件，待正常 PR 合入 main。** `run_agent_turn` 净减 497 行、4 个目标闭包迁出、新增函数最多 11 个参数；[CI run `40130139264`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40130139264) 的完整支持矩阵已通过，seed `50`，实际 checkout merge 为 `b0091e50b8f434cf811f3cdec5159d44052d3e09`，与 PR head 分别记录。Linux Python 3.11/3.12 **各 14,952 passed / 19 skipped**，macOS Python 3.11/3.12 **各 14,963 passed / 8 skipped**，四份 XML 均为 **0 failed / 0 errors**；六个选定 job 的安装、编译、lint、离线质量与包检查均成功。结果由 **attempt 1 的五个成功 job + attempt 2 重跑的 macOS 3.11 整个 job** 组成；只执行过一次 `rerun --failed`。原 macOS 3.11 pytest 通过后上传遇到 `ENOTFOUND`，job 失败且缺少 XML，这些原迹保留；另外五个 attempt 2 API job ID 是继承记录，不能当作五次新执行。原始日志、四份 XML、来源映射及逐成员 SHA 见[最终支持矩阵证据包](../artifacts/governance-trial-2026-10-24/phase1-supported-matrix/README.md)，46 个成员已实际恢复比对。Windows 两项仅为实验性包/静态检查通过，完整 runtime 仍有已知失败，不属于本期正式支持验收；历史失败不改判。
+**Phase 1 GO：候选 `e6492f9be7357a707bb8f05c722aa2af4eefcc3d` 已满足原定验收条件，已通过 [PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) 合入 main `ed21acb3`。** `run_agent_turn` 净减 497 行、4 个目标闭包迁出、新增函数最多 11 个参数；[CI run `40130139264`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40130139264) 的完整支持矩阵已通过，seed `50`，实际 checkout merge 为 `b0091e50b8f434cf811f3cdec5159d44052d3e09`，与 PR head 分别记录。Linux Python 3.11/3.12 **各 14,952 passed / 19 skipped**，macOS Python 3.11/3.12 **各 14,963 passed / 8 skipped**，四份 XML 均为 **0 failed / 0 errors**；六个选定 job 的安装、编译、lint、离线质量与包检查均成功。结果由 **attempt 1 的五个成功 job + attempt 2 重跑的 macOS 3.11 整个 job** 组成；只执行过一次 `rerun --failed`。原 macOS 3.11 pytest 通过后上传遇到 `ENOTFOUND`，job 失败且缺少 XML，这些原迹保留；另外五个 attempt 2 API job ID 是继承记录，不能当作五次新执行。原始日志、四份 XML、来源映射及逐成员 SHA 见[最终支持矩阵证据包](../artifacts/governance-trial-2026-10-24/phase1-supported-matrix/README.md)，46 个成员已实际恢复比对。Windows 两项仅为实验性包/静态检查通过，完整 runtime 仍有已知失败，不属于本期正式支持验收；历史失败不改判。
 
 Phase 2 的首次冻结 `987f7cf3…` 在零模型试次时撤销，其后 [r2 冻结](../artifacts/governance-trial-2026-10-24/phase2-freeze-r2/README.md) `32dacc25…` 因公开契约缺口受控停止：**5 次完成、1 次中断未判分、26 次未运行**，固定分母与原始记录保留为 [r2 不完整试跑](real-task-comparison-r2-pilot-2026-10-25.md)，不倒填成功或合并成绩。用户确认补齐公开契约后重新执行完整一轮；[r3 注册](../artifacts/governance-trial-2026-10-24/phase2-preparation-r3/README.md)、[冻结](../artifacts/governance-trial-2026-10-24/phase2-freeze-r3/README.md)和旧试跑处置已在首个 API 调用前随 `f41a9006`、`48a8216487b2951ca15e442a76629ee9e824047d` 发布。**r3 已启动，当前冻结 manifest 为 `b32718a77f1680cf2d7d465d655a95bdcdcf5c6c745c3d30e1b9e430193d3b01`；本轮结果待执行结束后按预定 32 次汇总。** 两组仍为 GLM 5.3 Flash、同一顺序和限制；产品维持 P0，评测器含 r2 transport 修复，不含 P1 抽取或后来的 PTY 修复。执行树继续冻结至报告，既有 92/114 离线检查不计模型成绩；[r3 说明](real-task-comparison-r3-2026-10-25.md)保留事后修订及读范围暴露等解释限制。
 
-**Phase 1 GO。** 原定净减量、闭包归属、显式接口与完整支持矩阵要求均已满足，下一步为正常 PR 合入；没有增加新的审批或验收机制。Phase 2 r3 仍按冻结输入运行，收益及默认路径结论等待完整报告。
+**Phase 1 GO。** 原定净减量、闭包归属、显式接口与完整支持矩阵要求均已满足，已通过 PR #2 合入 main `ed21acb3`；没有增加新的审批或验收机制。Phase 2 r3 仍按冻结输入运行，收益及默认路径结论等待完整报告。

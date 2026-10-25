@@ -5,6 +5,7 @@ import logging
 import time
 import urllib.error
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -762,28 +763,70 @@ def test_provider_exception_does_not_mask_concurrent_cancellation(
 )
 def test_provider_exception_does_not_mask_elapsed_parent_deadline(
     provider_error: Exception,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    import minicode.intent_semantic_classifier as classifier_module
+    import minicode.model_call_control as control_module
+
+    # Preparation time must not consume the deadline before this test reaches
+    # the provider. Advance only after the real call boundary has been entered;
+    # leave the shared stdlib clock (and other tests) untouched.
+    clock = SimpleNamespace(now=1000.0)
+    local_time = SimpleNamespace(monotonic=lambda: clock.now)
+    monkeypatch.setattr(classifier_module, "time", local_time)
+    monkeypatch.setattr(control_module, "time", local_time)
+    parent_deadline = clock.now + 0.005
     sink = _Sink()
     budget = AgentTurnBudget(max_model_calls=3, max_total_tokens=10_000)
-    model = _ControlRaceModel(
-        provider_error,
-        delay_seconds=0.02,
-    )
+    provider_entries: list[dict[str, object]] = []
 
-    with pytest.raises(ModelCallDeadlineExceeded):
+    class DeadlineRaceModel(_Model):
+        def next(self, messages, **kwargs):
+            provider_entries.append({
+                "now": clock.now,
+                "deadline": kwargs.get("deadline_monotonic"),
+                "events": [event.event_type for event in sink.events],
+                "reserved_tokens": budget.snapshot().reserved_total_tokens,
+            })
+            clock.now += 0.02
+            return super().next(messages, **kwargs)
+
+    model = DeadlineRaceModel(provider_error)
+    with pytest.raises(ModelCallDeadlineExceeded) as raised:
         parse_intent(
             "Could you make this flow less brittle?",
             semantic_adapter=BudgetedSemanticIntentClassifier(model, config=_config()),
             call_context=_controls(
                 budget=budget,
                 sink=sink,
-                deadline_monotonic=time.monotonic() + 0.005,
+                deadline_monotonic=parent_deadline,
             ),
         )
 
-    assert budget.snapshot().reserved_total_tokens == 0
-    assert sink.events[-1].event_type == "model.failed"
+    # Assertions stay outside Model.next: the classifier treats ordinary
+    # provider exceptions as advisory failures and could swallow an assertion.
+    assert type(raised.value) is ModelCallDeadlineExceeded
+    assert model.calls == 1
+    assert len(provider_entries) == 1
+    entry = provider_entries[0]
+    assert entry["now"] == 1000.0 < parent_deadline < clock.now
+    assert entry["deadline"] == parent_deadline
+    assert entry["events"] == ["model.started"]
+    assert entry["reserved_tokens"] > 0
+    snapshot = budget.snapshot()
+    assert snapshot.used_model_calls == 1
+    assert snapshot.reserved_total_tokens == 0
+    assert snapshot.used_input_tokens == entry["reserved_tokens"]
+    assert snapshot.used_total_tokens == snapshot.used_input_tokens
+    assert snapshot.used_output_tokens == 0
+    assert snapshot.usage_uncertain is True
+    assert [event.event_type for event in sink.events] == [
+        "model.started",
+        "model.failed",
+    ]
+    assert sink.events[-1].payload["operationId"] == sink.events[0].payload["operationId"]
     assert sink.events[-1].payload["failureKind"] == "timeout"
+    assert "private" not in str(sink.events)
 
 
 def test_timeout_honors_parent_bounded_deadline_before_clock_expiry() -> None:

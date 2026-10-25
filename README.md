@@ -69,7 +69,7 @@ support layer across them, not a fifth capability track.
 
 ## Evidence at a Glance
 
-**Governance status: Phase 1 GO at `e6492f9b`, awaiting the normal PR merge.** The first extraction removes 497 lines from `run_agent_turn`, moves all four target closures, and uses at most 11 parameters per new function. The [acceptance record](./docs/release-baseline-2026-10-24.md#phase-1-最终支持矩阵) documents the complete supported-platform CI and one infrastructure retry. [Phase 2 r3](./docs/real-task-comparison-r3-2026-10-25.md) is still running; efficiency claims and default-path decisions await its complete report.
+**Governance status: Phase 1 passed acceptance at `e6492f9b` and merged via [PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) into main `ed21acb3`.** The first extraction removes 497 lines from `run_agent_turn`, moves all four target closures, and uses at most 11 parameters per new function. The [acceptance record](./docs/release-baseline-2026-10-24.md#phase-1-最终支持矩阵) documents the complete supported-platform CI and one infrastructure retry. The post-merge seed-52 run exposed one deadline-fixture failure; its deterministic repair is awaiting full CI, as recorded in the acceptance record. [Phase 2 r3](./docs/real-task-comparison-r3-2026-10-25.md) is still running; efficiency claims and default-path decisions await its complete report.
 
 First, the contract surface for the four tracks and their support layer:
 

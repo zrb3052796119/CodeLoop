@@ -1,12 +1,22 @@
 # CodeLoop 治理基线 — 2026-10-24
 
-**当前状态：Phase 1 候选 `e6492f9b` 已取得完整支持矩阵验收，原定 GO 条件成立，待正常 PR 合入 main。** P0 `9f936942` 的完整本机验收及 main `ff2f18ea` 保持历史身份。Phase 2 r2 已受控停止，保留 5 完成 / 1 中断未判分 / 26 未运行的 pilot；补齐公开契约的 r3 已注册、冻结并启动，仍待完整 32 次报告，不能据 Phase 1 验收推断收益或改变默认路径。
+**当前状态：Phase 1 候选 `e6492f9b` 已取得完整支持矩阵验收，原定 GO 条件成立，已通过 [PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) 合入 main `ed21acb3`。** 合入后 seed `52` 暴露一项 deadline 测试前提失败；修复候选已通过定向检查，完整 CI 仍待，不能把当前 main 称为全绿。P0 `9f936942` 的完整本机验收及 main `ff2f18ea` 保持历史身份。Phase 2 r2 已受控停止，保留 5 完成 / 1 中断未判分 / 26 未运行的 pilot；补齐公开契约的 r3 已注册、冻结并启动，仍待完整 32 次报告，不能据 Phase 1 验收推断收益或改变默认路径。
 
-main 与开发分支曾于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档/证据序列的生产及测试字节与通过的 `9f936942` 相同。当前验收对应 P1 PR head `e6492f9b` 及其 CI merge ref，尚未完成正常 PR 合入；此前两次本机失败、各旧 CI 失败与局部证明保持原记录。
+main 与开发分支曾于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档/证据序列的生产及测试字节与通过的 `9f936942` 相同。当前验收对应 P1 PR head `e6492f9b` 及其 CI merge ref，后续文档提交 `3f0115ee` 保持同一 runtime/test 字节，并于 2026-10-25 经 PR #2 合入 main `ed21acb3`；此前两次本机失败、各旧 CI 失败与局部证明保持原记录。
+
+合入时间为 **2026-10-25 08:26:55（Asia/Shanghai）**，PR head `3f0115ee0575caad5bfeabc4f09fa01095bbee25`，main merge `ed21acb302a548e1c3c9ddf3a989e9c113fa7d47`。合入前该 head 的 [CI `40140217669`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40140217669)（seed `51`）六项全部成功、无重跑，四个正式平台完整套件均为 0 failed / 0 errors。下方归档仍保留原 `e6492f9b` / seed `50` 验收身份和一次基础设施重跑；不能把两次执行混为一份记录。独立 Windows 完整诊断失败仍按已批准实验性范围保留。
+
+## 合入后的 seed 52 跟进
+
+main `ed21acb3` 的 [CI `40146728915`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40146728915) 在 macOS 3.12 得到 **14,962 passed / 1 failed / 8 skipped**；其他三份正式平台完整套件和两项 Windows 包检查通过。唯一失败为 `test_provider_exception_does_not_mask_elapsed_parent_deadline[provider_error0]` 访问空事件列表。未重跑原 CI；上述合入前验收与本次失败均保留原身份。
+
+这是测试前提缺口：5 ms 的真实期限可能在 provider 调用前耗尽，此时生产在 preflight 正确拒绝，尚无 `model.started`。原测试本机自然运行 **1 failed / 1 passed**；加 20 ms 准备延迟后两参数均在同点失败，观察到 0 次 provider 调用和空事件。原 CI 的具体交错未知，受控反例不冒称精确重放。修复只在测试局部控制 classifier/control 两模块的时钟，确认真实进入 provider 后推进 20 ms 再抛原异常；保留原 5 ms 期限，并在模型外验证调用、完整事件/operationId、释放预留及精确估算计账。
+
+最终测试 SHA `3e5aa848a5b8b516cedd153082ad2fcd14ca70b7120714787cd942710203cef2`：相关 **81 passed / 0.78 秒**，含目标两项；目标受控、自然和恢复执行均通过，是重叠执行、不累加。四种合成控制/计账/事件故障均被拒绝，不称历史产品 bug；首个误指不存在文件的无效命令也保留。原 CI、前后证明、源身份与独立审查见[deadline fixture 证据包](../artifacts/governance-trial-2026-10-24/intent-deadline-fixture-proofs/README.md)。生产/脚本未改，既有 quality 的 439 个输入逐字节相同，继续引用原 88/88 和 57/57 记录；没有重新执行 quality 或本机全套。**本修订的完整 CI 待完成，Phase 2 r3 的 ROOT 冻结保持不变。**
 
 ## Phase 1 最终支持矩阵
 
-**Phase 1 GO：候选 `e6492f9be7357a707bb8f05c722aa2af4eefcc3d` 已满足原定验收条件，待正常 PR 合入 main。** `run_agent_turn` 净减 497 行、4 个目标闭包迁出、新增函数最多 11 个参数；[CI run `40130139264`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40130139264) 的完整支持矩阵已通过，seed `50`，实际 checkout merge 为 `b0091e50b8f434cf811f3cdec5159d44052d3e09`，与 PR head 分别记录。Linux Python 3.11/3.12 **各 14,952 passed / 19 skipped**，macOS Python 3.11/3.12 **各 14,963 passed / 8 skipped**，四份 XML 均为 **0 failed / 0 errors**；六个选定 job 的安装、编译、lint、离线质量与包检查均成功。结果由 **attempt 1 的五个成功 job + attempt 2 重跑的 macOS 3.11 整个 job** 组成；只执行过一次 `rerun --failed`。原 macOS 3.11 pytest 通过后上传遇到 `ENOTFOUND`，job 失败且缺少 XML，这些原迹保留；另外五个 attempt 2 API job ID 是继承记录，不能当作五次新执行。原始日志、四份 XML、来源映射及逐成员 SHA 见[最终支持矩阵证据包](../artifacts/governance-trial-2026-10-24/phase1-supported-matrix/README.md)，46 个成员已实际恢复比对。Windows 两项仅为实验性包/静态检查通过，完整 runtime 仍有已知失败，不属于本期正式支持验收；历史失败不改判。
+**Phase 1 GO：候选 `e6492f9be7357a707bb8f05c722aa2af4eefcc3d` 已满足原定验收条件，已通过 [PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) 合入 main `ed21acb3`。** `run_agent_turn` 净减 497 行、4 个目标闭包迁出、新增函数最多 11 个参数；[CI run `40130139264`](https://github.com/zrb3052796119/CodeLoop/actions/runs/40130139264) 的完整支持矩阵已通过，seed `50`，实际 checkout merge 为 `b0091e50b8f434cf811f3cdec5159d44052d3e09`，与 PR head 分别记录。Linux Python 3.11/3.12 **各 14,952 passed / 19 skipped**，macOS Python 3.11/3.12 **各 14,963 passed / 8 skipped**，四份 XML 均为 **0 failed / 0 errors**；六个选定 job 的安装、编译、lint、离线质量与包检查均成功。结果由 **attempt 1 的五个成功 job + attempt 2 重跑的 macOS 3.11 整个 job** 组成；只执行过一次 `rerun --failed`。原 macOS 3.11 pytest 通过后上传遇到 `ENOTFOUND`，job 失败且缺少 XML，这些原迹保留；另外五个 attempt 2 API job ID 是继承记录，不能当作五次新执行。原始日志、四份 XML、来源映射及逐成员 SHA 见[最终支持矩阵证据包](../artifacts/governance-trial-2026-10-24/phase1-supported-matrix/README.md)，46 个成员已实际恢复比对。Windows 两项仅为实验性包/静态检查通过，完整 runtime 仍有已知失败，不属于本期正式支持验收；历史失败不改判。
 
 | 正式平台 | Python | passed | skipped | failed / errors | 证据 attempt / 原始 job ID |
 | --- | --- | ---: | ---: | --- | --- |
@@ -80,7 +90,7 @@ main 与开发分支曾于 2026-10-25 原子推送至 `ff2f18ea`；该 P0 文档
 
 原 CI run `40111546762` 的 Windows 3.11/3.12 job 确认是既存 `_publish_portable` 的 WinError 32，故障文件在初始 `88ec62d0`、`9f936942`、P0 main 字节相同。同一 run 的 Ubuntu Python 3.11.17 与 macOS Python 3.11.9 内部错误均来自既有 `test_run_command_lifecycle.py:246` 全局猴补 `os.name="nt"`：`run_command.py:288` 的 `Path(command).name` 选择不支持的 WindowsPath，随后 pytest 报告/退出也崩溃。Ubuntu 原 JUnit 4934 tests / 0 failures / 1 internal error / 7 skipped；旧 fixture 已在真实 Python 3.11.15 复现。`7b8157e7` 修复只使用测试模块局部 `os`/`sys`/`subprocess` 代理，生产字节不变；Python 3.11/3.12 各 124 项相关通过，最终同字节目标测试在 exact P0 1 passed，2 个合成坏 flags/session 反例仍正常断言失败。[fixture 修复和原始 CI 证据](../artifacts/governance-trial-2026-10-24/run-command-fixture-proofs/README.md)已归档，不将其归为生产 bug。上述定向结果不代替新版组合候选的完整 CI 验收，Phase 1 go 尚未成立。
 
-上述旧候选和定向记录不替代最终矩阵；当前 `e6492f9b` 的 Phase 1 GO 结论见[本页最终支持矩阵](#phase-1-最终支持矩阵)，待正常 PR 合入 main。
+上述旧候选和定向记录不替代最终矩阵；当前 `e6492f9b` 的 Phase 1 GO 结论见[本页最终支持矩阵](#phase-1-最终支持矩阵)，已通过 [PR #2](https://github.com/zrb3052796119/CodeLoop/pull/2) 合入 main `ed21acb3`。
 
 旧 CI `40111546762` 的 Ubuntu 3.12 完整结果为 14,911 passed / 2 failed / 18 skipped；两项失败分别源于 fixture 依赖目录枚举顺序、在真实 outer Future 完成前过早发出信号。`c6d1e485` 已提交修正，仅调整测试前提，相关 60 项（seed `20261024`）与 124 项（seed `42`）通过，但范围有重叠、不相加。`827c1751` 已将审查通过的 Windows publisher 生产改动补入未冻结 v41 的精确 staged source 声明：相同最终测试旧声明 15 failed / 19 passed，新声明 34 passed，相关 179 项通过；40 份历史 pin 字节不变，不激活 v41。原始失败、独立审查及边界见[跟进证据包](../artifacts/governance-trial-2026-10-24/ci-followup-proofs/README.md)。
 
