@@ -1,0 +1,1803 @@
+{
+  "schemaVersion": 1,
+  "studyId": "codeloop-real-task-comparison-2026-10-24-r3",
+  "status": "offline-prepared-awaiting-r3-host-freeze",
+  "newGate": false,
+  "arms": [
+    "single",
+    "auto"
+  ],
+  "repeats": 1,
+  "scheduleSeed": 20261024,
+  "schedule": [
+    {
+      "id": "write-profile-parser-r1-single",
+      "case": "write-profile-parser",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "write-profile-parser-r1-auto",
+      "case": "write-profile-parser",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-atomic-replace-r1-auto",
+      "case": "read-atomic-replace",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-atomic-replace-r1-single",
+      "case": "read-atomic-replace",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-workflow-runner-r1-single",
+      "case": "refactor-workflow-runner",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-workflow-runner-r1-auto",
+      "case": "refactor-workflow-runner",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-todo-isolation-r1-auto",
+      "case": "write-todo-isolation",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-todo-isolation-r1-single",
+      "case": "write-todo-isolation",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-finalization-r1-single",
+      "case": "refactor-finalization",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-finalization-r1-auto",
+      "case": "refactor-finalization",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-cache-fallback-r1-auto",
+      "case": "write-cache-fallback",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-cache-fallback-r1-single",
+      "case": "write-cache-fallback",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-workspace-r1-single",
+      "case": "refactor-workspace",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-workspace-r1-auto",
+      "case": "refactor-workspace",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-frozen-change-r1-auto",
+      "case": "refactor-frozen-change",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-frozen-change-r1-single",
+      "case": "refactor-frozen-change",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "write-user-profiles-r1-single",
+      "case": "write-user-profiles",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "write-user-profiles-r1-auto",
+      "case": "write-user-profiles",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-closing-reminder-r1-auto",
+      "case": "read-closing-reminder",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-closing-reminder-r1-single",
+      "case": "read-closing-reminder",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "read-router-r1-single",
+      "case": "read-router",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "read-router-r1-auto",
+      "case": "read-router",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-profile-dispatch-r1-auto",
+      "case": "write-profile-dispatch",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-profile-dispatch-r1-single",
+      "case": "write-profile-dispatch",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "read-image-boundaries-r1-single",
+      "case": "read-image-boundaries",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "read-image-boundaries-r1-auto",
+      "case": "read-image-boundaries",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-deadline-r1-auto",
+      "case": "read-deadline",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-deadline-r1-single",
+      "case": "read-deadline",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "write-profile-contracts-r1-single",
+      "case": "write-profile-contracts",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "write-profile-contracts-r1-auto",
+      "case": "write-profile-contracts",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-cache-tip-r1-auto",
+      "case": "write-cache-tip",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-cache-tip-r1-single",
+      "case": "write-cache-tip",
+      "arm": "single",
+      "repeat": 1
+    }
+  ],
+  "runtime": {
+    "model": "glm-5.3-flash",
+    "subagentRoutingEnabled": false,
+    "subagentModels": {},
+    "temperature": 0,
+    "modelMaxRetries": 0,
+    "maxOutputTokens": 8192,
+    "memory": "cold-empty-both-arms",
+    "skills": "empty-both-arms",
+    "mcp": "disabled",
+    "roleMaxTurns": {
+      "explore": 12,
+      "plan": 8,
+      "general": 15
+    },
+    "maxAgentDepth": 2
+  },
+  "limits": {
+    "maxCostUsd": null,
+    "maxModelCalls": null,
+    "maxTokens": null,
+    "wallSeconds": 1800,
+    "connectTimeoutSeconds": 30,
+    "idleTimeoutSeconds": 120,
+    "requestTimeoutSeconds": 300,
+    "externalJudgeSeconds": 180
+  },
+  "constraints": [
+    "no-live-calls-before-parent-Phase0-readiness",
+    "freeze-execution-host-and-adapter-before-live",
+    "same-model-for-parent-and-all-roles",
+    "no-rerun-or-replacement-after-first-provider-receipt",
+    "all-failures-and-unknown-usage-retained",
+    "no-new-gate-or-production-module"
+  ],
+  "outcomes": [
+    "preregistered-task-success",
+    "provider-input-output-cache-tokens",
+    "physical-request-count",
+    "agent-wall-seconds",
+    "human-approval-correction-count",
+    "host-policy-approval-count",
+    "actual-child-execution-and-delivery",
+    "unknown-usage-count"
+  ],
+  "exclusions": [
+    {
+      "id": "write-continuation-store",
+      "referenceRef": "e625ae981e7b7c4058e031a23f9450ace5fa17ee",
+      "reason": "Historical checkout before core snapshot imports nonexistent minicode.capability_contracts through tooling; no later-code backfill permitted."
+    },
+    {
+      "id": "write-continuation-resume",
+      "referenceRef": "b90a3ded8e5a5f4e8e1bf011650126b03f4e549a",
+      "reason": "Historical checkout before core snapshot imports nonexistent minicode.capability_contracts through tooling; no later-code backfill permitted."
+    }
+  ],
+  "offlineSummary": {
+    "activeTasks": 16,
+    "read": 5,
+    "write": 7,
+    "refactor": 4,
+    "referenceAccepted": 16,
+    "historicalParentRejected": 16,
+    "providerCalls": 0,
+    "referenceCheckInstances": 92,
+    "hostGuardianOraclesPassed": 16,
+    "readAdversarialProbesPassed": 5
+  },
+  "pricing": {
+    "known": false,
+    "currency": null,
+    "amount": null,
+    "reason": "custom configured route price unknown; no borrowed model/list-price assumption",
+    "primaryCostMeasures": [
+      "providerInputTokens",
+      "providerOutputTokens",
+      "providerCacheTokens",
+      "physicalRequests"
+    ]
+  },
+  "format": "portable-git-reconstruction-v1",
+  "cases": [
+    {
+      "id": "read-router",
+      "category": "read",
+      "sourcePaths": [
+        "minicode/agent_router.py",
+        "minicode/smart_router.py"
+      ],
+      "authorized_paths": [],
+      "baselineRef": "8a1b3d9e08faa954987065c3fb94c67a2a5f69c6",
+      "referenceRef": "8a1b3d9e08faa954987065c3fb94c67a2a5f69c6",
+      "historicalParentRef": "e85a95803e248e157523e10dd0f1fe5bbed3f9bb",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "8a1b3d9e08faa954987065c3fb94c67a2a5f69c6",
+        "parentCommit": "e85a95803e248e157523e10dd0f1fe5bbed3f9bb",
+        "committedAt": "2026-10-23T10:52:15+08:00",
+        "commitSubject": "fix(router): reject unavailable model candidates",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": true
+      },
+      "promptPath": "cases/read-router/prompt.txt",
+      "promptSha256": "4ec7d976f67b9dee97524223ca7ab7adefc4a40001c2eefac300ebdc7b0b8c2c",
+      "referencePatchPath": "cases/read-router/reference.patch",
+      "referencePatchSha256": "0b2dea4a1fa9f6c1669e8d5958356c0c29650397d85c6a1b14499836e5353feb",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "8a1b3d9e08faa954987065c3fb94c67a2a5f69c6",
+          "minicodeTree": "db3e605b86191fe0eea43bbd5a8411a961d77545",
+          "pythonFileCount": 316,
+          "pythonInventorySha256": "e9c7335cd93e07f8edc04dc11a8cf7fa5075d55afb842d4d1c3c282507b87dcf"
+        },
+        "reference": {
+          "commit": "8a1b3d9e08faa954987065c3fb94c67a2a5f69c6",
+          "minicodeTree": "db3e605b86191fe0eea43bbd5a8411a961d77545",
+          "pythonFileCount": 316,
+          "pythonInventorySha256": "e9c7335cd93e07f8edc04dc11a8cf7fa5075d55afb842d4d1c3c282507b87dcf"
+        },
+        "historicalParent": {
+          "commit": "e85a95803e248e157523e10dd0f1fe5bbed3f9bb",
+          "minicodeTree": "417f91ae555cfd71642a7c081295b388b64166fb",
+          "pythonFileCount": 316,
+          "pythonInventorySha256": "179c0d36d0ec5763eb57013744787f0830fd33f1a741f9b5b624d3cc1222210a"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_agent_router_fail_closed.py",
+        "historical_test_sha256": "1eb1a6623f3b37c07af93bd8d8495cc5f563eb1e30e95a5e5f90f01a135f8d74",
+        "selectors": [
+          "test_explicit_empty_catalog_does_not_inherit_builtin_models",
+          "test_unspecified_catalog_preserves_default_model_selection",
+          "test_missing_tier_candidates_never_select_an_unrelated_model",
+          "test_unregistered_explicit_model_is_rejected",
+          "test_smart_router_does_not_switch_after_candidate_exhaustion"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": false,
+        "sourceScopeRequired": true,
+        "diagnosticProbeRequired": true,
+        "diagnosticMinChecks": 5,
+        "diagnosticCallCoverage": {
+          "minicode/agent_router.py:route_task": 5,
+          "minicode/smart_router.py:route_and_switch": 1
+        },
+        "diagnosticHistoricalCounterexampleRequired": true,
+        "diagnosticProbeIsNotSharedWithAgent": true,
+        "oraclePath": "cases/read-router/oracle.py",
+        "oracleSha256": "97e6a0fe6dd518af0b8d43dc693db39942e5f4fc53fd84d5b5b8136e2810da25",
+        "preparedOriginalOracleSha256": "e5bc622368f045e9f88486a0465655bda252f3a2fef8b42c32b4156c68e4224c",
+        "referenceDiagnosticPath": "cases/read-router/reference-diagnostic.json",
+        "referenceDiagnosticSha256": "9c37146b83124e9f6c3369b7217fb158c66203ada90c0ba2f130dcf4a2c76689"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "8a1b3d9e08faa954987065c3fb94c67a2a5f69c6",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 1.549,
+          "testSha256": "1eb1a6623f3b37c07af93bd8d8495cc5f563eb1e30e95a5e5f90f01a135f8d74",
+          "logPath": "cases/read-router/reference-proof.log",
+          "logSha256": "0f18846f02505ee432787dbe3891961c1d8a1fbe2c82d1b7deb7e21dde073c5c",
+          "originalUnnormalizedLogSha256": "0f18846f02505ee432787dbe3891961c1d8a1fbe2c82d1b7deb7e21dde073c5c",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "e85a95803e248e157523e10dd0f1fe5bbed3f9bb",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 1.376,
+          "testSha256": "1eb1a6623f3b37c07af93bd8d8495cc5f563eb1e30e95a5e5f90f01a135f8d74",
+          "logPath": "cases/read-router/parent-proof.log",
+          "logSha256": "9824f1f4e2349416e3042bdbb02d3c51e68dfb2a10016e63e93a517d0abc172b",
+          "originalUnnormalizedLogSha256": "9824f1f4e2349416e3042bdbb02d3c51e68dfb2a10016e63e93a517d0abc172b",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "read-deadline",
+      "category": "read",
+      "sourcePaths": [
+        "minicode/model_call_control.py"
+      ],
+      "authorized_paths": [],
+      "baselineRef": "594e7dba829082b39bbf5cc2f9758dda891cd9ec",
+      "referenceRef": "594e7dba829082b39bbf5cc2f9758dda891cd9ec",
+      "historicalParentRef": "0aa4e4625e9366ab62e884111bf92e7e12dad814",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "594e7dba829082b39bbf5cc2f9758dda891cd9ec",
+        "parentCommit": "0aa4e4625e9366ab62e884111bf92e7e12dad814",
+        "committedAt": "2026-08-24T17:48:57+08:00",
+        "commitSubject": "fix(runtime): enforce exact model deadlines",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": true
+      },
+      "promptPath": "cases/read-deadline/prompt.txt",
+      "promptSha256": "9e35f2474b342ba8f7b693c5bf66c593fc2e771fd0d9f31eb5f75ba5541f566e",
+      "referencePatchPath": "cases/read-deadline/reference.patch",
+      "referencePatchSha256": "17137f2b1b0245715d07f714a556db9643fe757a4dd240187684c865d292af13",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "594e7dba829082b39bbf5cc2f9758dda891cd9ec",
+          "minicodeTree": "dec08c5168304647f8819edf4de060749e5cd7ed",
+          "pythonFileCount": 208,
+          "pythonInventorySha256": "276dfe3a2150d7d07b7e79d6626c77ac1caefda5bd43239e573668aee3583ff4"
+        },
+        "reference": {
+          "commit": "594e7dba829082b39bbf5cc2f9758dda891cd9ec",
+          "minicodeTree": "dec08c5168304647f8819edf4de060749e5cd7ed",
+          "pythonFileCount": 208,
+          "pythonInventorySha256": "276dfe3a2150d7d07b7e79d6626c77ac1caefda5bd43239e573668aee3583ff4"
+        },
+        "historicalParent": {
+          "commit": "0aa4e4625e9366ab62e884111bf92e7e12dad814",
+          "minicodeTree": "44c80cc6ec775df7b9ca1aaeeaf9c9df92a45d21",
+          "pythonFileCount": 208,
+          "pythonInventorySha256": "42d8f3b3112b9f7c094a8791471630506f5bb1e6ee46ec7e793beca047b76631"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_production_reliability_hardening.py",
+        "historical_test_sha256": "f16bac502dd8ab455279a14af6d0c6967509a4ec23612dd98a967b1c24d0e29b",
+        "selectors": [
+          "test_request_timeout_is_bounded_by_remaining_agent_deadline",
+          "test_request_timeout_never_exceeds_a_sub_millisecond_deadline"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": false,
+        "sourceScopeRequired": true,
+        "diagnosticProbeRequired": true,
+        "diagnosticMinChecks": 2,
+        "diagnosticCallCoverage": {
+          "minicode/model_call_control.py:bounded_request_timeout": 3
+        },
+        "diagnosticHistoricalCounterexampleRequired": true,
+        "diagnosticProbeIsNotSharedWithAgent": true,
+        "oraclePath": "cases/read-deadline/oracle.py",
+        "oracleSha256": "73a671733546d53a63c29f03fb7217823dddaa4d43e6175afec4d09e43c93c32",
+        "preparedOriginalOracleSha256": "0cf8e44156f861bece709f6a791e64721634ff6d4f83d89234f7eca51942514b",
+        "referenceDiagnosticPath": "cases/read-deadline/reference-diagnostic.json",
+        "referenceDiagnosticSha256": "0c26ead0c4371d9899e74973ea62aac5c9597014551392ceb70dc1fb3953b19a"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "594e7dba829082b39bbf5cc2f9758dda891cd9ec",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 3.362,
+          "testSha256": "f16bac502dd8ab455279a14af6d0c6967509a4ec23612dd98a967b1c24d0e29b",
+          "logPath": "cases/read-deadline/reference-proof.log",
+          "logSha256": "3c45c895af180ba13823a5bdb06b10781ebeb63818c54cae60c943ea3d34458a",
+          "originalUnnormalizedLogSha256": "3c45c895af180ba13823a5bdb06b10781ebeb63818c54cae60c943ea3d34458a",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "0aa4e4625e9366ab62e884111bf92e7e12dad814",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 2.339,
+          "testSha256": "f16bac502dd8ab455279a14af6d0c6967509a4ec23612dd98a967b1c24d0e29b",
+          "logPath": "cases/read-deadline/parent-proof.log",
+          "logSha256": "b4c2573022c7d6fbd6dce209190b4a190db6decc03f413dc5a3d535e185195df",
+          "originalUnnormalizedLogSha256": "b4c2573022c7d6fbd6dce209190b4a190db6decc03f413dc5a3d535e185195df",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "read-atomic-replace",
+      "category": "read",
+      "sourcePaths": [
+        "minicode/conversation_turn_store.py",
+        "minicode/deletion_store.py"
+      ],
+      "authorized_paths": [],
+      "baselineRef": "5658aad992dfb78184509ba29020a5dc3ab6d7a3",
+      "referenceRef": "5658aad992dfb78184509ba29020a5dc3ab6d7a3",
+      "historicalParentRef": "3717baa060de83970b43aceccb8ac7e738954ca8",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "5658aad992dfb78184509ba29020a5dc3ab6d7a3",
+        "parentCommit": "3717baa060de83970b43aceccb8ac7e738954ca8",
+        "committedAt": "2026-08-24T14:58:08+08:00",
+        "commitSubject": "fix(storage): close temp files before Windows replace",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": true
+      },
+      "promptPath": "cases/read-atomic-replace/prompt.txt",
+      "promptSha256": "7d0699638cbf0e4f71a1de08bd446198bbd912e8e1277b8dcd03db0e5cde9aaf",
+      "referencePatchPath": "cases/read-atomic-replace/reference.patch",
+      "referencePatchSha256": "71f0d3336f1dc15f5de568c87351fbc117c9bb982847a1d41aa8a6e206ac681a",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "5658aad992dfb78184509ba29020a5dc3ab6d7a3",
+          "minicodeTree": "118d6cd0825f9638fc265cb6022d1bcbaa407a2d",
+          "pythonFileCount": 208,
+          "pythonInventorySha256": "63f5994b6c22ecb9ea0b411fa0185682c6ca14421eb5fcf513a97c5ee552ee16"
+        },
+        "reference": {
+          "commit": "5658aad992dfb78184509ba29020a5dc3ab6d7a3",
+          "minicodeTree": "118d6cd0825f9638fc265cb6022d1bcbaa407a2d",
+          "pythonFileCount": 208,
+          "pythonInventorySha256": "63f5994b6c22ecb9ea0b411fa0185682c6ca14421eb5fcf513a97c5ee552ee16"
+        },
+        "historicalParent": {
+          "commit": "3717baa060de83970b43aceccb8ac7e738954ca8",
+          "minicodeTree": "af6ba881535a2a9443ebc60ee0ca4f8ac7b66628",
+          "pythonFileCount": 208,
+          "pythonInventorySha256": "d13d7ad0c99a15b95f7d3396be2d341ad5a85c98450ff6b2281a31cc72ae6892"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_conversation_turn_store.py",
+        "historical_test_sha256": "657e4ad58cc94ffb3fd390891b1695603208a949818ffe1e7783dcd2cb2b6521",
+        "selectors": [
+          "test_turn_write_closes_temporary_descriptor_before_atomic_replace"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": false,
+        "sourceScopeRequired": true,
+        "diagnosticProbeRequired": true,
+        "diagnosticMinChecks": 1,
+        "diagnosticCallCoverage": {
+          "minicode/conversation_turn_store.py:_write": 1
+        },
+        "diagnosticHistoricalCounterexampleRequired": true,
+        "diagnosticProbeIsNotSharedWithAgent": true,
+        "oraclePath": "cases/read-atomic-replace/oracle.py",
+        "oracleSha256": "ca01e17ef0c2f8f06b760e42d46614832978958b2ddbcb17bb1cf5e03d75d0a1",
+        "preparedOriginalOracleSha256": "c3bfea42ed91766f3cf15f9f5c3787470d7c649d5907d0da78d1dd9f4dc9ff0e",
+        "referenceDiagnosticPath": "cases/read-atomic-replace/reference-diagnostic.json",
+        "referenceDiagnosticSha256": "148d231ad144a0380c43c0e91185ac2379be9012aa8ac3f0057a391683ffe06c"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "5658aad992dfb78184509ba29020a5dc3ab6d7a3",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 1.781,
+          "testSha256": "657e4ad58cc94ffb3fd390891b1695603208a949818ffe1e7783dcd2cb2b6521",
+          "logPath": "cases/read-atomic-replace/reference-proof.log",
+          "logSha256": "106e2242acc92dbbe0317802bbe2046a9d0be71b46ef14dc833068c0a34e7939",
+          "originalUnnormalizedLogSha256": "106e2242acc92dbbe0317802bbe2046a9d0be71b46ef14dc833068c0a34e7939",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "3717baa060de83970b43aceccb8ac7e738954ca8",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 1.582,
+          "testSha256": "657e4ad58cc94ffb3fd390891b1695603208a949818ffe1e7783dcd2cb2b6521",
+          "logPath": "cases/read-atomic-replace/parent-proof.log",
+          "logSha256": "bcf4ed7b6c1598f76ee253e152bb5b14e87c5b5c11ba5f0c063ec88c11254dd4",
+          "originalUnnormalizedLogSha256": "bcf4ed7b6c1598f76ee253e152bb5b14e87c5b5c11ba5f0c063ec88c11254dd4",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "read-closing-reminder",
+      "category": "read",
+      "sourcePaths": [
+        "minicode/tools/task.py"
+      ],
+      "authorized_paths": [],
+      "baselineRef": "a9bdb56cff58bad0ceb83bc7c7ef7e27e8720b24",
+      "referenceRef": "a9bdb56cff58bad0ceb83bc7c7ef7e27e8720b24",
+      "historicalParentRef": "f724d382dedfe4a9fe54a1a54d8c07a8528cd259",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "a9bdb56cff58bad0ceb83bc7c7ef7e27e8720b24",
+        "parentCommit": "f724d382dedfe4a9fe54a1a54d8c07a8528cd259",
+        "committedAt": "2026-09-25T01:16:12+08:00",
+        "commitSubject": "feat(task): one bounded closing-reminder pass to recover the typed result note",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": true
+      },
+      "promptPath": "cases/read-closing-reminder/prompt.txt",
+      "promptSha256": "60a7ba4402df50ecb4c2a32a86692298b8db6d32c93f4adc428d67c6a17ab65d",
+      "referencePatchPath": "cases/read-closing-reminder/reference.patch",
+      "referencePatchSha256": "71f25c6b626f297db26d82a92de9deca9f7b42f8955f5d1b1b7c5c8183f5948b",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "a9bdb56cff58bad0ceb83bc7c7ef7e27e8720b24",
+          "minicodeTree": "26c7bea204aa2072b80c617e6f380041630226ac",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "44ecd5426ee85c4de18f9f6546ebba23fbe4f6b401dd0d7990ece6dbb8d48907"
+        },
+        "reference": {
+          "commit": "a9bdb56cff58bad0ceb83bc7c7ef7e27e8720b24",
+          "minicodeTree": "26c7bea204aa2072b80c617e6f380041630226ac",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "44ecd5426ee85c4de18f9f6546ebba23fbe4f6b401dd0d7990ece6dbb8d48907"
+        },
+        "historicalParent": {
+          "commit": "f724d382dedfe4a9fe54a1a54d8c07a8528cd259",
+          "minicodeTree": "976758699e4e51e2dd313aad92bb3cb857c111d2",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "5b1fb540686902bc69678a2371699eea471edf543889b06b99a2dec96b3b3a81"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_subagent_contract_compliance.py",
+        "historical_test_sha256": "0f73e658e0493854d83f9d93986c18aa49bed1fae213d21368c28fd0115b8c66",
+        "selectors": [
+          "test_missing_note_triggers_reminder_and_recovers",
+          "test_model_refuses_reminder",
+          "test_partial_run_skips_remediation",
+          "test_existing_note_skips_remediation",
+          "test_no_mailbox_skips_remediation"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": false,
+        "sourceScopeRequired": true,
+        "diagnosticProbeRequired": true,
+        "diagnosticMinChecks": 5,
+        "diagnosticCallCoverage": {
+          "minicode/tools/task.py:_run": 5
+        },
+        "diagnosticHistoricalCounterexampleRequired": true,
+        "diagnosticProbeIsNotSharedWithAgent": true,
+        "oraclePath": "cases/read-closing-reminder/oracle.py",
+        "oracleSha256": "742a605c706b545815d922d242409a3644ad8f41af943ccf12b30ae64fb11319",
+        "preparedOriginalOracleSha256": "9d41a6c5fbfd04da6d4db28a1a79f58e694b360d3e3663cadf478a666c827865",
+        "referenceDiagnosticPath": "cases/read-closing-reminder/reference-diagnostic.json",
+        "referenceDiagnosticSha256": "72aec5e95b67845e55341dfef7d328141ce5beb7e7de4ba71289f26bcc3eefa7"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "a9bdb56cff58bad0ceb83bc7c7ef7e27e8720b24",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 5.894,
+          "testSha256": "0f73e658e0493854d83f9d93986c18aa49bed1fae213d21368c28fd0115b8c66",
+          "logPath": "cases/read-closing-reminder/reference-proof.log",
+          "logSha256": "d74f900f7c066edb53c51d26a16860951f134df3ee837be28483d02c5f29b1ee",
+          "originalUnnormalizedLogSha256": "d74f900f7c066edb53c51d26a16860951f134df3ee837be28483d02c5f29b1ee",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "f724d382dedfe4a9fe54a1a54d8c07a8528cd259",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 6.326,
+          "testSha256": "0f73e658e0493854d83f9d93986c18aa49bed1fae213d21368c28fd0115b8c66",
+          "logPath": "cases/read-closing-reminder/parent-proof.log",
+          "logSha256": "833c5532429fbce7c9db9107887b20b1e295da166324ff8a7e4c8080cbcc7ecc",
+          "originalUnnormalizedLogSha256": "833c5532429fbce7c9db9107887b20b1e295da166324ff8a7e4c8080cbcc7ecc",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "read-image-boundaries",
+      "category": "read",
+      "sourcePaths": [
+        "minicode/tools/inspect_image.py"
+      ],
+      "authorized_paths": [],
+      "baselineRef": "f353c105b8a1f7265377aff116893c75966cee4b",
+      "referenceRef": "f353c105b8a1f7265377aff116893c75966cee4b",
+      "historicalParentRef": "b7265e9745d3963b399d836eaf61d2627122a998",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "f353c105b8a1f7265377aff116893c75966cee4b",
+        "parentCommit": "b7265e9745d3963b399d836eaf61d2627122a998",
+        "committedAt": "2026-09-25T15:41:07+08:00",
+        "commitSubject": "feat(tools): inspect_image read-only vision tool with fail-closed routing",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": true
+      },
+      "promptPath": "cases/read-image-boundaries/prompt.txt",
+      "promptSha256": "d50761b7dbc6744126d859f59b95b169993e800bc4ef83647e8c19cba7dda328",
+      "referencePatchPath": "cases/read-image-boundaries/reference.patch",
+      "referencePatchSha256": "e45924b6256bba54b51a74a8570893d5ae1cf9a5d6765576eb77b490efb2fba0",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "f353c105b8a1f7265377aff116893c75966cee4b",
+          "minicodeTree": "043a8a5eea7953ed447078a378b021a5a73c2db7",
+          "pythonFileCount": 268,
+          "pythonInventorySha256": "83d191ce13440a31356543632d9b4fd922d4e7d32f4995e7bf87715d1388c0dd"
+        },
+        "reference": {
+          "commit": "f353c105b8a1f7265377aff116893c75966cee4b",
+          "minicodeTree": "043a8a5eea7953ed447078a378b021a5a73c2db7",
+          "pythonFileCount": 268,
+          "pythonInventorySha256": "83d191ce13440a31356543632d9b4fd922d4e7d32f4995e7bf87715d1388c0dd"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_inspect_image.py",
+        "historical_test_sha256": "7e968e148bfec8f105d72877224a1f9d7c4c97c9294e29fb218da001affc5d61",
+        "selectors": [
+          "test_rejects_non_image_extension",
+          "test_rejects_disguised_image",
+          "test_rejects_network_url",
+          "test_rejects_oversized_file",
+          "test_missing_vision_model_fails_closed",
+          "test_visual_key_in_subagent_models_suffices",
+          "test_missing_credentials_fail_closed"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": false,
+        "sourceScopeRequired": true,
+        "diagnosticProbeRequired": true,
+        "diagnosticMinChecks": 7,
+        "diagnosticCallCoverage": {
+          "minicode/tools/inspect_image.py:_run": 7
+        },
+        "diagnosticHistoricalCounterexampleRequired": false,
+        "diagnosticProbeIsNotSharedWithAgent": true,
+        "oraclePath": "cases/read-image-boundaries/oracle.py",
+        "oracleSha256": "803a5257f42ebb33af996abdbe27411d0213150cb58bf99dbd0bc28a8482a587",
+        "preparedOriginalOracleSha256": "803a5257f42ebb33af996abdbe27411d0213150cb58bf99dbd0bc28a8482a587",
+        "referenceDiagnosticPath": "cases/read-image-boundaries/reference-diagnostic.json",
+        "referenceDiagnosticSha256": "64fa3b5ee3e2a9d766c3f535d112927a308544840975956c3171f94ef1996d7f"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "f353c105b8a1f7265377aff116893c75966cee4b",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 5.488,
+          "testSha256": "7e968e148bfec8f105d72877224a1f9d7c4c97c9294e29fb218da001affc5d61",
+          "logPath": "cases/read-image-boundaries/reference-proof.log",
+          "logSha256": "e94620bac0c486c3ee7045b45ea79a79dfc2d45118fbd7961f8ab1592dfd9f7c",
+          "originalUnnormalizedLogSha256": "e94620bac0c486c3ee7045b45ea79a79dfc2d45118fbd7961f8ab1592dfd9f7c",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "b7265e9745d3963b399d836eaf61d2627122a998",
+          "status": "rejected",
+          "returncode": 4,
+          "seconds": 5.043,
+          "testSha256": "7e968e148bfec8f105d72877224a1f9d7c4c97c9294e29fb218da001affc5d61",
+          "logPath": "cases/read-image-boundaries/parent-proof.log",
+          "logSha256": "6214fbddb2985525ab75f153a515af8b50bc470217a483aa9c8f5f0ac00a7c6b",
+          "originalUnnormalizedLogSha256": "726b342b80e34be002768a616780f4a2b6c98b727442883a6c5104251db6591a",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "write-cache-tip",
+      "category": "write",
+      "sourcePaths": [
+        "minicode/anthropic_adapter.py"
+      ],
+      "authorized_paths": [
+        "minicode/anthropic_adapter.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "5cdbdd55b6be30df92eda5a4d81bb076ab72dead",
+      "referenceRef": "3bb0fd3538fa9c1edc598bb02a6b974357840176",
+      "historicalParentRef": "5cdbdd55b6be30df92eda5a4d81bb076ab72dead",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "3bb0fd3538fa9c1edc598bb02a6b974357840176",
+        "parentCommit": "5cdbdd55b6be30df92eda5a4d81bb076ab72dead",
+        "committedAt": "2026-09-25T11:50:26+08:00",
+        "commitSubject": "feat(adapter): message-level cache breakpoint on the growing conversation",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/write-cache-tip/prompt.txt",
+      "promptSha256": "bea40e6c4609e45b0f8b341014e5fe5dae2cda8396917aca7c0ed7357e518102",
+      "referencePatchPath": "cases/write-cache-tip/reference.patch",
+      "referencePatchSha256": "55188d075cda8e9e66b6c0fe780f4a5f790cb36808903dbf1b087d618253adf3",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "5cdbdd55b6be30df92eda5a4d81bb076ab72dead",
+          "minicodeTree": "26c7bea204aa2072b80c617e6f380041630226ac",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "44ecd5426ee85c4de18f9f6546ebba23fbe4f6b401dd0d7990ece6dbb8d48907"
+        },
+        "reference": {
+          "commit": "3bb0fd3538fa9c1edc598bb02a6b974357840176",
+          "minicodeTree": "9c9d81de481400faef428dce617ce328219eae5c",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "55a2e2f6d27f4de31e94ebb0d6900607a998d3bf757a2bc97c6652c5a845c749"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_anthropic_adapter.py",
+        "historical_test_sha256": "10d4e9b98f2446995366b410968762c03a245b8d051e26c43829b224033be724",
+        "selectors": [
+          "test_message_marker_lands_on_last_block",
+          "test_two_step_growth_keeps_prefix_bytes_stable",
+          "test_tool_result_last_block_gets_marker"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/write-cache-tip/oracle.py",
+        "oracleSha256": "6e52da4ad8b986779549d1eb837ec1b3700b6e76f9879589a071011a56c87f3f",
+        "preparedOriginalOracleSha256": "6e52da4ad8b986779549d1eb837ec1b3700b6e76f9879589a071011a56c87f3f"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "3bb0fd3538fa9c1edc598bb02a6b974357840176",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 1.421,
+          "testSha256": "10d4e9b98f2446995366b410968762c03a245b8d051e26c43829b224033be724",
+          "logPath": "cases/write-cache-tip/reference-proof.log",
+          "logSha256": "a469a5e7cce5ca5537b9826f25fd0934548c00eaea63709fd909af84354078f8",
+          "originalUnnormalizedLogSha256": "a469a5e7cce5ca5537b9826f25fd0934548c00eaea63709fd909af84354078f8",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "5cdbdd55b6be30df92eda5a4d81bb076ab72dead",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 1.551,
+          "testSha256": "10d4e9b98f2446995366b410968762c03a245b8d051e26c43829b224033be724",
+          "logPath": "cases/write-cache-tip/parent-proof.log",
+          "logSha256": "7dd842304ca4d250bb2799d0859bdd78af23de7aab17d69eecb6c53d84e7f22e",
+          "originalUnnormalizedLogSha256": "7dd842304ca4d250bb2799d0859bdd78af23de7aab17d69eecb6c53d84e7f22e",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "write-cache-fallback",
+      "category": "write",
+      "sourcePaths": [
+        "minicode/anthropic_adapter.py"
+      ],
+      "authorized_paths": [
+        "minicode/anthropic_adapter.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "e04dfc1d205b27b83cfdd4217113e36716751dea",
+      "referenceRef": "1f972f5518c4e0bb2ab4df41b7d4382bd7e6f9c9",
+      "historicalParentRef": "e04dfc1d205b27b83cfdd4217113e36716751dea",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "1f972f5518c4e0bb2ab4df41b7d4382bd7e6f9c9",
+        "parentCommit": "e04dfc1d205b27b83cfdd4217113e36716751dea",
+        "committedAt": "2026-09-25T00:32:11+08:00",
+        "commitSubject": "feat(adapter): anthropic prompt-cache markers with kill-switch and 400 fallback",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/write-cache-fallback/prompt.txt",
+      "promptSha256": "0d1b2ea02221716b5794bb8cf05a05e84df63ef3eb55e7511f87c565aa58092e",
+      "referencePatchPath": "cases/write-cache-fallback/reference.patch",
+      "referencePatchSha256": "a9988f7cb03f121c1a8bb19ebcfe6c98bca4f05c576609e893b68d1c9112d838",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "e04dfc1d205b27b83cfdd4217113e36716751dea",
+          "minicodeTree": "eb15838ee1cf74cf13248a573b5fa6b2893c17e1",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "185b0187f460ca4a4899f235bcca07ea945757d7ca5c2e873939645e7c0e6283"
+        },
+        "reference": {
+          "commit": "1f972f5518c4e0bb2ab4df41b7d4382bd7e6f9c9",
+          "minicodeTree": "976758699e4e51e2dd313aad92bb3cb857c111d2",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "5b1fb540686902bc69678a2371699eea471edf543889b06b99a2dec96b3b3a81"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_anthropic_adapter.py",
+        "historical_test_sha256": "638162a7c3de066f066cf8b218c03182fbb797032045dbfc5c29e97f05d20158",
+        "selectors": [
+          "test_prompt_cache_marks_system_and_last_tool",
+          "test_prompt_cache_disabled_by_runtime_flag",
+          "test_prompt_cache_env_kill_switch",
+          "test_empty_system_keeps_plain_shape",
+          "test_cache_control_400_falls_back_to_plain",
+          "test_cache_usage_fields_flow_to_step"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/write-cache-fallback/oracle.py",
+        "oracleSha256": "e968384902b6cca43255cfb3a23d75ddf6ea42187b7e8d679b9b8826462ba12a",
+        "preparedOriginalOracleSha256": "e968384902b6cca43255cfb3a23d75ddf6ea42187b7e8d679b9b8826462ba12a"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "1f972f5518c4e0bb2ab4df41b7d4382bd7e6f9c9",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 1.62,
+          "testSha256": "638162a7c3de066f066cf8b218c03182fbb797032045dbfc5c29e97f05d20158",
+          "logPath": "cases/write-cache-fallback/reference-proof.log",
+          "logSha256": "f7c1fdc3644d020ba74994d5153230018b4748cb350b707ddcfd3ab9dacc8093",
+          "originalUnnormalizedLogSha256": "f7c1fdc3644d020ba74994d5153230018b4748cb350b707ddcfd3ab9dacc8093",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "e04dfc1d205b27b83cfdd4217113e36716751dea",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 1.51,
+          "testSha256": "638162a7c3de066f066cf8b218c03182fbb797032045dbfc5c29e97f05d20158",
+          "logPath": "cases/write-cache-fallback/parent-proof.log",
+          "logSha256": "41135bbd10a16e5df976b41fd27cc42325fd42c3abbc34c11f4916cd69f6a183",
+          "originalUnnormalizedLogSha256": "41135bbd10a16e5df976b41fd27cc42325fd42c3abbc34c11f4916cd69f6a183",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "write-todo-isolation",
+      "category": "write",
+      "sourcePaths": [
+        "minicode/agent_loop.py",
+        "minicode/subagent_types.py",
+        "minicode/tooling.py",
+        "minicode/tools/todo_write.py"
+      ],
+      "authorized_paths": [
+        "minicode/agent_loop.py",
+        "minicode/subagent_types.py",
+        "minicode/tooling.py",
+        "minicode/tools/todo_write.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "688ed5a82c885a9a110812a8e551e223cfd10f58",
+      "referenceRef": "c8345cbaee529b8816bd7f02bfb711774284536a",
+      "historicalParentRef": "688ed5a82c885a9a110812a8e551e223cfd10f58",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "c8345cbaee529b8816bd7f02bfb711774284536a",
+        "parentCommit": "688ed5a82c885a9a110812a8e551e223cfd10f58",
+        "committedAt": "2026-09-25T14:47:04+08:00",
+        "commitSubject": "feat(subagent): per-loop todo state and todo_write for read-only agents",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/write-todo-isolation/prompt.txt",
+      "promptSha256": "557e9e31b4f0a1dedbded2d5614c9def3e666c5758641f2602751d2b4cab0bd4",
+      "referencePatchPath": "cases/write-todo-isolation/reference.patch",
+      "referencePatchSha256": "e2cf440a561e5e2dcc60067d78830f14cb6e66a5eb9e5fb8123e7d3a9b0f0292",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "688ed5a82c885a9a110812a8e551e223cfd10f58",
+          "minicodeTree": "baccee650d2f26f3ea1197e90ca3d85cc0f6fc3a",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "a80c24621a7560dc4004ca25e7e9f2f6bb2855976f37d187af68463ab995f11f"
+        },
+        "reference": {
+          "commit": "c8345cbaee529b8816bd7f02bfb711774284536a",
+          "minicodeTree": "f4af0aecd3addbd33f8ad8ce21efd8cca176b84a",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "7e472cfd0ab38e6e7a99446e27f0909ef79d7989eedf10a5ea35ffd958cc5fde"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_todo_state_isolation.py",
+        "historical_test_sha256": "952cb753167b186a50db66b965ee49994e28f46439b78b6c491f29679ecb63ca",
+        "selectors": [
+          "test_context_todo_state_isolates_from_global",
+          "test_two_contexts_do_not_share_state",
+          "test_context_state_replaces_within_itself",
+          "test_no_context_falls_back_to_global",
+          "test_explore_and_plan_allowlists_include_todo_write",
+          "test_sub_agent_registry_exposes_todo_write"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/write-todo-isolation/oracle.py",
+        "oracleSha256": "2bf2c732505629d812d78ad055fc037631e95d7ce316e3d8a1c37cb126325e04",
+        "preparedOriginalOracleSha256": "2bf2c732505629d812d78ad055fc037631e95d7ce316e3d8a1c37cb126325e04"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "c8345cbaee529b8816bd7f02bfb711774284536a",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 3.55,
+          "testSha256": "952cb753167b186a50db66b965ee49994e28f46439b78b6c491f29679ecb63ca",
+          "logPath": "cases/write-todo-isolation/reference-proof.log",
+          "logSha256": "34c526cad1480af004eaf81acccf4af5226205617ad5a709833236b0ddb4a41b",
+          "originalUnnormalizedLogSha256": "34c526cad1480af004eaf81acccf4af5226205617ad5a709833236b0ddb4a41b",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "688ed5a82c885a9a110812a8e551e223cfd10f58",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 3.214,
+          "testSha256": "952cb753167b186a50db66b965ee49994e28f46439b78b6c491f29679ecb63ca",
+          "logPath": "cases/write-todo-isolation/parent-proof.log",
+          "logSha256": "4c43ed83351f5e8ae91453e5e21fd3dbbda0df798a4d53fab7d235b7604ec7cb",
+          "originalUnnormalizedLogSha256": "4c43ed83351f5e8ae91453e5e21fd3dbbda0df798a4d53fab7d235b7604ec7cb",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "write-user-profiles",
+      "category": "write",
+      "sourcePaths": [
+        "minicode/subagent_profiles.py"
+      ],
+      "authorized_paths": [
+        "minicode/subagent_profiles.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "ac9fb3cc40d42642186f8b9d9eef28f1aed44f23",
+      "referenceRef": "688ed5a82c885a9a110812a8e551e223cfd10f58",
+      "historicalParentRef": "ac9fb3cc40d42642186f8b9d9eef28f1aed44f23",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "688ed5a82c885a9a110812a8e551e223cfd10f58",
+        "parentCommit": "ac9fb3cc40d42642186f8b9d9eef28f1aed44f23",
+        "committedAt": "2026-09-25T14:45:18+08:00",
+        "commitSubject": "feat(subagent): user-level agent profile directory with project precedence",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/write-user-profiles/prompt.txt",
+      "promptSha256": "818327d2415f970ce253b51be568e07149e238d7fef046e43e1751d73edb2cbb",
+      "referencePatchPath": "cases/write-user-profiles/reference.patch",
+      "referencePatchSha256": "3e13bdc55d06280ba48c749450b47de677e31e8839d7fe3b81829592b0db919a",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "ac9fb3cc40d42642186f8b9d9eef28f1aed44f23",
+          "minicodeTree": "9c9d81de481400faef428dce617ce328219eae5c",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "55a2e2f6d27f4de31e94ebb0d6900607a998d3bf757a2bc97c6652c5a845c749"
+        },
+        "reference": {
+          "commit": "688ed5a82c885a9a110812a8e551e223cfd10f58",
+          "minicodeTree": "baccee650d2f26f3ea1197e90ca3d85cc0f6fc3a",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "a80c24621a7560dc4004ca25e7e9f2f6bb2855976f37d187af68463ab995f11f"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_subagent_profiles.py",
+        "historical_test_sha256": "80dc1b01f272d853c248cbe3d4c4caec7ea883594dcd032aa068a9a55b9e57e4",
+        "selectors": [
+          "test_user_level_profile_loads",
+          "test_project_wins_over_user_on_same_name",
+          "test_errors_carry_origin_prefix",
+          "test_both_roots_merge",
+          "test_default_user_root_is_home"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/write-user-profiles/oracle.py",
+        "oracleSha256": "d7d783a1af6603a2c127d22c05742a98594ab2fcf665462991c666fe4bb9d874",
+        "preparedOriginalOracleSha256": "d7d783a1af6603a2c127d22c05742a98594ab2fcf665462991c666fe4bb9d874"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "688ed5a82c885a9a110812a8e551e223cfd10f58",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 1.253,
+          "testSha256": "80dc1b01f272d853c248cbe3d4c4caec7ea883594dcd032aa068a9a55b9e57e4",
+          "logPath": "cases/write-user-profiles/reference-proof.log",
+          "logSha256": "d9e7f0060f94f8cf8cd79289b21e226ea7368472d94b0aa47ba098b76482b4d5",
+          "originalUnnormalizedLogSha256": "d9e7f0060f94f8cf8cd79289b21e226ea7368472d94b0aa47ba098b76482b4d5",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "ac9fb3cc40d42642186f8b9d9eef28f1aed44f23",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 1.326,
+          "testSha256": "80dc1b01f272d853c248cbe3d4c4caec7ea883594dcd032aa068a9a55b9e57e4",
+          "logPath": "cases/write-user-profiles/parent-proof.log",
+          "logSha256": "c63910d094a076433382615af7b0e8474984141e7c535a938f5e2ab0e1efddff",
+          "originalUnnormalizedLogSha256": "c63910d094a076433382615af7b0e8474984141e7c535a938f5e2ab0e1efddff",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "write-profile-parser",
+      "category": "write",
+      "sourcePaths": [
+        "minicode/subagent_profiles.py",
+        "minicode/subagent_types.py"
+      ],
+      "authorized_paths": [
+        "minicode/subagent_profiles.py",
+        "minicode/subagent_types.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "45e9a0cbb9addcf17339d323cd3b18f673b2d8c1",
+      "referenceRef": "a1051e547c6084b48beb4489562af5c7bf84ef96",
+      "historicalParentRef": "45e9a0cbb9addcf17339d323cd3b18f673b2d8c1",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "a1051e547c6084b48beb4489562af5c7bf84ef96",
+        "parentCommit": "45e9a0cbb9addcf17339d323cd3b18f673b2d8c1",
+        "committedAt": "2026-09-24T22:01:12+08:00",
+        "commitSubject": "feat(subagent): markdown agent profiles in .mini-code/agents",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/write-profile-parser/prompt.txt",
+      "promptSha256": "279144d548623fe86739b2752e0c9dc4c8ab06373a61a61b2d7f60ad5d243273",
+      "referencePatchPath": "cases/write-profile-parser/reference.patch",
+      "referencePatchSha256": "0dd75e7d0cb886615b8bf7dc17f778b2636af7354499599ed1b0ffb05399748c",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "45e9a0cbb9addcf17339d323cd3b18f673b2d8c1",
+          "minicodeTree": "13150ee8c9a48a6b50125dab89f155ce3b01699a",
+          "pythonFileCount": 266,
+          "pythonInventorySha256": "f0e071af6a83726ff2779712b7ac59b5277dbf6ee315fad9936226a14ef16ad5"
+        },
+        "reference": {
+          "commit": "a1051e547c6084b48beb4489562af5c7bf84ef96",
+          "minicodeTree": "bffd35ed91cd88bc3afd8ccea3a650b86252a02d",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "03bb24a6ba6d63cc2b63688c94b9f9dde151d1c607a765a02bb1d1091dbf1df7"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_subagent_profiles.py",
+        "historical_test_sha256": "bb29020c78ca59859a483358ced51b2360b6156a64ec2c98bd8255c7283f183a",
+        "selectors": [
+          "test_valid_profile_parses",
+          "test_body_without_frontmatter_is_rejected",
+          "test_unclosed_frontmatter_is_rejected",
+          "test_malformed_frontmatter_line_is_rejected",
+          "test_reserved_names_are_rejected",
+          "test_bad_slug_is_rejected",
+          "test_write_tool_is_rejected",
+          "test_unknown_tool_is_rejected",
+          "test_out_of_range_turns_fail_closed",
+          "test_unknown_frontmatter_key_rejected",
+          "test_empty_body_rejected",
+          "test_missing_directory_is_empty",
+          "test_non_markdown_files_ignored",
+          "test_mtime_cache_invalidates",
+          "test_builtin_names_win_in_resolution",
+          "test_resolution_merges_custom_types",
+          "test_agent_name_re_shape"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/write-profile-parser/oracle.py",
+        "oracleSha256": "159390c3a01c188600a7e903117287c7e3d87889a55465414f2e6f88ccbadc10",
+        "preparedOriginalOracleSha256": "159390c3a01c188600a7e903117287c7e3d87889a55465414f2e6f88ccbadc10"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "a1051e547c6084b48beb4489562af5c7bf84ef96",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 1.489,
+          "testSha256": "bb29020c78ca59859a483358ced51b2360b6156a64ec2c98bd8255c7283f183a",
+          "logPath": "cases/write-profile-parser/reference-proof.log",
+          "logSha256": "fd7437788317a65349dd45638b6c12ee94e33a151ed6fa39d0995986098d68df",
+          "originalUnnormalizedLogSha256": "fd7437788317a65349dd45638b6c12ee94e33a151ed6fa39d0995986098d68df",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "45e9a0cbb9addcf17339d323cd3b18f673b2d8c1",
+          "status": "rejected",
+          "returncode": 4,
+          "seconds": 1.245,
+          "testSha256": "bb29020c78ca59859a483358ced51b2360b6156a64ec2c98bd8255c7283f183a",
+          "logPath": "cases/write-profile-parser/parent-proof.log",
+          "logSha256": "6922e77df89c1931a5959f6e45de523138f84fac0affb9ee0c3a7a9907c91b75",
+          "originalUnnormalizedLogSha256": "b07e86b6d172204757309a16a3dc05dba8f3a19836f81a012e1eb7bf0fcc672a",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "write-profile-dispatch",
+      "category": "write",
+      "sourcePaths": [
+        "minicode/tools/task.py"
+      ],
+      "authorized_paths": [
+        "minicode/tools/task.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "510d3650f11e431c60d8877be48f53cbf0c7746e",
+      "referenceRef": "c0c3f4fba3e2213c81abb55dd2b6c77cf889ab71",
+      "historicalParentRef": "510d3650f11e431c60d8877be48f53cbf0c7746e",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "c0c3f4fba3e2213c81abb55dd2b6c77cf889ab71",
+        "parentCommit": "510d3650f11e431c60d8877be48f53cbf0c7746e",
+        "committedAt": "2026-09-24T22:04:01+08:00",
+        "commitSubject": "feat(task): dispatch project-defined read-only agent profiles",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/write-profile-dispatch/prompt.txt",
+      "promptSha256": "0477edf416dedce87704c62d0d44a0a9e57e340aa2d3cd6daf102babeaa7b06b",
+      "referencePatchPath": "cases/write-profile-dispatch/reference.patch",
+      "referencePatchSha256": "07e3d122669228e09ddc1137985f7d7b4b9bad4edf7b067cf4c67383b335209c",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "510d3650f11e431c60d8877be48f53cbf0c7746e",
+          "minicodeTree": "b390aed30a5a93219d8ffe3aab6fe6f1b53ef592",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "d0af9969ea56479459d3a9a2ff17d60c5687a0d4316023f2c3f38b62e5620a06"
+        },
+        "reference": {
+          "commit": "c0c3f4fba3e2213c81abb55dd2b6c77cf889ab71",
+          "minicodeTree": "e46075f2c6b62779d9ef8e8a1556b39122e16071",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "953d570a209b457691c1f827c10af47a6c5f9c31c3f15d28c190648760fb5d20"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_subagent_profiles.py",
+        "historical_test_sha256": "515a2138e150c190d9c825060e23393a10d8fa1481f4236ccc553b63cea5546f",
+        "selectors": [
+          "test_run_dispatches_custom_profile_type",
+          "test_unknown_type_lists_available_and_load_errors",
+          "test_validate_rejects_malformed_type_name",
+          "test_custom_type_is_concurrency_safe_and_read_only"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/write-profile-dispatch/oracle.py",
+        "oracleSha256": "faf9152eda72b84466cab60eb89df1131d5b3c5ba40812ca55a9ad2125588805",
+        "preparedOriginalOracleSha256": "faf9152eda72b84466cab60eb89df1131d5b3c5ba40812ca55a9ad2125588805"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "c0c3f4fba3e2213c81abb55dd2b6c77cf889ab71",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 3.542,
+          "testSha256": "515a2138e150c190d9c825060e23393a10d8fa1481f4236ccc553b63cea5546f",
+          "logPath": "cases/write-profile-dispatch/reference-proof.log",
+          "logSha256": "9e38cf7f72ce428e3b1ef2377628c9e2aeb9092423519a3541519cfd13b9c9b3",
+          "originalUnnormalizedLogSha256": "9e38cf7f72ce428e3b1ef2377628c9e2aeb9092423519a3541519cfd13b9c9b3",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "510d3650f11e431c60d8877be48f53cbf0c7746e",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 3.351,
+          "testSha256": "515a2138e150c190d9c825060e23393a10d8fa1481f4236ccc553b63cea5546f",
+          "logPath": "cases/write-profile-dispatch/parent-proof.log",
+          "logSha256": "2e1ab1a23a68f18a8ca45d3bdb3bb88d577228dd32168a4c9ffc40ceed05de96",
+          "originalUnnormalizedLogSha256": "2e1ab1a23a68f18a8ca45d3bdb3bb88d577228dd32168a4c9ffc40ceed05de96",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "write-profile-contracts",
+      "category": "write",
+      "sourcePaths": [
+        "minicode/subagent_model_routing.py",
+        "minicode/subagent_observation.py",
+        "minicode/subagent_result.py"
+      ],
+      "authorized_paths": [
+        "minicode/subagent_model_routing.py",
+        "minicode/subagent_observation.py",
+        "minicode/subagent_result.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "a1051e547c6084b48beb4489562af5c7bf84ef96",
+      "referenceRef": "510d3650f11e431c60d8877be48f53cbf0c7746e",
+      "historicalParentRef": "a1051e547c6084b48beb4489562af5c7bf84ef96",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "510d3650f11e431c60d8877be48f53cbf0c7746e",
+        "parentCommit": "a1051e547c6084b48beb4489562af5c7bf84ef96",
+        "committedAt": "2026-09-24T22:02:39+08:00",
+        "commitSubject": "feat(subagent): typed contracts accept project-defined agent types",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/write-profile-contracts/prompt.txt",
+      "promptSha256": "33de698660a3db2a9c563434938821dacfebd23d846837ccb37259b764bbc4fa",
+      "referencePatchPath": "cases/write-profile-contracts/reference.patch",
+      "referencePatchSha256": "48c2d6d2468ec518dd71f81174e9b82f41dc6bb703864406c97906d56c13df05",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "a1051e547c6084b48beb4489562af5c7bf84ef96",
+          "minicodeTree": "bffd35ed91cd88bc3afd8ccea3a650b86252a02d",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "03bb24a6ba6d63cc2b63688c94b9f9dde151d1c607a765a02bb1d1091dbf1df7"
+        },
+        "reference": {
+          "commit": "510d3650f11e431c60d8877be48f53cbf0c7746e",
+          "minicodeTree": "b390aed30a5a93219d8ffe3aab6fe6f1b53ef592",
+          "pythonFileCount": 267,
+          "pythonInventorySha256": "d0af9969ea56479459d3a9a2ff17d60c5687a0d4316023f2c3f38b62e5620a06"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_subagent_profiles.py",
+        "historical_test_sha256": "8281d159d17bf3944b14c1d8d6856cd8a98296300990edbdc9813654e32cb997",
+        "selectors": [
+          "test_result_contract_accepts_custom_agent_type",
+          "test_result_contract_still_rejects_bad_type_names",
+          "test_model_routing_inherits_for_custom_type",
+          "test_observation_payload_accepts_custom_agent_type"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/write-profile-contracts/oracle.py",
+        "oracleSha256": "b6de1ddffd23aef66ca60d7d77c60abccc29a4ba05d62c5b79981bf539bc0875",
+        "preparedOriginalOracleSha256": "b6de1ddffd23aef66ca60d7d77c60abccc29a4ba05d62c5b79981bf539bc0875"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "510d3650f11e431c60d8877be48f53cbf0c7746e",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 1.154,
+          "testSha256": "8281d159d17bf3944b14c1d8d6856cd8a98296300990edbdc9813654e32cb997",
+          "logPath": "cases/write-profile-contracts/reference-proof.log",
+          "logSha256": "cd9f00546c34cfb5721e29ec23a1ed6cb673c65a1f499cca23fbf0be701ed940",
+          "originalUnnormalizedLogSha256": "cd9f00546c34cfb5721e29ec23a1ed6cb673c65a1f499cca23fbf0be701ed940",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "a1051e547c6084b48beb4489562af5c7bf84ef96",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 1.159,
+          "testSha256": "8281d159d17bf3944b14c1d8d6856cd8a98296300990edbdc9813654e32cb997",
+          "logPath": "cases/write-profile-contracts/parent-proof.log",
+          "logSha256": "ef52c46cb00ec98dfe648ea28bff9d5907d1fc5459532be9d63d95297a43ebc7",
+          "originalUnnormalizedLogSha256": "ef52c46cb00ec98dfe648ea28bff9d5907d1fc5459532be9d63d95297a43ebc7",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "refactor-finalization",
+      "category": "refactor",
+      "sourcePaths": [
+        "minicode/workflow_finalization.py",
+        "minicode/workflow_runner.py"
+      ],
+      "authorized_paths": [
+        "minicode/workflow_finalization.py",
+        "minicode/workflow_runner.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "f8ae6fd5ee43d05055286a3b1850fbbc73856f10",
+      "referenceRef": "56d8cd85a14a22355bc2a981eaa479b0542ebb3f",
+      "historicalParentRef": "f8ae6fd5ee43d05055286a3b1850fbbc73856f10",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "56d8cd85a14a22355bc2a981eaa479b0542ebb3f",
+        "parentCommit": "f8ae6fd5ee43d05055286a3b1850fbbc73856f10",
+        "committedAt": "2026-08-27T18:02:56+08:00",
+        "commitSubject": "refactor(workflow): seal finalization authority",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/refactor-finalization/prompt.txt",
+      "promptSha256": "b7603904840458c93a6c7918198d0b40c408e7729c63bd285f6d8d712b324ef2",
+      "referencePatchPath": "cases/refactor-finalization/reference.patch",
+      "referencePatchSha256": "6003adb880069142fe772ce1acd00c5bda996e1236db43ae12b9b1de6bef0e62",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "f8ae6fd5ee43d05055286a3b1850fbbc73856f10",
+          "minicodeTree": "0623d0dc58c6709ba2eb0e05ee5ef9431e6778cb",
+          "pythonFileCount": 225,
+          "pythonInventorySha256": "bdc9b3164a9e7666f96128536d1a39e72d48888bbfef2692524e68e3555f1ff5"
+        },
+        "reference": {
+          "commit": "56d8cd85a14a22355bc2a981eaa479b0542ebb3f",
+          "minicodeTree": "7bf8e6e943792487ef0e52f9b3b3032764b83f6b",
+          "pythonFileCount": 226,
+          "pythonInventorySha256": "b8927ca0f1cf70f64249dc93de93921fd453ac8dfa68f554e11548163be58c6d"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_workflow_finalization_resilience.py",
+        "historical_test_sha256": "826af62dbc3e84811e6e1169be4ada8be90607254f694392753adcd96d28d7d0",
+        "selectors": [
+          "test_uncommitted_audit_persistence_cancellation_propagates",
+          "test_phase_result_snapshot_rejects_tool_result_subclasses",
+          "test_direct_snapshot_rejects_invalid_initial_finalization_status",
+          "test_direct_snapshot_rejects_mutable_commit_error"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/refactor-finalization/oracle.py",
+        "oracleSha256": "586388769e2291a0796a1432fb04497a24a877a4fa7a8489cf994028211ccd72",
+        "preparedOriginalOracleSha256": "586388769e2291a0796a1432fb04497a24a877a4fa7a8489cf994028211ccd72"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "56d8cd85a14a22355bc2a981eaa479b0542ebb3f",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 1.161,
+          "testSha256": "826af62dbc3e84811e6e1169be4ada8be90607254f694392753adcd96d28d7d0",
+          "logPath": "cases/refactor-finalization/reference-proof.log",
+          "logSha256": "d659bd6603166793c084fa55538154b1e66dc1fb0a6b6de0f8bdd839943321ed",
+          "originalUnnormalizedLogSha256": "d659bd6603166793c084fa55538154b1e66dc1fb0a6b6de0f8bdd839943321ed",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "f8ae6fd5ee43d05055286a3b1850fbbc73856f10",
+          "status": "rejected",
+          "returncode": 4,
+          "seconds": 0.96,
+          "testSha256": "826af62dbc3e84811e6e1169be4ada8be90607254f694392753adcd96d28d7d0",
+          "logPath": "cases/refactor-finalization/parent-proof.log",
+          "logSha256": "384cddada83903c5468fb2bd094b4acce91d32dfc14e3b07648d385a96ec74df",
+          "originalUnnormalizedLogSha256": "9ad73d0e6b5cd220212ee4657bbcdf5c69771c3bc783ac69241268fc758aa3cf",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "refactor-workflow-runner",
+      "category": "refactor",
+      "sourcePaths": [
+        "minicode/subagent_journal.py",
+        "minicode/subagent_observation.py",
+        "minicode/subagent_types.py",
+        "minicode/task_deadline.py",
+        "minicode/tools/task.py",
+        "minicode/workflow_runner.py"
+      ],
+      "authorized_paths": [
+        "minicode/subagent_journal.py",
+        "minicode/subagent_observation.py",
+        "minicode/subagent_types.py",
+        "minicode/task_deadline.py",
+        "minicode/tools/task.py",
+        "minicode/workflow_runner.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "f444a079d2b27faaa1fbc8f8acf2c70b567aa267",
+      "referenceRef": "f8ae6fd5ee43d05055286a3b1850fbbc73856f10",
+      "historicalParentRef": "f444a079d2b27faaa1fbc8f8acf2c70b567aa267",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "f8ae6fd5ee43d05055286a3b1850fbbc73856f10",
+        "parentCommit": "f444a079d2b27faaa1fbc8f8acf2c70b567aa267",
+        "committedAt": "2026-08-27T16:22:15+08:00",
+        "commitSubject": "refactor(workflow): extract workflow runner",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/refactor-workflow-runner/prompt.txt",
+      "promptSha256": "ab09b69fe2012314dd0c7662ffff700d9b0442cd62a3dfdab174688d4a96578e",
+      "referencePatchPath": "cases/refactor-workflow-runner/reference.patch",
+      "referencePatchSha256": "2cba03fe902f47b11ebf2e2ac12c60a7b56538d38cb1126b5a413a0baab883d1",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "f444a079d2b27faaa1fbc8f8acf2c70b567aa267",
+          "minicodeTree": "e72bd09bde0113d9ff74d1538e2504441aebe943",
+          "pythonFileCount": 223,
+          "pythonInventorySha256": "ffb3f5878a4694281ecbef68c2a7a392e398b1eda35fd2fa143e8ca5490a3ed3"
+        },
+        "reference": {
+          "commit": "f8ae6fd5ee43d05055286a3b1850fbbc73856f10",
+          "minicodeTree": "0623d0dc58c6709ba2eb0e05ee5ef9431e6778cb",
+          "pythonFileCount": 225,
+          "pythonInventorySha256": "bdc9b3164a9e7666f96128536d1a39e72d48888bbfef2692524e68e3555f1ff5"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_workflow_runner_module.py",
+        "historical_test_sha256": "9cfb0627e20e1f2151db9e75c7f76a2d239782b55a12425dcbc83af07f099445",
+        "selectors": [
+          "test_workflow_runner_exposes_one_complete_run_seam",
+          "test_workflow_runner_does_not_reverse_import_task_tool",
+          "test_task_tool_does_not_own_workflow_runtime_internals",
+          "test_task_binds_the_current_child_runner_at_workflow_dispatch"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/refactor-workflow-runner/oracle.py",
+        "oracleSha256": "e287f3eb9eb844aff38c885662921d6795684578517aad4320945903c59afb5d",
+        "preparedOriginalOracleSha256": "e287f3eb9eb844aff38c885662921d6795684578517aad4320945903c59afb5d"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "f8ae6fd5ee43d05055286a3b1850fbbc73856f10",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 2.343,
+          "testSha256": "9cfb0627e20e1f2151db9e75c7f76a2d239782b55a12425dcbc83af07f099445",
+          "logPath": "cases/refactor-workflow-runner/reference-proof.log",
+          "logSha256": "f9d03954048267f47951ae34eb7f09c6df44c2c8a31cfb104abb3da7d64b7ca3",
+          "originalUnnormalizedLogSha256": "f9d03954048267f47951ae34eb7f09c6df44c2c8a31cfb104abb3da7d64b7ca3",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "f444a079d2b27faaa1fbc8f8acf2c70b567aa267",
+          "status": "rejected",
+          "returncode": 1,
+          "seconds": 2.317,
+          "testSha256": "9cfb0627e20e1f2151db9e75c7f76a2d239782b55a12425dcbc83af07f099445",
+          "logPath": "cases/refactor-workflow-runner/parent-proof.log",
+          "logSha256": "bc4243ad2af7cc7d1dfee58dca8918f4071f94f39e6e10cf84d3317068209567",
+          "originalUnnormalizedLogSha256": "ae193fc45200b3c8b75f2e5bc91fc80fefbb9f25006b227f8617308ea9a4a6d9",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "refactor-frozen-change",
+      "category": "refactor",
+      "sourcePaths": [
+        "minicode/tools/task.py",
+        "minicode/workflow_workspace.py"
+      ],
+      "authorized_paths": [
+        "minicode/tools/task.py",
+        "minicode/workflow_workspace.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "3782553c31a5d93407f890e38296a96a989d74e8",
+      "referenceRef": "f444a079d2b27faaa1fbc8f8acf2c70b567aa267",
+      "historicalParentRef": "3782553c31a5d93407f890e38296a96a989d74e8",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "f444a079d2b27faaa1fbc8f8acf2c70b567aa267",
+        "parentCommit": "3782553c31a5d93407f890e38296a96a989d74e8",
+        "committedAt": "2026-08-27T15:00:37+08:00",
+        "commitSubject": "refactor(workflow): bind frozen change capability",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/refactor-frozen-change/prompt.txt",
+      "promptSha256": "67ffc8f364bc96bf91fb27d8a46e039604f3b70e76ff8913498aed40ea35d994",
+      "referencePatchPath": "cases/refactor-frozen-change/reference.patch",
+      "referencePatchSha256": "43288ec26e7dfdc83ce26a444677f18515a9cc1ccba4a015b608c4c62f28a99f",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "3782553c31a5d93407f890e38296a96a989d74e8",
+          "minicodeTree": "800494643958146d5a8ec6ff5f19943bfb429cdd",
+          "pythonFileCount": 223,
+          "pythonInventorySha256": "82f2f2c8c25571732cfd3aa5b3f0974b004eeff05558526f62984eb3aa986b7e"
+        },
+        "reference": {
+          "commit": "f444a079d2b27faaa1fbc8f8acf2c70b567aa267",
+          "minicodeTree": "e72bd09bde0113d9ff74d1538e2504441aebe943",
+          "pythonFileCount": 223,
+          "pythonInventorySha256": "ffb3f5878a4694281ecbef68c2a7a392e398b1eda35fd2fa143e8ca5490a3ed3"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_frozen_workflow_change.py",
+        "historical_test_sha256": "ce0f7c8d28b4fcd4d856d010366565cbcd56048171917e8cbde78417475e20da",
+        "selectors": [
+          "test_frozen_capability_cannot_be_constructed_directly",
+          "test_freeze_returns_detached_documents_and_owns_promotion",
+          "test_freeze_is_a_single_state_transition",
+          "test_failed_freeze_can_retry_without_reusing_a_partial_snapshot",
+          "test_freeze_maps_snapshot_os_errors_and_remains_retryable",
+          "test_freeze_rejects_a_tampered_trusted_git_template",
+          "test_verification_uses_frozen_bytes_and_promotion_rejects_later_drift",
+          "test_verification_rebuilds_a_tampered_frozen_git_index",
+          "test_verification_rebuilds_trusted_git_control_metadata",
+          "test_promotion_requires_the_approved_patch_digest",
+          "test_promotion_ignores_worker_git_config_and_checks_target_state",
+          "test_promotion_cannot_report_success_for_a_wrong_parent_state",
+          "test_promotion_maps_metadata_allocation_errors_and_remains_retryable",
+          "test_frozen_capability_fails_closed_after_owner_close"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/refactor-frozen-change/oracle.py",
+        "oracleSha256": "a09fc5e9b8b1606f463cfc312bdc4b53542ba8a175375c37c3e77c7c70f5022e",
+        "preparedOriginalOracleSha256": "a09fc5e9b8b1606f463cfc312bdc4b53542ba8a175375c37c3e77c7c70f5022e"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "f444a079d2b27faaa1fbc8f8acf2c70b567aa267",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 7.406,
+          "testSha256": "ce0f7c8d28b4fcd4d856d010366565cbcd56048171917e8cbde78417475e20da",
+          "logPath": "cases/refactor-frozen-change/reference-proof.log",
+          "logSha256": "ebd71f7d48e070d843d4d4a457f2bc8941bf00fabb68163506ca38d052779351",
+          "originalUnnormalizedLogSha256": "ebd71f7d48e070d843d4d4a457f2bc8941bf00fabb68163506ca38d052779351",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "3782553c31a5d93407f890e38296a96a989d74e8",
+          "status": "rejected",
+          "returncode": 4,
+          "seconds": 1.081,
+          "testSha256": "ce0f7c8d28b4fcd4d856d010366565cbcd56048171917e8cbde78417475e20da",
+          "logPath": "cases/refactor-frozen-change/parent-proof.log",
+          "logSha256": "511f38b3ece27d0cb12e067c5ff5cd093906d163852812eeeca27beb3c229643",
+          "originalUnnormalizedLogSha256": "9bfb29c0ba2c853a7bc4742df1d31beee90c7afd28abce3eb9a7ad9b411f6e57",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    },
+    {
+      "id": "refactor-workspace",
+      "category": "refactor",
+      "sourcePaths": [
+        "minicode/task_deadline.py",
+        "minicode/tools/task.py",
+        "minicode/workflow_workspace.py"
+      ],
+      "authorized_paths": [
+        "minicode/task_deadline.py",
+        "minicode/tools/task.py",
+        "minicode/workflow_workspace.py",
+        "tests/test_eval_regression.py"
+      ],
+      "baselineRef": "4d3b7c1d3c1596f6ff03c1f7cbce063efc41c580",
+      "referenceRef": "3782553c31a5d93407f890e38296a96a989d74e8",
+      "historicalParentRef": "4d3b7c1d3c1596f6ff03c1f7cbce063efc41c580",
+      "provenance": {
+        "repository": "current CodeLoop Git history",
+        "referenceCommit": "3782553c31a5d93407f890e38296a96a989d74e8",
+        "parentCommit": "4d3b7c1d3c1596f6ff03c1f7cbce063efc41c580",
+        "committedAt": "2026-08-27T13:31:53+08:00",
+        "commitSubject": "refactor(workflow): extract workspace transaction",
+        "requestKind": "researcher-reconstructed-from-real-git-change",
+        "humanOriginalRequestAvailable": false,
+        "baselineConstruction": "unaltered Git source; no injected defect",
+        "readOnlyUsesReferenceTree": false
+      },
+      "promptPath": "cases/refactor-workspace/prompt.txt",
+      "promptSha256": "126bbce90cd72782f4941f9c156b9daca62ed344298fccf3d70c1fee41dff34e",
+      "referencePatchPath": "cases/refactor-workspace/reference.patch",
+      "referencePatchSha256": "2425fffa993d85c14144282c0b1135293ad293b7ae2eca822cda29013c380664",
+      "sourceTrees": {
+        "baseline": {
+          "commit": "4d3b7c1d3c1596f6ff03c1f7cbce063efc41c580",
+          "minicodeTree": "e081e5b15b5b6c6ebb38882ef7e1e6b8c6e7366c",
+          "pythonFileCount": 221,
+          "pythonInventorySha256": "f6e104395720cce1cd74f389fe7afa298e3f567466f49ed2f0a6999436235022"
+        },
+        "reference": {
+          "commit": "3782553c31a5d93407f890e38296a96a989d74e8",
+          "minicodeTree": "800494643958146d5a8ec6ff5f19943bfb429cdd",
+          "pythonFileCount": 223,
+          "pythonInventorySha256": "82f2f2c8c25571732cfd3aa5b3f0974b004eeff05558526f62984eb3aa986b7e"
+        }
+      },
+      "acceptance": {
+        "historical_test_path": "tests/test_workflow_workspace_module.py",
+        "historical_test_sha256": "c046946a3f8f7a1521266353a7a26cb57d27f6d3ff0de5d441fa41db6776cd9c",
+        "selectors": [
+          "test_task_compatibility_names_share_the_extracted_types",
+          "test_shared_task_deadline_preserves_the_existing_contract",
+          "test_workspace_module_does_not_depend_on_the_task_orchestrator"
+        ],
+        "all_registered_checks_must_pass": true,
+        "skip_xfail_zero_collection_allowed": false,
+        "generatedRegressionRequired": true,
+        "sourceScopeRequired": true,
+        "oraclePath": "cases/refactor-workspace/oracle.py",
+        "oracleSha256": "3285b85219efd28f917227d7e74bc0cbbb5c78571ebec3090b9d3fbffda9d515",
+        "preparedOriginalOracleSha256": "3285b85219efd28f917227d7e74bc0cbbb5c78571ebec3090b9d3fbffda9d515"
+      },
+      "offlineProof": {
+        "reference": {
+          "ref": "3782553c31a5d93407f890e38296a96a989d74e8",
+          "status": "passed",
+          "returncode": 0,
+          "seconds": 2.331,
+          "testSha256": "c046946a3f8f7a1521266353a7a26cb57d27f6d3ff0de5d441fa41db6776cd9c",
+          "logPath": "cases/refactor-workspace/reference-proof.log",
+          "logSha256": "43070f769e236d6133131b818344f14b9cc70eb0b06d977dc080afb56e79db89",
+          "originalUnnormalizedLogSha256": "43070f769e236d6133131b818344f14b9cc70eb0b06d977dc080afb56e79db89",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        },
+        "parent": {
+          "ref": "4d3b7c1d3c1596f6ff03c1f7cbce063efc41c580",
+          "status": "rejected",
+          "returncode": 4,
+          "seconds": 1.244,
+          "testSha256": "c046946a3f8f7a1521266353a7a26cb57d27f6d3ff0de5d441fa41db6776cd9c",
+          "logPath": "cases/refactor-workspace/parent-proof.log",
+          "logSha256": "80d1e07fc492d320a4109a9b37a85aa1c921ebccc2afa37bba729095684a1640",
+          "originalUnnormalizedLogSha256": "897630f698e099832572a080aa36a2885efd5cb240b5071a226c00553f5d8e7d",
+          "normalization": "absolute repository and temporary study root paths replaced; no assertion text changed"
+        }
+      }
+    }
+  ],
+  "amendment": {
+    "kind": "post-start-public-contract-correction-new-study",
+    "predecessorStudyId": "codeloop-real-task-comparison-2026-10-24",
+    "predecessorPortableManifestSha256": "535e79bdfd248557558fb2e55d45a01cc893bb68f54993dbd493bdd54957fdc3",
+    "predecessorFrozenManifestSha256": "32dacc257169eff53026a3b8e1663ed68b62ceae1adac118589073921d47d332",
+    "prospectivePromptOnlyTasksSha256": "1c2e5aea11580aeb47acd2734dce996d86aac48f13f8847c3408cbec3a744095",
+    "reviewedAppendicesSha256": "3be39861adf8bcc147459578e28948cf259f931dad01e96f8cc90bb3ebccc09f",
+    "independentContractClosureSha256": "9c9078cbee2450573f1524e2a19648ebeb8b0b572c3386bae04fb3463fbd0167",
+    "scope": "Append the previously reviewed public API and observation contracts to all 16 prompts; preserve original source, private oracles, support, model, schedule, limits, outcomes and analysis plan.",
+    "predecessorDisposition": {
+      "scheduledCells": 32,
+      "completedRowsRetained": 5,
+      "interruptedUnfinalizedCells": 1,
+      "remainingUnstartedCells": 26,
+      "resultsRewritten": false,
+      "interventionReceipt": {
+        "path": "/private/tmp/codeloop-governance-20261024/phase2-controlled-stop/intervention-01/interruption.json",
+        "sha256": "ae0295397215b2890ad13ad53b96fd8376786dae618e70a3846892b8562fdcaa",
+        "bytes": 1803
+      }
+    },
+    "userDirection": {
+      "choice": "修正规格后新开一轮（推荐）",
+      "confirmation": {
+        "path": "/private/tmp/codeloop-governance-20261024/phase2-controlled-stop/user-direction-confirmation.json",
+        "sha256": "0b397964067f363338d46a7a4413b944605d86a6c330f67bea605cdee42c784f",
+        "bytes": 633
+      },
+      "timing": "Confirmation arrived after the authorized design-validity stop; the earlier interruption humanDecisionObserved=null remains unchanged."
+    },
+    "separateStudy": "r3 is a new complete 32-cell comparison, never a replacement or rerun of selected r2 cells. r2 remains an incomplete pilot; no pooled result.",
+    "runtimeCandidate": {
+      "productionBaseline": "9f9369421486f018c837f84d21bd727aed6ab326",
+      "harnessRevision": "8b15640ab14316873596e921a7b6dda116320672",
+      "productionSha256": "13151ca1031c9ec8b4ffec4fa23b43509946018a61fa8a01445aad65af4bccd8",
+      "harnessSha256": "15898623cbc94e6a313cee6032bd008dc691ac0fac8739711405d32d4044a4ef",
+      "formalFreezePerformed": false
+    },
+    "offlineEvidence": {
+      "offlineSummaryAttribution": "Unchanged original preparation receipts, including 92 reference-check instances; not rerun for r3. Existing runner mechanics evidence is inherited only for byte-identical inputs/runtime.",
+      "historicalRunnerRegression": {
+        "checks": 114,
+        "logPath": "runner-regression-current.log",
+        "logSha256": "f456046c62a72cc90e027e0ddc51cd6d2cd86c2caf134aa73df9975b52fc9a0b",
+        "sourceBindings": "adapter-preparation-hashes.json",
+        "attribution": "Original six-file adapter regression only; not rerun or claimed to certify later transport or revised prompts."
+      },
+      "newOracleExecutions": 0,
+      "newModelCalls": 0,
+      "scopeLimit": "Historical oracle/reference checks do not validate the revised prompt wording or model performance."
+    },
+    "preparationReadScopeIncident": {
+      "kind": "inadvertent-r2-search-excerpt-exposure",
+      "description": "A metadata search used an ineffective exclusion glob and returned limited results, transport and transcript matching lines. The search stopped; no further outcome inspection or interpretation was used. The v3 contract closure review was completed without later-output inspection. This later exposure occurred during registration preparation; it does not change that historical review record and does not permit a claim that the entire process stayed blind. The candidate prompt bytes were fixed and independently reviewed before this exposure; all new input changes are checked against that exact candidate."
+    }
+  }
+}

@@ -584,7 +584,7 @@ def _run_with_pty(
 
     process: subprocess.Popen[bytes] | None = None
     capture = _StreamCapture()
-    slave_open = True
+    process_group_cleaned = False
     try:
         _execution_checkpoint(context, deadline=deadline)
         process = subprocess.Popen(  # noqa: S603
@@ -597,17 +597,24 @@ def _run_with_pty(
             close_fds=True,
             **_popen_options(),
         )
-        os.close(slave_fd)
-        slave_open = False
+        # Keep our slave open through the final drain. On macOS, closing
+        # the last slave can discard output before the master has read it.
 
         while True:
             _execution_checkpoint(context, deadline=deadline)
+            process_exited = process.poll() is not None
+            if process_exited and not process_group_cleaned:
+                # Descendants may still own the PTY or keep writing after the
+                # direct child exits. Stop the group before draining queued data.
+                _kill_process_tree(process, grace_seconds=0.2)
+                process_group_cleaned = True
+                _execution_checkpoint(context, deadline=deadline)
             remaining = deadline - time.monotonic()
             readable, _, _ = select.select(
                 [master_fd],
                 [],
                 [],
-                min(0.05, max(0.001, remaining)),
+                0 if process_exited else min(0.05, max(0.001, remaining)),
             )
             if readable:
                 try:
@@ -617,24 +624,26 @@ def _run_with_pty(
                 if chunk:
                     capture.add(chunk)
                     continue
-            if process.poll() is not None:
+            if process_exited:
+                _execution_checkpoint(context, deadline=deadline)
                 break
 
         return_code = process.returncode
         if not isinstance(return_code, int):
             return_code = process.wait(timeout=0.1)
     finally:
-        if process is not None:
-            _kill_process_tree(process, grace_seconds=0.2)
-        if slave_open:
+        try:
+            if process is not None and not process_group_cleaned:
+                _kill_process_tree(process, grace_seconds=0.2)
+        finally:
             try:
                 os.close(slave_fd)
             except OSError:
                 pass
-        try:
-            os.close(master_fd)
-        except OSError:
-            pass
+            try:
+                os.close(master_fd)
+            except OSError:
+                pass
     output = capture.text().replace("\r\n", "\n").strip()
     return return_code, _truncate_large_output(output)
 

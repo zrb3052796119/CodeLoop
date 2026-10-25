@@ -2,7 +2,7 @@
 
 > 包版本：以 `pyproject.toml` 为准（当前 `0.1.0`）
 >
-> 更新时间：2026-08-24
+> 平台范围更新：2026-10-25；其他使用内容按原版本保留
 >
 > 说明：CodeLoop 是 MiniCode Python 的衍生版本，完整继承与贡献边界见
 > [CONTRIBUTIONS.md](../CONTRIBUTIONS.md)。
@@ -10,6 +10,8 @@
 ---
 
 ## 🚀 快速开始
+
+本期正式 runtime 支持 Linux/macOS；原生 Windows 为实验性，仅包/入口检查通过，不能据此承诺完整工作流或 Memory。[平台范围与移植清单](./platform-support.md)。
 
 ### 0. 安装
 
@@ -23,7 +25,7 @@ source .venv/bin/activate
 python -m pip install -e ".[dev]"
 ```
 
-Windows PowerShell：
+Windows PowerShell（实验性）：
 
 ```powershell
 git clone https://github.com/zrb3052796119/CodeLoop.git
@@ -73,7 +75,7 @@ export MINI_CODE_MODEL_MODE=mock
 python -m minicode.main
 ```
 
-Windows PowerShell：
+Windows PowerShell（实验性）：
 
 ```powershell
 $env:MINI_CODE_MODEL_MODE = "mock"
@@ -418,7 +420,7 @@ minicode-py config migrate-env \
 
 无需 API 密钥，用于测试和开发：
 
-Windows PowerShell：
+Windows PowerShell（实验性）：
 
 ```powershell
 $env:MINI_CODE_MODEL_MODE = "mock"
@@ -500,7 +502,7 @@ python -m minicode.main --install
 **解决**: 确保终端支持：
 - 最小 80x24 字符
 - 支持 ANSI 转义序列
-- Windows 10+ 推荐使用 Windows Terminal
+- 原生 Windows 入口仍为实验性；Windows Terminal 仅是终端选择，不代表完整 runtime 已通过
 
 ### 问题：会话无法恢复
 

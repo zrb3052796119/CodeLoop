@@ -46,6 +46,25 @@ def test_failed_final_write_returns_to_same_executor_before_delivery(tmp_path, m
     first_source = GREEN_PENDING if initial_checks_pass else PARTIAL
     original_worker = task_module._run
 
+    def formal_rounds():
+        # Per-check callbacks finish concurrently. Keep each candidate's
+        # requested check identity instead of assuming completion order.
+        rounds = {}
+        expected_argv = {
+            check["checkId"]: tuple(check["argv"])
+            for check in request["verificationChecks"]
+        }
+        for item in commands:
+            if not item["formal"]:
+                continue
+            assert item["argv"] == expected_argv[item["checkId"]]
+            identity = (item["assignmentId"], item["patchDigest"])
+            checks = rounds.setdefault(identity, {})
+            assert item["checkId"] not in checks, "duplicate formal result"
+            checks[item["checkId"]] = item["exit"]
+        assert all(set(checks) == set(expected_argv) for checks in rounds.values())
+        return list(rounds.values())
+
     def run_worker(data, context):
         ledger = context._agent_budget
         while hasattr(ledger, "_budget"):
@@ -101,8 +120,9 @@ def test_failed_final_write_returns_to_same_executor_before_delivery(tmp_path, m
                            and "Search string not found" in message.get("content", "") for message in messages), (
                                "The original Executor must receive its exact last edit failure")
                 assert any(message.get("toolUseId") == "write-regression" for message in messages)
-                formal = [item["exit"] for item in commands if item["formal"]]
-                assert formal == [0, 0 if initial_checks_pass else 1]
+                assert formal_rounds() == [
+                    {"compat": 0, "regression": 0 if initial_checks_pass else 1},
+                ]
                 if initial_checks_pass:
                     # A green check cannot acknowledge an unseen edit error.
                     # The same owner resolves the failed edit using the
@@ -182,7 +202,12 @@ def test_failed_final_write_returns_to_same_executor_before_delivery(tmp_path, m
             assert target.read_text() == INITIAL, "Pending feedback and unreviewed revisions cannot reach the parent"
             formal = getattr(kwargs["evidence_sink"], "__name__", "") == "per_check_sink"
             result = super().run(**kwargs)
-            commands.extend({"formal": formal, "exit": item["exitCode"], "cwd": kwargs["cwd"]}
+            requested = {check.check_id: check for check in kwargs["checks"]}
+            assert len(result["checks"]) == len(requested)
+            assert {item["checkId"] for item in result["checks"]} == set(requested)
+            commands.extend({"formal": formal, "exit": item["exitCode"], "cwd": kwargs["cwd"],
+                             "checkId": item["checkId"], "argv": requested[item["checkId"]].argv,
+                             "assignmentId": kwargs["execution_assignment_id"], "patchDigest": kwargs["patch_digest"]}
                             for item in result["checks"])
             return result
 
@@ -236,7 +261,10 @@ def test_failed_final_write_returns_to_same_executor_before_delivery(tmp_path, m
     executor_workers = [item for item in workers if item["role"] == "executor"]
     assert len(executor_workers) == 2 and executor_workers[0]["session"] is not None
     assert executor_workers[0]["session"] is executor_workers[1]["session"]
-    assert [item["exit"] for item in commands if item["formal"]] == [0, 0 if initial_checks_pass else 1, 0, 0]
+    assert formal_rounds() == [
+        {"compat": 0, "regression": 0 if initial_checks_pass else 1},
+        {"compat": 0, "regression": 0},
+    ]
     assert all(not Path(item["cwd"]).exists() for item in commands)
     reloaded = RunJournal(tmp_path, data_dir=data_dir)
     audit = reloaded.get_scheduler_audit(run_id, trace["workflowId"])

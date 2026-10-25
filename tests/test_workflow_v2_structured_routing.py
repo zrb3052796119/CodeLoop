@@ -16,7 +16,11 @@ import minicode.tools.task as task_module
 import minicode.workflow_finalization as workflow_finalization_module
 import minicode.workflow_runner as workflow_runner_module
 from minicode.central_scheduler import CentralScheduler
-from minicode.conflict_port_runner import BoundedConflictPortRunner
+from minicode.conflict_port_runner import (
+    BoundedConflictPortRunner,
+    ConflictPortCapacityExhausted,
+    ConflictPortDeadlineExceeded,
+)
 from minicode.deterministic_verifier import DeterministicVerifier
 from minicode.run_journal import (
     RunJournal,
@@ -4566,46 +4570,114 @@ def test_hung_final_observation_is_bounded_and_does_not_erase_audit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     (tmp_path / "README.md").write_text("evidence\n", encoding="utf-8")
+    observation_started = threading.Event()
     release_observation = threading.Event()
+    observation_returned = threading.Event()
+    observation_threads = []
     audits = []
+    timeout_outcomes = []
+    clock_reads = []
+    now = [0.0]
+    caller = threading.current_thread()
+
+    def clock() -> float:
+        if threading.current_thread() is caller and not release_observation.is_set():
+            if clock_reads:
+                assert observation_started.wait(5)
+                now[0] += 0.01
+            clock_reads.append(now[0])
+        return now[0]
 
     class HangingObservationSink:
         def emit(self, *_args, **_kwargs):
-            release_observation.wait(1.0)
+            observation_threads.append(threading.current_thread())
+            observation_started.set()
+            if release_observation.wait(5):
+                observation_returned.set()
+            return "late observation value"
 
         def record_scheduler_audit(self, audit):
             audits.append(audit)
             return True
 
+    class ObservedRunner(BoundedConflictPortRunner):
+        def run(self, operation, **kwargs):
+            try:
+                return super().run(operation, **kwargs)
+            except ConflictPortDeadlineExceeded as exc:
+                timeout_outcomes.append((kwargs["port_name"], exc.reason))
+                raise
+
     def worker(input_data, context):
         _write_analyst_result(input_data, context, prepare_change=False)
         return ToolResult(ok=True, output="analysis complete")
 
+    runner = ObservedRunner(
+        max_in_flight=1,
+        default_timeout_seconds=0.02,
+        cancellation_poll_seconds=0.001,
+        clock=clock,
+    )
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(
-        workflow_runner_module,
-        "_FINALIZATION_OBSERVATION_PORT_RUNNER",
-        BoundedConflictPortRunner(
-            max_in_flight=1,
-            default_timeout_seconds=0.02,
-            cancellation_poll_seconds=0.001,
-        ),
+        workflow_runner_module, "_FINALIZATION_OBSERVATION_PORT_RUNNER", runner,
     )
 
-    started = time.monotonic()
-    result = _run(
-        tmp_path,
-        _request(kind="read_only"),
-        monkeypatch,
-        event_sink=HangingObservationSink(),
-    )
-    elapsed = time.monotonic() - started
-    release_observation.set()
+    try:
+        result = _run(
+            tmp_path,
+            _request(kind="read_only"),
+            monkeypatch,
+            event_sink=HangingObservationSink(),
+        )
+        # The bound belongs to the observation port, not all workflow I/O.
+        assert clock_reads == [0.0, 0.01, 0.02]
+        assert timeout_outcomes == [
+            ("workflow-final-observation", "port_deadline_exceeded"),
+        ]
+        assert observation_started.is_set()
+        assert not observation_returned.is_set()
+        assert not release_observation.is_set()
+        assert result.ok is True
+        assert len(audits) == 1
+        assert '"auditStatus": "persisted"' in result.output
+        output_before_late_return = result.output
+        trace_before_late_return = json.loads(json.dumps(audits[0].trace))
+        # A timed-out worker still owns its slot until it actually exits.
+        forbidden_dispatches = []
+        with pytest.raises(ConflictPortCapacityExhausted):
+            runner.run(
+                lambda: forbidden_dispatches.append("unexpected"),
+                port_name="capacity-probe",
+                operation_id="blocked-observation",
+                timeout_seconds=None,
+            )
+        assert forbidden_dispatches == []
+    finally:
+        release_observation.set()
+        for thread in observation_threads:
+            thread.join(timeout=5)
+            assert not thread.is_alive()
 
-    assert elapsed < 0.5
-    assert result.ok is True
+    assert len(observation_threads) == 1
+    assert observation_returned.is_set()
+    assert result.output == output_before_late_return
     assert len(audits) == 1
-    assert '"auditStatus": "persisted"' in result.output
+    assert audits[0].trace == trace_before_late_return
+    replayed = project_scheduler_audit(
+        profile=audits[0].profile,
+        plan=audits[0].plan,
+        trace=audits[0].trace,
+        artifacts=audits[0].artifacts,
+        contract_mode="v2",
+    )
+    assert replayed.trace == trace_before_late_return
+    assert runner.run(
+        lambda: "slot-reused",
+        port_name="recovered-observation",
+        operation_id="after-late-return",
+        timeout_seconds=None,
+    ) == "slot-reused"
 
 
 def test_analyst_retry_prompt_carries_bounded_validation_feedback(

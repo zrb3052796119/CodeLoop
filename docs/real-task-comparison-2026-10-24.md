@@ -1,6 +1,8 @@
 # CodeLoop 真实历史任务比较预注册（2026-10-24）
 
-状态：**Phase 0 基线已通过；32 个试次的任务、适配器和运行时已冻结，尚未调用模型**。冻结源码为 `9f9369421486f018c837f84d21bd727aed6ab326`；正式执行等待本机全量测试退出，避免资源竞争污染延迟指标。本文不设新的扩张 gate，不修改既有历史证据。模型按用户授权使用当前配置的 `custom / glm-5.3-flash`，沿用现有凭证与端点；API 支出不设上限。
+> 后续状态（2026-10-25）：本 r2 因公开契约缺失而停止，5 次完成、1 次中断未判分、26 次未运行。原结果、固定分母和下列预注册条件保留，不追改验收。见[试跑处置报告](real-task-comparison-r2-pilot-2026-10-25.md)；用户已确认补齐契约后以新版本执行完整 32 次。下文的“尚未调用模型”描述原注册发布时点。
+
+状态：**Phase 0 基线通过；r2 已重新冻结32个试次，尚未调用模型**。生产 `minicode` 仍为 `9f936942`，评测器来源为 `8b15640a`。原冻结在0试次时因排队流字节误判idle的离线缺陷被明确撤销，原件保留；[r2更正记录](../artifacts/governance-trial-2026-10-24/phase2-freeze-r2/README.md)记录唯一harness修复和路径重定位。任务、顺序、模型、验收和预算均不变。模型按用户授权使用当前配置的 `custom / glm-5.3-flash`，API支出不设上限。
 
 ## 问题与样本
 
@@ -55,6 +57,8 @@
 
 16个 prepared oracle 已通过现有宿主裁判的调用接口和进程清理；只读 oracle 的5组有效/错误事实/仅答案/硬编码断言/xfail反例也已检查。两组生命周期测试使用真实运行时、适配器、分派与transport，把HTTP替换为离线SSE，验证同模型子角色、无限预算、token/调用记账及只读工作区不变。宿主须允许进程枚举；普通沙箱的 `ps` 限制会使既有guardian判清理未完成，不能绕过该检查。上述均为离线软件验证，不是32个正式模型 trial 的结果。
 
+首次调用前的有效 manifest 与冻结记录见[r2冻结更正](../artifacts/governance-trial-2026-10-24/phase2-freeze-r2/README.md)；原冻结保留为已撤销版本。
+
 ## 可复现材料与限制
 
 可提交材料位于 `artifacts/governance-trial-2026-10-24/phase2-preparation/`：`manifest.json` 记录16题、32个 cell、提交/源码树及验收 SHA；`cases/*` 保存提示、私有 oracle、参考差分和父版本/参考版本证明；`SHA256SUMS.json` 固定材料字节。源码只存 Git 引用、Python 文件清单摘要和文件数，不复制16份完整源码。`rebuild.py` 仅验证与解包材料，调用现有 runner 的 `prepare`，没有模型调用或冻结功能。重建需要保留相应 Git 历史；浅克隆/无 Git 归档须先取得这些已知对象。
@@ -71,8 +75,8 @@
 ```sh
 env MINI_CODE_SUBAGENT_EXPLORE_MAX_TURNS=12 \
   MINI_CODE_SUBAGENT_PLAN_MAX_TURNS=8 MINI_CODE_SUBAGENT_GENERAL_MAX_TURNS=15 \
-  .venv-acceptance/bin/python scripts/run_three_arm_real.py freeze --output /private/tmp/codeloop-governance-20261024/phase2-portable/execution
-.venv-acceptance/bin/python scripts/run_three_arm_real.py run --output /private/tmp/codeloop-governance-20261024/phase2-portable/execution
+  .venv-acceptance/bin/python scripts/run_three_arm_real.py freeze --output /private/tmp/codeloop-governance-20261024/phase2-portable/execution-r2
+.venv-acceptance/bin/python scripts/run_three_arm_real.py run --output /private/tmp/codeloop-governance-20261024/phase2-portable/execution-r2
 ```
 
 这是单仓库、已知历史修复、同作者任务聚簇的回顾性内部比较，且每 cell 仅一次。profile/工作流题相关，任务不独立；模型可能见过公开历史，无法保证盲测。结果只支持这些工作负载和冻结配置下的描述，不能外推到日常生产力、与成熟产品的优势或“多 agent 一般更好”。本期没有 warm/cold 记忆消融，不用已有记忆结果替代本次证据。

@@ -8,7 +8,12 @@ import time
 
 import minicode.subagent_model_routing as model_routing
 import minicode.tools.task as task_module
+from minicode.agent_budget import AgentTurnBudget
 from minicode.agent_loop import run_agent_turn
+from minicode.permissions import PermissionManager
+from minicode.subagent_lifecycle import AsyncSubagentLifecycle
+from minicode.subagent_mailbox import SubagentMailbox
+from minicode.turn_cancellation import TurnCancellationToken
 from minicode.subagent_result import extract_subagent_result
 from minicode.subagent_sessions import SubagentSessionStore
 from minicode.tooling import SkillLoadPolicy, ToolRegistry
@@ -20,6 +25,11 @@ def test_parallel_tasks_preserve_sessions_todo_deadline_and_skill_authority(monk
     contexts = []
     children = []
     deadline = time.monotonic() + 60
+    budget = AgentTurnBudget(max_model_calls=40, max_total_tokens=500000)
+    cancellation = TurnCancellationToken("turn_" + "d" * 32)
+    permissions = PermissionManager(str(tmp_path))
+    mailbox = SubagentMailbox()
+    lifecycle = AsyncSubagentLifecycle(max_workers=2)
     policy = SkillLoadPolicy(denied_qualified_names=frozenset({"private-skill"}), reason_code="batch-test")
     original_run = task_module._SYNC_RUN
 
@@ -82,16 +92,24 @@ def test_parallel_tasks_preserve_sessions_todo_deadline_and_skill_authority(monk
             messages=[{"role": "user", "content": "Inspect both modules and follow up on the first."}],
             cwd=str(tmp_path), runtime={"model": "fake"}, enable_work_chain=False,
             allow_user_interaction=False, deadline_monotonic=deadline,
-            skill_load_policy=policy,
+            skill_load_policy=policy, permissions=permissions,
+            agent_budget=budget, cancellation_token=cancellation,
+            subagent_mailbox=mailbox, subagent_lifecycle=lifecycle,
         )
     finally:
         registry.dispose()
+        lifecycle.shutdown()
 
     # Inspect the actual public Task dispatch, with real nested loops and
     # actual tools; only provider adapters are replaced by scripted models.
     assert len(contexts) >= 2
     assert all(isinstance(context._subagent_sessions, SubagentSessionStore) for context in contexts)
     assert contexts[0]._subagent_sessions is contexts[1]._subagent_sessions
+    assert all(context._agent_budget is budget for context in contexts)
+    assert all(context._cancellation_token is cancellation for context in contexts)
+    assert all(context.permissions is permissions for context in contexts)
+    assert all(context._subagent_mailbox is mailbox for context in contexts)
+    assert all(context._subagent_lifecycle is lifecycle for context in contexts)
     assert contexts[0]._todo_state is contexts[1]._todo_state
     assert [todo["content"] for todo in contexts[0]._todo_state["tasks"]] == ["Parent task"]
     assert all(context._task_deadline_monotonic == deadline for context in contexts)

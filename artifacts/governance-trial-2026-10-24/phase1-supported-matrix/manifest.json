@@ -1,0 +1,619 @@
+{
+  "schemaVersion": 1,
+  "runId": 40130139264,
+  "runNumber": 50,
+  "expectedHead": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+  "originalAttemptConclusion": "failure",
+  "originalFailedJobId": 120979908153,
+  "originalMissingJUnit": "macos-311-pytest-results.xml",
+  "originalFailureReason": "CreateArtifact ENOTFOUND after successful pytest; raw terminal summary retained, no substitute XML",
+  "retryRequests": 1,
+  "retryJobId": 120994485852,
+  "finalRunAttempt": 2,
+  "finalRunConclusion": "success",
+  "coverage": "Five original successful jobs plus exactly one infrastructure-triggered rerun of macOS3.11; never claimed as six new executions",
+  "allSelectedJobConclusionsSuccess": true,
+  "notAProjectPromotionDecision": true,
+  "windowsFullRuntimeIncluded": false,
+  "olderCandidateGreensIncluded": false,
+  "archive": "proofs.tar.gz",
+  "archiveBytes": 1823581,
+  "archiveSha256": "284655961023c37c53d075a889a7ac184fd1c45b6a26d66ef0ecc0635d85b61e",
+  "entryCount": 46,
+  "rawBytes": 10932547,
+  "restorationVerification": "All archive members actually restored and byte-compared with selected original sources",
+  "jobs": [
+    {
+      "name": "Full runtime / Python 3.12 on ubuntu-latest",
+      "sourceAttempt": 1,
+      "sourceJobId": 120979908000,
+      "latestApiJobId": 120994486483,
+      "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+      "actualCheckoutMergeRef": "b0091e50b8f434cf811f3cdec5159d44052d3e09",
+      "conclusion": "success",
+      "scope": "complete-runtime",
+      "startedAt": "2026-10-24T20:31:12Z",
+      "completedAt": "2026-10-24T21:05:32Z",
+      "artifactProvenance": {
+        "sourceAttempt": 1,
+        "sourceJobId": 120979908000,
+        "artifactId": 12575383154,
+        "artifactName": "pytest-ubuntu-latest-py3.12-seed-50",
+        "createdAt": "2026-10-24T21:05:29Z",
+        "uploadStartedAt": "2026-10-24T21:05:27Z",
+        "uploadCompletedAt": "2026-10-24T21:05:29Z",
+        "apiWholeSecondBoundaryToleranceSeconds": 1,
+        "artifactCreationMinusStepCompletionSeconds": 0.0,
+        "artifactIdAndZipDigestPresentInSameJobRawLog": true,
+        "runId": 40130139264,
+        "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+        "downloadedZipBytes": 312096,
+        "downloadedZipSha256": "7257f5021568defe91086ef8340a65120f4966fc0f57074d661aa36273db1611",
+        "apiDigestEqualsDownloadedZipSha256": true,
+        "xmlSha256": "1f30646f21ebdd1cf52ff9e374539fe25ce994b2b322ad29248d5d60fcdd28e9",
+        "xmlByteEqualsArchiveMember": true,
+        "newArtifactAfterOriginalFailure": null
+      },
+      "randomlySeed": 50,
+      "actualTestCommand": "python -m pytest -ra --randomly-seed=50 --junitxml=pytest-results.xml",
+      "outcomes": {
+        "failure": 0,
+        "error": 0,
+        "skipped": 19,
+        "passed": 14952
+      },
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "19",
+          "tests": "14971",
+          "time": "1997.818",
+          "timestamp": "2026-10-24T20:32:05.802046+00:00",
+          "hostname": "runnervmtai0g"
+        }
+      ],
+      "xmlSha256": "1f30646f21ebdd1cf52ff9e374539fe25ce994b2b322ad29248d5d60fcdd28e9"
+    },
+    {
+      "name": "Experimental package checks / Python 3.11 on windows-latest",
+      "sourceAttempt": 1,
+      "sourceJobId": 120979908081,
+      "latestApiJobId": 120994515468,
+      "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+      "actualCheckoutMergeRef": "b0091e50b8f434cf811f3cdec5159d44052d3e09",
+      "conclusion": "success",
+      "scope": "experimental-package-only",
+      "startedAt": "2026-10-24T20:31:12Z",
+      "completedAt": "2026-10-24T20:33:23Z"
+    },
+    {
+      "name": "Full runtime / Python 3.12 on macos-latest",
+      "sourceAttempt": 1,
+      "sourceJobId": 120979908130,
+      "latestApiJobId": 120994486824,
+      "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+      "actualCheckoutMergeRef": "b0091e50b8f434cf811f3cdec5159d44052d3e09",
+      "conclusion": "success",
+      "scope": "complete-runtime",
+      "startedAt": "2026-10-24T20:31:13Z",
+      "completedAt": "2026-10-24T21:32:15Z",
+      "artifactProvenance": {
+        "sourceAttempt": 1,
+        "sourceJobId": 120979908130,
+        "artifactId": 12575883204,
+        "artifactName": "pytest-macos-latest-py3.12-seed-50",
+        "createdAt": "2026-10-24T21:32:11Z",
+        "uploadStartedAt": "2026-10-24T21:32:09Z",
+        "uploadCompletedAt": "2026-10-24T21:32:10Z",
+        "apiWholeSecondBoundaryToleranceSeconds": 1,
+        "artifactCreationMinusStepCompletionSeconds": 1.0,
+        "artifactIdAndZipDigestPresentInSameJobRawLog": true,
+        "runId": 40130139264,
+        "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+        "downloadedZipBytes": 318596,
+        "downloadedZipSha256": "22178046b2a5992defc67237f3551e091765978fd25fa2dee47b479f0c943d62",
+        "apiDigestEqualsDownloadedZipSha256": true,
+        "xmlSha256": "48e5d119bb7c2ee7f9c995e7f23fe24b097dd6ac2ade84461f8da93e0be2516c",
+        "xmlByteEqualsArchiveMember": true,
+        "newArtifactAfterOriginalFailure": null
+      },
+      "randomlySeed": 50,
+      "actualTestCommand": "python -m pytest -ra --randomly-seed=50 --junitxml=pytest-results.xml",
+      "outcomes": {
+        "failure": 0,
+        "error": 0,
+        "skipped": 8,
+        "passed": 14963
+      },
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "8",
+          "tests": "14971",
+          "time": "3516.664",
+          "timestamp": "2026-10-24T20:33:29.404275+00:00",
+          "hostname": "iad20-gt1018-de2bbb3f-06a2-4674-aa14-c4069362ea89-BA4A3C95E442.local"
+        }
+      ],
+      "xmlSha256": "48e5d119bb7c2ee7f9c995e7f23fe24b097dd6ac2ade84461f8da93e0be2516c"
+    },
+    {
+      "name": "Experimental package checks / Python 3.12 on windows-latest",
+      "sourceAttempt": 1,
+      "sourceJobId": 120979908151,
+      "latestApiJobId": 120994486987,
+      "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+      "actualCheckoutMergeRef": "b0091e50b8f434cf811f3cdec5159d44052d3e09",
+      "conclusion": "success",
+      "scope": "experimental-package-only",
+      "startedAt": "2026-10-24T20:31:12Z",
+      "completedAt": "2026-10-24T20:33:10Z"
+    },
+    {
+      "name": "Full runtime / Python 3.11 on macos-latest",
+      "sourceAttempt": 2,
+      "sourceJobId": 120994485852,
+      "latestApiJobId": 120994485852,
+      "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+      "actualCheckoutMergeRef": "b0091e50b8f434cf811f3cdec5159d44052d3e09",
+      "conclusion": "success",
+      "scope": "complete-runtime",
+      "startedAt": "2026-10-24T21:36:47Z",
+      "completedAt": "2026-10-24T22:37:56Z",
+      "artifactProvenance": {
+        "sourceAttempt": 2,
+        "sourceJobId": 120994485852,
+        "artifactId": 12578305196,
+        "artifactName": "pytest-macos-latest-py3.11-seed-50",
+        "createdAt": "2026-10-24T22:37:51Z",
+        "uploadStartedAt": "2026-10-24T22:37:49Z",
+        "uploadCompletedAt": "2026-10-24T22:37:51Z",
+        "apiWholeSecondBoundaryToleranceSeconds": 1,
+        "artifactCreationMinusStepCompletionSeconds": 0.0,
+        "artifactIdAndZipDigestPresentInSameJobRawLog": true,
+        "runId": 40130139264,
+        "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+        "downloadedZipBytes": 318865,
+        "downloadedZipSha256": "a263004e9406ddcde63a496c9b98390ed8fac63e5c29a7af11847028ee6cf92d",
+        "apiDigestEqualsDownloadedZipSha256": true,
+        "xmlSha256": "bf22a930c7a22a5866ebbdfe0d6d1f14c13cfc606d6d261140eb4eb70c85ae89",
+        "xmlByteEqualsArchiveMember": true,
+        "newArtifactAfterOriginalFailure": true
+      },
+      "randomlySeed": 50,
+      "actualTestCommand": "python -m pytest -ra --randomly-seed=50 --junitxml=pytest-results.xml",
+      "outcomes": {
+        "failure": 0,
+        "error": 0,
+        "skipped": 8,
+        "passed": 14963
+      },
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "8",
+          "tests": "14971",
+          "time": "3526.891",
+          "timestamp": "2026-10-24T21:38:58.181410+00:00",
+          "hostname": "sjc22-bt149-cd236e15-2c08-48cc-a73b-432c0fba00be-82B1F8DC4876.local"
+        }
+      ],
+      "xmlSha256": "bf22a930c7a22a5866ebbdfe0d6d1f14c13cfc606d6d261140eb4eb70c85ae89"
+    },
+    {
+      "name": "Full runtime / Python 3.11 on ubuntu-latest",
+      "sourceAttempt": 1,
+      "sourceJobId": 120979908190,
+      "latestApiJobId": 120994486492,
+      "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+      "actualCheckoutMergeRef": "b0091e50b8f434cf811f3cdec5159d44052d3e09",
+      "conclusion": "success",
+      "scope": "complete-runtime",
+      "startedAt": "2026-10-24T20:31:12Z",
+      "completedAt": "2026-10-24T21:03:37Z",
+      "artifactProvenance": {
+        "sourceAttempt": 1,
+        "sourceJobId": 120979908190,
+        "artifactId": 12575103238,
+        "artifactName": "pytest-ubuntu-latest-py3.11-seed-50",
+        "createdAt": "2026-10-24T21:03:34Z",
+        "uploadStartedAt": "2026-10-24T21:03:33Z",
+        "uploadCompletedAt": "2026-10-24T21:03:35Z",
+        "apiWholeSecondBoundaryToleranceSeconds": 1,
+        "artifactCreationMinusStepCompletionSeconds": -1.0,
+        "artifactIdAndZipDigestPresentInSameJobRawLog": true,
+        "runId": 40130139264,
+        "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+        "downloadedZipBytes": 311659,
+        "downloadedZipSha256": "89292dba4ce26555117b6a4318162ca4ab4ecd167abbe6f2846fcbe0868c833d",
+        "apiDigestEqualsDownloadedZipSha256": true,
+        "xmlSha256": "051a4068ef6c75fae6b9f7044215ebaf7dbc2b8bdb4d0fc2123c3ee26006fe57",
+        "xmlByteEqualsArchiveMember": true,
+        "newArtifactAfterOriginalFailure": null
+      },
+      "randomlySeed": 50,
+      "actualTestCommand": "python -m pytest -ra --randomly-seed=50 --junitxml=pytest-results.xml",
+      "outcomes": {
+        "failure": 0,
+        "error": 0,
+        "skipped": 19,
+        "passed": 14952
+      },
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "19",
+          "tests": "14971",
+          "time": "1882.338",
+          "timestamp": "2026-10-24T20:32:07.653098+00:00",
+          "hostname": "runnervmtai0g"
+        }
+      ],
+      "xmlSha256": "051a4068ef6c75fae6b9f7044215ebaf7dbc2b8bdb4d0fc2123c3ee26006fe57"
+    }
+  ],
+  "artifactProvenanceChecks": [
+    {
+      "sourceAttempt": 1,
+      "sourceJobId": 120979908000,
+      "artifactId": 12575383154,
+      "artifactName": "pytest-ubuntu-latest-py3.12-seed-50",
+      "createdAt": "2026-10-24T21:05:29Z",
+      "uploadStartedAt": "2026-10-24T21:05:27Z",
+      "uploadCompletedAt": "2026-10-24T21:05:29Z",
+      "apiWholeSecondBoundaryToleranceSeconds": 1,
+      "artifactCreationMinusStepCompletionSeconds": 0.0,
+      "artifactIdAndZipDigestPresentInSameJobRawLog": true,
+      "runId": 40130139264,
+      "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+      "downloadedZipBytes": 312096,
+      "downloadedZipSha256": "7257f5021568defe91086ef8340a65120f4966fc0f57074d661aa36273db1611",
+      "apiDigestEqualsDownloadedZipSha256": true,
+      "xmlSha256": "1f30646f21ebdd1cf52ff9e374539fe25ce994b2b322ad29248d5d60fcdd28e9",
+      "xmlByteEqualsArchiveMember": true,
+      "newArtifactAfterOriginalFailure": null
+    },
+    {
+      "sourceAttempt": 1,
+      "sourceJobId": 120979908130,
+      "artifactId": 12575883204,
+      "artifactName": "pytest-macos-latest-py3.12-seed-50",
+      "createdAt": "2026-10-24T21:32:11Z",
+      "uploadStartedAt": "2026-10-24T21:32:09Z",
+      "uploadCompletedAt": "2026-10-24T21:32:10Z",
+      "apiWholeSecondBoundaryToleranceSeconds": 1,
+      "artifactCreationMinusStepCompletionSeconds": 1.0,
+      "artifactIdAndZipDigestPresentInSameJobRawLog": true,
+      "runId": 40130139264,
+      "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+      "downloadedZipBytes": 318596,
+      "downloadedZipSha256": "22178046b2a5992defc67237f3551e091765978fd25fa2dee47b479f0c943d62",
+      "apiDigestEqualsDownloadedZipSha256": true,
+      "xmlSha256": "48e5d119bb7c2ee7f9c995e7f23fe24b097dd6ac2ade84461f8da93e0be2516c",
+      "xmlByteEqualsArchiveMember": true,
+      "newArtifactAfterOriginalFailure": null
+    },
+    {
+      "sourceAttempt": 2,
+      "sourceJobId": 120994485852,
+      "artifactId": 12578305196,
+      "artifactName": "pytest-macos-latest-py3.11-seed-50",
+      "createdAt": "2026-10-24T22:37:51Z",
+      "uploadStartedAt": "2026-10-24T22:37:49Z",
+      "uploadCompletedAt": "2026-10-24T22:37:51Z",
+      "apiWholeSecondBoundaryToleranceSeconds": 1,
+      "artifactCreationMinusStepCompletionSeconds": 0.0,
+      "artifactIdAndZipDigestPresentInSameJobRawLog": true,
+      "runId": 40130139264,
+      "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+      "downloadedZipBytes": 318865,
+      "downloadedZipSha256": "a263004e9406ddcde63a496c9b98390ed8fac63e5c29a7af11847028ee6cf92d",
+      "apiDigestEqualsDownloadedZipSha256": true,
+      "xmlSha256": "bf22a930c7a22a5866ebbdfe0d6d1f14c13cfc606d6d261140eb4eb70c85ae89",
+      "xmlByteEqualsArchiveMember": true,
+      "newArtifactAfterOriginalFailure": true
+    },
+    {
+      "sourceAttempt": 1,
+      "sourceJobId": 120979908190,
+      "artifactId": 12575103238,
+      "artifactName": "pytest-ubuntu-latest-py3.11-seed-50",
+      "createdAt": "2026-10-24T21:03:34Z",
+      "uploadStartedAt": "2026-10-24T21:03:33Z",
+      "uploadCompletedAt": "2026-10-24T21:03:35Z",
+      "apiWholeSecondBoundaryToleranceSeconds": 1,
+      "artifactCreationMinusStepCompletionSeconds": -1.0,
+      "artifactIdAndZipDigestPresentInSameJobRawLog": true,
+      "runId": 40130139264,
+      "headSha": "e6492f9be7357a707bb8f05c722aa2af4eefcc3d",
+      "downloadedZipBytes": 311659,
+      "downloadedZipSha256": "89292dba4ce26555117b6a4318162ca4ab4ecd167abbe6f2846fcbe0868c833d",
+      "apiDigestEqualsDownloadedZipSha256": true,
+      "xmlSha256": "051a4068ef6c75fae6b9f7044215ebaf7dbc2b8bdb4d0fc2123c3ee26006fe57",
+      "xmlByteEqualsArchiveMember": true,
+      "newArtifactAfterOriginalFailure": null
+    }
+  ],
+  "inheritedSuccesses": [
+    {
+      "name": "Full runtime / Python 3.12 on ubuntu-latest",
+      "attempt2ApiJobId": 120994486483,
+      "originalAttempt1JobId": 120979908000,
+      "startedAt": "2026-10-24T20:31:12Z",
+      "completedAt": "2026-10-24T21:05:32Z",
+      "actualNewExecution": false
+    },
+    {
+      "name": "Full runtime / Python 3.11 on ubuntu-latest",
+      "attempt2ApiJobId": 120994486492,
+      "originalAttempt1JobId": 120979908190,
+      "startedAt": "2026-10-24T20:31:12Z",
+      "completedAt": "2026-10-24T21:03:37Z",
+      "actualNewExecution": false
+    },
+    {
+      "name": "Full runtime / Python 3.12 on macos-latest",
+      "attempt2ApiJobId": 120994486824,
+      "originalAttempt1JobId": 120979908130,
+      "startedAt": "2026-10-24T20:31:13Z",
+      "completedAt": "2026-10-24T21:32:15Z",
+      "actualNewExecution": false
+    },
+    {
+      "name": "Experimental package checks / Python 3.12 on windows-latest",
+      "attempt2ApiJobId": 120994486987,
+      "originalAttempt1JobId": 120979908151,
+      "startedAt": "2026-10-24T20:31:12Z",
+      "completedAt": "2026-10-24T20:33:10Z",
+      "actualNewExecution": false
+    },
+    {
+      "name": "Experimental package checks / Python 3.11 on windows-latest",
+      "attempt2ApiJobId": 120994515468,
+      "originalAttempt1JobId": 120979908081,
+      "startedAt": "2026-10-24T20:31:12Z",
+      "completedAt": "2026-10-24T20:33:23Z",
+      "actualNewExecution": false
+    }
+  ],
+  "entries": [
+    {
+      "path": "attempt1/artifacts-latest.json",
+      "bytes": 2731,
+      "sha256": "e18c014cc30a7649818f362687f5e0d5c772b71123b54b40e487872570a56a7f"
+    },
+    {
+      "path": "attempt1/attempt1-run.json",
+      "bytes": 12988,
+      "sha256": "42ab0a4c7123ccf37748eca3e316dd40d6e2f976ec15ffa98c7c46f513f972f4"
+    },
+    {
+      "path": "attempt1/jobs-latest.json",
+      "bytes": 32739,
+      "sha256": "6911778f84a5a9ddfd2f6c3a19037f1cc17b6d694bf05a2cb3d835cde7c4d1c7"
+    },
+    {
+      "path": "attempt1/macos-311-job-120979908153.json",
+      "bytes": 4786,
+      "sha256": "3a066ca42c7f655d2f59019818328deb96923867f88060fff757bfeba9d3cc07"
+    },
+    {
+      "path": "attempt1/macos-311-job-120979908153.log",
+      "bytes": 178139,
+      "sha256": "02d52baded12b40a48510a01fe20123cb05392aaf2d1535f433b8c1491f25b09"
+    },
+    {
+      "path": "attempt1/macos-311-summary-pending.json",
+      "bytes": 5472,
+      "sha256": "f5c62629708c6f36d1a84eafe7aa9c827cfca1ad069312c6761127a08e6eb920"
+    },
+    {
+      "path": "attempt1/macos-311-upload-failure-triage.json",
+      "bytes": 2717,
+      "sha256": "bea9470f598c15dcbe86a74c0aaa54a76cfdc916fb51a45d51c7529894de56ea"
+    },
+    {
+      "path": "attempt1/macos-312-job-120979908130.json",
+      "bytes": 4786,
+      "sha256": "8b23300a0e8b09b2c6f75a2edb02dce7640ede7ce13318ac3919c23d134ef56e"
+    },
+    {
+      "path": "attempt1/macos-312-job-120979908130.log",
+      "bytes": 179660,
+      "sha256": "213c5e7616f5faa91ee715b2c33b39f677a1c298bb2339861c6a3da33aa2c25d"
+    },
+    {
+      "path": "attempt1/macos-312-pytest-results.xml",
+      "bytes": 2407533,
+      "sha256": "48e5d119bb7c2ee7f9c995e7f23fe24b097dd6ac2ade84461f8da93e0be2516c"
+    },
+    {
+      "path": "attempt1/macos-312-summary.json",
+      "bytes": 6820,
+      "sha256": "ae7711c847a2986586b7b99076af9fdf6f8a5679ebe9f1b8dac6bf5b0e31d398"
+    },
+    {
+      "path": "attempt1/monitor-plan.json",
+      "bytes": 308,
+      "sha256": "9d7b9025715a02a759ca61a07dded80720a8591f9606745a9980fd0da038f0a3"
+    },
+    {
+      "path": "attempt1/observer-stop-record.json",
+      "bytes": 536,
+      "sha256": "9ed48fb7d7d55c2c013a6217bd294c86057dc373b80fff97cb9e358b9e03d789"
+    },
+    {
+      "path": "attempt1/snapshot-manifest.json",
+      "bytes": 9261,
+      "sha256": "0c3b6fa7ae78dda090df9d6f0d639ad6530a13d6e4fecdfab41c0b0039ff6448"
+    },
+    {
+      "path": "attempt1/ubuntu-311-job-120979908190.json",
+      "bytes": 4788,
+      "sha256": "64dce3104a163d46ff3bd3732e8405268c5d7413071a71ef59c13c13df266711"
+    },
+    {
+      "path": "attempt1/ubuntu-311-job-120979908190.log",
+      "bytes": 177793,
+      "sha256": "8dfb11df5a87f7dffa5e0aaf67dd9c27c04622b7fe4f0a610dc6e4d6ae0fcb7c"
+    },
+    {
+      "path": "attempt1/ubuntu-311-pytest-results.xml",
+      "bytes": 2409877,
+      "sha256": "051a4068ef6c75fae6b9f7044215ebaf7dbc2b8bdb4d0fc2123c3ee26006fe57"
+    },
+    {
+      "path": "attempt1/ubuntu-311-summary.json",
+      "bytes": 6771,
+      "sha256": "5e3b5310981a29c8e34a0ae0cabe4fcd02a63beb28ebc5ed9b814c3d436e2a6c"
+    },
+    {
+      "path": "attempt1/ubuntu-312-job-120979908000.json",
+      "bytes": 4788,
+      "sha256": "4826343c990acd35119fca2b683b331b38b9073bf848eaada59444d9ac4f5235"
+    },
+    {
+      "path": "attempt1/ubuntu-312-job-120979908000.log",
+      "bytes": 177898,
+      "sha256": "8f5d9a3a40b891dacf69541edbe1dfc8afea10d77c2eea5367285051ec388554"
+    },
+    {
+      "path": "attempt1/ubuntu-312-pytest-results.xml",
+      "bytes": 2409884,
+      "sha256": "1f30646f21ebdd1cf52ff9e374539fe25ce994b2b322ad29248d5d60fcdd28e9"
+    },
+    {
+      "path": "attempt1/ubuntu-312-summary.json",
+      "bytes": 6771,
+      "sha256": "0309a1f71edd5a21494d76c2cfff17ef27758ce2f7631e72e5728045257a4e52"
+    },
+    {
+      "path": "attempt1/windows-311-job-120979908081.json",
+      "bytes": 4805,
+      "sha256": "292bc2f311f7f6e163b7ea23d32e1a8a15903976134704735f70adb424a699b5"
+    },
+    {
+      "path": "attempt1/windows-311-job-120979908081.log",
+      "bytes": 80568,
+      "sha256": "f55d84f3a5725407b64e82a9a5cae01c3d4f1523fdc47c5f2d179fbe8a312726"
+    },
+    {
+      "path": "attempt1/windows-311-summary.json",
+      "bytes": 5502,
+      "sha256": "d13e7f9092bf600c3ab0649602936ee66e1bd0eaee94859e061a7a2960e2db20"
+    },
+    {
+      "path": "attempt1/windows-312-job-120979908151.json",
+      "bytes": 4805,
+      "sha256": "892af0d8fdfb055d8d464914758cda3e12b3a7301cd94229ba7beda6e51108f4"
+    },
+    {
+      "path": "attempt1/windows-312-job-120979908151.log",
+      "bytes": 78954,
+      "sha256": "b4307057c941264abe38b91789d0477d3348a9a9a7aafea6a02f1264172e24e5"
+    },
+    {
+      "path": "attempt1/windows-312-summary.json",
+      "bytes": 5502,
+      "sha256": "ffd2977f55d496655c98f9c1bc223cbaec85fd6c4c072370aebe9ac01061560a"
+    },
+    {
+      "path": "attempt2/artifacts-latest.json",
+      "bytes": 3626,
+      "sha256": "01de312210c188f4b922d6b849e60de0b54a13c1b46cefedfdd087a26b5bb8d1"
+    },
+    {
+      "path": "attempt2/completed-summary.json",
+      "bytes": 7305,
+      "sha256": "5d334eb06afccae8e5745ae9437baf4a1a2c9dab06034a828c14e6addfb870a6"
+    },
+    {
+      "path": "attempt2/final-run.json",
+      "bytes": 13073,
+      "sha256": "e2f44f057a5303d417c93e273b1164de977fc0061f3f17398110ed5ed0359abe"
+    },
+    {
+      "path": "attempt2/inherited-successes.json",
+      "bytes": 1359,
+      "sha256": "50ee9a30498cd7e1f4da3af169aabef80402933c5b5db050da1bb73cdb36d9a6"
+    },
+    {
+      "path": "attempt2/initial-unfiltered-jobs.json",
+      "bytes": 21891,
+      "sha256": "f6d00c18a3b681f0dda4d3f45eaa1516eac7cead1056524a0990fd3253bb9b49"
+    },
+    {
+      "path": "attempt2/jobs-full-latest.json",
+      "bytes": 32754,
+      "sha256": "139ad0e8b35a690bcc0d4a9fe144d542ef52e3379f447a693afc123b1a900ab0"
+    },
+    {
+      "path": "attempt2/jobs-latest.json",
+      "bytes": 5482,
+      "sha256": "ebfb59f26f831fae418845ccd665f31532ac75ed2a4ea93658e138a3051ddb7b"
+    },
+    {
+      "path": "attempt2/macos-311-job-120994485852.json",
+      "bytes": 4786,
+      "sha256": "454df2766f98bb6ed03d825d391359b5bf840e664106732f8fafaa1faaddbb55"
+    },
+    {
+      "path": "attempt2/macos-311-job-120994485852.log",
+      "bytes": 178655,
+      "sha256": "69b2fad6edfd72fce5d2e6752c5f978caab5de5c56d698ec78a6a4fae762e776"
+    },
+    {
+      "path": "attempt2/macos-311-pytest-results.xml",
+      "bytes": 2407531,
+      "sha256": "bf22a930c7a22a5866ebbdfe0d6d1f14c13cfc606d6d261140eb4eb70c85ae89"
+    },
+    {
+      "path": "attempt2/macos-311-summary.json",
+      "bytes": 6857,
+      "sha256": "28a948010be0dca2971cbccd2f1d7c032d87742c7ff2ef2e45c25c5fd920ce97"
+    },
+    {
+      "path": "attempt2/monitor-plan.json",
+      "bytes": 766,
+      "sha256": "651aded3c47bb83f5c04f6f265b6a3e2380ccd21ef5da66e90ce2bc065e170fc"
+    },
+    {
+      "path": "attempt2/observer-inventory-mismatch.json",
+      "bytes": 504,
+      "sha256": "04762a76a2220f56ac40586a97413ad469942db9704234228d74b5516dad90a3"
+    },
+    {
+      "path": "retry/retry-request.json",
+      "bytes": 617,
+      "sha256": "d25cbff43b11237ee32ed455d7a39c54e1695551a98240c8e79a9032a4164071"
+    },
+    {
+      "path": "retry/retry-request.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "retry/retry-request.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "review/ci-attempt-lineage-readonly-review.json",
+      "bytes": 16064,
+      "sha256": "b77a96435edd638dfb52c247215e2d4775d440c51394fd6b924c03bdc2b280eb"
+    },
+    {
+      "path": "review/ci-attempt-lineage-readonly-review.md",
+      "bytes": 4095,
+      "sha256": "038b3a8909858da0c0ce03161f48f98b0cb0110fb2cfd9ab521f59398b31d7c0"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+name: Windows runtime diagnostics
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Experimental full runtime diagnostic / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package
+        run: python -m pip install -e ".[dev]"
+
+      - name: Compile sources
+        run: python -m compileall -q minicode tests
+
+      - name: Lint (ruff)
+        run: |
+          python -m pip install ruff
+          python -m ruff check minicode/ --select=E,F --ignore=E501
+
+      - name: Restore pinned test and replay inputs
+        run: python scripts/restore_archived_artifacts.py --manifest artifacts/archives/governance-pinned-inputs-2026-10-24/manifest.json --restore
+
+      - name: Run deterministic agent quality gate
+        run: python scripts/evaluate_agent_quality.py --profile current
+
+      - name: Check portfolio documentation links
+        run: python -m pytest tests/test_portfolio_document_links.py -q
+
+      - name: Run packaging smoke tests
+        run: python -m pytest tests/test_packaging.py -q
+
+      - name: Verify committed archive package
+        run: python scripts/check_clean_archive_package.py
+
+      - name: Run complete native Windows diagnostics
+        # Changes per CI run, remains identical across its OS/Python matrix and
+        # retries, and is printed by pytest-randomly for exact reproduction.
+        env:
+          PYTEST_RANDOMLY_SEED: ${{ github.run_number }}
+        run: python -m pytest -ra --randomly-seed=${{ env.PYTEST_RANDOMLY_SEED }} --junitxml=pytest-results.xml
+
+      - name: State diagnostic boundary
+        if: always()
+        shell: pwsh
+        run: |
+          'This is the complete native Windows runtime diagnostic. Failures remain failures; this workflow is outside the supported Linux/macOS runtime acceptance policy. Packaging success does not imply full runtime support. See docs/platform-support.md.' >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-windows-diagnostic-py${{ matrix.python-version }}-seed-${{ github.run_number }}
+          path: pytest-results.xml
+          if-no-files-found: ignore

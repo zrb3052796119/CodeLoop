@@ -1,0 +1,11 @@
+# r3 freeze input review
+
+GO for the frozen-input binding, with no new performance or acceptance claim. The reviewer authored the r3 portable preparation and is independent of root's freeze invocation, not independent of that earlier package authorship. Root separately reviewed the prepared package.
+
+The r2 and r3 frozen manifests have exactly four changed fields: `createdAt`, `taskSha256`, `studyDesignSha256`, and `frozenCodeArchiveSha256`. All remaining fields are equal, including production and harness identity, model and routes, temperature, role limits, economic/time limits, pricing, arms, repetitions, exact 32-cell order, oracle support identity and analysis plan. The registration-to-expanded-design-to-frozen-input SHA chain is verified for the explicit r3 registration. The existing reporter's input-only validators accept r3 and reject the original registration for a study identity mismatch; no report/results path was invoked.
+
+Both ZIPs contain the same 330 member names in the same order and every extracted byte is identical. The only observed member metadata difference is the timestamp of `analysis-plan.md`; that explains the different ZIP SHA without a code/content change. All 329 frozen Python files match current ROOT bytes, and the production/harness aggregate hashes match both manifests. All 999 oracle-support files match the original source copy. Registered role models use the same glm-5.3-flash route with routing overrides disabled; no provider configuration values or secrets were printed.
+
+At review time the new execution directory had no `results.json`, `trials`, `private`, or transport ledger. The root freeze invocation records exit code zero and zero provider calls. This review made zero model, oracle or freeze calls and did not inspect r2 result/transcript files. Earlier preparation-scope exposure remains disclosed in the existing amendment; this review does not erase it or claim whole-process blindness.
+
+The original 153-member preparation manifest and every member were checked unchanged; this review is stored separately. This is an input identity and schema review, not a test of model task success, public-spec validity beyond prior review, or permission to rewrite r2 records. See `freeze-review.json` for exact hashes, changed values and the complete member inventory.

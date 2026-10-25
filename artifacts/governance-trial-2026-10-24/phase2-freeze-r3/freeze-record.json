@@ -1,0 +1,14 @@
+{
+  "classification": "Separate post-start specification-corrected study; not an r2 rerun or pooled result",
+  "registrationSha256": "eaa9645d3a2a39649d1e80c28ae3db39fc3c9bab89f8586e12515378babee5b2",
+  "frozenManifestSha256": "b32718a77f1680cf2d7d465d655a95bdcdcf5c6c745c3d30e1b9e430193d3b01",
+  "preparedExecutionDirectory": "/private/tmp/codeloop-governance-20261024/phase2-r3/prepared/execution",
+  "predecessorManifestSha256": "32dacc257169eff53026a3b8e1663ed68b62ceae1adac118589073921d47d332",
+  "predecessorDisposition": "5 complete retained; 1 interrupted unfinalized; 26 unstarted",
+  "modelCallsBeforePublication": 0,
+  "productionBaseline": "9f9369421486f018c837f84d21bd727aed6ab326",
+  "harnessSource": "8b15640ab14316873596e921a7b6dda116320672",
+  "sourceHeadAtFreeze": "2706e00e6b7e8a5c4bc87226cec242ddc7e47d74",
+  "sourceDirtyAtFreeze": "Documentation and evidence additions only; frozen product/harness unchanged",
+  "plan": "Publish registration/freeze/old-pilot evidence before first call, then execute all32 once. No change to ROOT product or scripts until reporting completes."
+}

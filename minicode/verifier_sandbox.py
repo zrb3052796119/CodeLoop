@@ -61,11 +61,12 @@ class DarwinSeatbeltVerifierSandbox:
         # directory).  Allow metadata-only reads on those ancestor
         # directories themselves — never their subtrees — so such probes
         # succeed without exposing any file contents outside the workspace
-        # and the verifier home.
+        # and the verifier home. Explicitly registered toolchains also need
+        # metadata on their own ancestors when the clone is elsewhere.
         ancestor_literals = " ".join(
             dict.fromkeys(
                 f"(literal {self._literal(str(ancestor))})"
-                for base in (Path(cwd), Path(verifier_home))
+                for base in (Path(cwd), Path(verifier_home), *(Path(root) for root in extra_read_roots))
                 for ancestor in base.resolve(strict=True).parents
                 if ancestor.parent != ancestor
             )

@@ -604,6 +604,9 @@ V41_CHANGED_FILE_REASONS = {
     "minicode/main.py": "skill_routing_semantic_authority",
     "minicode/mcp.py": "skill_routing_semantic_authority",
     "minicode/memory.py": "hybrid_memory_behavior_closure",
+    # The reviewed Windows publication repair closes the owned temporary handle
+    # before replacement. Record this staged delta; do not rewrite v40 hashes.
+    "minicode/memory_authority_publisher.py": "persistent_memory_lifecycle_authority",
     # Curation reserves provider-aware input through the shared model-call
     # transport, which is already part of this staged source closure.
     "minicode/memory_curator_agent.py": "persistent_memory_lifecycle_authority",
@@ -677,6 +680,7 @@ V41_REQUIRED_HYBRID_CLOSURE_FILES = frozenset(
         "minicode/context_compactor.py",
         "minicode/file_review.py",
         "minicode/memory.py",
+        "minicode/memory_authority_publisher.py",
         "minicode/memory_curator_agent.py",
         "minicode/run_events.py",
         "minicode/run_journal.py",

@@ -152,11 +152,19 @@ def check_clean_archive(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "detail": install.stderr[-2000:],
             }
 
+        # -I ignores PYTHONPATH. Select the wheel before the first import and
+        # reject any module supplied by an ambient/editable installation.
         smoke = "\n".join(
             [
-                "import importlib",
+                "import importlib, sys",
+                "from pathlib import Path",
+                f"installed = Path({str(installed)!r}).resolve()",
+                "sys.path.insert(0, str(installed))",
                 f"modules = {list(_REQUIRED_IMPORTS)!r}",
-                "for module in modules: importlib.import_module(module)",
+                "for name in modules:",
+                "    module = importlib.import_module(name)",
+                "    origin = Path(module.__file__).resolve()",
+                "    assert origin.is_relative_to(installed), f'{name}: outside installed wheel: {origin}'",
                 "from minicode.agent_runtime import final_response_text",
                 "assert final_response_text([{'role':'user','content':'x'}, {'role':'tool_result','content':'committed'}]) == 'committed'",
             ]
@@ -164,7 +172,6 @@ def check_clean_archive(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         env = os.environ.copy()
         env.update(
             {
-                "PYTHONPATH": str(installed),
                 "PYTHONNOUSERSITE": "1",
                 "HOME": str(temp / "home"),
                 "USERPROFILE": str(temp / "home"),
@@ -177,15 +184,6 @@ def check_clean_archive(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             cwd=temp,
             env=env,
         )
-        if imported.returncode != 0:
-            # Isolated mode intentionally ignores PYTHONPATH; inject only the
-            # installed target through the script, never the source checkout.
-            isolated_smoke = f"import sys; sys.path.insert(0, {str(installed)!r})\n{smoke}"
-            imported = _run(
-                [sys.executable, "-I", "-c", isolated_smoke],
-                cwd=temp,
-                env=env,
-            )
         if imported.returncode != 0:
             return {
                 "schemaVersion": 1,

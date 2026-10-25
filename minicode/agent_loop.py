@@ -13,7 +13,7 @@ import uuid
 import urllib.error
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from minicode.agent_budget import (
     AgentBudgetExceeded,
@@ -146,12 +146,17 @@ from minicode.reflection_evidence import (
 # 上下文管理集成 (Claude Code-style + Engineering Cybernetics)
 from minicode.context_compactor import (
     ContextCompactor,
+    CompactionResult,
     AutoCompactConfig,
     strip_historical_session_memory,
 )
 from minicode.context_cybernetics import ContextCyberneticsOrchestrator
 from minicode.cost_control import CostControlLoop
 from minicode.memory import MemoryManager
+
+
+if TYPE_CHECKING:
+    from minicode.memory_pipeline import MemoryPipeline
 
 
 class AgentTurnDeadlineExceeded(RuntimeError):
@@ -991,10 +996,9 @@ def _execute_single_tool(
                     _tool_abandoned=abandoned_event,
                     _subagent_mailbox=subagent_mailbox,
                     _subagent_lifecycle=subagent_lifecycle,
-                    _subagent_sessions=subagent_sessions,
                     _todo_state=todo_state,
                     _skill_load_policy=skill_load_policy,
-                ),
+                ).with_subagent_sessions(subagent_sessions),
             ))
             if candidate_before is not None:
                 decision = implementation_candidate_guard.observe_results(
@@ -2100,6 +2104,590 @@ def _append_pending_memory_notice(
     )
 
 
+@dataclass(frozen=True, slots=True)
+class ContextRetention:
+    """Current ledger and completion authority for one transcript transformation.
+
+    Construct at each call site: completion feedback can be replaced or cleared
+    during the turn. This value borrows authority; it does not own its lifetime.
+    """
+
+    ledger: TaskLedger | None
+    active_completion_feedback: ChatMessage | None
+
+    def reconcile(self, candidate: list[ChatMessage]) -> list[ChatMessage]:
+        result = (
+            self.ledger.reconcile(candidate)
+            if self.ledger is not None
+            else list(candidate)
+        )
+        if (self.active_completion_feedback is not None
+                and self.active_completion_feedback not in result):
+            # Restore compacted state ahead of retained history. A previously
+            # delivered decision must never move behind its subsequent results.
+            result = [message for message in result if not message.get("_implementation_completion_feedback")]
+            insert_at = 0
+            while insert_at < len(result) and result[insert_at].get("role") == "system":
+                insert_at += 1
+            result.insert(insert_at, self.active_completion_feedback)
+        return result
+
+
+@dataclass(frozen=True, slots=True)
+class ContextRecovery:
+    """Successful recovery awaiting canonical rebinding and observation.
+
+    The loop must install messages before manager synchronization or any event
+    can interrupt the turn. This record carries only this operation's facts.
+    """
+
+    messages: list[ChatMessage]
+    result: CompactionResult
+    context_operation_id: str | None
+    messages_before: int | None
+    kind: Literal["cybernetic", "compactor"]
+
+
+def _observable_message_count(candidate: list[ChatMessage]) -> int:
+    return sum(not message.get("_task_ledger") for message in candidate)
+
+
+def _prepare_turn_context(
+    current_messages: list[ChatMessage],
+    context_manager: ContextManager,
+    *,
+    retention: ContextRetention,
+    context_compactor: ContextCompactor | None,
+    context_cybernetics: ContextCyberneticsOrchestrator | None,
+    cost_control: CostControlLoop | None,
+    memory_pipeline: MemoryPipeline | None,
+    event_sink: AgentEventSink | None,
+    step: int,
+    tool_error_count: int,
+    last_step_duration_seconds: float,
+) -> None:
+    """Apply pre-request optimization and install guarded output in place."""
+    context_manager.messages = current_messages
+    stats = context_manager.get_stats()
+    logger.info("Context: %d tokens (%.0f%%), %d messages",
+               stats.total_tokens, stats.usage_percentage, stats.messages_count)
+
+    # 运行控制论闭环优化管线 (Sense → Predict → Control → Act → Learn)
+    if context_cybernetics:
+        if cost_control:
+            est_cost = stats.total_tokens * 0.000015
+            adj = cost_control.run(
+                cost_usd=est_cost,
+                total_tokens=stats.total_tokens,
+                total_calls=max(step, 1),
+            )
+            if context_compactor and hasattr(context_compactor, '_tool_budget') and context_compactor._tool_budget:
+                cost_control.apply_to_budget_manager(context_compactor._tool_budget)
+            elif adj and adj.budget_multiplier < 0.8:
+                logger.warning(
+                    "CostControl: budget tightened (mult=%.2f reason=%s) but no compactor active",
+                    adj.budget_multiplier, adj.reason,
+                )
+
+        context_operation_id = _new_context_operation_observation(
+            event_sink
+        )
+        context_messages_before = (
+            _observable_message_count(current_messages)
+            if context_operation_id is not None
+            else None
+        )
+        try:
+            cyber_messages, cyber_result, cyber_action = context_cybernetics.run_cycle(
+                current_messages,
+                error_rate=float(tool_error_count) / max(step, 1) if step > 0 else 0.0,
+                avg_latency=last_step_duration_seconds,
+                turn_id=step,
+            )
+        except ModelCallDeadlineExceeded as exc:
+            raise AgentTurnDeadlineExceeded(str(exc)) from exc
+        if cyber_result and cyber_result.effective:
+            original_messages = list(current_messages)
+            compacted_messages = retention.reconcile(cyber_messages)
+            installed, _memory_ids = _commit_materialized_compaction_memory(
+                cyber_result,
+                memory_pipeline,
+                lambda: current_messages.__setitem__(
+                    slice(None),
+                    compacted_messages,
+                ),
+                lambda: current_messages.__setitem__(
+                    slice(None),
+                    original_messages,
+                ),
+                event_sink=event_sink,
+                context_operation_id=context_operation_id,
+            )
+            if not installed:
+                fallback_messages = (
+                    context_compactor.rejection_fallback_messages(
+                        cyber_result,
+                        original_messages,
+                    )
+                )
+                fallback_messages = retention.reconcile(
+                    fallback_messages
+                )
+                cyber_result.memory_free_fallback = fallback_messages
+                current_messages[:] = fallback_messages
+            _finalize_compaction_materialization_state(
+                cyber_result,
+                context_compactor,
+                installed=installed,
+                original_messages=original_messages,
+                context_cybernetics=context_cybernetics,
+            )
+            if installed:
+                context_manager.messages = current_messages
+                if (
+                    context_operation_id is not None
+                    and context_messages_before is not None
+                ):
+                    emit_context_compaction_safely(
+                        event_sink,
+                        cyber_result,
+                        context_operation_id=context_operation_id,
+                        path="pre_request_cybernetic",
+                        messages_before=context_messages_before,
+                        messages_after=_observable_message_count(
+                            current_messages
+                        ),
+                    )
+                logger.info(
+                    "Cybernetics[%s]: %s intensity=%.2f freed=%d tokens [%s]",
+                    cyber_action.reason if cyber_action else "unknown",
+                    cyber_result.strategy.value,
+                    (
+                        cyber_action.compaction_intensity
+                        if cyber_action
+                        else 0
+                    ),
+                    cyber_result.tokens_freed,
+                    (
+                        cyber_result.summary_text[:80]
+                        if cyber_result.summary_text
+                        else ""
+                    ),
+                )
+            else:
+                context_manager.messages = current_messages
+                cyber_result.success = False
+                cyber_result.error = (
+                    "Memory authority changed before compaction install"
+                )
+                _emit_failed_context_compaction(
+                    event_sink,
+                    cyber_result,
+                    path="pre_request_cybernetic",
+                    context_compactor=context_compactor,
+                    context_operation_id=context_operation_id,
+                )
+        elif cyber_result is not None:
+            _emit_failed_context_compaction(
+                event_sink,
+                cyber_result,
+                context_compactor,
+                path="pre_request_cybernetic",
+                context_operation_id=context_operation_id,
+            )
+    elif context_compactor:
+        context_operation_id = _new_context_operation_observation(
+            event_sink
+        )
+        context_messages_before = (
+            _observable_message_count(current_messages)
+            if context_operation_id is not None
+            else None
+        )
+        try:
+            compaction_result = context_compactor.process_request(
+                current_messages
+            )
+        except ModelCallDeadlineExceeded as exc:
+            raise AgentTurnDeadlineExceeded(str(exc)) from exc
+        if compaction_result.effective:
+            original_messages = list(current_messages)
+            compacted_messages = retention.reconcile(
+                compaction_result.messages
+            )
+            installed, _memory_ids = _commit_materialized_compaction_memory(
+                compaction_result,
+                memory_pipeline,
+                lambda: current_messages.__setitem__(
+                    slice(None),
+                    compacted_messages,
+                ),
+                lambda: current_messages.__setitem__(
+                    slice(None),
+                    original_messages,
+                ),
+                event_sink=event_sink,
+                context_operation_id=context_operation_id,
+            )
+            if not installed:
+                fallback_messages = (
+                    context_compactor.rejection_fallback_messages(
+                        compaction_result,
+                        original_messages,
+                    )
+                )
+                fallback_messages = retention.reconcile(
+                    fallback_messages
+                )
+                compaction_result.memory_free_fallback = fallback_messages
+                current_messages[:] = fallback_messages
+            _finalize_compaction_materialization_state(
+                compaction_result,
+                context_compactor,
+                installed=installed,
+                original_messages=original_messages,
+            )
+            if installed:
+                context_manager.messages = current_messages
+                if (
+                    context_operation_id is not None
+                    and context_messages_before is not None
+                ):
+                    emit_context_compaction_safely(
+                        event_sink,
+                        compaction_result,
+                        context_operation_id=context_operation_id,
+                        path="pre_request_compactor",
+                        messages_before=context_messages_before,
+                        messages_after=_observable_message_count(
+                            current_messages
+                        ),
+                    )
+                logger.info(
+                    "ContextCompactor: %s freed %d tokens [%s]",
+                    compaction_result.strategy.value,
+                    compaction_result.tokens_freed,
+                    compaction_result.summary_text[:80],
+                )
+            else:
+                context_manager.messages = current_messages
+                compaction_result.success = False
+                compaction_result.error = (
+                    "Memory authority changed before compaction install"
+                )
+                _emit_failed_context_compaction(
+                    event_sink,
+                    compaction_result,
+                    path="pre_request_compactor",
+                    context_compactor=context_compactor,
+                    context_operation_id=context_operation_id,
+                )
+        else:
+            _emit_failed_context_compaction(
+                event_sink,
+                context_compactor.last_result,
+                context_compactor,
+                path="pre_request_compactor",
+                context_operation_id=context_operation_id,
+            )
+
+
+def _apply_high_water_compaction(
+    current_messages: list[ChatMessage],
+    *,
+    context_manager: ContextManager | None,
+    retention: ContextRetention,
+    context_compactor: ContextCompactor,
+    memory_pipeline: MemoryPipeline | None,
+    event_sink: AgentEventSink | None,
+    step: int,
+) -> None:
+    """Apply an already-triggered high-water compaction with its error policy."""
+    context_operation_id = _new_context_operation_observation(
+        event_sink
+    )
+    context_messages_before = (
+        _observable_message_count(current_messages)
+        if context_operation_id is not None
+        else None
+    )
+    try:
+        in_loop_result = context_compactor.process_request(
+            current_messages,
+            enable_tool_budget=False,
+        )
+        if in_loop_result.effective:
+            original_messages = list(current_messages)
+            compacted_messages = retention.reconcile(
+                in_loop_result.messages
+            )
+            installed, _memory_ids = (
+                _commit_materialized_compaction_memory(
+                    in_loop_result,
+                    memory_pipeline,
+                    lambda target=current_messages,
+                    candidate=compacted_messages: target.__setitem__(
+                        slice(None),
+                        candidate,
+                    ),
+                    lambda target=current_messages,
+                    original=original_messages: target.__setitem__(
+                        slice(None),
+                        original,
+                    ),
+                    event_sink=event_sink,
+                    context_operation_id=context_operation_id,
+                )
+            )
+            if not installed:
+                fallback_messages = (
+                    context_compactor.rejection_fallback_messages(
+                        in_loop_result,
+                        original_messages,
+                    )
+                )
+                fallback_messages = retention.reconcile(
+                    fallback_messages
+                )
+                in_loop_result.memory_free_fallback = (
+                    fallback_messages
+                )
+                current_messages[:] = fallback_messages
+            _finalize_compaction_materialization_state(
+                in_loop_result,
+                context_compactor,
+                installed=installed,
+                original_messages=original_messages,
+            )
+            if installed:
+                if context_manager is not None:
+                    context_manager.messages = current_messages
+                if (
+                    context_operation_id is not None
+                    and context_messages_before is not None
+                ):
+                    emit_context_compaction_safely(
+                        event_sink,
+                        in_loop_result,
+                        step=step,
+                        context_operation_id=context_operation_id,
+                        path="in_loop_compactor",
+                        messages_before=context_messages_before,
+                        messages_after=_observable_message_count(
+                            current_messages
+                        ),
+                    )
+                logger.info(
+                    "InLoopCompact[%d]: freed %d tokens [%s]",
+                    step,
+                    in_loop_result.tokens_freed,
+                    in_loop_result.strategy.value,
+                )
+            else:
+                if context_manager is not None:
+                    context_manager.messages = current_messages
+                in_loop_result.success = False
+                in_loop_result.error = (
+                    "Memory authority changed before compaction install"
+                )
+                _emit_failed_context_compaction(
+                    event_sink,
+                    in_loop_result,
+                    context_compactor,
+                    path="in_loop_compactor",
+                    step=step,
+                    context_operation_id=context_operation_id,
+                )
+        else:
+            _emit_failed_context_compaction(
+                event_sink,
+                context_compactor.last_result,
+                context_compactor,
+                path="in_loop_compactor",
+                step=step,
+                context_operation_id=context_operation_id,
+            )
+    except TurnCancellationRequested:
+        raise
+    except ModelCallDeadlineExceeded as exc:
+        raise AgentTurnDeadlineExceeded(str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 - never break the loop
+        logger.warning("In-loop compaction failed safely: %s", exc)
+
+
+def _recover_overflow_context(
+    current_messages: list[ChatMessage],
+    *,
+    retention: ContextRetention,
+    context_compactor: ContextCompactor | None,
+    context_cybernetics: ContextCyberneticsOrchestrator | None,
+    event_sink: AgentEventSink | None,
+    step: int,
+    error_str: str,
+) -> ContextRecovery | None:
+    """Recover a classified overflow, retaining the original reactive quota."""
+    if context_cybernetics:
+        context_operation_id = _new_context_operation_observation(
+            event_sink
+        )
+        recovery_messages_before = (
+            _observable_message_count(current_messages)
+            if context_operation_id is not None
+            else None
+        )
+        if context_operation_id is not None:
+            emit_recovery_started_safely(
+                event_sink,
+                context_operation_id=context_operation_id,
+                kind="cybernetic",
+                step=step,
+            )
+        recovered_messages, recovery_result = context_cybernetics.try_reactive_recover(current_messages, error_str)
+        if recovery_result and recovery_result.effective:
+            return ContextRecovery(
+                messages=retention.reconcile(recovered_messages),
+                result=recovery_result,
+                context_operation_id=context_operation_id,
+                messages_before=recovery_messages_before,
+                kind="cybernetic",
+            )
+        if (
+            context_operation_id is not None
+            and recovery_messages_before is not None
+        ):
+            emit_recovery_completed_safely(
+                event_sink,
+                recovery_result,
+                step=step,
+                context_operation_id=context_operation_id,
+                kind="cybernetic",
+                messages_before=recovery_messages_before,
+                messages_after=_observable_message_count(
+                    recovered_messages
+                ),
+            )
+    elif context_compactor:
+        context_operation_id = _new_context_operation_observation(
+            event_sink
+        )
+        recovery_messages_before = (
+            _observable_message_count(current_messages)
+            if context_operation_id is not None
+            else None
+        )
+        if context_operation_id is not None:
+            emit_recovery_started_safely(
+                event_sink,
+                context_operation_id=context_operation_id,
+                kind="compactor",
+                step=step,
+            )
+        recovery_result = context_compactor.reactive_recover(current_messages, error_str)
+        if recovery_result and recovery_result.effective:
+            return ContextRecovery(
+                messages=retention.reconcile(recovery_result.messages),
+                result=recovery_result,
+                context_operation_id=context_operation_id,
+                messages_before=recovery_messages_before,
+                kind="compactor",
+            )
+        if (
+            context_operation_id is not None
+            and recovery_messages_before is not None
+        ):
+            emit_recovery_completed_safely(
+                event_sink,
+                recovery_result,
+                step=step,
+                context_operation_id=context_operation_id,
+                kind="compactor",
+                messages_before=recovery_messages_before,
+                messages_after=recovery_messages_before,
+            )
+    return None
+
+def _complete_context_recovery(
+    recovery: ContextRecovery,
+    context_manager: ContextManager | None,
+    event_sink: AgentEventSink | None,
+    step: int,
+) -> None:
+    """Observe only after the loop has rebound its canonical transcript."""
+    if context_manager:
+        context_manager.messages = recovery.messages
+    if recovery.context_operation_id is not None and recovery.messages_before is not None:
+        emit_context_compaction_safely(
+            event_sink,
+            recovery.result,
+            step=step,
+            context_operation_id=recovery.context_operation_id,
+            path=f"reactive_{recovery.kind}",
+            messages_before=recovery.messages_before,
+            messages_after=_observable_message_count(recovery.messages),
+        )
+        emit_recovery_completed_safely(
+            event_sink,
+            recovery.result,
+            step=step,
+            context_operation_id=recovery.context_operation_id,
+            kind=recovery.kind,
+            messages_before=recovery.messages_before,
+            messages_after=_observable_message_count(recovery.messages),
+        )
+    logger.info(
+        "Cybernetics Reactive recovered: freed %d tokens"
+        if recovery.kind == "cybernetic"
+        else "Reactive Compact recovered: freed %d tokens",
+        recovery.result.tokens_freed,
+    )
+
+
+def _revalidate_prompt_memory(
+    current_messages: list[ChatMessage],
+    context_manager: ContextManager | None,
+    memory_pipeline: MemoryPipeline | None,
+) -> None:
+    """Apply the latest Memory authority immediately before a model call."""
+    revalidate = getattr(memory_pipeline, "revalidate_prompt_messages", None)
+    if not callable(revalidate):
+        return
+    sanitized = revalidate(current_messages)
+    if sanitized == current_messages:
+        return
+    current_messages[:] = sanitized
+    if context_manager is not None:
+        context_manager.messages = list(current_messages)
+
+
+def _apply_predictive_compaction(
+    current_messages: list[ChatMessage],
+    context_manager: ContextManager | None,
+    context_compactor: ContextCompactor | None,
+    retention: ContextRetention,
+) -> None:
+    """Use proactive compaction without consuming reactive retry authority."""
+    # Proactive compaction: run the pre-request
+    # pipeline (not the reactive engine, whose
+    # retry quota is reserved for real API
+    # overflow errors) and apply its output.
+    if not context_compactor:
+        return
+    compacted = context_compactor.compact_messages(
+        current_messages, force=True
+    )
+    if compacted is not None and len(compacted) < len(current_messages):
+        previous_count = len(current_messages)
+        current_messages[:] = retention.reconcile(
+            compacted
+        )
+        if context_manager is not None:
+            context_manager.messages = list(current_messages)
+        logger.info(
+            "Predictive: compaction applied %d -> %d messages",
+            previous_count, len(compacted),
+        )
+
+
 def run_agent_turn(
     *,
     model: ModelAdapter,
@@ -2230,29 +2818,7 @@ def run_agent_turn(
         implementation_completion_feedback = completion_evidence_views.project_message(
             implementation_completion_feedback)
 
-    def reconcile_task_ledger(
-        candidate: list[dict[str, Any]],
-    ) -> list[dict[str, Any]]:
-        result = (
-            task_ledger.reconcile(candidate)
-            if task_ledger is not None
-            else list(candidate)
-        )
-        if (implementation_completion_feedback is not None
-                and implementation_completion_feedback not in result):
-            # Restore compacted state ahead of retained history. A previously
-            # delivered decision must never move behind its subsequent results.
-            result = [message for message in result if not message.get("_implementation_completion_feedback")]
-            insert_at = 0
-            while insert_at < len(result) and result[insert_at].get("role") == "system":
-                insert_at += 1
-            result.insert(insert_at, implementation_completion_feedback)
-        return result
-
-    def observable_message_count(candidate: list[dict[str, Any]]) -> int:
-        return sum(not message.get("_task_ledger") for message in candidate)
-
-    current_messages = reconcile_task_ledger(current_messages)
+    current_messages = ContextRetention(task_ledger, implementation_completion_feedback).reconcile(current_messages)
     if agent_budget is None and runtime is not None:
         agent_budget = AgentTurnBudget.from_runtime(runtime)
     if subagent_mailbox is None:
@@ -2872,229 +3438,17 @@ def run_agent_turn(
 
     # 检查上下文状态 + 运行 Claude Code-style 预请求优化管线
     if context_manager:
-        context_manager.messages = current_messages
-        stats = context_manager.get_stats()
-        logger.info("Context: %d tokens (%.0f%%), %d messages",
-                   stats.total_tokens, stats.usage_percentage, stats.messages_count)
-
-        # 运行控制论闭环优化管线 (Sense → Predict → Control → Act → Learn)
-        if context_cybernetics:
-            if cost_control:
-                est_cost = stats.total_tokens * 0.000015
-                adj = cost_control.run(
-                    cost_usd=est_cost,
-                    total_tokens=stats.total_tokens,
-                    total_calls=max(step, 1),
-                )
-                if context_compactor and hasattr(context_compactor, '_tool_budget') and context_compactor._tool_budget:
-                    cost_control.apply_to_budget_manager(context_compactor._tool_budget)
-                elif adj and adj.budget_multiplier < 0.8:
-                    logger.warning(
-                        "CostControl: budget tightened (mult=%.2f reason=%s) but no compactor active",
-                        adj.budget_multiplier, adj.reason,
-                    )
-
-            context_operation_id = _new_context_operation_observation(
-                event_sink
-            )
-            context_messages_before = (
-                observable_message_count(current_messages)
-                if context_operation_id is not None
-                else None
-            )
-            try:
-                cyber_messages, cyber_result, cyber_action = context_cybernetics.run_cycle(
-                    current_messages,
-                    error_rate=float(tool_error_count) / max(step, 1) if step > 0 else 0.0,
-                    avg_latency=last_step_duration_seconds,
-                    turn_id=step,
-                )
-            except ModelCallDeadlineExceeded as exc:
-                raise AgentTurnDeadlineExceeded(str(exc)) from exc
-            if cyber_result and cyber_result.effective:
-                original_messages = list(current_messages)
-                compacted_messages = reconcile_task_ledger(cyber_messages)
-                installed, _memory_ids = _commit_materialized_compaction_memory(
-                    cyber_result,
-                    getattr(orch, "memory_pipeline", None) if orch else None,
-                    lambda: current_messages.__setitem__(
-                        slice(None),
-                        compacted_messages,
-                    ),
-                    lambda: current_messages.__setitem__(
-                        slice(None),
-                        original_messages,
-                    ),
-                    event_sink=event_sink,
-                    context_operation_id=context_operation_id,
-                )
-                if not installed:
-                    fallback_messages = (
-                        context_compactor.rejection_fallback_messages(
-                            cyber_result,
-                            original_messages,
-                        )
-                    )
-                    fallback_messages = reconcile_task_ledger(
-                        fallback_messages
-                    )
-                    cyber_result.memory_free_fallback = fallback_messages
-                    current_messages[:] = fallback_messages
-                _finalize_compaction_materialization_state(
-                    cyber_result,
-                    context_compactor,
-                    installed=installed,
-                    original_messages=original_messages,
-                    context_cybernetics=context_cybernetics,
-                )
-                if installed:
-                    context_manager.messages = current_messages
-                    if (
-                        context_operation_id is not None
-                        and context_messages_before is not None
-                    ):
-                        emit_context_compaction_safely(
-                            event_sink,
-                            cyber_result,
-                            context_operation_id=context_operation_id,
-                            path="pre_request_cybernetic",
-                            messages_before=context_messages_before,
-                            messages_after=observable_message_count(
-                                current_messages
-                            ),
-                        )
-                    logger.info(
-                        "Cybernetics[%s]: %s intensity=%.2f freed=%d tokens [%s]",
-                        cyber_action.reason if cyber_action else "unknown",
-                        cyber_result.strategy.value,
-                        (
-                            cyber_action.compaction_intensity
-                            if cyber_action
-                            else 0
-                        ),
-                        cyber_result.tokens_freed,
-                        (
-                            cyber_result.summary_text[:80]
-                            if cyber_result.summary_text
-                            else ""
-                        ),
-                    )
-                else:
-                    context_manager.messages = current_messages
-                    cyber_result.success = False
-                    cyber_result.error = (
-                        "Memory authority changed before compaction install"
-                    )
-                    _emit_failed_context_compaction(
-                        event_sink,
-                        cyber_result,
-                        path="pre_request_cybernetic",
-                        context_compactor=context_compactor,
-                        context_operation_id=context_operation_id,
-                    )
-            elif cyber_result is not None:
-                _emit_failed_context_compaction(
-                    event_sink,
-                    cyber_result,
-                    context_compactor,
-                    path="pre_request_cybernetic",
-                    context_operation_id=context_operation_id,
-                )
-        elif context_compactor:
-            context_operation_id = _new_context_operation_observation(
-                event_sink
-            )
-            context_messages_before = (
-                observable_message_count(current_messages)
-                if context_operation_id is not None
-                else None
-            )
-            try:
-                compaction_result = context_compactor.process_request(
-                    current_messages
-                )
-            except ModelCallDeadlineExceeded as exc:
-                raise AgentTurnDeadlineExceeded(str(exc)) from exc
-            if compaction_result.effective:
-                original_messages = list(current_messages)
-                compacted_messages = reconcile_task_ledger(
-                    compaction_result.messages
-                )
-                installed, _memory_ids = _commit_materialized_compaction_memory(
-                    compaction_result,
-                    getattr(orch, "memory_pipeline", None) if orch else None,
-                    lambda: current_messages.__setitem__(
-                        slice(None),
-                        compacted_messages,
-                    ),
-                    lambda: current_messages.__setitem__(
-                        slice(None),
-                        original_messages,
-                    ),
-                    event_sink=event_sink,
-                    context_operation_id=context_operation_id,
-                )
-                if not installed:
-                    fallback_messages = (
-                        context_compactor.rejection_fallback_messages(
-                            compaction_result,
-                            original_messages,
-                        )
-                    )
-                    fallback_messages = reconcile_task_ledger(
-                        fallback_messages
-                    )
-                    compaction_result.memory_free_fallback = fallback_messages
-                    current_messages[:] = fallback_messages
-                _finalize_compaction_materialization_state(
-                    compaction_result,
-                    context_compactor,
-                    installed=installed,
-                    original_messages=original_messages,
-                )
-                if installed:
-                    context_manager.messages = current_messages
-                    if (
-                        context_operation_id is not None
-                        and context_messages_before is not None
-                    ):
-                        emit_context_compaction_safely(
-                            event_sink,
-                            compaction_result,
-                            context_operation_id=context_operation_id,
-                            path="pre_request_compactor",
-                            messages_before=context_messages_before,
-                            messages_after=observable_message_count(
-                                current_messages
-                            ),
-                        )
-                    logger.info(
-                        "ContextCompactor: %s freed %d tokens [%s]",
-                        compaction_result.strategy.value,
-                        compaction_result.tokens_freed,
-                        compaction_result.summary_text[:80],
-                    )
-                else:
-                    context_manager.messages = current_messages
-                    compaction_result.success = False
-                    compaction_result.error = (
-                        "Memory authority changed before compaction install"
-                    )
-                    _emit_failed_context_compaction(
-                        event_sink,
-                        compaction_result,
-                        path="pre_request_compactor",
-                        context_compactor=context_compactor,
-                        context_operation_id=context_operation_id,
-                    )
-            else:
-                _emit_failed_context_compaction(
-                    event_sink,
-                    context_compactor.last_result,
-                    context_compactor,
-                    path="pre_request_compactor",
-                    context_operation_id=context_operation_id,
-                )
+        _prepare_turn_context(
+            current_messages, context_manager,
+            retention=ContextRetention(task_ledger, implementation_completion_feedback),
+            context_compactor=context_compactor,
+            context_cybernetics=context_cybernetics,
+            cost_control=cost_control,
+            memory_pipeline=getattr(orch, "memory_pipeline", None) if orch else None,
+            event_sink=event_sink, step=step,
+            tool_error_count=tool_error_count,
+            last_step_duration_seconds=last_step_duration_seconds,
+        )
 
     owns_subagent_lifecycle = subagent_lifecycle is None
     if subagent_lifecycle is None:
@@ -3178,23 +3532,6 @@ def run_agent_turn(
                 on_assistant_message(content)
             except BaseException:  # committed receipts must remain deliverable
                 logger.warning("Failed to present interrupted parent status", exc_info=True)
-
-    def _revalidate_model_visible_memory() -> None:
-        """Apply the latest Memory authority immediately before a model call."""
-        pipeline = (
-            getattr(orch, "memory_pipeline", None)
-            if orch is not None
-            else None
-        )
-        revalidate = getattr(pipeline, "revalidate_prompt_messages", None)
-        if not callable(revalidate):
-            return
-        sanitized = revalidate(current_messages)
-        if sanitized == current_messages:
-            return
-        current_messages[:] = sanitized
-        if context_manager is not None:
-            context_manager.messages = list(current_messages)
 
     completion_policy = (
         TurnCompletionPolicy(
@@ -3470,7 +3807,10 @@ def run_agent_turn(
         try:
             raise_if_cancelled(cancellation_token)
             raise_if_deadline_exceeded()
-            _revalidate_model_visible_memory()
+            _revalidate_prompt_memory(
+                current_messages, context_manager,
+                getattr(orch, "memory_pipeline", None) if orch is not None else None,
+            )
             closing_messages = implementation_request_messages()
             closing_options = ({
                 "disable_tools": True,
@@ -3909,7 +4249,7 @@ def run_agent_turn(
         current_messages[:] = [message for message in current_messages
             if not message.get("_implementation_completion_feedback")]
         current_messages.append(implementation_completion_feedback)
-        current_messages[:] = reconcile_task_ledger(current_messages)
+        current_messages[:] = ContextRetention(task_ledger, implementation_completion_feedback).reconcile(current_messages)
         if context_manager is not None:
             context_manager.messages = list(current_messages)
         return "stop" if review_budget_stopped or decision.get("canContinue") is False else "retry"
@@ -4041,7 +4381,7 @@ def run_agent_turn(
                                 and len(compacted) < len(current_messages)
                             ):
                                 previous_count = len(current_messages)
-                                current_messages[:] = reconcile_task_ledger(
+                                current_messages[:] = ContextRetention(task_ledger, implementation_completion_feedback).reconcile(
                                     compacted
                                 )
                                 if context_manager is not None:
@@ -4133,51 +4473,29 @@ def run_agent_turn(
                                 action.recommended_action, action.urgency,
                                 getattr(action, 'horizon', 'unknown'),
                             )
-                            # Execute predictive actions via dispatch
-                            def _predictive_compaction() -> None:
-                                # Proactive compaction: run the pre-request
-                                # pipeline (not the reactive engine, whose
-                                # retry quota is reserved for real API
-                                # overflow errors) and apply its output.
-                                if not context_compactor:
-                                    return
-                                compacted = context_compactor.compact_messages(
-                                    current_messages, force=True
-                                )
-                                if compacted is not None and len(compacted) < len(current_messages):
-                                    previous_count = len(current_messages)
-                                    current_messages[:] = reconcile_task_ledger(
-                                        compacted
+                            # Each action has explicit dependencies and retains
+                            # the original cancellation/deadline propagation.
+                            try:
+                                if action.recommended_action == "trigger_compaction":
+                                    _apply_predictive_compaction(
+                                        current_messages, context_manager, context_compactor,
+                                        ContextRetention(task_ledger, implementation_completion_feedback),
                                     )
-                                    if context_manager is not None:
-                                        context_manager.messages = list(current_messages)
+                                elif action.recommended_action == "enable_safe_mode":
                                     logger.info(
-                                        "Predictive: compaction applied %d -> %d messages",
-                                        previous_count, len(compacted),
+                                        "Predictive: safe_mode recommended (reduce concurrency, extend timeouts)"
                                     )
-
-                            dispatch: dict[str, Callable[[], None]] = {
-                                "trigger_compaction": _predictive_compaction,
-                                "enable_safe_mode": lambda: logger.info(
-                                    "Predictive: safe_mode recommended (reduce concurrency, extend timeouts)"
-                                ),
-                                "reduce_concurrency": lambda: logger.info(
-                                    "Predictive: reduce_concurrency recommended"
-                                ),
-                            }
-                            handler = dispatch.get(action.recommended_action)
-                            if handler:
-                                try:
-                                    handler()
-                                except TurnCancellationRequested:
-                                    raise
-                                except ModelCallDeadlineExceeded as exc:
-                                    raise AgentTurnDeadlineExceeded(str(exc)) from exc
-                                except Exception as exc:
-                                    logger.warning(
-                                        "Predictive action %s failed: %s",
-                                        action.recommended_action, exc,
-                                    )
+                                elif action.recommended_action == "reduce_concurrency":
+                                    logger.info("Predictive: reduce_concurrency recommended")
+                            except TurnCancellationRequested:
+                                raise
+                            except ModelCallDeadlineExceeded as exc:
+                                raise AgentTurnDeadlineExceeded(str(exc)) from exc
+                            except Exception as exc:
+                                logger.warning(
+                                    "Predictive action %s failed: %s",
+                                    action.recommended_action, exc,
+                                )
                             # Also run self-healing for corroboration
                             if self_healing_engine:
                                 healing_actions = self_healing_engine.detect_and_heal({
@@ -4220,7 +4538,10 @@ def run_agent_turn(
             try:
                 raise_if_cancelled(cancellation_token)
                 raise_if_deadline_exceeded()
-                _revalidate_model_visible_memory()
+                _revalidate_prompt_memory(
+                    current_messages, context_manager,
+                    getattr(orch, "memory_pipeline", None) if orch is not None else None,
+                )
                 request_messages = current_messages
                 if implementation_phases is not None:
                     if (isinstance(implementation_feedback, ExecutorCheckCapability)
@@ -4735,142 +5056,18 @@ def run_agent_turn(
                 # Reactive Compact: 控制论恢复路径
                 error_str = str(error).lower()
                 needs_recovery = _looks_like_context_overflow(error_str)
-                if context_cybernetics and needs_recovery:
-                    context_operation_id = _new_context_operation_observation(
-                        event_sink
+                if needs_recovery:
+                    recovery = _recover_overflow_context(
+                        current_messages,
+                        retention=ContextRetention(task_ledger, implementation_completion_feedback),
+                        context_compactor=context_compactor,
+                        context_cybernetics=context_cybernetics,
+                        event_sink=event_sink, step=step, error_str=error_str,
                     )
-                    recovery_messages_before = (
-                        observable_message_count(current_messages)
-                        if context_operation_id is not None
-                        else None
-                    )
-                    if context_operation_id is not None:
-                        emit_recovery_started_safely(
-                            event_sink,
-                            context_operation_id=context_operation_id,
-                            kind="cybernetic",
-                            step=step,
-                        )
-                    recovered_messages, recovery_result = context_cybernetics.try_reactive_recover(current_messages, error_str)
-                    if recovery_result and recovery_result.effective:
-                        current_messages = reconcile_task_ledger(
-                            recovered_messages
-                        )
-                        if context_manager:
-                            context_manager.messages = current_messages
-                        if (
-                            context_operation_id is not None
-                            and recovery_messages_before is not None
-                        ):
-                            emit_context_compaction_safely(
-                                event_sink,
-                                recovery_result,
-                                step=step,
-                                context_operation_id=context_operation_id,
-                                path="reactive_cybernetic",
-                                messages_before=recovery_messages_before,
-                                messages_after=observable_message_count(
-                                    current_messages
-                                ),
-                            )
-                            emit_recovery_completed_safely(
-                                event_sink,
-                                recovery_result,
-                                step=step,
-                                context_operation_id=context_operation_id,
-                                kind="cybernetic",
-                                messages_before=recovery_messages_before,
-                                messages_after=observable_message_count(
-                                    current_messages
-                                ),
-                            )
-                        logger.info(
-                            "Cybernetics Reactive recovered: freed %d tokens",
-                            recovery_result.tokens_freed,
-                        )
+                    if recovery is not None:
+                        current_messages = recovery.messages
+                        _complete_context_recovery(recovery, context_manager, event_sink, step)
                         continue
-                    if (
-                        context_operation_id is not None
-                        and recovery_messages_before is not None
-                    ):
-                        emit_recovery_completed_safely(
-                            event_sink,
-                            recovery_result,
-                            step=step,
-                            context_operation_id=context_operation_id,
-                            kind="cybernetic",
-                            messages_before=recovery_messages_before,
-                            messages_after=observable_message_count(
-                                recovered_messages
-                            ),
-                        )
-                elif context_compactor and needs_recovery:
-                    context_operation_id = _new_context_operation_observation(
-                        event_sink
-                    )
-                    recovery_messages_before = (
-                        observable_message_count(current_messages)
-                        if context_operation_id is not None
-                        else None
-                    )
-                    if context_operation_id is not None:
-                        emit_recovery_started_safely(
-                            event_sink,
-                            context_operation_id=context_operation_id,
-                            kind="compactor",
-                            step=step,
-                        )
-                    recovery_result = context_compactor.reactive_recover(current_messages, error_str)
-                    if recovery_result and recovery_result.effective:
-                        current_messages = reconcile_task_ledger(
-                            recovery_result.messages
-                        )
-                        if context_manager:
-                            context_manager.messages = current_messages
-                        if (
-                            context_operation_id is not None
-                            and recovery_messages_before is not None
-                        ):
-                            emit_context_compaction_safely(
-                                event_sink,
-                                recovery_result,
-                                step=step,
-                                context_operation_id=context_operation_id,
-                                path="reactive_compactor",
-                                messages_before=recovery_messages_before,
-                                messages_after=observable_message_count(
-                                    current_messages
-                                ),
-                            )
-                            emit_recovery_completed_safely(
-                                event_sink,
-                                recovery_result,
-                                step=step,
-                                context_operation_id=context_operation_id,
-                                kind="compactor",
-                                messages_before=recovery_messages_before,
-                                messages_after=observable_message_count(
-                                    current_messages
-                                ),
-                            )
-                        logger.info(
-                            "Reactive Compact recovered: freed %d tokens",
-                            recovery_result.tokens_freed,
-                        )
-                        continue
-                    if (
-                        context_operation_id is not None
-                        and recovery_messages_before is not None
-                    ):
-                        emit_recovery_completed_safely(
-                            event_sink,
-                            recovery_result,
-                            step=step,
-                            context_operation_id=context_operation_id,
-                            kind="compactor",
-                            messages_before=recovery_messages_before,
-                            messages_after=recovery_messages_before,
-                        )
 
                 # ModelSwitcher: 尝试切换到备用模型并重试
                 if model_switcher and "rate" not in error_str:
@@ -6352,120 +6549,14 @@ def run_agent_turn(
                 and context_compactor is not None
                 and context_compactor.auto_compact.should_trigger(current_messages)
             ):
-                context_operation_id = _new_context_operation_observation(
-                    event_sink
+                _apply_high_water_compaction(
+                    current_messages,
+                    context_manager=context_manager,
+                    retention=ContextRetention(task_ledger, implementation_completion_feedback),
+                    context_compactor=context_compactor,
+                    memory_pipeline=getattr(orch, "memory_pipeline", None) if orch else None,
+                    event_sink=event_sink, step=step,
                 )
-                context_messages_before = (
-                    observable_message_count(current_messages)
-                    if context_operation_id is not None
-                    else None
-                )
-                try:
-                    in_loop_result = context_compactor.process_request(
-                        current_messages,
-                        enable_tool_budget=False,
-                    )
-                    if in_loop_result.effective:
-                        original_messages = list(current_messages)
-                        compacted_messages = reconcile_task_ledger(
-                            in_loop_result.messages
-                        )
-                        installed, _memory_ids = (
-                            _commit_materialized_compaction_memory(
-                                in_loop_result,
-                                (
-                                    getattr(orch, "memory_pipeline", None)
-                                    if orch
-                                    else None
-                                ),
-                                lambda target=current_messages,
-                                candidate=compacted_messages: target.__setitem__(
-                                    slice(None),
-                                    candidate,
-                                ),
-                                lambda target=current_messages,
-                                original=original_messages: target.__setitem__(
-                                    slice(None),
-                                    original,
-                                ),
-                                event_sink=event_sink,
-                                context_operation_id=context_operation_id,
-                            )
-                        )
-                        if not installed:
-                            fallback_messages = (
-                                context_compactor.rejection_fallback_messages(
-                                    in_loop_result,
-                                    original_messages,
-                                )
-                            )
-                            fallback_messages = reconcile_task_ledger(
-                                fallback_messages
-                            )
-                            in_loop_result.memory_free_fallback = (
-                                fallback_messages
-                            )
-                            current_messages[:] = fallback_messages
-                        _finalize_compaction_materialization_state(
-                            in_loop_result,
-                            context_compactor,
-                            installed=installed,
-                            original_messages=original_messages,
-                        )
-                        if installed:
-                            if context_manager is not None:
-                                context_manager.messages = current_messages
-                            if (
-                                context_operation_id is not None
-                                and context_messages_before is not None
-                            ):
-                                emit_context_compaction_safely(
-                                    event_sink,
-                                    in_loop_result,
-                                    step=step,
-                                    context_operation_id=context_operation_id,
-                                    path="in_loop_compactor",
-                                    messages_before=context_messages_before,
-                                    messages_after=observable_message_count(
-                                        current_messages
-                                    ),
-                                )
-                            logger.info(
-                                "InLoopCompact[%d]: freed %d tokens [%s]",
-                                step,
-                                in_loop_result.tokens_freed,
-                                in_loop_result.strategy.value,
-                            )
-                        else:
-                            if context_manager is not None:
-                                context_manager.messages = current_messages
-                            in_loop_result.success = False
-                            in_loop_result.error = (
-                                "Memory authority changed before compaction install"
-                            )
-                            _emit_failed_context_compaction(
-                                event_sink,
-                                in_loop_result,
-                                context_compactor,
-                                path="in_loop_compactor",
-                                step=step,
-                                context_operation_id=context_operation_id,
-                            )
-                    else:
-                        _emit_failed_context_compaction(
-                            event_sink,
-                            context_compactor.last_result,
-                            context_compactor,
-                            path="in_loop_compactor",
-                            step=step,
-                            context_operation_id=context_operation_id,
-                        )
-                except TurnCancellationRequested:
-                    raise
-                except ModelCallDeadlineExceeded as exc:
-                    raise AgentTurnDeadlineExceeded(str(exc)) from exc
-                except Exception as exc:  # noqa: BLE001 - never break the loop
-                    logger.warning("In-loop compaction failed safely: %s", exc)
 
             # 工具执行完成后的控制论反馈
             if enable_work_chain:
@@ -6527,7 +6618,7 @@ def run_agent_turn(
                         completion_hard_limit = min(completion_hard_limit, max_steps)
                         max_steps = max(0, completion_hard_limit - 1)
                         completion_policy.lower_limit(max_steps)
-                    current_messages = reconcile_task_ledger(current_messages)
+                    current_messages = ContextRetention(task_ledger, implementation_completion_feedback).reconcile(current_messages)
                     if context_manager is not None:
                         context_manager.messages = list(current_messages)
                 else:
@@ -7323,7 +7414,7 @@ def run_agent_turn(
                         )
                         if compacted is not None and len(compacted) < len(current_messages):
                             previous_count = len(current_messages)
-                            current_messages[:] = reconcile_task_ledger(compacted)
+                            current_messages[:] = ContextRetention(task_ledger, implementation_completion_feedback).reconcile(compacted)
                             if context_manager is not None:
                                 context_manager.messages = list(current_messages)
                             logger.info(

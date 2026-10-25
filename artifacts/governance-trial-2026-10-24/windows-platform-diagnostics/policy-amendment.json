@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "authority": "Explicit human reply in this governance task",
+  "approvedChoice": "A",
+  "approvedScope": "正式支持 Linux/macOS，Windows 标为实验性并保留可见失败诊断与移植清单",
+  "meaning": "Changes the current trial platform contract and acceptance policy; does not turn historical Windows failures green.",
+  "oldArchiveSha256": "fba5b7867d3099799290e38c92b1c70f2f6cc937fe7e05acfa566b9607442dfc",
+  "historicalManifestPreserved": true,
+  "remoteBranchProtectionChanged": false,
+  "structuralVerification": {
+    "yamlParsed": true,
+    "supportedFullMatrix": [
+      "ubuntu-latest",
+      "macos-latest"
+    ],
+    "pythonVersions": [
+      "3.11",
+      "3.12"
+    ],
+    "windowsDiagnosticFullCommandUnchanged": true,
+    "noContinueOnError": true,
+    "bothUploadJUnitAlways": true,
+    "retainedWindowsSubset": "existing installation/compile/lint/offline quality/links/packaging/committed archive steps",
+    "sources": {
+      ".github/workflows/ci.yml": "e7886fc431dd4b8ff2f7d7ee58ec4d64502c2eb44917a5ac7bb8a71645c353dc",
+      ".github/workflows/windows-runtime-diagnostic.yml": "4ce10d2a562a1b0b1313e18bd645f30e5d907d23ff6d5600a20620fc628235d8"
+    }
+  },
+  "existingCheckLog": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/lib/python3.12/site-packages/pytest_randomly/__init__.py:125: PytestCacheWarning: cache could not write path /Users/zhourunbo/.codex/worktrees/governance-context-retention/MiniCode-Python-main/.pytest_cache/v/randomly_seed: [Errno 1] Operation not permitted: '/Users/zhourunbo/.codex/worktrees/governance-context-retention/MiniCode-Python-main/.pytest_cache/v/randomly_seed'\n  config.cache.set(\"randomly_seed\", seed)\n.......                                                                  [100%]\n=============================== warnings summary ===============================\n../../../../code/coding agent/MiniCode-Python-main/.venv-acceptance/lib/python3.12/site-packages/_pytest/cacheprovider.py:469\n  /Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/lib/python3.12/site-packages/_pytest/cacheprovider.py:469: PytestCacheWarning: cache could not write path /Users/zhourunbo/.codex/worktrees/governance-context-retention/MiniCode-Python-main/.pytest_cache/v/cache/nodeids: [Errno 1] Operation not permitted: '/Users/zhourunbo/.codex/worktrees/governance-context-retention/MiniCode-Python-main/.pytest_cache/v/cache/nodeids'\n    config.cache.set(\"cache/nodeids\", sorted(self.cached_nodeids))\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n7 passed, 1 warning in 0.45s\n",
+  "independentReview": {
+    "decision": "no blocking finding; wording clarifications resolved",
+    "method": "read-only source/command comparison, relative links, archive decompression and member hash verification; no pytest or remote changes",
+    "sourceSha256": {
+      ".github/workflows/ci.yml": "e7886fc431dd4b8ff2f7d7ee58ec4d64502c2eb44917a5ac7bb8a71645c353dc",
+      ".github/workflows/windows-runtime-diagnostic.yml": "4ce10d2a562a1b0b1313e18bd645f30e5d907d23ff6d5600a20620fc628235d8",
+      "README.md": "7174057bd35fc971dd929cb7f9491f768d9539409759591a7e345a189a44c353",
+      "README.zh-CN.md": "360d1e97e92b457087ccd15dd56123547fed74a62d4c4100a6fdbf9c64cc719f",
+      "docs/USAGE_GUIDE.md": "edbb5e2b4c6dcbb75072a41a03cd14705b45d0f499f730c24a246ebedfa2f2b4",
+      "docs/platform-support.md": "5dabb2acb198c141d2f536b57b6e0c5b673a88c44f01e8fb2abd22804e66d601",
+      "docs/governance-trial-2026-10-24.md": "947668a31c976518f41d3117a3ebb64361a7d1e6f8ff3a4acdc76715221bb54e",
+      "docs/release-baseline-2026-10-24.md": "3b50b0be447c894c2c9bdf54cb3055cc5e147f56f43f67be5aa0cc2601045c19",
+      "artifacts/governance-trial-2026-10-24/windows-platform-diagnostics/README.md": "fd554770b166e10b33b69ab08621a0e29d128c7558a54a96e44c751be104a269"
+    },
+    "originalUnfilteredCommandPreserved": true,
+    "supportedRuntimePlatforms": [
+      "ubuntu-latest",
+      "macos-latest"
+    ],
+    "experimentalPackagePlatform": "windows-latest",
+    "completeDiagnosticPlatforms": [
+      "windows-latest"
+    ],
+    "noContinueOnError": true,
+    "artifactUploadStepAlways": true,
+    "artifactFileAbsentPolicy": "ignore; upload attempt does not guarantee XML exists",
+    "linkChecks": [
+      {
+        "source": "README.md",
+        "target": "./docs/platform-support.md",
+        "exists": true
+      },
+      {
+        "source": "README.md",
+        "target": "./.github/workflows/windows-runtime-diagnostic.yml",
+        "exists": true
+      },
+      {
+        "source": "README.md",
+        "target": "./docs/platform-support.md",
+        "exists": true
+      },
+      {
+        "source": "README.md",
+        "target": "./docs/platform-support.md",
+        "exists": true
+      },
+      {
+        "source": "README.zh-CN.md",
+        "target": "./docs/platform-support.md",
+        "exists": true
+      },
+      {
+        "source": "README.zh-CN.md",
+        "target": "./.github/workflows/windows-runtime-diagnostic.yml",
+        "exists": true
+      },
+      {
+        "source": "README.zh-CN.md",
+        "target": "./docs/platform-support.md",
+        "exists": true
+      },
+      {
+        "source": "README.zh-CN.md",
+        "target": "./docs/platform-support.md",
+        "exists": true
+      },
+      {
+        "source": "docs/USAGE_GUIDE.md",
+        "target": "./platform-support.md",
+        "exists": true
+      },
+      {
+        "source": "docs/platform-support.md",
+        "target": "../.github/workflows/ci.yml",
+        "exists": true
+      },
+      {
+        "source": "docs/platform-support.md",
+        "target": "../.github/workflows/windows-runtime-diagnostic.yml",
+        "exists": true
+      },
+      {
+        "source": "docs/platform-support.md",
+        "target": "../artifacts/governance-trial-2026-10-24/windows-platform-diagnostics/README.md",
+        "exists": true
+      },
+      {
+        "source": "docs/governance-trial-2026-10-24.md",
+        "target": "platform-support.md",
+        "exists": true
+      },
+      {
+        "source": "docs/release-baseline-2026-10-24.md",
+        "target": "platform-support.md",
+        "exists": true
+      }
+    ],
+    "windowsArchive": {
+      "sha256": "fba5b7867d3099799290e38c92b1c70f2f6cc937fe7e05acfa566b9607442dfc",
+      "members": 21,
+      "allMemberHashesAndLengthsMatch": true,
+      "regularRelativeMembersOnly": true
+    },
+    "remoteProtectionChanges": false,
+    "newNativeAcceptanceClaimed": false,
+    "wordingClarificationsResolved": true,
+    "finalReviewScope": "Final byte hashes updated after only the two requested wording clarifications; no new test execution."
+  },
+  "independentReviewSha256": "d28d151d7f9a8174217ac5f896ff0b7a779ff5752b340bc8fc2eeec54b0f9bff",
+  "independentReviewText": "# Independent review: platform policy and CI split\n\nNo blocking finding; the two wording clarifications below are resolved. This is a read-only review of the final candidate files named in review.json; no tests, workflow dispatch or remote protection change was performed.\n\nThe main workflow retains the original complete pytest command for Linux/macOS Python 3.11/3.12. Native Windows keeps the original installation, compile/lint, restoration, offline quality, portfolio and package/archive checks under an explicit experimental job name. The new Windows diagnostic workflow preserves the original complete, unfiltered pytest command for both Python versions and retains failure status; no continue-on-error, filtering or blanket skip was added. Its artifact step runs with always(), while absent JUnit is explicitly ignored. Each workflow has its own run-number seed, as documented.\n\nThe English/Chinese README and usage guide explicitly narrow native Windows support, link the policy, retain known full-suite failures and distinguish package evidence from full runtime. P0 results remain tied to 9f936942; supported-platform acceptance for later candidates is still pending. The policy accurately describes a maintainer merge policy rather than claiming server-side branch protection. All new platform/diagnostic relative links inspected resolve.\n\nThe Windows diagnostic archive SHA and all 21 member lengths/hashes were checked by reading the actual gzip. All members are regular relative paths and contain only CI evidence, classifications and historical contract material; no environment or source tree is included. Historical merge-ref identity is retained.\n\nThe two wording clarifications are resolved in the reviewed final bytes: the external archive README states that the decision was pending at packaging time and subsequently approved as option A, while preserving the original manifest/history. The platform policy now says the always() step attempts to upload JUnit that was generated. Neither clarification changes workflow execution. An optional Windows diagnostic failure will remain visible on the PR; a green main CI badge is explicitly limited to the documented scope.\n"
+}

@@ -1,0 +1,52 @@
+{
+  "revision": 2,
+  "status": "frozen-before-first-provider-call",
+  "sourceHead": "8b15640ab14316873596e921a7b6dda116320672",
+  "productionBaseline": "9f9369421486f018c837f84d21bd727aed6ab326",
+  "productionSha256": "13151ca1031c9ec8b4ffec4fa23b43509946018a61fa8a01445aad65af4bccd8",
+  "manifestSha256": "32dacc257169eff53026a3b8e1663ed68b62ceae1adac118589073921d47d332",
+  "harnessSha256": "15898623cbc94e6a313cee6032bd008dc691ac0fac8739711405d32d4044a4ef",
+  "freezeCreatedAt": "2026-10-24T17:50:32.691491+00:00",
+  "model": "glm-5.3-flash",
+  "scheduledCells": 32,
+  "existingTrialResults": 0,
+  "economicBudgetCaps": {
+    "maxTokens": null,
+    "maxModelCalls": null,
+    "maxCostUsd": null
+  },
+  "supersedes": {
+    "manifestSha256": "987f7cf31627ca85f18cdf2a270dae3918c5bf6cacac68cf02053dd767da91be",
+    "status": "withdrawn-before-execution",
+    "existingTrialResults": 0,
+    "reason": "Reader bytes already queued during ledger persistence could be misclassified as idle; evaluation harness repaired before model execution."
+  },
+  "changeScope": {
+    "productMinicodeUnchanged": true,
+    "sourceFilesChanged": [
+      "scripts/evaluation_transport.py"
+    ],
+    "testsChanged": [
+      "tests/test_evaluation_transport.py"
+    ],
+    "manifestFieldsChanged": [
+      "createdAt",
+      "frozenCodeArchiveSha256",
+      "harnessSha256",
+      "taskSha256"
+    ],
+    "taskDifference": "Only absolute prepared oracle-support directory relocation; normalized task document is equal.",
+    "unchanged": [
+      "task prompts",
+      "source inventories",
+      "oracles",
+      "oracle support bytes",
+      "schedule",
+      "analysis plan",
+      "model and route",
+      "runtime limits",
+      "economic budgets",
+      "product production hash"
+    ]
+  }
+}

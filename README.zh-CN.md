@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/zrb3052796119/CodeLoop/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/zrb3052796119/CodeLoop/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/zrb3052796119/CodeLoop/actions/workflows/ci.yml"><img alt="Supported CI" src="https://github.com/zrb3052796119/CodeLoop/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <img alt="Python" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white">
   <img alt="Package" src="https://img.shields.io/badge/package-minicode--py-555?style=flat-square">
 </p>
@@ -62,7 +62,7 @@ CodeLoop 是 [MiniCode Python](https://github.com/QUSETIONS/MiniCode-Python)
 
 | 系统证据 | 结果 | 能说明什么，不能说明什么 |
 | --- | ---: | --- |
-| [仓库回归测试](./.github/workflows/ci.yml) | **4,482 passed, 2 skipped** | 2026-08-25 在 Python 3.12 完成的本地发布验收；说明已实现行为受到回归保护，不代表通用 Agent 智能。推送后 CI 会在 3 OS × 2 Python 矩阵重跑。 |
+| [仓库回归测试](./.github/workflows/ci.yml) | **14,923 passed, 8 skipped** | 2026-10-25 在 macOS / Python 3.12 完成的 P0 `9f936942` 验收；后续候选需独立验收。正式 CI 对 Linux/macOS 跑完整套件；原生 Windows 为实验性包/入口检查，另保留完整失败诊断。 |
 | [Skill 路由门禁](./docs/agent-quality-gates.md) | **旧集 60/60；joined 路由决策 96/96** | production-shaped 开发集的完整 case 为 84/96；剩余 12 条是意图/上下文标签差异，不是 Skill 选错。两套均为 `remoteCallCount=0` 的离线证据，不是 live Qwen、盲测生产集或第三方 benchmark。 |
 | [重复压缩门禁](./docs/agent-quality-gates.md) | **12/12 门禁 + 60/60 压测** | 对 1–5 轮强制压缩检查摘要链、被否方案、任务账本、最新指令、已加载 Skill 和工具轮次，并覆盖 4 档历史规模和 3 种 marker 位置。证明冻结合同，不证明任意长会话都无语义漂移。 |
 | [上下文压缩配对实验](./docs/context-compaction-experiment-study.md) | **12/12 配对完成；24 个 case** | canonical/control 的 provider 输入 token 为 4,288,270 vs 6,011,480（**聚合 -28.7%，配对中位数 -22.7%**，exact `p=0.00537`）。严格成功率为 9/12 vs 10/12，5 个 case 遇到远端 `IncompleteRead`；但所有可执行测试和保护 marker 均通过。因此证据支持 token 效率，不支持“质量完全无损”。 |
@@ -98,7 +98,7 @@ task/子 Agent 工具。这些不能被描述成 CodeLoop 从零新增的模块�
 | 上下文保真 | summary-of-summary 摘要链；保存目标/显式约束/typed fact/失败码的压缩免疫账本；原子 provider 工具轮次、usage 校准、未变化状态重试身份；让强制路径遵守基线已有熔断器。 | 重复压缩门禁和大文件回放。 |
 | 多 Agent Runtime | 面向只读 `explore/plan` 的异步 `spawn` / `poll` / `cancel`、结构化结果与收尾提醒挽回、`subagentId` 日志 join、`continue_subagent_id` 续聊（追问省 100% 工具调用/75% 模型轮数，采用率可从无内容标记统计）、`.mini-code/agents/*.md` 项目自定义只读类型、共享 Turn 预算、deadline、按角色模型路由与三断点提示缓存。 | 生命周期、取消、结果协议（含 v5 续聊标记）、续聊/Profile/缓存单测、路由、日志与预算测试，以及 live 8v12 与契约遵从对比报告。 |
 | 持久化经验 | 在基线已有存储、通用恢复合成、sanitizer、审批、词法检索/重排、内容哈希和渲染反馈之上，强化 corroborated/idempotent 反馈、隔离与投影卫生、操作恢复、canonical Hybrid 检索和验收归因。 | warm/cold 配对实验、V1–V5 确定性合同（V5 live/provider 运行待执行）和 Memory 回归矩阵。 |
-| 横向工程支撑（非第五条能力主线） | 在基线已有 3 OS × 2 Python CI、CLI/TUI/Dashboard 和权限流上，增加全局凭据边界、隐私安全失败投影、确定性质量档位、冻结 manifest、外部 oracle，并持续修复 Windows/并发/期限问题。 | CI、本地全量验证、clean-checkout 和 live 路由检查。 |
+| 横向工程支撑（非第五条能力主线） | 在基线已有 3 OS × 2 Python CI、CLI/TUI/Dashboard 和权限流上，增加全局凭据边界、隐私安全失败投影、确定性质量档位、冻结 manifest、外部 oracle，并持续修复并发/期限问题；平台审计后原生 Windows 明确为实验性，见支持范围。 | CI、本地全量验证、clean-checkout 和 live 路由检查。 |
 
 更细的继承/新增/实质重构清单与提交谱系见
 [完整贡献图谱](./docs/CONTRIBUTION_AUDIT.md)和
@@ -244,6 +244,8 @@ Memory 写入不是“把模型总结存下来”。一条可持久化的恢复�
 
 ## 快速开始
 
+本期正式支持 Linux/macOS。原生 Windows 的安装与入口说明为实验性：打包检查通过，完整 runtime 尚未通过。[支持范围、保留的失败诊断与移植清单](./docs/platform-support.md)。
+
 ### 1. 安装 CodeLoop
 
 macOS / Linux：
@@ -256,7 +258,7 @@ source .venv/bin/activate
 python -m pip install -e ".[dev]"
 ```
 
-Windows PowerShell：
+Windows PowerShell（实验性）：
 
 ```powershell
 git clone https://github.com/zrb3052796119/CodeLoop.git
@@ -277,7 +279,7 @@ cp .env.example ~/.mini-code/.env
 chmod 600 ~/.mini-code/.env
 ```
 
-Windows PowerShell：
+Windows PowerShell（实验性）：
 
 ```powershell
 $configDir = Join-Path $HOME ".mini-code"
@@ -305,7 +307,7 @@ cd /path/to/your/project
 minicode-py
 ```
 
-Windows PowerShell：
+Windows PowerShell（实验性）：
 
 ```powershell
 & C:\path\to\CodeLoop\.venv\Scripts\Activate.ps1
@@ -356,7 +358,7 @@ python -m pytest -q
 
 两档质量门都不会调用远程模型。`current` 固定 fixture、manifest 和记录结果哈希；`a` 固定 fixture/manifest 合同，但有意接受同一 manifest 的新结果，默认命令评估仓库中的记录结果。`current` 是 CI 回归档，`a` 是项目声明的内部晋级阈值。50 个记录的 north-star case 覆盖 10 类任务，其中 30 个会写工作区。仓库自带门禁不会假装重新执行这 50 个任务。
 
-GitHub Actions 会在 Linux、macOS、Windows 和 Python 3.11/3.12 矩阵上执行安装、编译、限定范围 Ruff、打包 smoke、确定性 `current` 门禁和全量测试。
+GitHub Actions 对 Linux/macOS 的 Python 3.11/3.12 要求安装、编译、限定范围 Ruff、打包、确定性 `current` 和完整套件通过。原生 Windows 在 CI 中保留包/入口及离线检查；[独立 Windows 完整诊断](./.github/workflows/windows-runtime-diagnostic.yml)仍运行未筛选的全部测试、保留真实失败，不属于本期正式 runtime 合入要求。CI 徽章绿色不代表 Windows 完整支持；具体边界见[已批准的平台范围](./docs/platform-support.md)。
 
 ## 仓库导航
 
@@ -381,6 +383,8 @@ GitHub Actions 会在 Linux、macOS、Windows 和 Python 3.11/3.12 矩阵上执�
 - [优化历史](./docs/OPTIMIZATION_SUMMARY.md)
 
 ## 诚实的限制
+
+- 原生 Windows 为实验性。Workflow、Memory、安全证据 I/O、进程树等仍有平台失败；打包成功不能替代完整 runtime 验收。保留的失败和移植工作见[平台范围](./docs/platform-support.md)。
 
 - 60 例 Skill 门禁和 96 例 joined 开发集都是冻结的离线合同，不调用远程 embedding，也不是盲测真实项目任务；可选 Qwen embedding 路径不能据此宣传为 live benchmark。
 - 语义意图 fallback 尚无仓库内真实生产纠错语料；内置置信度映射只是保守 bootstrap policy，明确不是 production-fit 校准。

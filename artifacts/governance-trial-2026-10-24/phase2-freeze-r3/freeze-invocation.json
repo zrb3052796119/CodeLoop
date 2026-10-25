@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+    "scripts/run_three_arm_real.py",
+    "freeze",
+    "--output",
+    "/private/tmp/codeloop-governance-20261024/phase2-r3/prepared/execution"
+  ],
+  "sourceHead": "2706e00e6b7e8a5c4bc87226cec242ddc7e47d74",
+  "productBaseline": "9f9369421486f018c837f84d21bd727aed6ab326",
+  "harnessSource": "8b15640ab14316873596e921a7b6dda116320672",
+  "sourceStatus": "Only r2 pilot documentation/artifact additions are uncommitted; product and harness byte-identical to prior frozen runtime.",
+  "started": 1792869298.0315268,
+  "providerCalls": 0,
+  "exitCode": 0,
+  "finished": 1792869300.006301,
+  "durationSeconds": 1.9747741222381592,
+  "manifestSha256": "b32718a77f1680cf2d7d465d655a95bdcdcf5c6c745c3d30e1b9e430193d3b01"
+}

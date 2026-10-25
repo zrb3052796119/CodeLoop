@@ -1,10 +1,16 @@
 """Continuation sessions for read-only sub-agents (task tool)."""
 
+from dataclasses import fields
 import re
 
 import pytest
 
 import minicode.tools.task as task_module
+from minicode.agent_budget import AgentTurnBudget
+from minicode.permissions import PermissionManager
+from minicode.subagent_lifecycle import AsyncSubagentLifecycle
+from minicode.subagent_mailbox import SubagentMailbox
+from minicode.turn_cancellation import TurnCancellationToken
 from minicode.subagent_sessions import (
     MAX_RETAINED_SESSIONS,
     SubagentSession,
@@ -47,6 +53,41 @@ def test_store_evicts_oldest_beyond_cap() -> None:
 def test_store_rejects_non_positive_cap() -> None:
     with pytest.raises(ValueError):
         SubagentSessionStore(max_sessions=0)
+
+
+def test_context_session_binding_is_read_only_and_preserves_other_capabilities(tmp_path):
+    original_store = SubagentSessionStore()
+    next_store = SubagentSessionStore()
+    lifecycle = AsyncSubagentLifecycle(max_workers=1)
+    context = ToolContext(
+        cwd=str(tmp_path), permissions=PermissionManager(str(tmp_path)),
+        _agent_budget=AgentTurnBudget(max_model_calls=4, max_total_tokens=1000),
+        _cancellation_token=TurnCancellationToken("turn_" + "c" * 32),
+        _subagent_mailbox=SubagentMailbox(), _subagent_lifecycle=lifecycle,
+        _subagent_sessions=original_store,
+    )
+    try:
+        bound = context.with_subagent_sessions(next_store)
+        assert bound is not context
+        assert context.subagent_sessions is original_store
+        assert bound.subagent_sessions is next_store
+        assert not hasattr(bound, "__dict__"), "ToolContext must remain slotted"
+        for item in fields(context):
+            if item.name != "_subagent_sessions":
+                assert getattr(bound, item.name) is getattr(context, item.name), item.name
+        reservation = bound._agent_budget.reserve_model_call(7)
+        bound._agent_budget.record_model_call(
+            input_tokens=7, output_tokens=3, reservation=reservation,
+        )
+        assert context._agent_budget.snapshot().used_total_tokens == 10
+        assert context._agent_budget.snapshot().used_model_calls == 1
+        disabled = bound.with_subagent_sessions(None)
+        assert disabled.subagent_sessions is None
+        assert bound.subagent_sessions is next_store
+        with pytest.raises(AttributeError):
+            bound.subagent_sessions = original_store
+    finally:
+        lifecycle.shutdown()
 
 
 # ---------------------------------------------------------------------------

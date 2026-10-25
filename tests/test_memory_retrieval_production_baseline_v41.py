@@ -122,6 +122,7 @@ def test_v41_candidate_closes_the_exact_hybrid_runtime_delta() -> None:
         "minicode/main.py",
         "minicode/mcp.py",
         "minicode/memory.py",
+        "minicode/memory_authority_publisher.py",
         "minicode/memory_curator_agent.py",
         "minicode/permissions.py",
         "minicode/run_events.py",
@@ -136,7 +137,7 @@ def test_v41_candidate_closes_the_exact_hybrid_runtime_delta() -> None:
         "minicode/tui/input_handler.py",
     }
     assert EXPECTED_V41_ADDED_FILES == EXPECTED_ADDED
-    assert len(EXPECTED_V41_CHANGED_FILES) == 25
+    assert len(EXPECTED_V41_CHANGED_FILES) == 26
     assert len(EXPECTED_ADDED) == 26
     assert V41_REQUIRED_HYBRID_CLOSURE_FILES == (
         EXPECTED_V41_CHANGED_FILES | EXPECTED_V41_ADDED_FILES
@@ -148,6 +149,13 @@ def test_v41_candidate_closes_the_exact_hybrid_runtime_delta() -> None:
         "addedFiles": sorted(EXPECTED_V41_ADDED_FILES),
         "removedFiles": [],
     }
+    # The reviewed portable-publication repair is staged source, not a rewrite
+    # of the immutable v40 authority. Its candidate digest must be the real file.
+    publisher = "minicode/memory_authority_publisher.py"
+    assert candidate["files"][publisher] == hashlib.sha256(
+        (ROOT / publisher).read_bytes()
+    ).hexdigest()
+    assert candidate["files"][publisher] != v40["files"][publisher]
     validate_manifest(candidate, version="v41")
     assert set(HYBRID_RUNTIME_BEHAVIOR_FILES) <= set(candidate["files"])
 
@@ -164,6 +172,10 @@ def test_v41_reasons_separate_behavior_transport_and_evaluator() -> None:
     )
     assert (
         V41_CHANGED_FILE_REASONS["minicode/run_events.py"]
+        == "persistent_memory_lifecycle_authority"
+    )
+    assert (
+        V41_CHANGED_FILE_REASONS["minicode/memory_authority_publisher.py"]
         == "persistent_memory_lifecycle_authority"
     )
     assert set(V41_CHANGED_FILE_REASONS.values()) == {

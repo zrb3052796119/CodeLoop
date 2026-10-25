@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/zrb3052796119/CodeLoop/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/zrb3052796119/CodeLoop/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/zrb3052796119/CodeLoop/actions/workflows/ci.yml"><img alt="Supported CI" src="https://github.com/zrb3052796119/CodeLoop/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <img alt="Python" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white">
   <img alt="Package" src="https://img.shields.io/badge/package-minicode--py-555?style=flat-square">
 </p>
@@ -69,11 +69,13 @@ support layer across them, not a fifth capability track.
 
 ## Evidence at a Glance
 
+**Governance status: Phase 1 GO at `e6492f9b`, awaiting the normal PR merge.** The first extraction removes 497 lines from `run_agent_turn`, moves all four target closures, and uses at most 11 parameters per new function. The [acceptance record](./docs/release-baseline-2026-10-24.md#phase-1-最终支持矩阵) documents the complete supported-platform CI and one infrastructure retry. [Phase 2 r3](./docs/real-task-comparison-r3-2026-10-25.md) is still running; efficiency claims and default-path decisions await its complete report.
+
 First, the contract surface for the four tracks and their support layer:
 
 | System evidence | Result | What it does—and does not—show |
 | --- | ---: | --- |
-| [Repository regression suite](./.github/workflows/ci.yml) | **10,440 passed, 2 skipped** | Local Python 3.13 release run on 2026-09-25; protects implemented behavior, not general agent intelligence. CI reruns the suite on a 3-OS × 2-Python matrix after push. |
+| [Repository regression suite](./artifacts/governance-trial-2026-10-24/phase1-supported-matrix/README.md) | **Linux: 14,952 passed / 19 skipped; macOS: 14,963 passed / 8 skipped, per Python version** | Phase 1 candidate `e6492f9b`, Python 3.11 and 3.12, CI seed `50`; all four supported runtime jobs have zero failures/errors. Native Windows has passing experimental package checks and separate, still-failing full-runtime diagnostics. Counts are not added across environments. |
 | [Skill-routing gate](./docs/agent-quality-gates.md) | **60/60 legacy; 96/96 joined routing decisions** | The joined production-shaped development set also records 84/96 full cases; its 12 residuals are intent/context labels, not Skill decisions. Both are offline with `remoteCallCount=0`, not live Qwen, a blind production holdout, or an external benchmark. |
 | [Repeated-compaction gate](./docs/agent-quality-gates.md) | **12/12 gate + 60/60 stress** | Forced one-to-five-round cases cover summary chains, rejected approaches, the task ledger, latest instruction, loaded Skill, and tool turns across four history scales and three marker layouts. Proves the frozen contract, not zero drift in every long conversation. |
 | [Paired context-compaction study](./docs/context-compaction-experiment-study.md) | **12/12 pairs complete; 24 cases** | Canonical/control provider input tokens were 4,288,270 vs 6,011,480 (**-28.7% aggregate; 22.7% median paired**, exact `p=0.00537`). Strict success was 9/12 vs 10/12 because five cases hit remote `IncompleteRead`; all executable tests and protected markers still passed. This supports token efficiency, not a quality-neutrality claim. |
@@ -112,7 +114,7 @@ CodeLoop should not claim those as original components.
 | Context fidelity | Added summary-of-summary chaining, a compression-immune ledger for goal/constraints/typed facts/failure codes, atomic provider tool turns, provider-usage calibration, and unchanged-state retry identity; connected forced paths to the inherited breaker. | Repeated-compaction gate and large-file replay. |
 | Multi-agent runtime | Asynchronous `spawn` / `poll` / `cancel` for read-only `explore/plan`, structured results, `subagentId` journal joins, shared turn budgets, deadlines, and per-role OpenAI-compatible model routing. | Lifecycle, cancellation, result-schema, routing, journal, and budget tests. |
 | Persistent Memory | On top of inherited storage, generic recovery synthesis, sanitization, approval, lexical retrieval/reranking, content hashes, and rendered-entry feedback: corroborated/idempotent feedback, quarantine/projection hygiene, broader operational recovery, canonical evidence-gated hybrid retrieval, and stricter acceptance attribution. | Paired warm/cold studies, V1–V5 deterministic contracts (V5 live/provider run pending), and the Memory regression matrix. |
-| Cross-cutting support (not a fifth capability track) | Added global credential boundaries, privacy-safe failure projections, deterministic profiles, sealed manifests, and external oracles while hardening the inherited 3-OS × 2-Python CI, CLI/TUI/dashboard, and permission surfaces for Windows, concurrency, and deadline failures. | CI, local full-suite, clean-checkout, and live-routing checks. |
+| Cross-cutting support (not a fifth capability track) | Added global credential boundaries, privacy-safe failure projections, deterministic profiles, sealed manifests, and external oracles while hardening the inherited CI, CLI/TUI/dashboard, and permission surfaces for concurrency and deadline failures. Native Windows remains experimental after the platform audit; see the support policy. | CI, local full-suite, clean-checkout, and live-routing checks. |
 
 The [full contribution map](./docs/CONTRIBUTION_AUDIT.md) binds each track to
 code, tests, and commits. The repository lineage and explicit
@@ -328,6 +330,8 @@ and [non-path paired study](./docs/2026-08-22--non-path-persistent-memory--r1--r
 
 ## Quick Start
 
+Linux and macOS are the supported runtime targets for this governance trial. Native Windows instructions are experimental: package/entry checks pass, but the complete runtime suite does not. [Platform scope, diagnostics and porting work](./docs/platform-support.md).
+
 ### 1. Install CodeLoop
 
 macOS / Linux:
@@ -340,7 +344,7 @@ source .venv/bin/activate
 python -m pip install -e ".[dev]"
 ```
 
-Windows PowerShell:
+Windows PowerShell (experimental):
 
 ```powershell
 git clone https://github.com/zrb3052796119/CodeLoop.git
@@ -361,7 +365,7 @@ cp .env.example ~/.mini-code/.env
 chmod 600 ~/.mini-code/.env
 ```
 
-Windows PowerShell:
+Windows PowerShell (experimental):
 
 ```powershell
 $configDir = Join-Path $HOME ".mini-code"
@@ -397,7 +401,7 @@ cd /path/to/your/project
 minicode-py
 ```
 
-Windows PowerShell:
+Windows PowerShell (experimental):
 
 ```powershell
 & C:\path\to\CodeLoop\.venv\Scripts\Activate.ps1
@@ -499,8 +503,11 @@ sets their TTL in seconds; it follows the deposition TTL when omitted
 Hybrid adjudications are cached for one hour using the frozen authority
 revision, request and protocol/model fingerprints. The in-process LRU remains.
 Redis connection or command errors permanently disable that hot store in the process, and draft
-writes fall back to the existing file path. Redis waiting has a shared 190 ms
-turn allowance, below the 200 ms ceiling. Canonical `memory.json` and blob
+writes fall back to the existing file path. Redis operations share a 190 ms
+turn allowance: each wait requests at most the remaining budget, and elapsed
+wait time is deducted. This replaces the earlier 200 ms total-latency claim;
+thread scheduling and local processing can make caller wall time exceed 200 ms.
+Canonical `memory.json` and blob
 storage remain authoritative; existing drafts and curator file leases stay
 in place. No Redis persistence or data migration is required.
 Invalid local inputs or malformed cached JSON are logged and skipped without
@@ -515,12 +522,20 @@ silently skip when it is missing. Then run the focused release checks:
 
 ```bash
 python -m pip install -e '.[dev]'
+python scripts/restore_archived_artifacts.py --manifest artifacts/archives/governance-pinned-inputs-2026-10-24/manifest.json --restore
 python -m compileall -q minicode scripts
 python -m ruff check minicode/ --select=E,F --ignore=E501
 python scripts/evaluate_agent_quality.py --profile current
 python scripts/evaluate_agent_quality.py --profile a
 python -m pytest -q
 ```
+
+The restore step recovers eight pinned test/replay inputs from committed gzip
+archives to their original paths and checks their unchanged SHA-256 values. Run
+it once in every fresh checkout or source export before pytest, quality checks,
+or historical replay; CI performs the same step. Recovery is offline and refuses
+to overwrite different local contents. [Archive details and export options](./docs/artifact-archive-2026-10-24.md)
+cover the separate four-report archive and replay prerequisites.
 
 Both quality profiles make no remote model calls. `current` pins fixture,
 manifest, and recorded-result hashes. Profile `a` pins its fixture/manifest
@@ -531,9 +546,13 @@ include 30 workspace-writing tasks. A fresh provider run can be supplied to
 the same sealed manifest, but the checked-in gate itself does not replay those
 tasks.
 
-GitHub Actions runs installation, compilation, scoped Ruff checks, packaging
-smoke tests, the deterministic `current` gate, and the full suite on Linux,
-macOS, and Windows with Python 3.11 and 3.12.
+GitHub Actions requires installation, compilation, scoped Ruff, packaging,
+the deterministic `current` gate and the full suite on Linux/macOS with Python
+3.11 and 3.12. Native Windows keeps the package/entry and offline checks in CI.
+Its complete, unfiltered suite runs in a separate [Windows runtime diagnostics
+workflow](./.github/workflows/windows-runtime-diagnostic.yml); failures remain
+visible and are outside this trial's supported-runtime merge policy. A green
+CI badge does not claim full Windows support. See [the approved platform scope](./docs/platform-support.md).
 
 ## Repository Guide
 
@@ -558,6 +577,8 @@ Useful entry points:
 - [Optimization history](./docs/OPTIMIZATION_SUMMARY.md)
 
 ## Honest Limitations
+
+- Native Windows is experimental. Workflow, Memory, secure evidence I/O and process-tree contracts have unresolved native-platform failures; successful packaging is not full-runtime acceptance. See [the retained diagnostics and porting list](./docs/platform-support.md).
 
 - The 60-case Skill gate and 96-case joined challenge are frozen offline
   contracts. Neither makes remote embedding calls or constitutes a blind set

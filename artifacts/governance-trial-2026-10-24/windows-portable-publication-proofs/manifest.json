@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "archive": "proofs.tar.gz",
+  "archiveBytes": 123667,
+  "archiveSha256": "e69910b425656c86d1d183554be921cd3591c78bfd04cbc79e008a032ef26c1c",
+  "memberCount": 25,
+  "uncompressedMemberBytes": 692332,
+  "members": [
+    {
+      "path": "after-final-tests.json",
+      "bytes": 634,
+      "sha256": "39fa743b2d5f39df5b3c99dbc1b14b65af39481d632c196cfdccb5faa6155bfc"
+    },
+    {
+      "path": "after-final-tests.log",
+      "bytes": 253,
+      "sha256": "d576acc39352a5f9ba18974d134b27e1bb4c332f64f336a519971a4d15eb14c2"
+    },
+    {
+      "path": "after-packaging.json",
+      "bytes": 575,
+      "sha256": "a7bc3c4a4b77f705ad0b179ae931acb91200f87833e3bc2ad28c96493dc71410"
+    },
+    {
+      "path": "after-packaging.log",
+      "bytes": 239,
+      "sha256": "14db2df136065169fc01d3fd994f1669f6eaef3d78104aefc0074686df356c09"
+    },
+    {
+      "path": "after-portable.json",
+      "bytes": 624,
+      "sha256": "26542bb034f82464569910faafb65e67b0d5a75314b430b6377f7360b351016c"
+    },
+    {
+      "path": "after-portable.log",
+      "bytes": 254,
+      "sha256": "c9f389efb9668675b059624b250639e534b58565fcb5bb3428e1890b7a9115d2"
+    },
+    {
+      "path": "after-safety-publication.json",
+      "bytes": 855,
+      "sha256": "9aa870d99a969bcbdb68a393d7d9119e9d68a9e0d7d11b284cb5b3825a25b10c"
+    },
+    {
+      "path": "after-safety-publication.log",
+      "bytes": 319,
+      "sha256": "80ca9b6faa7df0b0feb2a97b015775257d71e8ad5dd6a01c4d079e9075c4edeb"
+    },
+    {
+      "path": "before-final-tests.json",
+      "bytes": 639,
+      "sha256": "40c56441930e45466c75ec57f4a06208871a612fe0638a6a848467d68b5b4230"
+    },
+    {
+      "path": "before-final-tests.log",
+      "bytes": 15525,
+      "sha256": "f2f07f8966c1f968845c58b62a55d2a734dfdc908a8c6fb2315af4c3a1314b1d"
+    },
+    {
+      "path": "ci/windows-publication-source-proof.json",
+      "bytes": 755,
+      "sha256": "d533ba6ce1c5079adc7f41bb883a05aaec1535c90537539de06264f2070bc6e4"
+    },
+    {
+      "path": "ci/windows311-failure-excerpt.log",
+      "bytes": 5186,
+      "sha256": "81a19d96c52bde8944c206422af4fc95deb973943e13c1c0234ce1a12fb3b1f1"
+    },
+    {
+      "path": "ci/windows311-job.log",
+      "bytes": 282583,
+      "sha256": "4bc6c6839a598bffc037a92c9c7e8c7d926826616fe52d18372e647de837ca38"
+    },
+    {
+      "path": "ci/windows312-failure-excerpt.log",
+      "bytes": 5186,
+      "sha256": "9f0f972e7e62761dbc4b77ec0dec1e80eec669c1778982a9dc34f0353baa411f"
+    },
+    {
+      "path": "ci/windows312-job.log",
+      "bytes": 282168,
+      "sha256": "a1017b9ea7f47e081f9ab029094d90bbaeebda36c40957e91fd98e0722401c71"
+    },
+    {
+      "path": "diff-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final.patch",
+      "bytes": 10597,
+      "sha256": "51d101168cf26f6a5e358f103b77f0ce6190406083ec80b645bd855c25f0f343"
+    },
+    {
+      "path": "independent-module-isolation-proof.json",
+      "bytes": 426,
+      "sha256": "48dd20725935f69aea0e3759cc97adc233f6a6eb97661a4bdd5f243c03072cdf"
+    },
+    {
+      "path": "independent-review.json",
+      "bytes": 1526,
+      "sha256": "f11647f5af148865da4057e49948346e2109b7b4abf9b78f7943a86a319aae25"
+    },
+    {
+      "path": "independent-review.md",
+      "bytes": 3250,
+      "sha256": "4a257fc3a362865a298e3b7bcf977b5113c64a9dedbbd5df4a442570fd9b7016"
+    },
+    {
+      "path": "publisher-before.py",
+      "bytes": 44650,
+      "sha256": "3ae33616aa46b60cccbef75662be7e4f1210a7d2d02abe4f46610619da25b77a"
+    },
+    {
+      "path": "ruff.log",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "run_checks.py",
+      "bytes": 1595,
+      "sha256": "8552da794fd52bf106371d63e04b4fece24bd767ad89b4828169bd3c6aae9670"
+    },
+    {
+      "path": "source-and-proof.json",
+      "bytes": 1802,
+      "sha256": "aa8cda011bce889bcc8c7c67d41c686542313dc8c31788a8fa017661859f89df"
+    },
+    {
+      "path": "test_memory_authority_io.py",
+      "bytes": 32672,
+      "sha256": "8561450fadc16e561a23d30fc9590221b53783c8cf755186d99984821d0aa938"
+    }
+  ]
+}

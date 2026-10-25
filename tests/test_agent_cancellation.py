@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import threading
+from types import SimpleNamespace
 
 import pytest
 
@@ -812,13 +813,19 @@ def test_cancel_after_concurrent_batch_starts_stops_before_next_model_turn() -> 
     all_started = threading.Barrier(3)
     release = threading.Event()
     finished: list[str] = []
+    tool_finished = {name: threading.Event() for name in ("read_file", "list_files")}
 
     def definition(name: str) -> ToolDefinition:
         def run(_input, _context):
-            all_started.wait(5)
-            assert release.wait(5)
-            finished.append(name)
-            return ToolResult(ok=True, output=name)
+            try:
+                all_started.wait(5)
+                # The test owns release in finally; a timeout here would make
+                # an incorrectly blocking shutdown look like cancellation.
+                release.wait()
+                finished.append(name)
+                return ToolResult(ok=True, output=name)
+            finally:
+                tool_finished[name].set()
 
         return ToolDefinition(
             name=name,
@@ -848,14 +855,25 @@ def test_cancel_after_concurrent_batch_starts_stops_before_next_model_turn() -> 
         cancellation_token=token,
     )
 
-    all_started.wait(5)
-    token.request()
-    release.set()
-    worker.join(5)
+    try:
+        all_started.wait(5)
+        token.request()
+        worker.join(5)
+
+        # Cancellation abandons running reads; joining the turn does not join
+        # its tool threads. Keep both reads blocked while observing the turn.
+        assert not worker.is_alive()
+        assert finished == []
+        assert model.calls == 1
+        assert isinstance(outcome.get("error"), TurnCancellationRequested)
+    finally:
+        release.set()
+        worker.join(5)
+        for completed in tool_finished.values():
+            assert completed.wait(5)
 
     assert sorted(finished) == ["list_files", "read_file"]
     assert model.calls == 1
-    assert isinstance(outcome.get("error"), TurnCancellationRequested)
 
 
 def test_cancel_after_concurrent_results_finalize_post_hooks_before_raise(
@@ -2117,12 +2135,30 @@ def test_concurrent_finalized_authority_outranks_fatal_signal() -> None:
 
 
 def test_concurrent_finalized_authority_outranks_fatal_without_cancellation(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     authority_finished = threading.Event()
     authority_output = _finalized_authority_output()
+    authority_futures: list[concurrent.futures.Future[ToolResult]] = []
+
+    class CompletionSignalingExecutor(concurrent.futures.ThreadPoolExecutor):
+        def submit(self, function, /, *args, **kwargs):
+            future = super().submit(function, *args, **kwargs)
+            if kwargs.get("call", {}).get("id") == "authority":
+                # The outer invocation must finish, including its post-tool
+                # processing. A signal inside tool.run() does not prove this.
+                assert function is agent_loop_module._execute_single_tool
+                authority_futures.append(future)
+                future.add_done_callback(lambda _future: authority_finished.set())
+            return future
+
+    local_futures = SimpleNamespace(**vars(concurrent.futures))
+    local_futures.ThreadPoolExecutor = CompletionSignalingExecutor
+    monkeypatch.setattr(
+        agent_loop_module, "concurrent", SimpleNamespace(futures=local_futures)
+    )
 
     def finalized(_input, _context):
-        authority_finished.set()
         return ToolResult(
             ok=True,
             output=authority_output,
@@ -2131,6 +2167,9 @@ def test_concurrent_finalized_authority_outranks_fatal_without_cancellation(
 
     def raises_fatal(_input, _context):
         assert authority_finished.wait(5)
+        assert len(authority_futures) == 1
+        assert authority_futures[0].done()
+        assert authority_futures[0].result()._must_deliver
         raise SystemExit("fatal worker signal")
 
     tools = ToolRegistry(

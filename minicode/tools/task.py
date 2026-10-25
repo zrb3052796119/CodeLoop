@@ -106,6 +106,7 @@ from minicode.task_deadline import (
 from minicode.task_outcome import AgentOutcomeCapture
 from minicode.tooling import (
     ToolCapability,
+    ToolContext,
     ToolDefinition,
     ToolExecutionAbandoned,
     ToolMetadata,
@@ -2022,7 +2023,7 @@ def _run_general_in_subprocess(
     )
 
 
-def _run(input_data: dict, context) -> ToolResult:
+def _run(input_data: dict, context: ToolContext) -> ToolResult:
     """Execute a sub-agent task.
 
     This creates an isolated agent loop with:
@@ -2170,7 +2171,7 @@ def _run(input_data: dict, context) -> ToolResult:
     # setup so every failure mode is a cheap, explicit error — never a
     # silent fallback into a fresh sub-agent run.
     continue_id = input_data.get("continue_subagent_id")
-    session_store = getattr(context, "_subagent_sessions", None)
+    session_store = context.subagent_sessions
     prior_messages: list[dict] | None = None
     if continue_id is not None:
         if scheduler_role is not None:

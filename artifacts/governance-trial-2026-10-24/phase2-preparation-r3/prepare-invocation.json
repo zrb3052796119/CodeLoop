@@ -1,0 +1,35 @@
+{
+  "startedEpoch": 1792869032.817434,
+  "finishedEpoch": 1792869037.153089,
+  "python": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+  "unpacker": {
+    "path": "/private/tmp/codeloop-governance-20261024/phase2-r3/portable/rebuild.py",
+    "sha256": "b7e9cf98646d0c22c877c189f17ec6992d37b3557389c9be5bf92cb57d4319af",
+    "bytes": 7329
+  },
+  "runner": {
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/scripts/run_three_arm_real.py",
+    "sha256": "54e988bfb005fd82225a24dca4801655518b5de1af01f803deced0c19be23b3e",
+    "bytes": 54333
+  },
+  "root": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+  "package": "/private/tmp/codeloop-governance-20261024/phase2-r3/portable",
+  "output": "/private/tmp/codeloop-governance-20261024/phase2-r3/prepared",
+  "sourceIdentityBefore": {
+    "productionSha256": "13151ca1031c9ec8b4ffec4fa23b43509946018a61fa8a01445aad65af4bccd8",
+    "harnessSha256": "15898623cbc94e6a313cee6032bd008dc691ac0fac8739711405d32d4044a4ef"
+  },
+  "sourceIdentityAfter": {
+    "productionSha256": "13151ca1031c9ec8b4ffec4fa23b43509946018a61fa8a01445aad65af4bccd8",
+    "harnessSha256": "15898623cbc94e6a313cee6032bd008dc691ac0fac8739711405d32d4044a4ef"
+  },
+  "stagesInvoked": [
+    "original rebuild.verify",
+    "original rebuild.rebuild",
+    "existing runner prepare"
+  ],
+  "newOracleExecutions": 0,
+  "newModelCalls": 0,
+  "formalFreezePerformed": false,
+  "success": true
+}

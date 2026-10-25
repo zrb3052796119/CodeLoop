@@ -142,3 +142,14 @@ out.txt
 /artifacts/intent-optimization-phase4-2026-09-07/offline-all-baseline.json
 /artifacts/intent-optimization-phase4-2026-09-07/offline-all-final.json
 /artifacts/intent-optimization-phase4-2026-09-07/offline-delivery.json
+
+# Pinned test/replay inputs: restore exact original bytes before verification.
+# See artifacts/archives/governance-pinned-inputs-2026-10-24/manifest.json.
+/artifacts/memory-retrieval-hybrid-offline.json
+/artifacts/memory-retrieval-hybrid-config.json
+/artifacts/multi-agent-gen2-2026-10-23/run-v2/tasks.json
+/artifacts/memory-retrieval-semantic-gap-baseline-v2.json
+/artifacts/memory-retrieval-semantic-gap-v2-candidate.json
+/artifacts/memory-retrieval-semantic-gap-baseline.json
+/artifacts/memory-retrieval-phase2a.json
+/artifacts/skill-selection-model-vs-routed-2026-09-08/live-paired/skill-embeddings.json

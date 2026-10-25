@@ -132,32 +132,6 @@ class _LockedHTTPResponse(http.client.HTTPResponse):
             self.closed_event.set()
 
 
-class _SlowDripResponse:
-    status = 200
-
-    def __init__(self, delay_seconds: float = 0.01) -> None:
-        self.delay_seconds = delay_seconds
-        self.read1_calls = 0
-        self.read_calls = 0
-        self.closed = False
-        self.closed_event = threading.Event()
-        self.socket = _RecordingSocket()
-        self.fp = SimpleNamespace(raw=SimpleNamespace(_sock=self.socket))
-
-    def read1(self, _amount: int = -1) -> bytes:
-        self.read1_calls += 1
-        time.sleep(self.delay_seconds)
-        return b"x"
-
-    def read(self, _amount: int = -1) -> bytes:
-        self.read_calls += 1
-        raise AssertionError("read1 must be preferred for HTTP-style responses")
-
-    def close(self) -> None:
-        self.closed = True
-        self.closed_event.set()
-
-
 class _BlockingReadOnlyResponse:
     status = 200
 
@@ -1156,27 +1130,48 @@ def test_non_streaming_chunk_read_rechecks_absolute_deadline(
     monkeypatch: pytest.MonkeyPatch,
     provider: str,
 ) -> None:
-    response = _SlowDripResponse()
+    # Advance only the adapter/control clocks from the real reader thread.
+    # Host scheduling cannot promise a minimum number of reads in 50 ms.
+    now = 100.0
+    clock_lock = threading.Lock()
+
+    def monotonic() -> float:
+        with clock_lock:
+            return now
+
+    def advance_read() -> None:
+        nonlocal now
+        with clock_lock:
+            now += 0.02
+
+    real_monotonic = time.monotonic
+    clock = SimpleNamespace(**{**vars(time), "monotonic": monotonic})
+    monkeypatch.setattr(f"minicode.{provider}_adapter.time", clock)
+    monkeypatch.setattr("minicode.model_call_control.time", clock)
+    response = _ChunkedResponse(
+        b'{"unused":"body"}', chunk_size=1, on_read=advance_read
+    )
+    response.socket = _RecordingSocket()
+    response.fp = SimpleNamespace(raw=SimpleNamespace(_sock=response.socket))
     monkeypatch.setattr(
         f"minicode.{provider}_adapter.open_verified_url",
         lambda _request, *, timeout: response,
     )
 
-    started_at = time.monotonic()
     with pytest.raises(ModelCallDeadlineExceeded):
         _adapter_for_provider(provider).next(
             [{"role": "user", "content": "classify"}],
-            deadline_monotonic=started_at + 0.05,
+            deadline_monotonic=100.05,
             max_response_bytes_override=4096,
         )
-    elapsed = time.monotonic() - started_at
 
-    assert 0.03 <= elapsed < 0.3
-    assert response.read_calls == 0
-    assert response.read1_calls >= 2
-    assert len(response.socket.timeouts) >= 2
-    assert response.socket.timeouts[-1] < response.socket.timeouts[0]
-    assert response.closed_event.wait(timeout=0.3)
+    assert monotonic() == pytest.approx(100.06)
+    assert response.read_sizes == []
+    assert len(response.read1_sizes) == 3
+    assert response.socket.timeouts == pytest.approx([0.05, 0.03, 0.01])
+    # This is a cleanup watchdog, not a response-latency assertion.
+    assert response.closed_event.wait(timeout=5)
+    assert time.monotonic is real_monotonic
 
 
 @pytest.mark.parametrize("provider", ["openai", "anthropic"])

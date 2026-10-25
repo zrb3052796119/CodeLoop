@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import errno
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 import minicode.memory as memory_mod
 import minicode.memory_approval as memory_approval_mod
+import minicode.memory_authority_publisher as publisher_mod
+import minicode.memory_store as memory_store_mod
 from minicode.memory import (
     MemoryApprovalPolicy,
     MemoryEntry,
@@ -730,3 +734,240 @@ def test_legacy_json_audit_projection_change_invalidates_scope_revision(
     assert manager.approval_audit[MemoryScope.PROJECT][-1]["audit_id"] == (
         "audit-out-of-band"
     )
+
+
+@pytest.fixture
+def portable_publisher_modules(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Hook only this publisher; other threads must retain the real stdlib APIs.
+    monkeypatch.setattr(publisher_mod, "os", SimpleNamespace(**vars(os)))
+    monkeypatch.setattr(
+        publisher_mod,
+        "tempfile",
+        SimpleNamespace(mkstemp=publisher_mod.tempfile.mkstemp),
+    )
+
+
+@pytest.mark.parametrize("existing_target", [False, True])
+def test_portable_publication_closes_synced_source_before_replace(
+    portable_publisher_modules: None,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    existing_target: bool,
+) -> None:
+    target = tmp_path / "memory.json"
+    if existing_target:
+        target.write_bytes(b"previous authority")
+    encoded = b'{"entries": []}'
+    opened = {}
+    events = []
+    actual_mkstemp = publisher_mod.tempfile.mkstemp
+    actual_fsync = os.fsync
+    actual_close = os.close
+    actual_replace = os.replace
+
+    def capture_temporary(**kwargs):
+        fd, path = actual_mkstemp(**kwargs)
+        opened.update(fd=fd, path=path)
+        return fd, path
+
+    def record_sync(fd):
+        actual_fsync(fd)
+        if fd == opened["fd"]:
+            events.append("fsync")
+
+    def record_close(fd):
+        if fd == opened["fd"]:
+            events.append("close")
+        actual_close(fd)
+
+    def replace_with_windows_sharing_rule(source, destination):
+        # A real open descriptor reproduces the Windows sharing constraint;
+        # recording that close() was called would miss a wrong descriptor.
+        try:
+            os.fstat(opened["fd"])
+        except OSError as error:
+            assert error.errno == errno.EBADF
+        else:
+            raise PermissionError(errno.EACCES, "source handle is still open")
+        assert Path(source).read_bytes() == encoded
+        assert events == ["fsync", "close"]
+        events.append("replace")
+        actual_replace(source, destination)
+
+    monkeypatch.setattr(publisher_mod.tempfile, "mkstemp", capture_temporary)
+    monkeypatch.setattr(publisher_mod.os, "fsync", record_sync)
+    monkeypatch.setattr(publisher_mod.os, "close", record_close)
+    monkeypatch.setattr(publisher_mod.os, "replace", replace_with_windows_sharing_rule)
+
+    publisher_mod.MemoryAuthorityPublisher._publish_portable(target, encoded)
+
+    assert target.read_bytes() == encoded
+    assert events == ["fsync", "close", "replace"]
+    assert not Path(opened["path"]).exists()
+
+
+@pytest.mark.parametrize("changed", ["inode", "size", "parent", "target"])
+def test_portable_publication_revalidates_paths_after_closing_source(
+    portable_publisher_modules: None,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    changed: str,
+) -> None:
+    parent = tmp_path / "authority"
+    parent.mkdir()
+    target = parent / "memory.json"
+    target.write_bytes(b"previous authority")
+    encoded = b'{"entries": []}'
+    opened = {}
+    replace_attempts = []
+    actual_mkstemp = publisher_mod.tempfile.mkstemp
+    actual_close = os.close
+    actual_replace = os.replace
+    displaced = tmp_path / "displaced"
+
+    def capture_temporary(**kwargs):
+        fd, path = actual_mkstemp(**kwargs)
+        opened.update(fd=fd, path=Path(path))
+        return fd, path
+
+    def close_then_change(fd):
+        actual_close(fd)
+        if fd != opened["fd"] or not opened["path"].exists():
+            return
+        temporary = opened["path"]
+        if changed == "inode":
+            actual_replace(temporary, displaced)
+            temporary.write_bytes(b"x" * len(encoded))
+        elif changed == "size":
+            temporary.write_bytes(encoded + b"x")
+        elif changed == "parent":
+            actual_replace(parent, displaced)
+            parent.mkdir()
+            actual_replace(displaced / temporary.name, temporary)
+            target.write_bytes(b"replacement directory authority")
+        else:
+            actual_replace(target, displaced)
+            target.mkdir()
+
+    def record_replace(source, destination):
+        replace_attempts.append((source, destination))
+        actual_replace(source, destination)
+
+    monkeypatch.setattr(publisher_mod.tempfile, "mkstemp", capture_temporary)
+    monkeypatch.setattr(publisher_mod.os, "close", close_then_change)
+    monkeypatch.setattr(publisher_mod.os, "replace", record_replace)
+
+    with pytest.raises(MemoryStoreUnsafePath):
+        publisher_mod.MemoryAuthorityPublisher._publish_portable(target, encoded)
+
+    assert replace_attempts == []
+    if changed == "parent":
+        assert (displaced / target.name).read_bytes() == b"previous authority"
+        assert target.read_bytes() == b"replacement directory authority"
+    elif changed == "target":
+        assert target.is_dir()
+        assert displaced.read_bytes() == b"previous authority"
+    else:
+        assert target.read_bytes() == b"previous authority"
+    assert not opened["path"].exists()
+
+
+def test_portable_publication_close_failure_never_replaces_target(
+    portable_publisher_modules: None,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "memory.json"
+    target.write_bytes(b"previous authority")
+    opened = {}
+    close_attempts = []
+    replace_attempts = []
+    actual_mkstemp = publisher_mod.tempfile.mkstemp
+    actual_close = os.close
+
+    def capture_temporary(**kwargs):
+        fd, path = actual_mkstemp(**kwargs)
+        opened.update(fd=fd, path=Path(path))
+        return fd, path
+
+    def fail_first_close(fd):
+        if fd == opened["fd"]:
+            close_attempts.append(fd)
+            if len(close_attempts) == 1:
+                raise OSError(errno.EIO, "close failed")
+        actual_close(fd)
+
+    def unexpected_replace(source, destination):
+        replace_attempts.append((source, destination))
+        raise AssertionError("a failed close must stop publication")
+
+    monkeypatch.setattr(publisher_mod.tempfile, "mkstemp", capture_temporary)
+    monkeypatch.setattr(publisher_mod.os, "close", fail_first_close)
+    monkeypatch.setattr(publisher_mod.os, "replace", unexpected_replace)
+
+    try:
+        with pytest.raises(MemoryStoreUnavailable) as failure:
+            publisher_mod.MemoryAuthorityPublisher._publish_portable(target, b"new")
+        assert isinstance(failure.value.__cause__, OSError)
+        assert failure.value.__cause__.errno == errno.EIO
+        assert replace_attempts == []
+        assert close_attempts == [opened["fd"], opened["fd"]]
+        assert target.read_bytes() == b"previous authority"
+        assert not opened["path"].exists()
+        with pytest.raises(OSError) as closed:
+            os.fstat(opened["fd"])
+        assert closed.value.errno == errno.EBADF
+    finally:
+        # Also release the actual handle when checking a broken implementation.
+        try:
+            actual_close(opened["fd"])
+        except OSError:
+            pass
+
+
+@pytest.mark.parametrize("changed", ["inode", "size", "reparse"])
+def test_portable_publication_rejects_post_replace_change(
+    portable_publisher_modules: None,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    changed: str,
+) -> None:
+    target = tmp_path / "memory.json"
+    encoded = b'{"entries": []}'
+    replaced = False
+    actual_replace = os.replace
+    actual_lstat = os.lstat
+
+    def replace_then_change(source, destination):
+        nonlocal replaced
+        actual_replace(source, destination)
+        replaced = True
+        if changed == "inode":
+            actual_replace(target, tmp_path / "displaced")
+            target.write_bytes(b"x" * len(encoded))
+        elif changed == "size":
+            target.write_bytes(encoded + b"x")
+
+    def lstat_with_windows_attributes(path, *args, **kwargs):
+        metadata = actual_lstat(path, *args, **kwargs)
+        if changed == "reparse" and replaced and Path(path) == target:
+            # Emulate Windows metadata only; inode, size, mode and publication
+            # still come from the real filesystem operation above.
+            return SimpleNamespace(
+                st_dev=metadata.st_dev,
+                st_ino=metadata.st_ino,
+                st_mode=metadata.st_mode,
+                st_size=metadata.st_size,
+                st_file_attributes=0x400,
+            )
+        return metadata
+
+    monkeypatch.setattr(publisher_mod.os, "replace", replace_then_change)
+    monkeypatch.setattr(publisher_mod.os, "lstat", lstat_with_windows_attributes)
+    if changed == "reparse":
+        monkeypatch.setattr(memory_store_mod, "_platform_name", lambda: "nt")
+
+    with pytest.raises(MemoryStoreUnsafePath, match="publication target changed"):
+        publisher_mod.MemoryAuthorityPublisher._publish_portable(target, encoded)
+
+    assert replaced is True

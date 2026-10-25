@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 2,
+  "frozenCodeArchiveSha256": "39d0b5b1d5b05484cc30100405924bb087f69ff4c5e3a5f36b18f28bdfd337ed",
+  "createdAt": "2026-10-24T17:50:32.691491+00:00",
+  "taskSha256": "1e134e338af2b19b78a54ded0ecf0bdcccdfc3c45803cf3c60bab5dc960e8cd5",
+  "analysisPlanSha256": "22f6215fcdaa7969f59677d9f7122a51ac5178698c5efb6fc104f7217ffb0813",
+  "productionSha256": "13151ca1031c9ec8b4ffec4fa23b43509946018a61fa8a01445aad65af4bccd8",
+  "harnessSha256": "15898623cbc94e6a313cee6032bd008dc691ac0fac8739711405d32d4044a4ef",
+  "model": "glm-5.3-flash",
+  "routeSha256": "7444aa98a782906660118e04d250088226353e8f5f948e26a13193f2c49d3c19",
+  "limits": {
+    "maxTokens": null,
+    "maxModelCalls": null,
+    "maxCostUsd": null,
+    "wallSeconds": 1800,
+    "requestTimeoutSeconds": 300,
+    "idleTimeoutSeconds": 120,
+    "connectTimeoutSeconds": 30,
+    "maxOutputTokens": 8192
+  },
+  "price": {
+    "known": false,
+    "currency": null,
+    "reason": "configured route price unknown"
+  },
+  "temperature": 0,
+  "roleTurnLimits": {
+    "explore": 12,
+    "plan": 8,
+    "general": 15
+  },
+  "repeats": 1,
+  "schedule": [
+    {
+      "id": "write-profile-parser-r1-single",
+      "case": "write-profile-parser",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "write-profile-parser-r1-auto",
+      "case": "write-profile-parser",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-atomic-replace-r1-auto",
+      "case": "read-atomic-replace",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-atomic-replace-r1-single",
+      "case": "read-atomic-replace",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-workflow-runner-r1-single",
+      "case": "refactor-workflow-runner",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-workflow-runner-r1-auto",
+      "case": "refactor-workflow-runner",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-todo-isolation-r1-auto",
+      "case": "write-todo-isolation",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-todo-isolation-r1-single",
+      "case": "write-todo-isolation",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-finalization-r1-single",
+      "case": "refactor-finalization",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-finalization-r1-auto",
+      "case": "refactor-finalization",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-cache-fallback-r1-auto",
+      "case": "write-cache-fallback",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-cache-fallback-r1-single",
+      "case": "write-cache-fallback",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-workspace-r1-single",
+      "case": "refactor-workspace",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-workspace-r1-auto",
+      "case": "refactor-workspace",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-frozen-change-r1-auto",
+      "case": "refactor-frozen-change",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "refactor-frozen-change-r1-single",
+      "case": "refactor-frozen-change",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "write-user-profiles-r1-single",
+      "case": "write-user-profiles",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "write-user-profiles-r1-auto",
+      "case": "write-user-profiles",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-closing-reminder-r1-auto",
+      "case": "read-closing-reminder",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-closing-reminder-r1-single",
+      "case": "read-closing-reminder",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "read-router-r1-single",
+      "case": "read-router",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "read-router-r1-auto",
+      "case": "read-router",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-profile-dispatch-r1-auto",
+      "case": "write-profile-dispatch",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-profile-dispatch-r1-single",
+      "case": "write-profile-dispatch",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "read-image-boundaries-r1-single",
+      "case": "read-image-boundaries",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "read-image-boundaries-r1-auto",
+      "case": "read-image-boundaries",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-deadline-r1-auto",
+      "case": "read-deadline",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "read-deadline-r1-single",
+      "case": "read-deadline",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "write-profile-contracts-r1-single",
+      "case": "write-profile-contracts",
+      "arm": "single",
+      "repeat": 1
+    },
+    {
+      "id": "write-profile-contracts-r1-auto",
+      "case": "write-profile-contracts",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-cache-tip-r1-auto",
+      "case": "write-cache-tip",
+      "arm": "auto",
+      "repeat": 1
+    },
+    {
+      "id": "write-cache-tip-r1-single",
+      "case": "write-cache-tip",
+      "arm": "single",
+      "repeat": 1
+    }
+  ],
+  "concurrency": 1,
+  "guardian": "At most 30 seconds for setup, then hard stop at the shared 1800 second execution deadline. Independent oracle runs afterward and is timed separately.",
+  "resolvedTransportRouteSha256": "dfe1c0c0c520107cb4bd5bbc9ad05a6c372cbaa75b6657387e997980c904652a",
+  "arms": [
+    "single",
+    "auto"
+  ],
+  "comparison": "single vs bounded automatic delegation on registered historical tasks",
+  "explicitRecipe": "Coordinator-only parent (task/todo_write): synchronous focused plan result, then workflow Executor; all reading/writing/testing delegated to real leaves.",
+  "minimumProtocolCoverage": 0.8,
+  "tokenBudgetSemantics": "No economic token/call/currency cap; shared wall deadline and role/depth bounds retained.",
+  "isolation": "Private host oracles and logical tool scope; authorized Python is not an OS sandbox.",
+  "singlePromptAdaptation": "Remove unavailable subagent usage section; preserve other production instructions.",
+  "studyDesignSha256": "c14a90c3b26d8d1bb366c6f74a9a84c7ad6e417934a7c8e32f17c00295fda104",
+  "oracleSupportSha256": "5c2281ac40e4bca07942b3bc3c5a582b61aa8b05276a426b7687589384d24585",
+  "externalJudgeSeconds": 180
+}
